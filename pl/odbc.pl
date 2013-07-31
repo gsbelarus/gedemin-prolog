@@ -1,4 +1,4 @@
-%
+﻿%
 
 open_connection(Connection) :-
     catch(

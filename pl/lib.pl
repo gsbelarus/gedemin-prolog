@@ -1,4 +1,4 @@
-%
+﻿%
 
 over_list(Over, [ Head | [] ]):-
     Over >= Head.

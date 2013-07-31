@@ -1,4 +1,4 @@
-:- multifile
+﻿:- multifile
     get_odbc_driver_string/2,
     get_sql/3,
     get_sql/4.

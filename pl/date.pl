@@ -1,4 +1,4 @@
-%
+﻿%
 
 date_add(Date, Add, Part, Date1) :-
     ground(Date), is_date(Date),
