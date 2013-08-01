@@ -1,6 +1,5 @@
 ﻿%
 :- include(date).
-:- include(lib).
 
 :- multifile
     twg_AvgWage/4,
@@ -66,7 +65,7 @@ avg_wage(EmplKey, AvgWage, Rule) :-
     % проверка по табелю
     check_month_tab(EmplKey, Periods),
     % есть хотя бы один расчетный месяц
-    wg_month_incl(EmplKey, _, _, _),
+    is_exist_month_incl(EmplKey),
     % проверка по заработку
     check_month_wage(EmplKey, Periods),
     % заработок по расчетным месяцам
@@ -129,6 +128,11 @@ avg_wage(EmplKey, AvgWage, Rule) :-
     % среднедневной заработок
     catch( AvgWage is  AvgHoureWage * AvgMonthNorm / AvgDays, _, fail),
     !.
+
+% есть хотя бы один расчетный месяц
+is_exist_month_incl(EmplKey) :-
+    wg_month_incl(EmplKey, _, _, _),
+    !.
     
 % проверка месяца по табелю
 check_month_tab(_, []):-
@@ -155,14 +159,16 @@ rule_month_tab(EmplKey, YM, Rule) :-
     % правило действительно
     is_valid_rule(Rule),
     % часы по дням по табелю покрывают график
-    month_by_day_houres(EmplKey, YM).
+    month_by_day_houres(EmplKey, YM),
+    !.
 
 rule_month_tab(EmplKey, YM, Rule) :-
     Rule = by_month_houres,
     % правило действительно
     is_valid_rule(Rule),
     % всего часов за месяц по табелю покрывает график
-    month_by_month_houres(EmplKey, YM).
+    month_by_month_houres(EmplKey, YM),
+    !.
 
 % часы по дням по табелю покрывают график
 month_by_day_houres(EmplKey, Y-M) :-
@@ -240,32 +246,30 @@ rule_month_wage(EmplKey, Y-M, Rule) :-
     Rule = by_month_wage_one,
     % правило действительно
     is_valid_rule(Rule),
-    % заработок за проверяемый месяц
-    usr_wg_TotalLine(EmplKey, Y, M, Wage),
-    % есть хотя бы один расчетный месяц
-    wg_month_incl(EmplKey, Y1, M1, Variant1),
-    % по варианту полного месяца
-    wg_full_month_rules(Rules),
-    member(Variant1, Rules),
-    % заработок за который
-    usr_wg_TotalLine(EmplKey, Y1, M1, Wage1),
-    % покрывается расчетным
+    % если заработок за проверяемый месяц
+    month_wage_check_calc(EmplKey, Y-M, Wage, Wage1),
+    % покрывает заработок одного из расчетных месяцев
     Wage >= Wage1,
     % то месяц включается в расчет
     !.
 
-% заработок за проверяемый месяц покрывает каждый из расчетных месяцев
-over_month_incl(EmplKey, Y-M) :-
+% заработки за проверяемый и один из расчетных месяцев
+month_wage_check_calc(EmplKey, Y-M, Wage, Wage1) :-
     % заработок за проверяемый месяц
     usr_wg_TotalLine(EmplKey, Y, M, Wage),
-    % если есть хотя бы один расчетный месяц
+    % для расчетного месяца
     wg_month_incl(EmplKey, Y1, M1, Variant1),
     % по варианту полного месяца
     wg_full_month_rules(Rules),
     member(Variant1, Rules),
-    % заработок в котором
-    usr_wg_TotalLine(EmplKey, Y1, M1, Wage1),
-    % не покрывается расчетным
+    % заработок за расчетный месяц
+    usr_wg_TotalLine(EmplKey, Y1, M1, Wage1).
+
+% заработок за проверяемый месяц покрывает каждый из расчетных месяцев
+over_month_incl(EmplKey, Y-M) :-
+    % если заработок за проверяемый месяц
+    month_wage_check_calc(EmplKey, Y-M, Wage, Wage1),
+    % не покрывается заработком одного из расчетных месяцев
     \+ Wage >= Wage1,
     % то месяц исключается из расчета
     !,
