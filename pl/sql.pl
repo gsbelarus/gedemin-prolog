@@ -1,4 +1,6 @@
-﻿:- multifile
+﻿:- ensure_loaded(odbc).
+
+:- multifile
     get_odbc_driver_string/2,
     get_sql/3,
     get_sql/4.
@@ -18,11 +20,16 @@ get_sql(bogem, twg_AvgWage,
         [default]
     ).
 
-get_sql(bogem, usr_wg_MovementLine,
-        'SELECT * FROM USR$WG_MOVEMENTLINE_P (?, ?)',
-        [default, atom > date]
+get_sql(bogem, usr_wg_MovementLine0,
+        'SELECT * FROM USR$WG_MOVEMENTLINE_P (?)',
+        [default]
     ).
 
+get_sql(bogem, usr_wg_MovementLine1,
+        'SELECT * FROM USR$WG_MOVEMENTLINE WHERE USR$EMPLKEY = ?',
+        [default]
+    ).
+    
 get_sql(bogem, usr_wg_TblCalDay,
         'SELECT * FROM USR$WG_TBLCALDAY_P (?, ?, ?)',
         [default, atom > date, atom > date]
@@ -32,3 +39,4 @@ get_sql(bogem, usr_wg_TblCalLine,
         'SELECT * FROM USR$WG_TBLCALLINE_P (?, ?, ?)',
         [default, atom > date, atom > date]
     ).
+    

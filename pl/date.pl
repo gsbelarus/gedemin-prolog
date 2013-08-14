@@ -1,5 +1,18 @@
 ﻿%
 
+get_date_time(DT) :-
+    get_time(TimeStamp),
+    stamp_date_time(TimeStamp, DateTime, local),
+    DateTime = date(Y, M, D, H, N, S,_,_,_),
+    atom_date(Date, date(Y,M,D)),
+    number_chars(H, Hs), chars_nn(Hs, [H1, H2]),
+    number_chars(N, Ns), chars_nn(Ns, [N1, N2]),
+    S0 is round(S),
+    number_chars(S0, Ss), chars_nn(Ss, [S1, S2]),
+    atom_chars(Time, [' ', H1, H2, ':', N1, N2, ':', S1, S2]),
+    atomic_list_concat([Date, Time], DT),
+    !.
+    
 date_add(Date, Add, Part, Date1) :-
     ground(Date), is_date(Date),
     number(Add), date_part(Part),

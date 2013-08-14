@@ -1,7 +1,6 @@
 ﻿%
-
 :- ensure_loaded(lib).
-/* ground_list, remove_from_list, member_list */
+/* ground_list, remove_list, member_list */
 
 :- dynamic(param_list/3).
 
@@ -11,7 +10,6 @@
 %       Client: in; data; got; restart; ...
 %       Server: run; query; temp; out; error; ...
 %   Pairs - list of pairs Key-Value or mixed with other
-param_list(-, -, []).
 
 % new_param_list(+Scope, +Type, +Pairs)
 new_param_list(Scope, Type, Pairs) :-
@@ -25,10 +23,23 @@ dispose_param_list(Scope, Type, Pairs) :-
     retractall( param_list(Scope, Type, Pairs) ),
     !.
 
-% get_param(?Scope, ?Type, ?Pair)
-get_param(Scope, Type, Key-Value) :-
+% get_param(?Scope, ?Type, ?Param)
+get_param(Scope, Type, Param) :-
     param_list(Scope, Type, Pairs),
-    member(Key-Value, Pairs).
+    member(Param, Pairs).
+% get_param(?Scope, ?Type, ?Param, ?Pairs)
+get_param(Scope, Type, Param, Pairs) :-
+    param_list(Scope, Type, Pairs),
+    member(Param, Pairs).
+    
+% get_params(?Scope, ?Type, ?Params)
+get_param_list(Scope, Type, Params) :-
+    param_list(Scope, Type, Pairs),
+    member_list(Params, Pairs).
+% get_params(?Scope, ?Type, ?Params, ?Pairs)
+get_param_list(Scope, Type, Params, Pairs) :-
+    param_list(Scope, Type, Pairs),
+    member_list(Params, Pairs).
     
 % find_param(+Scope, +Type, +Key1-Value1, ?Key2-Value2)
 find_param(Scope, Type, Key1-Value1, Key2-Value2) :-
@@ -44,14 +55,14 @@ find_param_list(Scope, Type, Key-Value, Pairs) :-
     ground_list([Scope, Type, Key-Value]),
     param_list(Scope, Type, Pairs0),
     once( member(Key-Value, Pairs0) ),
-    remove_from_list(Key-Value, Pairs0, Pairs).
+    remove_list(Key-Value, Pairs0, Pairs).
 % find_param_list(+Scope, +Type, +Pairs0, ?Pairs)
 find_param_list(Scope, Type, Pairs0, Pairs) :-
     ground_list([Scope, Type, Pairs0]),
     Pairs0 = [Key-Value|Tail],
     find_param_list(Scope, Type, Key-Value, Pairs1),
     once( member_list(Tail, Pairs1) ),
-    remove_from_list(Tail, Pairs1, Pairs).
+    remove_list(Tail, Pairs1, Pairs).
     
 %
 get_scope(Scope) :-

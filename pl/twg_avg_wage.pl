@@ -1,5 +1,6 @@
 ﻿%
-:- include(date).
+
+:- ensure_loaded(date).
 
 :- multifile
     twg_AvgWage/4,

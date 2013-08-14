@@ -1,13 +1,10 @@
 ﻿%
-
 :- ensure_loaded(lib).
+/* replace_all */
 
 :- multifile
     get_sql/3,
     get_sql/4.
-
-get_sql(-, -,'').
-get_sql(-, -,'',[]).
 
 open_connection(Connection) :-
     catch(
@@ -56,12 +53,15 @@ get_record(Connection, Query, Rec) :-
     get_sql(Connection, Query, SQL),
     odbc_query(Connection, SQL, Rec).
 
+get_record(Connection, Query, Rec, []) :-
+    get_record(Connection, Query, Rec).
+
 get_record(Connection, Query, Rec, [Key-Value|Pairs]) :-
     get_sql(Connection, Query, SQL, [Key-Value|Pairs]),
-    prepare_sql(SQL, [Key-Value|Pairs], SQL1),
-    odbc_query(Connection, SQL1, Rec).
+    prepare_sql(SQL, [Key-Value|Pairs], PrepSQL),
+    odbc_query(Connection, PrepSQL, Rec).
 
-get_record(_, _, __, [_-_|_]) :-
+get_record(_, _, _, [_-_|_]) :-
     !,
     fail.
 
@@ -76,10 +76,17 @@ prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
     replace_all(InSQL, Key, Value, InSQL1),
     prepare_sql(InSQL1,Pairs, OutSQL).
 
+assert_record([Query/_|Attrs], Rec) :-
+    Rec =.. [row|Recs],
+    append([Query|Attrs], Recs, [Functor|Args]),
+    Term =.. [Functor|Args],
+    assertz(Term),
+    !.
+    
 assert_record([Query|Attrs], Rec) :-
     Rec =.. [row|Recs],
     append([Query|Attrs], Recs, [Functor|Args]),
     Term =.. [Functor|Args],
     assertz(Term).
-
+    
 %
