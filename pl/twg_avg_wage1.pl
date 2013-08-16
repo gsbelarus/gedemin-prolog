@@ -6,7 +6,10 @@
 %
 
 % варианты правил расчета
-wg_valid_rules([by_calc_month, by_avg_houre, by_day_houres, by_month_houres, by_month_wage_all, by_month_wage_one]).
+wg_valid_rules([by_calc_month, by_avg_houre]).
+wg_valid_rules([by_day_houres, by_month_houres]).
+wg_valid_rules([by_month_wage_all, -by_month_wage_avg, -by_month_wage_one]).
+wg_valid_rules([by_month_no_bad_type]).
 
 % варианты правил полных месяцев
 wg_full_month_rules([by_day_houres, by_month_houres]).
@@ -57,10 +60,15 @@ avg_wage(Scope, PK, AvgWage, Rule) :-
     get_periods(Scope, PK, Periods),
     % проверка по табелю
     check_month_tab(Scope, PK, Periods),
+    % если есть хотя бы один расчетный месяц
+    ( exist_month_incl(Scope, PK),
+    % то проверка по заработку
+      check_month_wage(Scope, PK, Periods)
+      ; true ),
+    % проверка на отсутствие плохих типов начислений и часов
+    check_month_no_bad_type(Scope, PK, Periods),
     % есть хотя бы один расчетный месяц
-    is_exist_month_incl(Scope, PK),
-    % проверка по заработку
-    check_month_wage(Scope, PK, Periods),
+    exist_month_incl(Scope, PK),
     % взять заработок
     findall( Wage,
              % за расчетный месяц
@@ -158,39 +166,68 @@ make_periods(DateFrom, DateTo, [Y-M|Periods]) :-
     make_periods(DateFrom1, DateTo, Periods).
 make_periods(_, _, []).
 
-% расчитать заработок за месяц
-cacl_month_wage(Scope, PK, Y, M, Wage) :-
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey],
-    % взять формулу
-    findall( Debit*ModernCoef,
-          % для начисления
-          ( wg_TblCharge(EmplKey, _, Date, Debit, FeeTypeKey),
-          % соответствующего типа
-          usr_wg_FeeType(EmplKey, _, FeeTypeKey),
-          % где дата совпадает с проверяемым месяцем
-          atom_date(Date, date(Y, M, _)),
-          % с коэффициентом осовременивания
-          get_modern_coef(Scope, PK, Date, ModernCoef) ),
-    % в список начислений
-             Debits ),
-    % всего за месяц
-    sum_list(Debits, Wage),
+% месяц полный
+is_full_month(PK, Y-M) :-
+    % первый месяц работы полный или это не первый месяц работы
+    is_full_first_month(PK, Y-M),
+    % в месяце есть отработанные часы
+    is_month_worked(PK, Y-M),
+    % в месяце есть оплата
+    is_month_paid(PK, Y-M),
     !.
 
-% есть хотя бы один расчетный месяц
-is_exist_month_incl(Scope, PK) :-
-    get_month_incl(Scope, PK, _, _, _),
+% первый месяц работы полный или это не первый месяц работы
+is_full_first_month(PK, Y-M) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey],
+    % если для первого движения по типу 1 (прием на работу)
+    usr_wg_MovementLine(EmplKey, DocKey, DocKey, DateBegin, ScheduleKey, 1, _),
+    % где дата совпадает с проверяемым месяцем
+    atom_date(DateBegin, date(Y, M, _)),
+    % первый рабочий день по типу графика первого движения
+    once( ( usr_wg_TblCalDay(EmplKey, TheDay, _, 1, ScheduleKey),
+    % дата для которого совпадает с проверяемым месяцем
+    atom_date(TheDay, date(Y, M, _)) ) ),
+    !,
+    % больше или равен дате первого движения
+    TheDay @>= DateBegin,
+    % то первый месяц работы полный
+    true.
+is_full_first_month(_, _) :-
+    % проверяемый месяц не является первым месяцем работы
     !.
-    
+
+% в месяце есть отработанные часы
+is_month_worked(PK, Y-M) :-
+    % если есть хотя бы один рабочий день
+    usr_wg_TblCalLine1(PK, _, Date, Duration, _),
+    % с контролем наличия часов
+    Duration > 0,
+    % дата для которого совпадает с проверяемым месяцем
+    atom_date(Date, date(Y, M, _)),
+    % то в месяце есть отработанные часы
+    !.
+
+% в месяце есть оплата
+is_month_paid(PK, Y-M) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey],
+    % если есть хотя бы одно начисление
+    wg_TblCharge(EmplKey, _, Date, _, FeeTypeKey),
+    % соответствующего типа
+    usr_wg_FeeType(EmplKey, _, FeeTypeKey),
+    % где дата совпадает с проверяемым месяцем
+    atom_date(Date, date(Y, M, _)),
+    % то в месяце есть оплата
+    !.
 % взять расчетный месяц
 get_month_incl(Scope, PK, Y, M, Variant) :-
     get_param_list(Scope, temp, PK, Pairs),
     member(pMonthIncl-MonthInclList, Pairs),
     member(Y-M-Variant, MonthInclList).
-    
-% добавить расчетный месяц
-add_month_incl(Scope, PK, Y, M, Variant) :-
+
+% принять месяц для исчисления
+take_month_incl(Scope, PK, Y, M, Variant) :-
     get_param_list(Scope, temp, PK, Pairs),
     member(pMonthIncl-MonthInclList, Pairs),
     keysort([Y-M-Variant | MonthInclList], MonthInclList1),
@@ -198,20 +235,27 @@ add_month_incl(Scope, PK, Y, M, Variant) :-
     dispose_param_list(Scope, temp, Pairs),
     new_param_list(Scope, temp, Pairs1),
     !.
- add_month_incl(Scope, PK, Y, M, Variant) :-
+ take_month_incl(Scope, PK, Y, M, Variant) :-
     append(PK, [pMonthIncl-[Y-M-Variant]], Pairs),
     new_param_list(Scope, temp, Pairs),
     !.
-    
+
+% есть хотя бы один расчетный месяц
+exist_month_incl(Scope, PK) :-
+    get_month_incl(Scope, PK, _, _, _),
+    !.
+
 % проверка месяца по табелю
 check_month_tab(_, _, []):-
     % больше месяцев для проверки нет
     !.
 check_month_tab(Scope, PK, [Y-M|Periods]) :-
-    % если выполняется одно из правил
+    % если месяц полный
+    is_full_month(PK, Y-M),
+    % и выполняется одно из правил
     rule_month_tab(PK, Y-M, Variant),
-    % то добавить расчетный месяц
-    add_month_incl(Scope, PK, Y, M, Variant),
+    % то принять месяц для исчисления
+    take_month_incl(Scope, PK, Y, M, Variant),
     !,
     % проверить остальные месяцы
     check_month_tab(Scope, PK, Periods).
@@ -225,8 +269,6 @@ rule_month_tab(PK, Y-M, Rule) :-
     Rule = by_day_houres,
     % правило действительно
     is_valid_rule(Rule),
-    % месяц полный
-    is_full_month(PK, Y-M),
     % расчитать график за месяц
     calc_month_norm(PK, Y-M, NormDays),
     % расчитать табель за месяц
@@ -252,21 +294,6 @@ rule_month_tab(PK, Y-M, Rule) :-
     % если табель покрывает график по итогам месяца
     MonthTab >= MonthNorm,
     % то месяц включается в расчет
-    !.
-
-% месяц полный
-is_full_month(PK, Y-M) :-
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey],
-    % взять первое движение по типу 1 (прием на работу)
-    usr_wg_MovementLine(EmplKey, DocKey, DocKey, DateBegin, ScheduleKey, 1, _),
-    % если первый рабочий день по типу графика
-    once( ( usr_wg_TblCalDay(EmplKey, TheDay, _, 1, ScheduleKey),
-    % дата для которого совпадает с проверяемым месяцем
-    atom_date(TheDay, date(Y, M, _)) ) ),
-    % больше или равен дате первого движения
-    TheDay @>= DateBegin,
-    % то месяц полный
     !.
 
 % расчитать график за месяц
@@ -325,7 +352,27 @@ get_schedule(PK, TheDay, ScheduleKey) :-
     % взять последний тип из списка
     last(ScheduleKeys, _-ScheduleKey),
     !.
-    
+
+% расчитать заработок за месяц
+cacl_month_wage(Scope, PK, Y, M, Wage) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey],
+    % взять формулу
+    findall( Debit*ModernCoef,
+          % для начисления
+          ( wg_TblCharge(EmplKey, _, Date, Debit, FeeTypeKey),
+          % соответствующего типа
+          usr_wg_FeeType(EmplKey, _, FeeTypeKey),
+          % где дата совпадает с проверяемым месяцем
+          atom_date(Date, date(Y, M, _)),
+          % с коэффициентом осовременивания
+          get_modern_coef(Scope, PK, Date, ModernCoef) ),
+    % в список начислений
+             Debits ),
+    % всего за месяц
+    sum_list(Debits, Wage),
+    !.
+
 % коэффициент осовременивания
 get_modern_coef(Scope, PK, TheDay, ModernCoef) :-
     % разложить первичный ключ
@@ -359,10 +406,10 @@ calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef) :-
     % проверить для остальных движений
     !,
     calc_modern_coef(TheDay, Movements, ModernCoef).
-calc_modern_coef(_, _, 1) :-
+calc_modern_coef(_, _, 1.0) :-
     % если коэффициент не может быть вычислен, то его значение 1
     !.
-    
+
 % проверка месяца по заработку
 check_month_wage(_, _, []):-
     % больше месяцев для проверки нет
@@ -372,8 +419,8 @@ check_month_wage(Scope, PK, [Y-M|Periods]) :-
     \+ get_month_incl(Scope, PK, Y, M, _),
     % и выполняется одно из правил
     rule_month_wage(Scope, PK, Y-M, Variant),
-    % то добавить расчетный месяц
-    add_month_incl(Scope, PK, Y, M, Variant),
+    % то принять месяц для исчисления
+    take_month_incl(Scope, PK, Y, M, Variant),
     !,
     % проверить следующий месяц
     check_month_wage(Scope, PK, Periods).
@@ -396,6 +443,33 @@ rule_month_wage(Scope, PK, YM, Rule) :-
           ),
     % то месяц включается в расчет
     !.
+% заработок за месяц выше или на уровне среднего по полным месяцам
+rule_month_wage(Scope, PK, Y-M, Rule) :-
+    Rule = by_month_wage_avg,
+    % правило действительно
+    is_valid_rule(Rule),
+    % заработок за проверяемый месяц
+    cacl_month_wage(Scope, PK, Y, M, Wage),
+    % взять заработок
+    findall( Wage1,
+             % для расчетного месяца
+             ( get_month_incl(Scope, PK, Y1, M1, Variant1),
+             % по варианту полного месяца
+             wg_full_month_rules(Rules),
+             member(Variant1, Rules),
+             % расчитать заработок
+             cacl_month_wage(Scope, PK, Y1, M1, Wage1) ),
+    % в список заработков
+             Wages1 ),
+    % общий заработок за полные месяцы
+    sum_list(Wages1, Amount),
+    % количество полных месяцев
+    length(Wages1, Num),
+    % средний заработок за полные месяцы
+    catch( AvgMonthWage is Amount / Num, _, fail),
+    % заработок проверяемого месяца покрывает средний
+    Wage >= AvgMonthWage,
+    !.
 % заработок за месяц выше или на уровне одного из полных месяцев
 rule_month_wage(Scope, PK, YM, Rule) :-
     Rule = by_month_wage_one,
@@ -412,13 +486,90 @@ rule_month_wage(Scope, PK, YM, Rule) :-
 month_wage_check_calc(Scope, PK, Y-M, Wage, Wage1) :-
     % заработок за проверяемый месяц
     cacl_month_wage(Scope, PK, Y, M, Wage),
+    atom_date(Date, date(Y, M, 1)),
+    get_modern_coef(Scope, PK, Date, ModernCoef),
     % для расчетного месяца
     get_month_incl(Scope, PK, Y1, M1, Variant1),
+    atom_date(Date1, date(Y1, M1, 1)),
+    get_modern_coef(Scope, PK, Date1, ModernCoef1),
+    ModernCoef =:= ModernCoef1,
     % по варианту полного месяца
     wg_full_month_rules(Rules),
     member(Variant1, Rules),
     % заработок за расчетный месяц
     cacl_month_wage(Scope, PK, Y1, M1, Wage1).
+
+% проверка месяца по типу начислений
+check_month_no_bad_type(_, _, []):-
+    % больше месяцев для проверки нет
+    true.
+check_month_no_bad_type(Scope, PK, [Y-M|Periods]) :-
+    % если месяц еще не включен в расчет
+    \+ get_month_incl(Scope, PK, Y, M, _),
+    % месяц полный
+    is_full_month(PK, Y-M),
+    % и выполняется одно из правил
+    rule_month_no_bad_type(PK, Y-M, Variant),
+    % то принять месяц для исчисления
+    take_month_incl(Scope, PK, Y, M, Variant),
+    !,
+    % проверить следующий месяц
+    check_month_no_bad_type(Scope, PK, Periods).
+check_month_no_bad_type(Scope, PK, [_|Periods]) :-
+    !,
+    % проверить следующий месяц
+    check_month_no_bad_type(Scope, PK, Periods).
+
+% отсутствие плохих типов начислений и часов
+rule_month_no_bad_type(PK, Y-M, Rule) :-
+    Rule = by_month_no_bad_type,
+    % правило действительно
+    is_valid_rule(Rule),
+    % если нет плохих типов начислений и часов
+    month_no_bad_type(PK, Y-M),
+    % то месяц включается в расчет
+    !.
+
+% есть плохой тип начислений
+month_no_bad_type(PK, Y-M) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey],
+    % если есть хотя бы одно начисление
+    wg_TblCharge(EmplKey, _, Date, _, FeeTypeKey),
+    % где дата совпадает с проверяемым месяцем
+    atom_date(Date, date(Y, M, _)),
+    % с плохим типом начисления
+    bad_fee_type(FeeTypeKey),
+    % то месяц не включается в расчет
+    !,
+    fail.
+% есть плохой тип часов
+month_no_bad_type(PK, Y-M) :-
+    % если есть хотя бы один рабочий день
+    usr_wg_TblCalLine1(PK, _, Date, _, HoureType),
+    % дата для которого совпадает с проверяемым месяцем
+    atom_date(Date, date(Y, M, _)),
+    % с плохим типом часов
+    bad_houre_type(HoureType),
+    % то месяц не включается в расчет
+    !,
+    fail.
+% есть часы и начисление
+month_no_bad_type(PK, Y-M) :-
+    % если в проверяемом месяце есть отработанные часы
+    is_month_worked(PK, Y-M),
+    % и есть оплата
+    is_month_paid(PK, Y-M),
+    % то месяц включается в расчет
+    !.
+
+% плохие типы начислений
+bad_fee_type(150998870). % Б 80%
+
+% плохие типы часов
+bad_houre_type(147060485). % УБЗ
+bad_houre_type(147060501). % Т
+bad_houre_type(147060503). % А
 
 %% engine_loop(+Scope, +Type, +PK)
 % args handler
@@ -534,6 +685,7 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
             ( set_connection(Connection),
               forall( odbc_query(Connection, SQL, Rec),
                       assert_record([Query], Rec) ),
+              close_connection(Connection),
               append(PK,
                 [pConnection-Connection, pQuery-Query, pSQL-SQL],
                 PairsNextStep),

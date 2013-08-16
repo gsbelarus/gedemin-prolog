@@ -1,13 +1,12 @@
 ﻿%
 
-%
+% make_list(+Num, -List)
 make_list(Num, List) :-
     integer(Num),
     make_list(Num, List, 0),
     !.
     
-make_list(Num, [], Num) :-
-    !.
+make_list(Num, [], Num).
 make_list(Num, [_|Tail], Zero) :-
     Num1 is Num - 1,
     !,
