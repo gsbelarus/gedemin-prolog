@@ -8,7 +8,7 @@
 %   Scope - name of context
 %   Type  - protocol support
 %       Client: in; data; got; restart; test; ...
-%       Server: run; query; temp; out; error; ...
+%       Server: run; query; temp; log; out; clean; error; ...
 %   Pairs - list of pairs Key-Value or mixed with other
 
 % new_param_list(+Scope, +Type, +Pairs)
@@ -26,29 +26,29 @@ dispose_param_list(Scope, Type, Pairs) :-
 % get_param(?Scope, ?Type, ?Param)
 get_param(Scope, Type, Param) :-
     param_list(Scope, Type, Pairs),
-    member(Param, Pairs).
+    once( member(Param, Pairs) ).
 % get_param(?Scope, ?Type, ?Param, ?Pairs)
 get_param(Scope, Type, Param, Pairs) :-
     param_list(Scope, Type, Pairs),
-    member(Param, Pairs).
+    once( member(Param, Pairs) ).
     
-% get_params(?Scope, ?Type, ?Params)
+% get_param_list(?Scope, ?Type, ?Params)
 get_param_list(Scope, Type, Params) :-
     param_list(Scope, Type, Pairs),
-    member_list(Params, Pairs).
-% get_params(?Scope, ?Type, ?Params, ?Pairs)
+    once( member_list(Params, Pairs) ).
+% get_param_list(?Scope, ?Type, ?Params, ?Pairs)
 get_param_list(Scope, Type, Params, Pairs) :-
     param_list(Scope, Type, Pairs),
-    member_list(Params, Pairs).
+    once( member_list(Params, Pairs) ).
     
 % find_param(+Scope, +Type, +Key1-Value1, ?Key2-Value2)
 find_param(Scope, Type, Key1-Value1, Key2-Value2) :-
     find_param_list(Scope, Type, Key1-Value1, Pairs),
-    member(Key2-Value2, Pairs).
+    once( member(Key2-Value2, Pairs) ).
 % find_param(+Scope, +Type, +Pairs0, ?Key-Value)
 find_param(Scope, Type, Pairs0, Key-Value) :-
     find_param_list(Scope, Type, Pairs0, Pairs),
-    member(Key-Value, Pairs).
+    once( member(Key-Value, Pairs) ).
 
 % find_param_list(+Scope, +Type, +Key-Value, ?Pairs)
 find_param_list(Scope, Type, Key-Value, Pairs) :-

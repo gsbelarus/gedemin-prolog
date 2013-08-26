@@ -1,6 +1,6 @@
 ﻿%
 
-get_date_time(DT) :-
+get_local_date_time(DT) :-
     get_time(TimeStamp),
     stamp_date_time(TimeStamp, DateTime, local),
     DateTime = date(Y, M, D, H, N, S,_,_,_),
@@ -11,6 +11,17 @@ get_date_time(DT) :-
     number_chars(S0, Ss), chars_nn(Ss, [S1, S2]),
     atom_chars(Time, [' ', H1, H2, ':', N1, N2, ':', S1, S2]),
     atomic_list_concat([Date, Time], DT),
+    !.
+    
+get_local_time(Time) :-
+    get_time(TimeStamp),
+    stamp_date_time(TimeStamp, DateTime, local),
+    DateTime = date(_, _, _, H, N, S,_,_,_),
+    number_chars(H, Hs), chars_nn(Hs, [H1, H2]),
+    number_chars(N, Ns), chars_nn(Ns, [N1, N2]),
+    S0 is round(S),
+    number_chars(S0, Ss), chars_nn(Ss, [S1, S2]),
+    atom_chars(Time, [H1, H2, ':', N1, N2, ':', S1, S2]),
     !.
     
 date_add(Date, Add, Part, Date1) :-
@@ -90,7 +101,8 @@ atom_date(YYYYMMDD, date(YYYY, MM, DD)) :-
     catch( number_chars(YYYY, [Y1, Y2, Y3, Y4]), _, fail ),
     catch( number_chars(MM, [M1, M2]), _, fail ),
     catch( number_chars(DD, [D1, D2]), _, fail ),
-    is_date(date(YYYY, MM, DD)).
+    is_date(date(YYYY, MM, DD)),
+    !.
 
 atom_date(YYYYMMDD, date(Y, M, D)) :-
     var(YYYYMMDD),

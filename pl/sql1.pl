@@ -1,12 +1,8 @@
 ﻿%
-:- ensure_loaded(odbc).
-:- ensure_loaded(params).
-:- ensure_loaded(in_params).
-%
 
 % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMove, DateBegin, ScheduleKey,
-%   MovementType, Rate)
-get_sql(bogem, usr_wg_MovementLine/7,
+%   MovementType, Rate, ListNumber)
+get_sql(bogem, usr_wg_MovementLine/8,
 'SELECT \c
   ml.USR$EMPLKEY, \c
   ml.DOCUMENTKEY, \c
@@ -14,7 +10,8 @@ get_sql(bogem, usr_wg_MovementLine/7,
   \'\' || CAST(ml.USR$DATEBEGIN AS CHAR(10)) || \'\', \c
   ml.USR$SCHEDULEKEY, \c
   ml.USR$MOVEMENTTYPE, \c
-  CAST(ml.USR$RATE AS DOUBLE PRECISION) \c
+  CAST(ml.USR$RATE AS DOUBLE PRECISION), \c
+  USR$LISTNUMBER \c
 FROM \c
   USR$WG_MOVEMENTLINE ml \c
 WHERE \c
@@ -137,7 +134,6 @@ FROM \c
 [pEmplKey-_]
     ).
 
-% wg_TblCharge/5
 % wg_TblCharge(EmplKey, FirstMoveKey, DateBegin, Debit, FeeTypeKey)
 get_sql(bogem, wg_TblCharge/5,
 'SELECT \c
@@ -176,5 +172,34 @@ WHERE
 ',
 [pEmplKey-_, pFeeGroupKey-_]
     ).
+    
+% usr_wg_BadHourType(EmplKey, ID)
+get_sql(bogem, usr_wg_BadHourType/2,
+'SELECT \c
+  pEmplKey AS EmplKey, id \c
+FROM USR$WG_HOURTYPE \c
+WHERE id IN \c
+(SELECT id FROM gd_ruid \c
+WHERE xid IN (pBadHourType_xid_IN) \c
+AND dbid IN (pBadHourType_dbid_IN) \c
+) \c
+',
+[pEmplKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid_IN-_]
+    ).
+
+% usr_wg_BadFeeType(EmplKey, ID)
+get_sql(bogem, usr_wg_BadFeeType/2,
+'SELECT \c
+  pEmplKey AS EmplKey, id \c
+FROM USR$WG_FEETYPE \c
+WHERE id IN \c
+(SELECT id FROM gd_ruid \c
+WHERE xid IN (pBadFeeType_xid_IN) \c
+AND dbid IN (pBadFeeType_dbid_IN) \c
+) \c
+',
+[pEmplKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid_IN-_]
+    ).
+
     
 %

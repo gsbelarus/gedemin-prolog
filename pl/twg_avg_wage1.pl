@@ -1,17 +1,22 @@
-﻿%
-:- ensure_loaded(lib).
-:- ensure_loaded(date).
-:- ensure_loaded(params).
-:- ensure_loaded(sql1).
+﻿% [twg_avg_wage1]. avg_wage_in. avg_wage. avg_wage_kb. avg_wage. avg_wage_out.
+%
+:- ensure_loaded(lib), ensure_loaded(date), ensure_loaded(params).
+:- ensure_loaded(odbc), ensure_loaded(sql1).
 %
 
 % варианты правил расчета
+% [по расчетным месяцам, по среднечасовому]
 wg_valid_rules([by_calc_month, by_avg_houre]).
+% по расчетным месяцам - принятие месяца для исчисления
+% [соответствие табеля графику по дням и часам, по часам за месяц]
 wg_valid_rules([by_day_houres, by_month_houres]).
+% [заработок больше всех, больше среднего, больше любого]
 wg_valid_rules([by_month_wage_all, -by_month_wage_avg, -by_month_wage_one]).
+% [отсутствие плохих типов начислений и часов]
 wg_valid_rules([by_month_no_bad_type]).
 
 % варианты правил полных месяцев
+% [соответствие табеля графику по дням и часам, по часам за месяц]
 wg_full_month_rules([by_day_houres, by_month_houres]).
 
 % правило действительно
@@ -22,31 +27,31 @@ is_valid_rule(Rule) :-
 
 % среднедневной заработок
 avg_wage :-
+    % тестовая печать
+    get_local_time(T), write(T), nl,
     % объявить параметры контекста
-    Scope = wg_avg_wage, PK = [pEmplKey-_],
+    Scope = wg_avg_wage, PK = [pEmplKey-EmplKey],
     % для каждого первичного ключа расчета из входных параметров
     get_param_list(Scope, in, PK),
+    % тестовая печать
+    write(PK), nl,
     % подготовить данные
     engine_loop(Scope, in, PK),
     % вычислить среднедневной заработок по сотруднику
     avg_wage(Scope, PK, AvgWage, Variant),
     % сформировать выходные параметры
-    append(PK, [pAvgWage-AvgWage, pVariant-Variant], OutPairs),
+    once( usr_wg_MovementLine(EmplKey, _, _, _, _, 1, _, ListNumber) ),
+    append(PK, [pListNumber-ListNumber, pAvgWage-AvgWage, pVariant-Variant], OutPairs),
     new_param_list(Scope, out, OutPairs),
     % найти альтернативу
-    writeln( PK ),
     fail.
 avg_wage :-
-    % завершить вычисления
-    Scope = wg_avg_wage, PK = [pEmplKey-_],
-    forall(
-        % для каждого первичного ключа расчета из входных параметров
-        ( get_param_list(Scope, in, PK, InPairs),
-        % вывести результат расчета
-        find_param_list(Scope, temp, PK, TempPairs),
-        find_param_list(Scope, out, PK, OutPairs) ),
-        writeln( InPairs-OutPairs-TempPairs )
-          ).
+    % тестовая печать
+    get_local_time(T), write(T), nl,
+    % сборка мусора
+    garbage_collect,
+    % больше альтернатив нет
+    !.
 
 % среднедневной заработок по сотруднику (по расчетным месяцам)
 avg_wage(Scope, PK, AvgWage, Rule) :-
@@ -94,14 +99,27 @@ avg_wage(Scope, PK, AvgWage, Rule) :-
     is_valid_rule(Rule),
     % периоды для проверки
     get_periods(Scope, PK, Periods),
+    % если последний месяц в периоде
+    once( ( last(Periods, Y1-M1),
+            % является первым месяцем работы
+            is_first_month(PK, Y1-M1),
+            % то признак первого месяца 1
+            FirstMonth = 1
+            % иначе 0
+            ; FirstMonth = 0 ) ),
     % взять заработок
     findall( Wage,
              % за период проверки
              ( member(Y-M, Periods),
+             % если месяц значимый или первый месяц работы
+             once( ( is_value_month(PK, Y-M) ; FirstMonth = 1 ) ),
              % расчитать заработок
-             cacl_month_wage(Scope, PK, Y, M, Wage) ),
+             cacl_month_wage(Scope, PK, Y, M, Wage)
+             ),
     % в список заработков
              Wages ),
+    % есть заработки за период проверки
+    \+ Wages = [],
     % общий заработок по табелю
     sum_list(Wages, Amount),
     % взять часы
@@ -136,7 +154,7 @@ avg_wage(Scope, PK, AvgWage, Rule) :-
             get_schedule(PK, TheDay, TblCalKey),
             % дата для которого совпадает с проверяемым годом
             atom_date(TheDay, date(CalcYear, _, _)) ),
-    % в список дата/часы графика
+    % в список часов графика
             WDurations),
     % всего часов по графику
     sum_list(WDurations, TotalNorm),
@@ -145,14 +163,14 @@ avg_wage(Scope, PK, AvgWage, Rule) :-
     % среднемесячное количество календарных дней
     get_param(Scope, in, pAvgDays-AvgDays),
     % среднедневной заработок
-    catch( AvgWage0 is  AvgHoureWage * AvgMonthNorm / AvgDays, _, fail),
+    catch( AvgWage0 is AvgHoureWage * AvgMonthNorm / AvgDays, _, fail),
     AvgWage is float( round(AvgWage0) ),
     !.
 
 % периоды для проверки
 get_periods(Scope, PK, Periods) :-
-    find_param_list(Scope, run, PK, List),
-    member_list([pDateCalcFrom-DateFrom, pDateCalcTo-DateTo], List),
+    find_param_list(Scope, run, PK, Pairs),
+    member_list([pDateCalcFrom-DateFrom, pDateCalcTo-DateTo], Pairs),
     make_periods(DateFrom, DateTo, Periods),
     !.
 
@@ -166,8 +184,18 @@ make_periods(DateFrom, DateTo, [Y-M|Periods]) :-
     make_periods(DateFrom1, DateTo, Periods).
 make_periods(_, _, []).
 
-% месяц полный
-is_full_month(PK, Y-M) :-
+% первый месяц работы
+is_first_month(PK, Y-M) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey],
+    % для первого движения по типу 1 (прием на работу)
+    usr_wg_MovementLine(EmplKey, _, _, DateBegin, _, 1, _, _),
+    % дата совпадает с проверяемым месяцем
+    atom_date(DateBegin, date(Y, M, _)),
+    !.
+
+% месяц значимый
+is_value_month(PK, Y-M) :-
     % первый месяц работы полный или это не первый месяц работы
     is_full_first_month(PK, Y-M),
     % в месяце есть отработанные часы
@@ -181,7 +209,7 @@ is_full_first_month(PK, Y-M) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey],
     % если для первого движения по типу 1 (прием на работу)
-    usr_wg_MovementLine(EmplKey, DocKey, DocKey, DateBegin, ScheduleKey, 1, _),
+    usr_wg_MovementLine(EmplKey, DocKey, DocKey, DateBegin, ScheduleKey, 1, _, _),
     % где дата совпадает с проверяемым месяцем
     atom_date(DateBegin, date(Y, M, _)),
     % первый рабочий день по типу графика первого движения
@@ -220,6 +248,7 @@ is_month_paid(PK, Y-M) :-
     atom_date(Date, date(Y, M, _)),
     % то в месяце есть оплата
     !.
+
 % взять расчетный месяц
 get_month_incl(Scope, PK, Y, M, Variant) :-
     get_param_list(Scope, temp, PK, Pairs),
@@ -250,8 +279,8 @@ check_month_tab(_, _, []):-
     % больше месяцев для проверки нет
     !.
 check_month_tab(Scope, PK, [Y-M|Periods]) :-
-    % если месяц полный
-    is_full_month(PK, Y-M),
+    % если месяц значимый
+    is_value_month(PK, Y-M),
     % и выполняется одно из правил
     rule_month_tab(PK, Y-M, Variant),
     % то принять месяц для исчисления
@@ -266,6 +295,7 @@ check_month_tab(Scope, PK, [_|Periods]) :-
 
 % правила включения месяца в расчет
 rule_month_tab(PK, Y-M, Rule) :-
+    % по дням и часам
     Rule = by_day_houres,
     % правило действительно
     is_valid_rule(Rule),
@@ -278,6 +308,7 @@ rule_month_tab(PK, Y-M, Rule) :-
     % то месяц включается в расчет
     !.
 rule_month_tab(PK, Y-M, Rule) :-
+    % по часам за месяц
     Rule = by_month_houres,
     % правило действительно
     is_valid_rule(Rule),
@@ -339,10 +370,10 @@ get_schedule(PK, TheDay, ScheduleKey) :-
     findall( % взять тип графика
              DateBegin-ScheduleKey0,
                % где для движения
-             ( usr_wg_MovementLine(EmplKey, _, _, DateBegin, ScheduleKey0, _, _),
+             ( usr_wg_MovementLine(EmplKey, _, _, DateBegin, ScheduleKey0, _, _, _),
                % начальная дата меньше или равна проверяемой дате
                once( ( DateBegin @=< TheDay
-               % или первый день месяца меньше или равен проверяемой дате
+               % либо первый день месяца меньше или равен проверяемой дате
                        ; atom_date(DateBegin, date(Y, M, _)),
                        atom_date(DateBegin1, date(Y, M, 1)),
                        DateBegin1 @=< TheDay ) )
@@ -382,7 +413,7 @@ get_modern_coef(Scope, PK, TheDay, ModernCoef) :-
     % взять дату и ставку
     findall( DateBegin-Rate,
              % где для движения
-             ( usr_wg_MovementLine(EmplKey, _, _, DateBegin, _, _, Rate),
+             ( usr_wg_MovementLine(EmplKey, _, _, DateBegin, _, _, Rate, _),
              % дата меньше расчетной
              DateBegin @< DateCalc ),
     % в список движений
@@ -400,7 +431,7 @@ calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef) :
     % то взять последнюю ставку
     last([Date2-Rate2 | Movements], _-RateLast),
     % и вычислить коэффициент для текущего движения
-    ModernCoef is RateLast/Rate1,
+    ModernCoef is float( round( RateLast / Rate1 * 10000 ) / 10000 ),
     !.
 calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef) :-
     % проверить для остальных движений
@@ -506,8 +537,8 @@ check_month_no_bad_type(_, _, []):-
 check_month_no_bad_type(Scope, PK, [Y-M|Periods]) :-
     % если месяц еще не включен в расчет
     \+ get_month_incl(Scope, PK, Y, M, _),
-    % месяц полный
-    is_full_month(PK, Y-M),
+    % месяц значимый
+    is_value_month(PK, Y-M),
     % и выполняется одно из правил
     rule_month_no_bad_type(PK, Y-M, Variant),
     % то принять месяц для исчисления
@@ -539,44 +570,85 @@ month_no_bad_type(PK, Y-M) :-
     % где дата совпадает с проверяемым месяцем
     atom_date(Date, date(Y, M, _)),
     % с плохим типом начисления
-    bad_fee_type(FeeTypeKey),
+    usr_wg_BadFeeType(EmplKey, FeeTypeKey),
     % то месяц не включается в расчет
     !,
     fail.
 % есть плохой тип часов
 month_no_bad_type(PK, Y-M) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey],
     % если есть хотя бы один рабочий день
     usr_wg_TblCalLine1(PK, _, Date, _, HoureType),
     % дата для которого совпадает с проверяемым месяцем
     atom_date(Date, date(Y, M, _)),
     % с плохим типом часов
-    bad_houre_type(HoureType),
+    usr_wg_BadHourType(EmplKey, HoureType),
     % то месяц не включается в расчет
     !,
     fail.
-% есть часы и начисление
-month_no_bad_type(PK, Y-M) :-
-    % если в проверяемом месяце есть отработанные часы
-    is_month_worked(PK, Y-M),
-    % и есть оплата
-    is_month_paid(PK, Y-M),
-    % то месяц включается в расчет
+% нет плохих типов начислений и часов
+month_no_bad_type(_, _) :-
     !.
 
-% плохие типы начислений
-bad_fee_type(150998870). % Б 80%
-
-% плохие типы часов
-bad_houre_type(147060485). % УБЗ
-bad_houre_type(147060501). % Т
-bad_houre_type(147060503). % А
+% день по табелю
+usr_wg_TblCalLine1(PK, FirstMoveKey, Date, Duration, HoureType) :-
+    PK = [pEmplKey-EmplKey],
+    usr_wg_TblCalLine(EmplKey, FirstMoveKey, Date, Duration, HoureType).
+% или по табелю мастера
+usr_wg_TblCalLine1(PK, FirstMoveKey, Date, Duration, HoureType) :-
+    PK = [pEmplKey-EmplKey],
+    make_list(62, TeilArgs),
+    Term =.. [ usr_wg_TblCal_FlexLine, EmplKey, FirstMoveKey, DateBegin | TeilArgs ],
+    catch( call( Term ), _, fail),
+    atom_date(DateBegin, date(Y, M, _)),
+    member(D, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]),
+    atom_date(Date, date(Y, M, D)),
+    S is (D - 1) * 2 + 1,
+    H is S + 1,
+    nth1(S, TeilArgs, Duration0),
+    once( ( number(Duration0), Duration = Duration0
+            ; atom_number(Duration0, Duration)
+            ; Duration is 0 ) ),
+    nth1(H, TeilArgs, HoureType0),
+    once( ( number(HoureType0), HoureType = HoureType0
+            ; atom_number(HoureType0, HoureType)
+            ; HoureType is 0 ) ).
+            
 
 %% engine_loop(+Scope, +Type, +PK)
+%
+
 % args handler
 engine_loop(Scope, Type, PK) :-
     \+ ground_list([Scope, Type, PK]),
     !,
     fail.
+% fail handler
+engine_loop(Scope, _, PK) :-
+    engine_fail_step(Type),
+    get_param_list(Scope, Type, PK),
+    !,
+    fail.
+% deal handler
+engine_loop(Scope, Type, PK) :-
+    engine_deal_step(Type),
+    !,
+    get_param_list(Scope, Type, PK),
+    !.
+% data handler
+engine_loop(Scope, Type, PK) :-
+    engine_data_step(Type, TypeNextStep),
+    get_param_list(Scope, Type, PK),
+    \+ get_param_list(Scope, TypeNextStep, PK),
+    prepare_data(Scope, Type, PK, TypeNextStep),
+    !,
+    engine_loop(Scope, TypeNextStep, PK).
+engine_loop(Scope, Type, PK) :-
+    engine_data_step(Type, TypeNextStep),
+    !,
+    engine_loop(Scope, TypeNextStep, PK).
 % restart handler
 engine_loop(Scope, Type, PK) :-
     engine_restart_step(Type, TypeNextStep),
@@ -586,51 +658,54 @@ engine_loop(Scope, Type, PK) :-
           ),
     !,
     engine_loop(Scope, TypeNextStep, PK).
-% stop handler
+% clean handler
 engine_loop(Scope, Type, PK) :-
-    engine_stop_step(Type),
-    get_param_list(Scope, Type, PK, _),
+    engine_clean_step(Type, CleanType, NextType),
+    forall( ( get_param_list(Scope, ParamType, PK, Pairs),
+              ParamType = CleanType ),
+            dispose_param_list(Scope, ParamType, Pairs)
+          ),
+    once( get_param(Scope, NextType, pConnection-Connection) ),
+    forall( ( get_sql(Connection, Query/Arity, _, _),
+              current_functor(Query, Arity) ),
+            ( length(PK, Len),
+              Arity1 is Arity - Len,
+              make_list(Arity1, TeilArgs),
+              PK = [pEmplKey-EmplKey],
+              append([EmplKey], TeilArgs, Args),
+              Term =.. [Query | Args ],
+              retractall( Term ) )
+            ),
+    garbage_collect,
     !.
-% data handler
-engine_loop(Scope, Type, PK) :-
-    engine_data_step(Type, TypeNextStep),
-    get_param_list(Scope, Type, PK, _),
-    \+ get_param_list(Scope, TypeNextStep, PK, _),
-    prepare_data(Scope, Type, PK, TypeNextStep),
-    !,
-    engine_loop(Scope, TypeNextStep, PK).
-% fail stop handler
-engine_loop(Scope, _, PK) :-
-    engine_stop_step(Type),
-    get_param_list(Scope, Type, PK, _),
-    !,
-    fail.
 % error handler
 engine_loop(Scope, Type, PK) :-
     engine_error_step(TypeNextStep),
-    \+ get_param_list(Scope, TypeNextStep, PK, _),
-    get_date_time(DT),
+    \+ get_param_list(Scope, TypeNextStep, PK),
+    get_local_date_time(DT),
     append(PK, [Type, DT], PairsNextStep),
     new_param_list(Scope, TypeNextStep, PairsNextStep),
     !,
     fail.
-% deadlock
-engine_loop(_, _, _) :-
-    !.
-
-%
-engine_restart_step(restart, in).
+    
 %
 engine_data_step(in, run).
 engine_data_step(run, query).
 engine_data_step(query, data).
 %
-engine_stop_step(data).
-engine_stop_step(out).
-engine_stop_step(got).
-engine_stop_step(error).
+engine_deal_step(data).
+%
+engine_fail_step(out).
+engine_fail_step(got).
+engine_fail_step(error).
+%
+engine_restart_step(restart, in).
+%
+engine_clean_step(clean, data, query).
 %
 engine_error_step(error).
+
+ %
 %%
 
 %% prepare_data(+Scope, +Type, +PK, +TypeNextStep)
@@ -638,21 +713,21 @@ engine_error_step(error).
 prepare_data(Scope, Type, PK, TypeNextStep) :-
     Scope = wg_avg_wage, Type = in, TypeNextStep = run,
     get_param_list(Scope, Type,
-        [pConnection-Connection, pMonthQty-MonthQty, pFeeGroupKey-FeeGroupKey]),
+            [pConnection-_, pMonthQty-MonthQty], ConnectionPairs),
     get_param_list(Scope, Type, PK, Pairs),
     member_list([pDateCalc-DateCalc], Pairs),
-    % calc run data
-    atom_date(DateCalc, date(Y,M,_)), atom_date(DateCalcTo, date(Y,M,1)),
+    %
+    atom_date(DateCalc, date(Y, M, _)), atom_date(DateCalcTo, date(Y, M, 1)),
     MonthAdd is -MonthQty, date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),
-    atom_date(DateNormFrom0, date(Y,1,1)),
+    atom_date(DateNormFrom0, date(Y, 1, 1)),
     ( DateNormFrom0 @> DateCalcFrom, DateNormFrom = DateCalcFrom
       ; DateNormFrom = DateNormFrom0 ),
-    Y1 is Y + 1, atom_date(DateNormTo, date(Y1,1,1)),
+    Y1 is Y + 1, atom_date(DateNormTo, date(Y1, 1, 1)),
     %
     append(Pairs,
-        [pConnection-Connection, pFeeGroupKey-FeeGroupKey,
-         pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
-         pDateNormFrom-DateNormFrom, pDateNormTo-DateNormTo],
+            [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
+            pDateNormFrom-DateNormFrom, pDateNormTo-DateNormTo
+            |ConnectionPairs],
         PairsNextStep),
     new_param_list(Scope, TypeNextStep, PairsNextStep),
     !.
@@ -662,9 +737,10 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
     get_param_list(Scope, Type, PK, Pairs),
     member(pConnection-Connection, Pairs),
     forall( ( get_sql(Connection, Query, SQL, Params),
+              dynamic(Query),
               member_list(Params, Pairs),
               prepare_sql(SQL, Params, PrepSQL),
-              \+ get_param_list(Scope, TypeNextStep,
+              \+ find_param_list(Scope, TypeNextStep, PK,
                     [pConnection-Connection, pQuery-Query, pSQL-PrepSQL])
             ),
             ( append(PK,
@@ -674,12 +750,37 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
             )
           ),
     !.
-% wg_avg_wage-query-data
-prepare_data(Scope, Type, PK, TypeNextStep) :-
+ %
+%%
+
+
+%% эмуляция клиента
+%
+
+% загрузка входных данных из файла in_params.pl
+avg_wage_in :-
+    consult(in_params).
+
+% формирование базы знаний по SQL-запросам
+avg_wage_kb:-
+    % тестовая печать
+    get_local_time(T1), write(T1), nl,
+    Scope = wg_avg_wage, Type = query, TypeNextStep = data,
+    PK = [pEmplKey-_],
+    forall( get_param_list(Scope, in, PK),
+            % тестовая печать
+            ( write(PK), nl,
+            avg_wage_kb(Scope, Type, PK, TypeNextStep) )
+          ),
+    % тестовая печать
+    get_local_time(T2), write(T2), nl,
+    !.
+
+avg_wage_kb(Scope, Type, PK, TypeNextStep) :-
     Scope = wg_avg_wage, Type = query, TypeNextStep = data,
     forall( ( find_param_list(Scope, Type, PK,
                   [pConnection-Connection, pQuery-Query, pSQL-SQL]),
-              \+ get_param_list(Scope, TypeNextStep,
+              \+ find_param_list(Scope, TypeNextStep, PK,
                     [pConnection-Connection, pQuery-Query, pSQL-SQL])
             ),
             ( set_connection(Connection),
@@ -693,31 +794,36 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
             )
           ),
     !.
-%
 
-% взять день по табелю
-usr_wg_TblCalLine1(PK, FirstMoveKey, Date, Duration, HoureType) :-
-    PK = [pEmplKey-EmplKey],
-    usr_wg_TblCalLine(EmplKey, FirstMoveKey, Date, Duration, HoureType).
-% или по табелю мастера
-usr_wg_TblCalLine1(PK, FirstMoveKey, Date, Duration, HoureType) :-
-    PK = [pEmplKey-EmplKey],
-    make_list(62, List),
-    Term =.. [ usr_wg_TblCal_FlexLine, EmplKey, FirstMoveKey, DateBegin | List ],
-    catch( call( Term ), _, fail),
-    atom_date(DateBegin, date(Y, M, _)),
-    member(D, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]),
-    atom_date(Date, date(Y, M, D)),
-    S is (D - 1) * 2 + 1,
-    H is S + 1,
-    nth1(S, List, Duration0),
-    once( ( number(Duration0), Duration = Duration0
-            ; atom_number(Duration0, Duration)
-            ; Duration is 0 ) ),
-    nth1(H, List, HoureType0),
-    once( ( number(HoureType0), HoureType = HoureType0
-            ; atom_number(HoureType0, HoureType)
-            ; HoureType is 0) ).
-
-%
+% выгрузка выходных данных в файл out_params.pl
+avg_wage_out :-
+    % создать файл
+    open('out_params.pl', write, Stream, [alias(result), encoding(utf8)]),
+    Scope = wg_avg_wage, PK = [pEmplKey-_],
+    forall(
+        % для каждого первичного ключа расчета из входных параметров
+        ( get_param_list(Scope, in, PK, InPairs),
+        % найти временные параметры по месяцам исчисления
+        once( ( find_param_list(Scope, temp, PK, [pMonthIncl-MonthIncl|_])
+              ; MonthIncl = [] )
+            ),
+        % найти выходные параметры
+        find_param_list(Scope, out, PK, OutPairs)
+        ),
+        % вывести результат расчета
+        ( write(Stream, InPairs),
+          nl(Stream),
+          write(Stream, OutPairs),
+          nl(Stream),
+          forall( member(Y-M-Rule, MonthIncl),
+                  ( write(Stream, '  '),
+                  cacl_month_wage(Scope, PK, Y, M, Wage0),
+                  Wage is float( round(Wage0) ),
+                  write(Stream, Y-M-Wage-Rule),
+                  nl(Stream) )
+                ), nl(Stream)
+        )
+          ),
+    close(Stream, [force(true)]).
+ %
+%%
