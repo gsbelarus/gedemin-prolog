@@ -1,5 +1,12 @@
 ﻿%
 
+over_list(Over, [Head|[]]):-
+    Over >= Head.
+over_list(Over, [Head|Tail]) :-
+    Over >= Head,
+    !,
+    over_list(Over, Tail).
+
 % make_list(+Num, -List)
 make_list(Num, List) :-
     integer(Num),

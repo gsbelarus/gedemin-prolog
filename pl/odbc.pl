@@ -74,7 +74,7 @@ prepare_sql(InSQL, [], InSQL).
 
 prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
     replace_all(InSQL, Key, Value, InSQL1),
-    prepare_sql(InSQL1,Pairs, OutSQL).
+    prepare_sql(InSQL1, Pairs, OutSQL).
 
 assert_record([Query/_|Attrs], Rec) :-
     Rec =.. [row|Recs],

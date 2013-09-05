@@ -96,13 +96,14 @@
   2013-7-5507356.0-by_month_wage_all
 
 [pEmplKey-148586355,pDateCalc-2013-08-14]
-[pListNumber-338,pAvgWage-223724.0,pVariant-by_calc_month]
+[pListNumber-338,pAvgWage-223184.0,pVariant-by_calc_month]
   2012-8-4316912.0-by_month_no_bad_type
   2012-9-4623173.0-by_day_houres
   2012-10-5591375.0-by_day_houres
   2012-11-7448443.0-by_day_houres
   2012-12-11622629.0-by_day_houres
   2013-1-7443000.0-by_day_houres
+  2013-3-6468100.0-by_month_no_bad_type
   2013-4-6826351.0-by_month_no_bad_type
   2013-5-6849610.0-by_day_houres
   2013-6-5640810.0-by_day_houres

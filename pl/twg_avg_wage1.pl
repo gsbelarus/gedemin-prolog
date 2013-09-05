@@ -1,5 +1,6 @@
-﻿% [twg_avg_wage1]. avg_wage_in. avg_wage. avg_wage_kb. avg_wage. avg_wage_out.
+﻿% [twg_avg_wage1]. avg_wage_in, avg_wage, avg_wage_kb, avg_wage, avg_wage_out.
 %
+:- working_directory(CWD, CWD), working_directory(CWD, 'd:/latunov/pl/').
 :- ensure_loaded(lib), ensure_loaded(date), ensure_loaded(params).
 :- ensure_loaded(odbc), ensure_loaded(sql1).
 %
@@ -758,7 +759,7 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
 % загрузка входных данных из файла in_params.pl
 avg_wage_in :-
     consult(in_params).
-% добавление входных данных
+% загрузка входных данных
 avg_wage_in(EmplKey, DateCalc0) :-
     Scope = wg_avg_wage, Type = in,
     ( is_date(DateCalc0), DateCalc = DateCalc0
@@ -767,6 +768,15 @@ avg_wage_in(EmplKey, DateCalc0) :-
       atom_chars(DateCalc, [Y1, Y2, Y3, Y4, '-', M1, M2, '-', D1, D2])
     ),
     new_param_list(Scope, Type, [pEmplKey-EmplKey, pDateCalc-DateCalc]).
+
+% выгрузка SQL-запросов
+avg_wage_q(SQL):-
+    Scope = wg_avg_wage, PK = [pEmplKey-_],
+    get_param_list(Scope, in, PK),
+    find_param_list(Scope, query, PK,
+            [pConnection-Connection, pQuery-Query, pSQL-SQL]),
+    \+ find_param_list(Scope, data, PK,
+            [pConnection-Connection, pQuery-Query, pSQL-SQL]).
 
 % формирование базы знаний по SQL-запросам
 avg_wage_kb:-
@@ -782,7 +792,7 @@ avg_wage_kb:-
     % тестовая печать
     get_local_time(T2), write(T2), nl,
     !.
-
+%
 avg_wage_kb(Scope, Type, PK, TypeNextStep) :-
     Scope = wg_avg_wage, Type = query, TypeNextStep = data,
     forall( ( find_param_list(Scope, Type, PK,
@@ -832,22 +842,18 @@ avg_wage_out :-
         )
           ),
     close(Stream, [force(true)]).
-% запрос результата
+    
+% выгрузка выходных данных
 avg_wage_out(EmplKey, AvgWage) :-
     Scope = wg_avg_wage, Type = out, PK = [pEmplKey-EmplKey],
     find_param(Scope, Type, PK, pAvgWage-AvgWage).
 
-% запуск пролог-текста
-pl_run(Atom, Atom2, "true") :-
-    term_to_atom(Term, Atom),
-    catch( call( Term ), _, fail),
-    term_to_atom(Term, Atom1),
-    atom_codes(Atom1, Atom2).
-pl_run(_, "", "false").
+:- ensure_loaded(load_atom).
 
-% pl_run("avg_wage_in(147068452, '20.08.2012')", Out, Res).
-% pl_run("Scope = wg_avg_wage, Type = in, PK = [pEmplKey-EmplKey], get_param_list(Scope, Type, PK, Pairs)", Out, Res).
-% pl_run("find_param(wg_avg_wage, out, [pEmplKey-150921260], pAvgWage-AvgWage)", Out, Res).
+% pl_run("avg_wage_in(147068452, '20.08.2012')", Out, Res)
+% pl_run("Scope = wg_avg_wage, Type = in, PK = [pEmplKey-EmplKey], get_param_list(Scope, Type, PK, Pairs)", Out, Res)
+% pl_run("find_param(wg_avg_wage, out, [pEmplKey-150921260], pAvgWage-AvgWage)", Out, Res)
+% atom_codes(Out1, Out), atom_codes(Res1, Res)
 
  %
 %%
