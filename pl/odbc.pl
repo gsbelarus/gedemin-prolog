@@ -2,10 +2,6 @@
 :- ensure_loaded(lib).
 /* replace_all */
 
-:- multifile
-    get_sql/3,
-    get_sql/4.
-
 open_connection(Connection) :-
     catch(
         odbc_connect(

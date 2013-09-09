@@ -18,9 +18,28 @@
 % gd_pl_ds(+Name, +Arity, +Pairs)
 %%
 
-%
-gd_pl_ds_init :-
-    dynamic([gd_pl_ds/5, gd_pl_ds/4, gd_pl_ds/3]),
+/**/
+
+:- module( dataset, [
+            init_data_spec/0,
+            init_data/0,
+            get_data/2,         % +Name, ?FieldValuePairs
+            get_data/3,         % +Type, +Name, ?FieldValuePairs
+            get_data/4          % +Scope, +Type, +Name, ?FieldValuePairs
+            ]).
+
+% first, call init_data_spec then assert spec facts gd_pl_ds
+init_data_spec :-
+    SpecFacts = [user:gd_pl_ds/5, user:gd_pl_ds/4, user:gd_pl_ds/3],
+    dynamic(SpecFacts),
+    multifile(SpecFacts),
+    discontiguous(SpecFacts),
+    !.
+
+:- init_data_spec.
+
+% second, call init_data then assert data facts
+init_data :-
     forall( get_data_spec(_, _, Name, Arity, _),
             ( dynamic(Name/Arity),
               multifile(Name/Arity),
@@ -31,11 +50,11 @@ gd_pl_ds_init :-
 
 %
 get_data_spec(Scope, Type, Name, Arity, Pairs) :-
-    gd_pl_ds(Scope, Type, Name, Arity, Pairs).
+    user:gd_pl_ds(Scope, Type, Name, Arity, Pairs).
 get_data_spec(global, Type, Name, Arity, Pairs) :-
-    gd_pl_ds(Type, Name, Arity, Pairs).
+    user:gd_pl_ds(Type, Name, Arity, Pairs).
 get_data_spec(global, none, Name, Arity, Pairs) :-
-    gd_pl_ds(Name, Arity, Pairs).
+    user:gd_pl_ds(Name, Arity, Pairs).
 
 %
 get_data(Name, FieldValuePairs) :-
@@ -43,13 +62,14 @@ get_data(Name, FieldValuePairs) :-
 get_data(Type, Name, FieldValuePairs) :-
     get_data(global, Type, Name, FieldValuePairs).
 get_data(Scope, Type, Name, FieldValuePairs) :-
-    gd_pl_ds(Scope, Type, Name, Arity, FieldTypePairs),
+    ground(Scope), ground(Type), ground(Name),
+    get_data_spec(Scope, Type, Name, Arity, FieldTypePairs),
     catch( length(FieldTypePairs, Arity), _, fail ),
     current_functor(Name, Arity),
     check_fields(FieldValuePairs, FieldTypePairs),
     prepare_args(FieldTypePairs, FieldArgPairs, Args),
     Term =.. [Name|Args],
-    call( Term ),
+    call( user:Term ),
     unify_args(FieldValuePairs, FieldArgPairs).
 
 %

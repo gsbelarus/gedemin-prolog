@@ -1,5 +1,6 @@
 ﻿%
 
+% over_list(+Over, +List)
 over_list(Over, [Head|[]]):-
     Over >= Head.
 over_list(Over, [Head|Tail]) :-
