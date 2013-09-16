@@ -22,7 +22,9 @@
 
 :- module( dataset, [
             init_data_spec/0,
+            clean_data_spec/0,
             init_data/0,
+            clean_data/0,
             get_data/2,         % +Name, ?FieldValuePairs
             get_data/3,         % +Type, +Name, ?FieldValuePairs
             get_data/4          % +Scope, +Type, +Name, ?FieldValuePairs
@@ -38,14 +40,33 @@ init_data_spec :-
 
 :- init_data_spec.
 
+%
+clean_data_spec :-
+    SpecFacts = [user:gd_pl_ds/5, user:gd_pl_ds/4, user:gd_pl_ds/3],
+    member(SpecFact, SpecFacts),
+    abolish(SpecFact),
+    fail.
+clean_data_spec :-
+    init_data_spec,
+    !.
+
 % second, call init_data then assert data facts
 init_data :-
-    forall( get_data_spec(_, _, Name, Arity, _),
-            ( dynamic(Name/Arity),
-              multifile(Name/Arity),
-              discontiguous(Name/Arity)
-            )
-          ),
+    get_data_spec(_, _, Name, Arity, _),
+    dynamic(user:Name/Arity),
+    multifile(user:Name/Arity),
+    discontiguous(user:Name/Arity),
+    fail.
+init_data :-
+    !.
+
+%
+clean_data :-
+    get_data_spec(_, _, Name, Arity, _),
+    abolish(user:Name/Arity),
+    fail.
+clean_data :-
+    clean_data_spec,
     !.
 
 %

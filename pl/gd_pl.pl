@@ -11,6 +11,7 @@ gd_pl_path( usr('d:/shared/golden/Gedemin/swipl_odbc/usr/') ).
 
 %
 flg :-
+    set_prolog_flag(autoload, false),
     set_prolog_flag(gui, false),
     set_prolog_flag(debug, false),
     set_prolog_flag(debug_on_error, false),
