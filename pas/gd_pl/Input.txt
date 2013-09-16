@@ -1,0 +1,1 @@
+['d:/latunov/pl/twg_avg_wage1'], avg_wage_in, avg_wage, avg_wage_kb, avg_wage, avg_wage_out.
