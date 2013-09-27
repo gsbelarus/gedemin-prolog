@@ -23,6 +23,8 @@ type
     function GetInput(): String;
     function GetOutput(): String;
     function GetReturnValue(): String;
+    argc: Integer;
+    argv: array of PChar;
   public
     constructor Create;
     destructor Destroy; override;
@@ -38,8 +40,6 @@ implementation
 
 constructor TgsPL.Create;
 var
-  argc: Integer;
-  argv: array of PChar;
   PL: Integer;
 
 begin
@@ -78,7 +78,7 @@ begin
 
   if PL = 0 then
     raise EgsPLScriptException.Create('SWI-Prolog cleanup failed!');
-  
+
   inherited;
 end;
 
@@ -132,9 +132,8 @@ begin
           if Integer(e) = 0 then
             FReturnValue := 'call failed'
           else
-            if PL_get_string(e, S3, L3) <> 0 then
+            if PL_get_atom_chars(e, S3) <> 0 then
               begin
-                SetLength(FReturnValue, L3);
                 FReturnValue := String(S3);
               end
             else

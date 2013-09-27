@@ -6,7 +6,8 @@ uses
   SysUtils, Windows, Messages, Classes, Graphics, Controls,
   Forms, Dialogs, StdCtrls, Buttons, ExtCtrls, Menus
   //
-  , swiprolog, gsPLScript
+  , gsPLScript
+  , PLHeader, PLIntf, gsPLClient
   ;
 
 type
@@ -20,14 +21,19 @@ type
     Memo3: TMemo;
     Button1: TButton;
     Button2: TButton;
+    CheckBox2: TCheckBox;
+    Button3: TButton;
     procedure CheckBox1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure CheckBox2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   end;
 
 var
   MainForm: TMainForm;
   PLScript: TgsPLScript;
+  PLClient: TgsPLClient;
 
 implementation
 
@@ -41,7 +47,9 @@ begin
       PLScript := TgsPLScript.Create;
     end
   else
+    begin
     FreeAndNil(PLScript);
+    end;
   Button1.Enabled := CheckBox1.Checked;
 end;
 
@@ -63,6 +71,32 @@ begin
   Memo1.Clear;
   Memo2.Clear;
   Memo3.Clear;
+end;
+
+procedure TMainForm.CheckBox2Click(Sender: TObject);
+begin
+  if CheckBox2.Checked then
+    begin
+      FreeAndNil(PLClient);
+      PLClient := TgsPLClient.Create;
+      PLClient.Initialise(VarArrayOf(['libswipl.dll', '-x', 'gd_pl_state']));
+    end
+  else
+    begin
+      FreeAndNil(PLClient);
+    end;
+  Button3.Enabled := CheckBox2.Checked;
+end;
+
+procedure TMainForm.Button3Click(Sender: TObject);
+begin
+  if PLClient <> nil then
+    begin
+      if PLClient.Call(Memo1.Text) then
+        Memo3.Text := 'true'
+      else
+        Memo3.Text := 'false';
+    end;
 end;
 
 end.
