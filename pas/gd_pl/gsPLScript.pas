@@ -23,8 +23,6 @@ type
     function GetInput(): String;
     function GetOutput(): String;
     function GetReturnValue(): String;
-    argc: Integer;
-    argv: array of PChar;
   public
     constructor Create;
     destructor Destroy; override;
@@ -41,7 +39,8 @@ implementation
 constructor TgsPL.Create;
 var
   PL: Integer;
-
+  argc: Integer;
+  argv: array of PChar;
 begin
   inherited;
 
