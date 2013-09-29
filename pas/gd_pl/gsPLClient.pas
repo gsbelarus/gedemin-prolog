@@ -16,6 +16,7 @@ type
   public
     constructor CreateTerm(const ASize: Integer);
     procedure PutInteger(const Idx: LongWord; const AValue: Integer);
+    procedure PutAtom(const Idx: LongWord; const AValue: String);    
     procedure PutString(const Idx: LongWord; const AValue: String);
     procedure PutFloat(const Idx: LongWord; const AValue: Double);
     procedure PutDateTime(const Idx: LongWord; const AValue: TDateTime);
@@ -23,6 +24,7 @@ type
     procedure PutInt64(const Idx: LongWord; const AValue: Int64);
 
     function ReadInteger(const Idx: LongWord): Integer;
+    function ReadAtom(const Idx: LongWord): String;    
     function ReadString(const Idx: LongWord): String;
     function ReadFloat(const Idx: LongWord): Double;
     function ReadDateTime(const Idx: LongWord): TDateTime;
@@ -150,6 +152,11 @@ begin
   PL_put_integer(GetTerm(Idx), AValue);
 end;
 
+procedure TgsTermv.PutAtom(const Idx: LongWord; const AValue: String);
+begin
+  PL_put_atom_chars(GetTerm(Idx), PChar(AValue));
+end;
+
 procedure TgsTermv.PutString(const Idx: LongWord; const AValue: String);
 begin
   PL_put_string_chars(GetTerm(Idx), PChar(AValue));
@@ -179,6 +186,11 @@ function TgsTermv.ReadInteger(const Idx: LongWord): Integer;
 begin
   if PL_get_integer(GetTerm(Idx), Result) = 0 then
     raise EgsPLClientException.CreateTypeError('integer', GetTerm(Idx));
+end;
+
+function TgsTermv.ReadAtom(const Idx: LongWord): String;
+begin
+  Result := ReadString(Idx);
 end;
 
 function TgsTermv.ReadString(const Idx: LongWord): String;

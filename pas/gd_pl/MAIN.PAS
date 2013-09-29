@@ -6,7 +6,7 @@ uses
   SysUtils, Windows, Messages, Classes, Graphics, Controls,
   Forms, Dialogs, StdCtrls, Buttons, ExtCtrls, Menus
   //
-  , gsPLScript
+  //, gsPLScript
   , PLHeader, PLIntf, gsPLClient
   ;
 
@@ -32,7 +32,7 @@ type
 
 var
   MainForm: TMainForm;
-  PLScript: TgsPLScript;
+  //PLScript: TgsPLScript;
   PLClient: TgsPLClient;
 
 implementation
@@ -41,7 +41,7 @@ implementation
 
 procedure TMainForm.CheckBox1Click(Sender: TObject);
 begin
-  if CheckBox1.Checked then
+{  if CheckBox1.Checked then
     begin
       FreeAndNil(PLScript);
       PLScript := TgsPLScript.Create;
@@ -51,11 +51,11 @@ begin
     FreeAndNil(PLScript);
     end;
   Button1.Enabled := CheckBox1.Checked;
-end;
+}end;
 
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
-  if PLScript <> nil then
+{  if PLScript <> nil then
     begin
       PLScript.Input := Memo1.Text;
       Memo2.Clear;
@@ -64,7 +64,7 @@ begin
       Memo2.Text := PLScript.Output;
       Memo3.Text := PLScript.ReturnValue;
     end;
-end;
+}end;
 
 procedure TMainForm.Button2Click(Sender: TObject);
 begin
@@ -89,13 +89,23 @@ begin
 end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
+var
+  Tv: TgsTermv;
 begin
   if PLClient <> nil then
     begin
-      if PLClient.Call(Memo1.Text) then
-        Memo3.Text := 'true'
+      Tv := TgsTermv.CreateTerm(3);
+      Tv.PutString(0, Memo1.Text);
+      if PLClient.Call('pl_run', Tv) then
+        begin
+          Memo2.Text :=  Tv.ReadString(1);
+          Memo3.Text := Tv.ReadString(2);
+        end
       else
-        Memo3.Text := 'false';
+        begin
+          Memo2.Clear;
+          Memo3.Text := 'false';
+        end;
     end;
 end;
 

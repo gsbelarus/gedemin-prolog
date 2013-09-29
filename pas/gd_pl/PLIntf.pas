@@ -100,7 +100,7 @@ var
 
 function GetPath: String;
 begin
-  Result := ExtractFilePath(Application.EXEName) {+ 'swipl\'};
+  Result := ExtractFilePath(Application.EXEName) + 'swipl\';
 end;
 
 function LoadPLDependentLibraries: Boolean;
