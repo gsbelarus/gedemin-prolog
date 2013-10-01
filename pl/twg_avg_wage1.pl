@@ -1,10 +1,16 @@
-﻿% [twg_avg_wage1]. avg_wage_in, avg_wage, avg_wage_kb, avg_wage, avg_wage_out.
+﻿% [twg_avg_wage1].
+% avg_wage_in, avg_wage, avg_wage_kb, avg_wage, avg_wage_out, avg_wage_clean.
 %
-:- working_directory(_, 'd:/latunov/pl/').
-% uncomment next line if no saved state
-%:- load_files([load_atom, date, dataset], [if(changed), silent(true)]).
-:- load_files([lib, params, odbc, sql1], [if(changed), silent(true)]).
-:- init_data.
+twg_avg_wage1 :-
+    working_directory(CWD, CWD),
+    working_directory(_, 'd:/latunov/pl/'),
+    % uncomment next line if no saved state
+    load_files([load_atom, date, dataset], [if(changed), silent(true)]),
+    load_files([lib, params, odbc, sql1], [if(changed), silent(true)]),
+    init_data,
+    working_directory(_, CWD),
+    !.
+:- twg_avg_wage1.
 %
 
 % варианты правил расчета
@@ -31,7 +37,7 @@ is_valid_rule(Rule) :-
 % среднедневной заработок
 avg_wage :-
     % тестовая печать
-    get_local_time(T), write(T), nl,
+    get_local_date_time(_, T), write(T), nl,
     % объявить параметры контекста
     Scope = wg_avg_wage, PK = [pEmplKey-EmplKey],
     % для каждого первичного ключа расчета из входных параметров
@@ -51,9 +57,7 @@ avg_wage :-
     fail.
 avg_wage :-
     % тестовая печать
-    get_local_time(T), write(T), nl,
-    % сборка мусора
-    garbage_collect,
+    get_local_date_time(_, T), write(T), nl,
     % больше альтернатив нет
     !.
 
@@ -781,7 +785,10 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
 
 % загрузка входных данных из файла in_params.pl
 avg_wage_in :-
-    consult(in_params).
+    working_directory(CWD, CWD),
+    working_directory(_, 'd:/latunov/pl/'),
+    consult(in_params),
+    working_directory(_, CWD).
 % загрузка входных данных
 avg_wage_in(EmplKey, DateCalc0) :-
     Scope = wg_avg_wage, Type = in,
@@ -804,7 +811,7 @@ avg_wage_q(SQL):-
 % формирование базы знаний по SQL-запросам
 avg_wage_kb:-
     % тестовая печать
-    get_local_time(T1), write(T1), nl,
+    get_local_date_time(_, T1), write(T1), nl,
     Scope = wg_avg_wage, Type = query, TypeNextStep = data,
     PK = [pEmplKey-_],
     forall( get_param_list(Scope, in, PK),
@@ -813,7 +820,7 @@ avg_wage_kb:-
             avg_wage_kb(Scope, Type, PK, TypeNextStep) )
           ),
     % тестовая печать
-    get_local_time(T2), write(T2), nl,
+    get_local_date_time(_, T2), write(T2), nl,
     !.
 %
 avg_wage_kb(Scope, Type, PK, TypeNextStep) :-
@@ -837,6 +844,8 @@ avg_wage_kb(Scope, Type, PK, TypeNextStep) :-
 
 % выгрузка выходных данных в файл out_params.pl
 avg_wage_out :-
+    working_directory(CWD, CWD),
+    working_directory(_, 'd:/latunov/pl/'),
     % создать файл
     open('out_params.pl', write, Stream, [alias(result), encoding(utf8)]),
     Scope = wg_avg_wage, PK = [pEmplKey-_],
@@ -864,12 +873,21 @@ avg_wage_out :-
                 ), nl(Stream)
         )
           ),
-    close(Stream, [force(true)]).
+    close(Stream, [force(true)]),
+    working_directory(_, CWD).
     
 % выгрузка выходных данных
 avg_wage_out(EmplKey, AvgWage) :-
     Scope = wg_avg_wage, Type = out, PK = [pEmplKey-EmplKey],
     find_param(Scope, Type, PK, pAvgWage-AvgWage).
+
+avg_wage_clean :-
+    % очистка данных
+    retractall(param_list(_, _, _)),
+    clean_data, [sql1],
+    % сборка мусора
+    garbage_collect,
+    !.
 
 % pl_run("avg_wage_in(147068452, '20.08.2012')", Out, Res)
 % pl_run("Scope = wg_avg_wage, Type = in, PK = [pEmplKey-EmplKey], get_param_list(Scope, Type, PK, Pairs)", Out, Res)

@@ -1,9 +1,12 @@
 ﻿%
-:- GetSQL = [get_sql/3, get_sql/4],
+init_sql:-
+    GetSQL = [get_sql/3, get_sql/4],
     dynamic(GetSQL),
     multifile(GetSQL),
-    discontiguous(GetSQL).
-    
+    discontiguous(GetSQL),
+    !.
+:- init_sql.
+
 gd_pl_ds(wg_avg_wage, in, usr_wg_MovementLine, 8,
     [
     fEmplKey-integer, fDocumentKey-integer, fFirstMove-integer,
