@@ -90,11 +90,11 @@ end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
 var
-  Tv: TgsTermv;
+  Tv: TgsPLTermv;
 begin
   if PLClient <> nil then
     begin
-      Tv := TgsTermv.CreateTerm(3);
+      Tv := TgsPLTermv.CreateTermv(3);
       Tv.PutString(0, Memo1.Text);
       if PLClient.Call('pl_run', Tv) then
         begin
@@ -106,6 +106,7 @@ begin
           Memo2.Clear;
           Memo3.Text := 'false';
         end;
+      FreeAndNil(Tv);
     end;
 end;
 

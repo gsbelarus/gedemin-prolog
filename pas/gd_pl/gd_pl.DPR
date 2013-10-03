@@ -6,7 +6,8 @@ uses
   gsPLScript in 'gsPLScript.pas',
   gsPLClient in 'gsPLClient.pas',
   PLHeader in 'PLHeader.pas',
-  PLIntf in 'PLIntf.pas';
+  PLIntf in 'PLIntf.pas',
+  testSWIProlog in 'testSWIProlog.pas';
 
 {$R *.RES}
 
