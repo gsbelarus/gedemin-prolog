@@ -5,9 +5,9 @@ twg_avg_wage1 :-
     working_directory(CWD, CWD),
     working_directory(_, 'd:/latunov/pl/'),
     % uncomment next line if no saved state
-    load_files([load_atom, date, dataset], [if(changed), silent(true)]),
-    load_files([lib, params, odbc, sql1], [if(changed), silent(true)]),
+    %load_files([load_atom, date, dataset], [if(changed), silent(true)]),
     init_data,
+    load_files([lib, params, odbc, sql1], [if(changed), silent(true)]),
     working_directory(_, CWD),
     !.
 :- twg_avg_wage1.
@@ -882,11 +882,14 @@ avg_wage_out(EmplKey, AvgWage) :-
     find_param(Scope, Type, PK, pAvgWage-AvgWage).
 
 avg_wage_clean :-
+    working_directory(CWD, CWD),
+    working_directory(_, 'd:/latunov/pl/'),
     % очистка данных
     retractall(param_list(_, _, _)),
     clean_data, [sql1],
     % сборка мусора
     garbage_collect,
+    working_directory(_, CWD),
     !.
 
 % pl_run("avg_wage_in(147068452, '20.08.2012')", Out, Res)

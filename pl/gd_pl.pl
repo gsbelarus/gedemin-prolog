@@ -52,9 +52,9 @@ usr :-
 
 %
 fsp :-
-   retractall(file_search_path(_, _)),
-   assert(file_search_path(foreign, './swipl')),
-   assert(file_search_path(foreign, './swipl/lib')).
+   retractall(file_search_path(_, _)).
+   %assert(file_search_path(foreign, './swipl/')),
+   %assert(file_search_path(foreign, './swipl/lib/')).
    
 %
 flg :-
@@ -73,7 +73,7 @@ flg :-
 gd :-
     gd_pl_path( bin(PathBin) ),
     working_directory(_, PathBin),
-    qsave_program(gd_pl_state,
+    qsave_program('gd_pl_state.dat',
             [goal(true),
             init_file(none),
             class(runtime),
