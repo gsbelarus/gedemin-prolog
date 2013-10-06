@@ -71,6 +71,7 @@ begin
   Memo1.Clear;
   Memo2.Clear;
   Memo3.Clear;
+  Memo1.SetFocus;
 end;
 
 procedure TMainForm.CheckBox2Click(Sender: TObject);
@@ -79,7 +80,7 @@ begin
     begin
       FreeAndNil(PLClient);
       PLClient := TgsPLClient.Create;
-      PLClient.Initialise(VarArrayOf(['libswipl.dll', '-x', 'gd_pl_state']));
+      PLClient.Initialise();
     end
   else
     begin

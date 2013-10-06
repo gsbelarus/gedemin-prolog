@@ -3,11 +3,9 @@ program gd_pl;
 uses
   Forms,
   Main in 'MAIN.PAS' {MainForm},
-  gsPLScript in 'gsPLScript.pas',
   gsPLClient in 'gsPLClient.pas',
   PLHeader in 'PLHeader.pas',
-  PLIntf in 'PLIntf.pas',
-  testSWIProlog in 'testSWIProlog.pas';
+  PLIntf in 'PLIntf.pas';
 
 {$R *.RES}
 

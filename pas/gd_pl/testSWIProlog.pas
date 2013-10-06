@@ -27,7 +27,7 @@ begin
   Obj := TgsPLClient.Create;
   try
   Obj.Initialise(VarArrayOf(['libswipl.dll', '-x', 'gd_pl_state']));
-    Obj.Call('true');
+    Obj.Call2('true');
     Obj.MakePredicatesOfObject('TgdcCurr', '', 'ByID', VarArrayOf([200010]), nil, 'ID,ISNCU,NAME', FTr, 'Gd_curr', 'gd_curr');
     Obj.MakePredicatesOfSQLSelect('select first 5 c.id, c.name from gd_curr c', FTr, 'Test1', 'Test1');
 
@@ -38,7 +38,7 @@ begin
       CDS.FieldDefs.Add('Field3', ftString, 255, False);
       CDS.CreateDataSet;
       CDS.Open;
-      Obj.ExtractData(CDS, 'Test1', 2);
+      //Obj.ExtractData(CDS, 'Test1', 2);
       CDS.First;
       while not cds.eof do
       begin

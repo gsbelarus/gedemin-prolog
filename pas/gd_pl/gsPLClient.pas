@@ -22,7 +22,7 @@ type
     procedure PutDate(const Idx: LongWord; const AValue: TDateTime);
     procedure PutInt64(const Idx: LongWord; const AValue: Int64);
     procedure PutAtom(const Idx: LongWord; const AValue: String);
-    procedure PutVariable(const Idx: LongWord);
+    procedure PutVariable(const Idx: LongWord);  
 
     function ReadInteger(const Idx: LongWord): Integer;
     function ReadString(const Idx: LongWord): String;
@@ -69,14 +69,15 @@ type
     
     function GetArity(ASql: TIBSQL): Integer; overload;
     function GetArity(ADataSet: TDataSet; const AFieldList: String): Integer; overload;
-    function GetTempPath: String;  
+    function GetTempPath: String;
+    function GetDefaultPLInitString: String;  
   public
     destructor Destroy; override;
      
     function Call(const APredicateName: String; AParams: TgsPLTermv): Boolean;
     function Call2(const AGoal: String): Boolean;
     procedure Compound(AGoal: term_t; const AFunctor: String; ATermv: TgsPLTermv);
-    function Initialise(const AParams: String = InitParams): Boolean;
+    function Initialise(const AParams: String = ''): Boolean;
     function IsInitialised: Boolean;
     procedure MakePredicatesOfSQLSelect(const ASQL: String; ATr: TIBTransaction;
       const APredicateName: String; const AFileName: String);
@@ -100,7 +101,7 @@ type
 implementation
 
 uses
-  jclStrings, gd_GlobalParams_unit;
+  jclStrings, gd_GlobalParams_unit, Forms;
 
 constructor EgsPLClientException.CreateTypeError(const AnExpected: String; const AnActual: term_t);
 begin
@@ -108,16 +109,17 @@ begin
 end;
 
 constructor EgsPLClientException.CreatePLError(AnException: term_t);
-var
+{var
   a: term_t;
   name: atom_t;
-  arity: Integer;
+  arity: Integer; }
 begin
-  a := PL_new_term_ref;
+  Message := TermToString(AnException);
+  {a := PL_new_term_ref;
   if (PL_get_arg(1, AnException, a) <> 0)
     and (PL_get_name_arity(a, name, arity) <> 0)
   then
-    Message := PL_atom_chars(name); 
+    Message := PL_atom_chars(name); }
 end;
 
 procedure RaisePrologError;
@@ -535,50 +537,80 @@ begin
   Result := (argc > -1) and TryPLLoad;
 
   if Result then
-    Result := PL_is_initialised(argc, FInitArgv) <> 0; 
+    Result := PL_is_initialised(argc, FInitArgv) <> 0;
 end;
 
-function TgsPLClient.Initialise(const AParams: String = InitParams): Boolean;
+function TgsPLClient.Initialise(const AParams: String = ''): Boolean; 
 
   function GetNextElement(const S: String; var L: Integer): String;
   var
     F: Integer;
   begin
     F := L;
-
-    while (F <= Length(S)) and (S[F] <> ',') do
+    while (F <= Length(S)) and (S[F] <> '!') and (S[F + 1] <> '@') do
       Inc(F);
+
       
     Result := Trim(Copy(S, L, F - L));
-    Inc(F);
+    Inc(F, 2);
     L := F;
   end;
 
-var
-  P: Integer; 
-begin
-  Assert(AParams > '');
-
-  if not TryPLLoad then
-    raise EgsPLClientException.Create('Клиентская часть Prolog не установлена!'); 
-      
-  P := 1;
-  while P <= Length(AParams) do
+  procedure GetParamsList(const S: String; SL: TStringList);
+  var
+    P: Integer;
   begin
-    SetLength(FInitArgv, High(FInitArgv) + 2);
-    FInitArgv[High(FInitArgv)] := PChar(GetNextElement(AParams, P));
+    P := 1;
+    while P <= Length(S) do
+      SL.Add(GetNextElement(S, P));
   end;
 
-  Setlength(FInitArgv, High(FInitArgv) + 2);
-  FInitArgv[High(FInitArgv)] := nil;
+var
+  SL: TStringList;
+  I: Integer;
+  TempS: String;
+begin
+  if not TryPLLoad then
+    raise EgsPLClientException.Create('Клиентская часть Prolog не установлена!'); 
 
-  if not IsInitialised then
-  begin
-    Result := PL_initialise(High(FInitArgv), FInitArgv) <> 0;
-    if not Result then
-      PL_halt(1);
-  end else
-    Result := False;
+  {if AParams > '' then
+    TempS := Trim(AParams)
+  else
+    TempS := GetDefaultPLInitString;
+  TempS := StringReplace(TempS, '],[', '!@', [rfReplaceAll]);
+  TempS := Copy(TempS, 2, Length(TempS) - 2);
+
+  SL := TStringList.Create;
+  try
+    if AParams = '' then
+      GetParamsList(TempS, SL);
+
+    SetLength(FInitArgv, SL.Count + 1);
+    for I := 0 to SL.Count - 1 do
+      FInitArgv[I] := PChar(SL[I]);
+    FInitArgv[High(FInitArgv)] := nil;}
+//
+  TempS := 'c:/golden/Gedemin/gd_pl/EXE/';
+  SetLength(FInitArgv,8);
+  FInitArgv[0] := PChar('libswipl.dll');
+  FInitArgv[1] := PChar('-x');
+  FInitArgv[2] := PChar(TempS + 'swipl/gd_pl_state.dat');
+  FInitArgv[3] := PChar('-p');
+  FInitArgv[4] := PChar('foreign=' + TempS + 'swipl/lib');
+  FInitArgv[5] := PChar('-t');
+  FInitArgv[6] := PChar('true');
+  FInitArgv[7] := nil;
+//
+    if not IsInitialised then
+    begin
+      Result := PL_initialise(High(FInitArgv), FInitArgv) <> 0;
+      if not Result then
+        PL_halt(1);
+    end else
+      Result := False;
+  {finally
+    SL.Free;
+  end;}
 end;
 
 procedure TgsPLClient.MakePredicatesOfDataSet(ADataSet: TDataSet; const AFieldList: String;
@@ -731,6 +763,16 @@ begin
   finally
     Obj.Free;
   end;
-end;   
+end;
+
+
+function TgsPLClient.GetDefaultPLInitString: String;
+var
+  Path: String;
+begin
+  Path := ExtractFilePath(Application.EXEName) + IncludeTrailingBackSlash(PrologPath);
+  Path := StringReplace(Path, '\', '/', [rfReplaceAll]);
+  Result := Format('[libswipl.dll],[-x],[%0:sgd_pl_state.dat],[-p],[foreign=%0:slib]', [Path]);
+end;
 
 end.

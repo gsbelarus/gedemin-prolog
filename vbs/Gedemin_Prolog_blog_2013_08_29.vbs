@@ -1,8 +1,9 @@
 Option Explicit
 
-Sub Gedemin_Prolog_blog_2013_08_29()
 'subject close to the
 'http://gedemin.blogspot.com/2013/08/embedded-swi-prolog.html
+
+Sub Gedemin_Prolog_blog_2013_08_29()
   Dim Creator, PL, Termv, Ret
   Dim SQL_contact, SQL_place
   Dim Pred, City, CDS, I
