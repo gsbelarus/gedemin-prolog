@@ -1,4 +1,4 @@
-Option Explicit
+﻿Option Explicit
 
 Sub Gedemin_Prolog_test()
   Dim C, PL, Tv, Ret

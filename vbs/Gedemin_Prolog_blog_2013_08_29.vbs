@@ -1,4 +1,4 @@
-Option Explicit
+п»їOption Explicit
 
 'subject close to the
 'http://gedemin.blogspot.com/2013/08/embedded-swi-prolog.html
@@ -39,14 +39,14 @@ Sub Gedemin_Prolog_blog_2013_08_29()
   Ret = PL.Call("load_atom", Termv)
   If Not Ret Then Exit Sub
 
-  City = InputBox("Введите город", "Место", "Минск")
+  City = InputBox("Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ", "РњРµСЃС‚Рѕ", "РњРёРЅСЃРє")
   Termv.Reset
   Termv.PutString 0, City
   Ret = PL.Call("bycity", Termv)
   If Not Ret Then Exit Sub
 
   Ret = Termv.ReadString(1)
-  MsgBox Ret, , "Call: Первый контакт"
+  MsgBox Ret, , "Call: РџРµСЂРІС‹Р№ РєРѕРЅС‚Р°РєС‚"
   
   Set CDS = Creator.GetObject(nil, "TClientDataset", "")
   CDS.FieldDefs.Add "City", ftString, 60, True
@@ -66,7 +66,7 @@ Sub Gedemin_Prolog_blog_2013_08_29()
      I = I + 1
      CDS.Next
   Loop
-  MsgBox Ret, , "MakePredicatesOfSQLSelect: Первые 10 контактов"
+  MsgBox Ret, , "MakePredicatesOfSQLSelect: РџРµСЂРІС‹Рµ 10 РєРѕРЅС‚Р°РєС‚РѕРІ"
 
   I = 0
   CDS.First
@@ -87,9 +87,9 @@ Sub Gedemin_Prolog_blog_2013_08_29()
   If Ret Then
     Ret = Termv.ReadString(1) + " (" + Termv.ReadString(0) + ")"
   Else
-    Ret = "Было найдено меньше 6 контактов"
+    Ret = "Р‘С‹Р»Рѕ РЅР°Р№РґРµРЅРѕ РјРµРЅСЊС€Рµ 6 РєРѕРЅС‚Р°РєС‚РѕРІ"
   End If
-  MsgBox Ret, , "MakePredicatesOfDataSet: Контакт 6"
+  MsgBox Ret, , "MakePredicatesOfDataSet: РљРѕРЅС‚Р°РєС‚ 6"
 
   Call PL.MakePredicatesOfObject( _
        "TgdcCurr", "", "ByID", Array(200010, 200020), nil, _
@@ -103,6 +103,6 @@ Sub Gedemin_Prolog_blog_2013_08_29()
   If Not Ret Then Exit Sub
   
   Ret = CStr(Termv.ReadInteger(0)) + ": " + Termv.ReadString(1)
-  MsgBox Ret, , "MakePredicatesOfObject: Валюта"
+  MsgBox Ret, , "MakePredicatesOfObject: Р’Р°Р»СЋС‚Р°"
 End Sub
 
