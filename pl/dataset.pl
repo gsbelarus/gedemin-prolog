@@ -66,7 +66,7 @@ clean_data :-
     abolish(user:Name/Arity),
     fail.
 clean_data :-
-    clean_data_spec,
+    init_data,
     !.
 
 %
