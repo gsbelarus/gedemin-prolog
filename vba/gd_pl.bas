@@ -8,7 +8,7 @@ Const PL_STRING = 5
 Const PL_TERM = 6
 
 Sub gd_test()
-    Dim Gedemin, PL, Tv, Ret
+    Dim Gedemin, PL, Tv, Q, QTv, Ret
     
     Set Gedemin = CreateObject("Gedemin.gsGedeminApplication")
     Set PL = Gedemin.Designer.CreateObject(Null, "TgsPLClient", "")
@@ -16,6 +16,7 @@ Sub gd_test()
     Ret = PL.Initialise("")
     If Not Ret Then
         Debug.Print "Gedemin-Prolog: Initialise failed"
+        Exit Sub
     End If
     
     Set Tv = Gedemin.Designer.CreateObject(2, "TgsPLTermv", "")
@@ -37,6 +38,19 @@ Sub gd_test()
         Debug.Print "Gedemin-Prolog: Call failed"
     End If
     
+    Set Q = Gedemin.Designer.CreateObject(Null, "TgsPLQuery", "")
+    Set QTv = Gedemin.Designer.CreateObject(2, "TgsPLTermv", "")
+    
+    Q.PredicateName = "current_foreign_library"
+    Q.Termv = QTv
+    Q.OpenQuery
+    Do Until Q.EOF
+        Debug.Print Q.Termv.ToString(0)
+        Q.NextSolution
+    Loop
+    
+    Gedemin.Designer.DestroyObject QTv
+    Gedemin.Designer.DestroyObject Q
     Gedemin.Designer.DestroyObject Tv
     Gedemin.Designer.DestroyObject PL
 End Sub
