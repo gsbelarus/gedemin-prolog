@@ -1,0 +1,3 @@
+usr_wg_BadHourType(148441437,147060485).
+usr_wg_BadHourType(148441437,147060501).
+usr_wg_BadHourType(148441437,147060503).
