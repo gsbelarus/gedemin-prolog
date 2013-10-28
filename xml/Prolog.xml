@@ -2,8 +2,8 @@
 <SETTING>
   <SETTING_HEADER
     name="Prolog"
-    version="1"
-    modifydate="28.10.2013 11:04:29"
+    version="2"
+    modifydate="28.10.2013 18:29:05"
     xid="151189620"
     dbid="18175251"
     description="Prolog"
@@ -311,13 +311,11 @@
                 <L>  Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_run.PredicateName = "avg_wage_run"</L>
                 <L>  Q_run.Termv = Tv_run</L>
-                <L>  Q_run.DeleteDataAfterClose = True</L>
                 <L>  'avg_wage_sql(EmplKey, Connection, PredicateName, Arity, SQL)</L>
                 <L>  Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")</L>
                 <L>  Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_sql.PredicateName = "avg_wage_sql"</L>
                 <L>  Q_sql.Termv = Tv_sql</L>
-                <L>  Q_sql.DeleteDataAfterClose = True</L>
                 <L>  '</L>
                 <L>  Q_run.OpenQuery</L>
                 <L>  '</L>
@@ -336,10 +334,10 @@
                 <L>      Arity = Q_sql.Termv.ReadInteger(3)</L>
                 <L>      SQL = Q_sql.Termv.ReadAtom(4)</L>
                 <L>      '</L>
-                <L>      PL.MakePredicatesOfSQLSelect _</L>
-                <L>          SQL, _</L>
-                <L>          gdcBaseManager.ReadTransaction, _</L>
-                <L>          PredicateName, PredicateName</L>
+                <L>      Ret =  PL.MakePredicatesOfSQLSelect _</L>
+                <L>                (SQL, _</L>
+                <L>                gdcBaseManager.ReadTransaction, _</L>
+                <L>                PredicateName, PredicateName)</L>
                 <L>      Ret = PL.Call("avg_wage_kb", Tv_sql)</L>
                 <L>      '</L>
                 <L>      Q_sql.NextSolution</L>
@@ -358,7 +356,6 @@
                 <L>  Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_out.PredicateName = "avg_wage_out"</L>
                 <L>  Q_out.Termv = Tv_out</L>
-                <L>  Q_out.DeleteDataAfterClose = True</L>
                 <L>  '</L>
                 <L>  Q_out.OpenQuery</L>
                 <L>  '</L>
@@ -376,7 +373,7 @@
                 <L>  </L>
                 <L>  '''</L>
                 <L>  </L>
-                <L>  Ret = PL.Call2("avg_wage_out")</L>
+                <L>  'Ret = PL.Call2("avg_wage_out")</L>
                 <L></L>
                 <L>  'Ret = PL.Call2("assert(usr_wg_FeeType(148586355,147060452,147060446))")</L>
                 <L>  'Dim Tv_a, Tv_c</L>
@@ -385,7 +382,7 @@
                 <L>  'Tv_c.PutInteger 0, 148586355</L>
                 <L>  'Tv_c.PutInteger 1, 147060452</L>
                 <L>  'Tv_c.PutInteger 2, 147060446</L>
-                <L>  'PL.Compound Tv_a.Term(0), "usr_wg_FeeType", Tv_c</L>
+                <L>  'Call PL.Compound(Tv_a.Term(0), "usr_wg_FeeType", Tv_c)</L>
                 <L>  'Ret = PL.Call("assert", Tv_a)</L>
                 <L></L>
                 <L>  'param_list</L>
@@ -393,13 +390,12 @@
                 <L> 'param_list(Scope, PType, Pairs)</L>
                 <L>  Set Tv_p = Creator.GetObject(3, "TgsPLTermv", "")</L>
                 <L>  Set Q_p = Creator.GetObject(nil, "TgsPLQuery", "")</L>
-                <L>  Q_p.PredicateName = "param_list"</L>
-                <L>  'Q_p.PredicateName = "usr_wg_FeeType"</L>
+                <L>  'Q_p.PredicateName = "param_list"</L>
+                <L>  Q_p.PredicateName = "usr_wg_FeeType"</L>
                 <L>  Q_p.Termv = Tv_p</L>
-                <L>  Q_p.DeleteDataAfterClose = True</L>
                 <L>  '</L>
                 <L>  Tv_p.Reset</L>
-                <L>  Tv_p.PutAtom 1, "debug"</L>
+                <L>  'Tv_p.PutAtom 1, "debug"</L>
                 <L>  Q_p.OpenQuery</L>
                 <L>  '</L>
                 <L>  Do Until Q_p.EOF</L>
@@ -413,17 +409,17 @@
                 <L></L>
                 <L>  pl_twg_avg_wage = True</L>
                 <L>'</L>
-                <L>End function</L>
+                <L>End Function</L>
                 ]]>
               </SCRIPT>
               <PUBLICFUNCTION>1</PUBLICFUNCTION>
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>28.10.2013 09:17:42</EDITIONDATE>
+              <EDITIONDATE>28.10.2013 18:26:52</EDITIONDATE>
               <_XID>151189369</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>28.10.2013 09:17:42</_MODIFIED>
+              <_MODIFIED>28.10.2013 18:26:52</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -519,10 +515,6 @@
               <SCRIPT>
                 <![CDATA[
                 <L>% lib</L>
-                <L></L>
-                <L>pl_assert(Goal) :-</L>
-                <L>  assertz(Goal),</L>
-                <L>  !.</L>
                 <L></L>
                 <L>% over_list(+Over, +List)</L>
                 <L>over_list(Over, [Head|[]]) :-</L>
@@ -632,10 +624,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>27.10.2013 12:46:48</EDITIONDATE>
+              <EDITIONDATE>28.10.2013 16:17:10</EDITIONDATE>
               <_XID>151189469</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>27.10.2013 12:46:48</_MODIFIED>
+              <_MODIFIED>28.10.2013 16:17:10</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -816,7 +808,7 @@
                 <L>% по расчетным месяцам (принятие месяца для исчисления)</L>
                 <L>% [соответствие табеля графику по дням и часам, по часам за месяц]</L>
                 <L>wg_valid_rules([by_day_houres, by_month_houres]).</L>
-                <L>% [заработок больше всех расчетных месяцев, больше среднего, больше любого]</L>
+                <L>% [заработок больше всех расчетных месяцев]</L>
                 <L>wg_valid_rules([by_month_wage_all]).</L>
                 <L>% [отсутствие в месяце плохих типов начислений и часов]</L>
                 <L>wg_valid_rules([by_month_no_bad_type]).</L>
@@ -1652,10 +1644,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>27.10.2013 17:52:06</EDITIONDATE>
+              <EDITIONDATE>28.10.2013 12:48:31</EDITIONDATE>
               <_XID>151189370</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>27.10.2013 17:52:06</_MODIFIED>
+              <_MODIFIED>28.10.2013 12:48:31</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -1974,7 +1966,7 @@
                 <L>% 82</L>
                 <L>%:- new_param_list(wg_avg_wage, in,</L>
                 <L>%    [pEmplKey-147068452, pDateCalc-'2012-08-20']).</L>
-                <L></L>
+                <L>/*</L>
                 <L>% 800</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
                 <L>    [pEmplKey-150921260, pDateCalc-'2013-06-01']).</L>
@@ -1990,11 +1982,11 @@
                 <L>% 769</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
                 <L>    [pEmplKey-150814111, pDateCalc-'2013-05-01']).</L>
-                <L></L>
+                <L>*/</L>
                 <L>% 316</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
                 <L>    [pEmplKey-148441437, pDateCalc-'2013-07-15']).</L>
-                <L></L>
+                <L>/*</L>
                 <L>% 694</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
                 <L>    [pEmplKey-150453949, pDateCalc-'2013-07-15']).</L>
@@ -2014,7 +2006,7 @@
                 <L>% 338</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
                 <L>    [pEmplKey-148586355, pDateCalc-'2013-08-14']).</L>
-                <L></L>
+                <L>*/</L>
                 <L></L>
                 <L>%</L>
                 ]]>
@@ -2023,10 +2015,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>27.10.2013 17:56:36</EDITIONDATE>
+              <EDITIONDATE>28.10.2013 15:03:57</EDITIONDATE>
               <_XID>151189471</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>27.10.2013 17:56:36</_MODIFIED>
+              <_MODIFIED>28.10.2013 15:03:57</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -2087,15 +2079,15 @@
                 <L>  Ret = PL.Initialise("")</L>
                 <L>  If Not Ret Then Exit Sub</L>
                 <L>  </L>
-                <L>  Call PL.MakePredicatesOfSQLSelect( _</L>
-                <L>       SQL_contact, _</L>
-                <L>       gdcBaseManager.ReadTransaction, _</L>
-                <L>       "gd_contact", "contact")</L>
+                <L>  Ret = PL.MakePredicatesOfSQLSelect( _</L>
+                <L>          SQL_contact, _</L>
+                <L>          gdcBaseManager.ReadTransaction, _</L>
+                <L>          "gd_contact", "contact")</L>
                 <L></L>
-                <L>  Call PL.MakePredicatesOfSQLSelect( _</L>
-                <L>       SQL_place, _</L>
-                <L>       gdcBaseManager.ReadTransaction, _</L>
-                <L>       "gd_place", "place")</L>
+                <L>  Ret = PL.MakePredicatesOfSQLSelect( _</L>
+                <L>          SQL_place, _</L>
+                <L>          gdcBaseManager.ReadTransaction, _</L>
+                <L>          "gd_place", "place")</L>
                 <L></L>
                 <L>  Set Termv = Creator.GetObject(2, "TgsPLTermv", "")</L>
                 <L>  'Termv.PutString 0, "pred"</L>
@@ -2140,10 +2132,10 @@
                 <L>     I = I + 1</L>
                 <L>  Loop</L>
                 <L></L>
-                <L>  Call PL.MakePredicatesOfDataSet( _</L>
-                <L>       CDS, _</L>
-                <L>       "City,Name", _</L>
-                <L>       "gd_bycity", "bycity")</L>
+                <L>  Ret = PL.MakePredicatesOfDataSet( _</L>
+                <L>          CDS, _</L>
+                <L>          "City,Name", _</L>
+                <L>          "gd_bycity", "bycity")</L>
                 <L></L>
                 <L>  Ret = PL.Call2("dynamic(gd_bycity/2)")</L>
                 <L>  Termv.Reset</L>
@@ -2156,11 +2148,11 @@
                 <L>  End If</L>
                 <L>  MsgBox Ret, , "MakePredicatesOfDataSet: Контакт 6"</L>
                 <L></L>
-                <L>  Call PL.MakePredicatesOfObject( _</L>
-                <L>       "TgdcCurr", "", "ByID", Array(200010, 200020), nil, _</L>
-                <L>       "ID,Name", _</L>
-                <L>       gdcBaseManager.ReadTransaction, _</L>
-                <L>       "gd_curr", "curr")</L>
+                <L>  Ret = PL.MakePredicatesOfObject( _</L>
+                <L>          "TgdcCurr", "", "ByID", Array(200010, 200020), nil, _</L>
+                <L>          "ID,Name", _</L>
+                <L>          gdcBaseManager.ReadTransaction, _</L>
+                <L>          "gd_curr", "curr")</L>
                 <L></L>
                 <L>  Termv.Reset</L>
                 <L>  Termv.PutInteger 0, 200020</L>
@@ -2189,10 +2181,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>11.10.2013 15:46:54</EDITIONDATE>
+              <EDITIONDATE>28.10.2013 17:33:13</EDITIONDATE>
               <_XID>151157714</_XID>
               <_DBID>5956463</_DBID>
-              <_MODIFIED>11.10.2013 15:46:54</_MODIFIED>
+              <_MODIFIED>28.10.2013 17:33:13</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -2352,12 +2344,12 @@
               <ISLOCALEXECUTE>0</ISLOCALEXECUTE>
               <ISREBUILD>0</ISREBUILD>
               <SHORTCUT>0</SHORTCUT>
-              <EDITIONDATE>11.10.2013 15:46:54</EDITIONDATE>
+              <EDITIONDATE>28.10.2013 17:33:13</EDITIONDATE>
               <DISPLAYINMENU>1</DISPLAYINMENU>
               <RUNONLOGIN>0</RUNONLOGIN>
               <_XID>151157712</_XID>
               <_DBID>5956463</_DBID>
-              <_MODIFIED>11.10.2013 15:46:54</_MODIFIED>
+              <_MODIFIED>28.10.2013 17:33:13</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
