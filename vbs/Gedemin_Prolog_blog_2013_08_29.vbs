@@ -1,20 +1,21 @@
-п»їOption Explicit
-
+Option Explicit
+'#include pl_GetScriptIDByName
 Sub Gedemin_Prolog_blog_2013_08_29()
 'subject close to the
 'http://gedemin.blogspot.com/2013/08/embedded-swi-prolog.html
   Dim Creator, PL, Termv, Query, Ret
   Dim SQL_contact, SQL_place
-  Dim Pred, City, CDS, I
+  'Dim Pred
+  Dim City, CDS, I
   
   SQL_contact = _
       "SELECT ID, PlaceKey, Name FROM gd_contact"
   SQL_place = _
       "SELECT ID, Name FROM gd_place"
-  Pred = _
-      "bycity(City, Name) :- " + _
-      "  gd_place(CityID, City), " + _
-      "  gd_contact(_, CityID, Name). "
+  'Pred = _
+  '    "bycity(City, Name) :- " + _
+  '    "  gd_place(CityID, City), " + _
+  '    "  gd_contact(_, CityID, Name). "
       
   Set Creator = New TCreator
 
@@ -22,30 +23,31 @@ Sub Gedemin_Prolog_blog_2013_08_29()
   Ret = PL.Initialise("")
   If Not Ret Then Exit Sub
   
-  Call PL.MakePredicatesOfSQLSelect( _
-       SQL_contact, _
-       gdcBaseManager.ReadTransaction, _
-       "gd_contact", "contact")
+  Ret = PL.MakePredicatesOfSQLSelect( _
+          SQL_contact, _
+          gdcBaseManager.ReadTransaction, _
+          "gd_contact", "contact")
 
-  Call PL.MakePredicatesOfSQLSelect( _
-       SQL_place, _
-       gdcBaseManager.ReadTransaction, _
-       "gd_place", "place")
+  Ret = PL.MakePredicatesOfSQLSelect( _
+          SQL_place, _
+          gdcBaseManager.ReadTransaction, _
+          "gd_place", "place")
 
   Set Termv = Creator.GetObject(2, "TgsPLTermv", "")
-  Termv.PutString 0, "pred"
-  Termv.PutString 1, Pred
-  Ret = PL.Call("load_atom", Termv)
+  'Termv.PutString 0, "pred"
+  'Termv.PutString 1, Pred
+  'Ret = PL.Call("load_atom", Termv)
+  Ret = PL.LoadScript(pl_GetScriptIDByName("blog_2013_08_29"))
   If Not Ret Then Exit Sub
 
-  City = InputBox("Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ", "РњРµСЃС‚Рѕ", "РњРёРЅСЃРє")
+  City = InputBox("Введите город", "Место", "Минск")
   Termv.Reset
   Termv.PutString 0, City
   Ret = PL.Call("bycity", Termv)
   If Not Ret Then Exit Sub
 
   Ret = Termv.ReadString(1)
-  MsgBox Ret, , "Call: РџРµСЂРІС‹Р№ РєРѕРЅС‚Р°РєС‚"
+  MsgBox Ret, , "Call: Первый контакт"
   
   Set CDS = Creator.GetObject(nil, "TClientDataset", "")
   CDS.FieldDefs.Add "City", ftString, 60, True
@@ -65,7 +67,7 @@ Sub Gedemin_Prolog_blog_2013_08_29()
      I = I + 1
      CDS.Next
   Loop
-  MsgBox Ret, , "MakePredicatesOfSQLSelect: РџРµСЂРІС‹Рµ 10 РєРѕРЅС‚Р°РєС‚РѕРІ"
+  MsgBox Ret, , "MakePredicatesOfSQLSelect: Первые 10 контактов"
 
   I = 0
   CDS.First
@@ -74,10 +76,10 @@ Sub Gedemin_Prolog_blog_2013_08_29()
      I = I + 1
   Loop
 
-  Call PL.MakePredicatesOfDataSet( _
-       CDS, _
-       "City,Name", _
-       "gd_bycity", "bycity")
+  Ret = PL.MakePredicatesOfDataSet( _
+          CDS, _
+          "City,Name", _
+          "gd_bycity", "bycity")
 
   Ret = PL.Call2("dynamic(gd_bycity/2)")
   Termv.Reset
@@ -86,15 +88,15 @@ Sub Gedemin_Prolog_blog_2013_08_29()
   If Ret Then
     Ret = Termv.ReadString(1) + " (" + Termv.ReadString(0) + ")"
   Else
-    Ret = "Р‘С‹Р»Рѕ РЅР°Р№РґРµРЅРѕ РјРµРЅСЊС€Рµ 6 РєРѕРЅС‚Р°РєС‚РѕРІ"
+    Ret = "Было найдено меньше 6 контактов"
   End If
-  MsgBox Ret, , "MakePredicatesOfDataSet: РљРѕРЅС‚Р°РєС‚ 6"
+  MsgBox Ret, , "MakePredicatesOfDataSet: Контакт 6"
 
-  Call PL.MakePredicatesOfObject( _
-       "TgdcCurr", "", "ByID", Array(200010, 200020), nil, _
-       "ID,Name", _
-       gdcBaseManager.ReadTransaction, _
-       "gd_curr", "curr")
+  Ret = PL.MakePredicatesOfObject( _
+          "TgdcCurr", "", "ByID", Array(200010, 200020), nil, _
+          "ID,Name", _
+          gdcBaseManager.ReadTransaction, _
+          "gd_curr", "curr")
 
   Termv.Reset
   Termv.PutInteger 0, 200020
@@ -102,7 +104,7 @@ Sub Gedemin_Prolog_blog_2013_08_29()
   If Not Ret Then Exit Sub
   
   Ret = CStr(Termv.ReadInteger(0)) + ": " + Termv.ReadString(1)
-  MsgBox Ret, , "MakePredicatesOfObject: Р’Р°Р»СЋС‚Р°"
+  MsgBox Ret, , "MakePredicatesOfObject: Валюта"
   
   Set Query = Creator.GetObject(nil, "TgsPLQuery", "")
   Query.PredicateName = "current_foreign_library"
@@ -117,4 +119,3 @@ Sub Gedemin_Prolog_blog_2013_08_29()
   Loop
   MsgBox Ret, , "Query: current_foreign_library"
 End Sub
-

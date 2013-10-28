@@ -36,13 +36,11 @@ Function pl_twg_avg_wage()
   Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_run.PredicateName = "avg_wage_run"
   Q_run.Termv = Tv_run
-  Q_run.DeleteDataAfterClose = True
   'avg_wage_sql(EmplKey, Connection, PredicateName, Arity, SQL)
   Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_sql.PredicateName = "avg_wage_sql"
   Q_sql.Termv = Tv_sql
-  Q_sql.DeleteDataAfterClose = True
   '
   Q_run.OpenQuery
   '
@@ -61,10 +59,10 @@ Function pl_twg_avg_wage()
       Arity = Q_sql.Termv.ReadInteger(3)
       SQL = Q_sql.Termv.ReadAtom(4)
       '
-      PL.MakePredicatesOfSQLSelect _
-          SQL, _
-          gdcBaseManager.ReadTransaction, _
-          PredicateName, PredicateName
+      Ret =  PL.MakePredicatesOfSQLSelect _
+                (SQL, _
+                gdcBaseManager.ReadTransaction, _
+                PredicateName, PredicateName)
       Ret = PL.Call("avg_wage_kb", Tv_sql)
       '
       Q_sql.NextSolution
@@ -83,7 +81,6 @@ Function pl_twg_avg_wage()
   Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_out.PredicateName = "avg_wage_out"
   Q_out.Termv = Tv_out
-  Q_out.DeleteDataAfterClose = True
   '
   Q_out.OpenQuery
   '
@@ -101,7 +98,7 @@ Function pl_twg_avg_wage()
   
   '''
   
-  Ret = PL.Call2("avg_wage_out")
+  'Ret = PL.Call2("avg_wage_out")
 
   'Ret = PL.Call2("assert(usr_wg_FeeType(148586355,147060452,147060446))")
   'Dim Tv_a, Tv_c
@@ -110,7 +107,7 @@ Function pl_twg_avg_wage()
   'Tv_c.PutInteger 0, 148586355
   'Tv_c.PutInteger 1, 147060452
   'Tv_c.PutInteger 2, 147060446
-  'PL.Compound Tv_a.Term(0), "usr_wg_FeeType", Tv_c
+  'Call PL.Compound(Tv_a.Term(0), "usr_wg_FeeType", Tv_c)
   'Ret = PL.Call("assert", Tv_a)
 
   'param_list
@@ -118,13 +115,12 @@ Function pl_twg_avg_wage()
  'param_list(Scope, PType, Pairs)
   Set Tv_p = Creator.GetObject(3, "TgsPLTermv", "")
   Set Q_p = Creator.GetObject(nil, "TgsPLQuery", "")
-  Q_p.PredicateName = "param_list"
-  'Q_p.PredicateName = "usr_wg_FeeType"
+  'Q_p.PredicateName = "param_list"
+  Q_p.PredicateName = "usr_wg_FeeType"
   Q_p.Termv = Tv_p
-  Q_p.DeleteDataAfterClose = True
   '
   Tv_p.Reset
-  Tv_p.PutAtom 1, "debug"
+  'Tv_p.PutAtom 1, "debug"
   Q_p.OpenQuery
   '
   Do Until Q_p.EOF
@@ -138,4 +134,4 @@ Function pl_twg_avg_wage()
 
   pl_twg_avg_wage = True
 '
-End function
+End Function
