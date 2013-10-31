@@ -12,13 +12,9 @@ Sub Gedemin_Prolog_blog_2013_08_29()
       "SELECT ID, PlaceKey, Name FROM gd_contact"
   SQL_place = _
       "SELECT ID, Name FROM gd_place"
-  'Pred = _
-  '    "bycity(City, Name) :- " + _
-  '    "  gd_place(CityID, City), " + _
-  '    "  gd_contact(_, CityID, Name). "
-      
-  Set Creator = New TCreator
 
+  Set Creator = New TCreator
+  '
   Set PL = Creator.GetObject(nil, "TgsPLClient", "")
   Ret = PL.Initialise("")
   If Not Ret Then Exit Sub
@@ -34,9 +30,6 @@ Sub Gedemin_Prolog_blog_2013_08_29()
           "gd_place", "place")
 
   Set Termv = Creator.GetObject(2, "TgsPLTermv", "")
-  'Termv.PutString 0, "pred"
-  'Termv.PutString 1, Pred
-  'Ret = PL.Call("load_atom", Termv)
   Ret = PL.LoadScript(pl_GetScriptIDByName("blog_2013_08_29"))
   If Not Ret Then Exit Sub
 

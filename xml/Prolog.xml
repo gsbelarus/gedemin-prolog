@@ -2,8 +2,8 @@
 <SETTING>
   <SETTING_HEADER
     name="Prolog"
-    version="2"
-    modifydate="28.10.2013 18:29:05"
+    version="7"
+    modifydate="31.10.2013 15:17:44"
     xid="151189620"
     dbid="18175251"
     description="Prolog"
@@ -168,7 +168,7 @@
     <STREAM>
       <HEADER>
         <VERSION>3</VERSION>
-        <DBID>18175251</DBID>
+        <DBID>5956463</DBID>
         <LOADING_ORDER>
           <ITEM
             index="0"
@@ -279,12 +279,19 @@
                 <L>Function pl_twg_avg_wage()</L>
                 <L>'</L>
                 <L>  Dim Creator, PL, Ret</L>
-                <L>  'avg_wage_run, avg_wage_sql, avg_wage_out</L>
-                <L>  Dim Tv_run, Tv_sql, Tv_out</L>
-                <L>  Dim Q_run, Q_sql, Q_out</L>
-                <L>  Dim EmplKey, DateCalcFrom, DateCalcTo</L>
+                <L>  Dim Pred, Tv</L>
+                <L>  'avg_wage_in</L>
+                <L>  Dim P_in, Tv_in</L>
+                <L>  Dim EmplKey, DateCalc</L>
+                <L>  'avg_wage_run, avg_wage_sql</L>
+                <L>  Dim Tv_run, Q_run, Tv_sql, Q_sql</L>
+                <L>  Dim DateCalcFrom, DateCalcTo</L>
                 <L>  Dim Connection, PredicateName, Arity, SQL</L>
-                <L>  Dim AvgWage</L>
+                <L>  'avg_wage_out, avg_wage_det</L>
+                <L>  Dim Tv_out, Q_out, Tv_det, Q_det</L>
+                <L>  Dim AvgWage, AvgWageRule</L>
+                <L>  Dim Period, PeriodRule, Wage, ModernWage, ModernCoef</L>
+                <L>  Dim TabDays, TabHoures, NormDays, NormHoures</L>
                 <L></L>
                 <L>  pl_twg_avg_wage = False</L>
                 <L>  Set Creator = New TCreator</L>
@@ -302,6 +309,18 @@
                 <L>  If Not Ret Then</L>
                 <L>    Exit Function</L>
                 <L>  End If</L>
+                <L></L>
+                <L>  'avg_wage_in(EmplKey, DateCalc)</L>
+                <L>  P_in = "avg_wage_in"</L>
+                <L>  Set Tv_in = Creator.GetObject(2, "TgsPLTermv", "")</L>
+                <L>  '</L>
+                <L>  Tv_in.PutInteger 0, 150921260</L>
+                <L>  Tv_in.PutAtom 1, "2013-06-01"</L>
+                <L>  Ret = PL.Call(P_in, Tv_in)</L>
+                <L>  '</L>
+                <L>  Tv_in.PutInteger 0, 148441437</L>
+                <L>  Tv_in.PutAtom 1, "2013-07-15"</L>
+                <L>  Ret = PL.Call(P_in, Tv_in)</L>
                 <L></L>
                 <L>  'avg_wage (prepare data)</L>
                 <L>  Ret = PL.Call2("avg_wage")</L>
@@ -338,7 +357,9 @@
                 <L>                (SQL, _</L>
                 <L>                gdcBaseManager.ReadTransaction, _</L>
                 <L>                PredicateName, PredicateName)</L>
-                <L>      Ret = PL.Call("avg_wage_kb", Tv_sql)</L>
+                <L>      If Ret > 0 Then</L>
+                <L>         Ret = PL.Call("avg_wage_kb", Tv_sql)</L>
+                <L>      End If</L>
                 <L>      '</L>
                 <L>      Q_sql.NextSolution</L>
                 <L>    Loop</L>
@@ -351,63 +372,53 @@
                 <L>  'avg_wage (calc result)</L>
                 <L>  Ret = PL.Call2("avg_wage")</L>
                 <L></L>
-                <L>  'avg_wage_out(EmplKey, AvgWage)</L>
-                <L>  Set Tv_out = Creator.GetObject(2, "TgsPLTermv", "")</L>
+                <L>  'avg_wage_out(EmplKey, AvgWage, AvgWageVariant)</L>
+                <L>  Set Tv_out = Creator.GetObject(3, "TgsPLTermv", "")</L>
                 <L>  Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_out.PredicateName = "avg_wage_out"</L>
                 <L>  Q_out.Termv = Tv_out</L>
+                <L>  'avg_wage_det(EmplKey, Period, PeriodRule, Wage, ModernWage, ModernCoef, TabDays, TabHoures, NormDays, NormHoures)</L>
+                <L>  Set Tv_det = Creator.GetObject(10, "TgsPLTermv", "")</L>
+                <L>  Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")</L>
+                <L>  Q_det.PredicateName = "avg_wage_det"</L>
+                <L>  Q_det.Termv = Tv_det</L>
                 <L>  '</L>
                 <L>  Q_out.OpenQuery</L>
+                <L>  pl_twg_avg_wage = (Q_out.EOF = False)</L>
                 <L>  '</L>
                 <L>  Do Until Q_out.EOF</L>
                 <L>    EmplKey = Q_out.Termv.ReadInteger(0)</L>
                 <L>    AvgWage = Q_out.Termv.ReadFloat(1)</L>
+                <L>    AvgWageRule = Q_out.Termv.ReadAtom(2)</L>
+                <L>    '</L>
+                <L>    Tv_det.Reset</L>
+                <L>    Tv_det.PutInteger 0, EmplKey</L>
+                <L>    Q_det.OpenQuery</L>
+                <L>    '</L>
+                <L>    Do Until Q_det.EOF</L>
+                <L>      Period = Q_det.Termv.ReadDate(1)</L>
+                <L>      PeriodRule = Q_det.Termv.ReadAtom(2)</L>
+                <L>      Wage = Q_det.Termv.ReadFloat(3)</L>
+                <L>      ModernWage = Q_det.Termv.ReadFloat(4)</L>
+                <L>      ModernCoef = Q_det.Termv.ReadFloat(5)</L>
+                <L>      TabDays = Q_det.Termv.ReadFloat(6)</L>
+                <L>      TabHoures = Q_det.Termv.ReadFloat(7)</L>
+                <L>      NormDays = Q_det.Termv.ReadFloat(8)</L>
+                <L>      NormHoures = Q_det.Termv.ReadFloat(9)</L>
+                <L>      '</L>
+                <L>      Q_det.NextSolution</L>
+                <L>    Loop</L>
+                <L>    Q_det.Close</L>
                 <L>    '</L>
                 <L>    Q_out.NextSolution</L>
                 <L>  Loop</L>
                 <L>  Q_out.Close</L>
-                <L>  </L>
-                <L>  pl_twg_avg_wage = True</L>
-                <L>'</L>
-                <L>  Exit Function</L>
-                <L>  </L>
-                <L>  '''</L>
-                <L>  </L>
-                <L>  'Ret = PL.Call2("avg_wage_out")</L>
-                <L></L>
-                <L>  'Ret = PL.Call2("assert(usr_wg_FeeType(148586355,147060452,147060446))")</L>
-                <L>  'Dim Tv_a, Tv_c</L>
-                <L>  'Set Tv_a = Creator.GetObject(1, "TgsPLTermv", "")</L>
-                <L>  'Set Tv_c = Creator.GetObject(3, "TgsPLTermv", "")</L>
-                <L>  'Tv_c.PutInteger 0, 148586355</L>
-                <L>  'Tv_c.PutInteger 1, 147060452</L>
-                <L>  'Tv_c.PutInteger 2, 147060446</L>
-                <L>  'Call PL.Compound(Tv_a.Term(0), "usr_wg_FeeType", Tv_c)</L>
-                <L>  'Ret = PL.Call("assert", Tv_a)</L>
-                <L></L>
-                <L>  'param_list</L>
-                <L>  Dim Tv_p, Q_p, Scope, PType, Pairs</L>
-                <L> 'param_list(Scope, PType, Pairs)</L>
-                <L>  Set Tv_p = Creator.GetObject(3, "TgsPLTermv", "")</L>
-                <L>  Set Q_p = Creator.GetObject(nil, "TgsPLQuery", "")</L>
-                <L>  'Q_p.PredicateName = "param_list"</L>
-                <L>  Q_p.PredicateName = "usr_wg_FeeType"</L>
-                <L>  Q_p.Termv = Tv_p</L>
                 <L>  '</L>
-                <L>  Tv_p.Reset</L>
-                <L>  'Tv_p.PutAtom 1, "debug"</L>
-                <L>  Q_p.OpenQuery</L>
-                <L>  '</L>
-                <L>  Do Until Q_p.EOF</L>
-                <L>    Scope = Q_p.Termv.ToString(0)</L>
-                <L>    PType = Q_p.Termv.ToString(1)</L>
-                <L>    Pairs = Q_p.Termv.ToString(2)</L>
-                <L>    '</L>
-                <L>    Q_p.NextSolution</L>
-                <L>  Loop</L>
-                <L>  Q_p.Close</L>
-                <L></L>
-                <L>  pl_twg_avg_wage = True</L>
+                <L>  If PL.Debug Then</L>
+                <L>    Pred = "param_list"</L>
+                <L>    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")</L>
+                <L>    PL.SavePredicatesToFile Pred, Tv, Pred</L>
+                <L>  End If</L>
                 <L>'</L>
                 <L>End Function</L>
                 ]]>
@@ -416,10 +427,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>28.10.2013 18:26:52</EDITIONDATE>
+              <EDITIONDATE>31.10.2013 13:58:27</EDITIONDATE>
               <_XID>151189369</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>28.10.2013 18:26:52</_MODIFIED>
+              <_MODIFIED>31.10.2013 13:58:27</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -766,7 +777,10 @@
                 <![CDATA[
                 <L>% twg_avg_wage</L>
                 <L></L>
-                <L>/* % begin debug comment</L>
+                <L>:- retractall(debug_mode).</L>
+                <L></L>
+                <L>/* %%% begin debug mode section</L>
+                <L></L>
                 <L>%% saved state</L>
                 <L>:- [load_atom, date, dataset].</L>
                 <L>%%</L>
@@ -779,12 +793,11 @@
                 <L>%#INCLUDE twg_avg_wage_sql</L>
                 <L>:- [twg_avg_wage_sql].</L>
                 <L>%#INCLUDE twg_avg_wage_in_params</L>
-                <L>:- [twg_avg_wage_in_params].</L>
+                <L>%:- [twg_avg_wage_in_params].</L>
                 <L>%%</L>
                 <L></L>
-                <L>%% debug mode facts</L>
+                <L>%% facts</L>
                 <L>:-</L>
-                <L>    init_data,</L>
                 <L>    [</L>
                 <L>    usr_wg_MovementLine,</L>
                 <L>    usr_wg_TblCalDay,</L>
@@ -797,10 +810,17 @@
                 <L>    usr_wg_BadFeeType</L>
                 <L>    ].</L>
                 <L>%%</L>
-                <L>*/ % end debug comment</L>
                 <L></L>
-                <L>debug_mode :-</L>
-                <L>    fail.</L>
+                <L>%% dynamic state</L>
+                <L>:-</L>
+                <L>    [param_list].</L>
+                <L>%%</L>
+                <L></L>
+                <L>%% flag</L>
+                <L>:- assertz(debug_mode).</L>
+                <L>%%</L>
+                <L></L>
+                <L>*/ %%% end debug mode section</L>
                 <L></L>
                 <L>% варианты правил расчета</L>
                 <L>% [по расчетным месяцам, по среднечасовому]</L>
@@ -831,6 +851,8 @@
                 <L>    get_param_list(Scope, in, PK),</L>
                 <L>    % подготовить данные</L>
                 <L>    engine_loop(Scope, in, PK),</L>
+                <L>    get_local_date_time(DT1),</L>
+                <L>    new_param_list(Scope, debug, [begin-DT1|PK]),</L>
                 <L>    % вычислить среднедневной заработок по сотруднику</L>
                 <L>    avg_wage(Scope, PK, AvgWage, Variant),</L>
                 <L>    % сформировать выходные параметры</L>
@@ -838,6 +860,8 @@
                 <L>                [fEmplKey-EmplKey, fMovementType-1, fListNumber-ListNumber]) ),</L>
                 <L>    append(PK, [pListNumber-ListNumber, pAvgWage-AvgWage, pVariant-Variant], OutPairs),</L>
                 <L>    new_param_list(Scope, out, OutPairs),</L>
+                <L>    get_local_date_time(DT2),</L>
+                <L>    new_param_list(Scope, debug, [end-DT2|PK]),</L>
                 <L>    % найти альтернативу</L>
                 <L>    fail.</L>
                 <L>avg_wage :-</L>
@@ -1076,6 +1100,12 @@
                 <L>    !,</L>
                 <L>    % проверить остальные месяцы</L>
                 <L>    check_month_tab(Scope, PK, Periods).</L>
+                <L>check_month_tab(Scope, PK, [Y-M|Periods]) :-</L>
+                <L>    % расчитать график и табель за месяц</L>
+                <L>    calc_month_norm_tab(Scope, PK, Y-M, _, _),</L>
+                <L>    !,</L>
+                <L>    % проверить остальные месяцы</L>
+                <L>    check_month_tab(Scope, PK, Periods).</L>
                 <L>check_month_tab(Scope, PK, [_|Periods]) :-</L>
                 <L>    !,</L>
                 <L>    % проверить остальные месяцы</L>
@@ -1087,10 +1117,8 @@
                 <L>    Rule = by_day_houres,</L>
                 <L>    % правило действительно</L>
                 <L>    is_valid_rule(Rule),</L>
-                <L>    % расчитать график за месяц</L>
-                <L>    calc_month_norm(Scope, PK, Y-M, NormDays),</L>
-                <L>    % расчитать табель за месяц</L>
-                <L>    calc_month_tab(Scope, PK, Y-M, TabDays),</L>
+                <L>    % расчитать график и табель за месяц</L>
+                <L>    calc_month_norm_tab(Scope, PK, Y-M, NormDays, TabDays),</L>
                 <L>    % если все элементы списка графика есть в табеле</L>
                 <L>    member_list(NormDays, TabDays),</L>
                 <L>    % то месяц включается в расчет</L>
@@ -1100,19 +1128,40 @@
                 <L>    Rule = by_month_houres,</L>
                 <L>    % правило действительно</L>
                 <L>    is_valid_rule(Rule),</L>
-                <L>    % расчитать график за месяц</L>
-                <L>    calc_month_norm(Scope, PK, Y-M, NormDays),</L>
-                <L>    % всего часов за месяц по табелю</L>
-                <L>    findall( WDuration, member(_-WDuration, NormDays), WDurations),</L>
-                <L>    sumlist(WDurations, MonthNorm),</L>
-                <L>    % расчитать табель за месяц</L>
-                <L>    calc_month_tab(Scope, PK, Y-M, TabDays),</L>
-                <L>    % всего часов за месяц по графику</L>
-                <L>    findall( Duration, member(_-Duration, TabDays), Durations),</L>
-                <L>    sumlist(Durations, MonthTab),</L>
+                <L>    % взять итоги по часам для графика и табеля</L>
+                <L>    total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab),</L>
                 <L>    % если табель покрывает график по итогам месяца</L>
                 <L>    MonthTab >= MonthNorm,</L>
                 <L>    % то месяц включается в расчет</L>
+                <L>    !.</L>
+                <L></L>
+                <L>%</L>
+                <L>total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab) :-</L>
+                <L>    get_param_list(Scope, temp, PK, Pairs),</L>
+                <L>    member_list([pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),</L>
+                <L>    !.</L>
+                <L>total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab) :-</L>
+                <L>    calc_month_norm_tab(Scope, PK, Y-M, _, _),</L>
+                <L>    get_param_list(Scope, temp, PK, Pairs),</L>
+                <L>    member_list([pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),</L>
+                <L>    !.</L>
+                <L></L>
+                <L>%</L>
+                <L>calc_month_norm_tab(Scope, PK, Y-M, NormDays, TabDays) :-</L>
+                <L>    % расчитать график за месяц</L>
+                <L>    calc_month_norm(Scope, PK, Y-M, NormDays),</L>
+                <L>    sum_days_houres(NormDays, NDays, NHoures),</L>
+                <L>    % расчитать табель за месяц</L>
+                <L>    calc_month_tab(Scope, PK, Y-M, TabDays),</L>
+                <L>    sum_days_houres(TabDays, TDays, THoures),</L>
+                <L>    % график и табель не пустые</L>
+                <L>    \+ NormDays = [], \+ TabDays = [],</L>
+                <L>    % занести во временные параметры дни и часы</L>
+                <L>    append(PK, [pYM-Y-M,</L>
+                <L>                pTDays-TDays, pTHoures-THoures,</L>
+                <L>                pNDays-NDays, pNHoures-NHoures],</L>
+                <L>                Pairs),</L>
+                <L>    new_param_list(Scope, temp, Pairs),</L>
                 <L>    !.</L>
                 <L></L>
                 <L>% расчитать график за месяц</L>
@@ -1133,8 +1182,6 @@
                 <L>            atom_date(TheDay, date(Y, M, _)) ),</L>
                 <L>    % в список дата/часы графика</L>
                 <L>            NormDays),</L>
-                <L>    % график не пустой</L>
-                <L>    \+ NormDays = [],</L>
                 <L>    !.</L>
                 <L></L>
                 <L>% расчитать табель за месяц</L>
@@ -1149,9 +1196,18 @@
                 <L>            atom_date(Date, date(Y, M, _)) ),</L>
                 <L>    % в список дата/часы табеля</L>
                 <L>            TabDays),</L>
-                <L>    % табель не пустой</L>
-                <L>    \+ TabDays = [],</L>
                 <L>    !.</L>
+                <L></L>
+                <L>%</L>
+                <L>sum_days_houres(ListDays, Days, Houres) :-</L>
+                <L>    sum_days_houres(ListDays, Days, Houres, 0, 0),</L>
+                <L>    !.</L>
+                <L>sum_days_houres([], Days, Houres, Days, Houres).</L>
+                <L>sum_days_houres([_-Duration|ListDays], Days, Houres, Days0, Houres0) :-</L>
+                <L>    ( Duration > 0, Days1 is Days0 + 1 ; Days1 = Days0 ),</L>
+                <L>    Houres1 is Houres0 + Duration,</L>
+                <L>    !,</L>
+                <L>    sum_days_houres(ListDays, Days, Houres, Days1, Houres1).</L>
                 <L></L>
                 <L>% тип графика</L>
                 <L>get_schedule(Scope, PK, TheDay, ScheduleKey) :-</L>
@@ -1177,11 +1233,15 @@
                 <L>    !.</L>
                 <L></L>
                 <L>% расчитать заработок за месяц</L>
-                <L>cacl_month_wage(Scope, PK, Y, M, Wage) :-</L>
+                <L>cacl_month_wage(Scope, PK, Y, M, ModernWage) :-</L>
+                <L>    get_param_list(Scope, temp, PK, Pairs),</L>
+                <L>    member_list([pYM-Y-M, pModernWage-ModernWage], Pairs),</L>
+                <L>    !.</L>
+                <L>cacl_month_wage(Scope, PK, Y, M, ModernWage) :-</L>
                 <L>    % разложить первичный ключ</L>
                 <L>    PK = [pEmplKey-EmplKey],</L>
-                <L>    % взять формулу</L>
-                <L>    findall( Debit*ModernCoef,</L>
+                <L>    % взять начисления</L>
+                <L>    findall( Debit-ModernCoef,</L>
                 <L>          % для начисления</L>
                 <L>          ( get_data(Scope, in, wg_TblCharge, [</L>
                 <L>                fEmplKey-EmplKey, fDateBegin-Date,</L>
@@ -1196,8 +1256,28 @@
                 <L>    % в список начислений</L>
                 <L>             Debits ),</L>
                 <L>    % всего за месяц</L>
-                <L>    sum_list(Debits, Wage),</L>
+                <L>    sum_month_debit(Debits, Wage, ModernWage),</L>
+                <L>    % средний за месяц коэффициент осовременивания</L>
+                <L>    catch( MonthModernCoef is float( round( ModernWage / Wage * 10000 ) / 10000 ), _, fail),</L>
+                <L>    % занести во временные параметры заработок</L>
+                <L>    append(PK, [pYM-Y-M,</L>
+                <L>                pWage-Wage, pModernWage-ModernWage,</L>
+                <L>                pModernCoef-MonthModernCoef],</L>
+                <L>                Pairs),</L>
+                <L>    new_param_list(Scope, temp, Pairs),</L>
                 <L>    !.</L>
+                <L></L>
+                <L>%</L>
+                <L>sum_month_debit(Debits, Wage, ModernWage) :-</L>
+                <L>    sum_month_debit(Debits, Wage, ModernWage, 0, 0),</L>
+                <L>    !.</L>
+                <L>sum_month_debit([], Wage, ModernWage, Wage, ModernWage0) :-</L>
+                <L>    catch( ModernWage is float( round( ModernWage0 * 10000 ) / 10000 ), _, fail).</L>
+                <L>sum_month_debit([Debit-ModernCoef | Debits], Wage, ModernWage, Wage0, ModernWage0) :-</L>
+                <L>    Wage1 is Wage0 + Debit,</L>
+                <L>    ModernWage1 is ModernWage0 + Debit*ModernCoef,</L>
+                <L>    !,</L>
+                <L>    sum_month_debit(Debits, Wage, ModernWage, Wage1, ModernWage1).</L>
                 <L></L>
                 <L>% коэффициент осовременивания</L>
                 <L>get_modern_coef(Scope, PK, TheDay, ModernCoef) :-</L>
@@ -1227,7 +1307,7 @@
                 <L>    % то взять последнюю ставку из следующего и всех оставшихся движений</L>
                 <L>    last([Date2-Rate2 | Movements], _-RateLast),</L>
                 <L>    % и вычислить коэффициент для текущего движения</L>
-                <L>    ModernCoef is float( round( RateLast / Rate1 * 10000 ) / 10000 ),</L>
+                <L>    catch( ModernCoef is float( round( RateLast / Rate1 * 10000 ) / 10000 ), _, fail),</L>
                 <L>    !.</L>
                 <L>calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef) :-</L>
                 <L>    % проверить для остальных движений</L>
@@ -1286,23 +1366,6 @@
                 <L>    over_list(Wage, Wages1),</L>
                 <L>    % то месяц включается в расчет</L>
                 <L>    !.</L>
-                <L></L>
-                <L>% заработки за проверяемый и один из расчетных месяцев</L>
-                <L>month_wage_check_calc(Scope, PK, Y-M, Wage, Wage1) :-</L>
-                <L>    % заработок за проверяемый месяц</L>
-                <L>    cacl_month_wage(Scope, PK, Y, M, Wage),</L>
-                <L>    atom_date(Date, date(Y, M, 1)),</L>
-                <L>    get_modern_coef(Scope, PK, Date, ModernCoef),</L>
-                <L>    % для расчетного месяца</L>
-                <L>    get_month_incl(Scope, PK, Y1, M1, Variant1),</L>
-                <L>    atom_date(Date1, date(Y1, M1, 1)),</L>
-                <L>    get_modern_coef(Scope, PK, Date1, ModernCoef1),</L>
-                <L>    ModernCoef =:= ModernCoef1,</L>
-                <L>    % по варианту полного месяца</L>
-                <L>    wg_full_month_rules(Rules),</L>
-                <L>    member(Variant1, Rules),</L>
-                <L>    % заработок за расчетный месяц</L>
-                <L>    cacl_month_wage(Scope, PK, Y1, M1, Wage1).</L>
                 <L></L>
                 <L>% проверка месяца по типу начислений</L>
                 <L>check_month_no_bad_type(_, _, []):-</L>
@@ -1465,7 +1528,7 @@
                 <L>engine_data_step(run, query).</L>
                 <L>engine_data_step(query, data).</L>
                 <L>%</L>
-                <L>engine_deal_step(query) :-</L>
+                <L>engine_deal_step(run) :-</L>
                 <L>    debug_mode,</L>
                 <L>    !.</L>
                 <L>engine_deal_step(data).</L>
@@ -1511,7 +1574,6 @@
                 <L>    get_param_list(Scope, Type, PK, Pairs),</L>
                 <L>    member(pConnection-Connection, Pairs),</L>
                 <L>    forall( ( get_sql(Connection, Query, SQL, Params),</L>
-                <L>              dynamic(Query), multifile(Query), discontiguous(Query),</L>
                 <L>              member_list(Params, Pairs),</L>
                 <L>              prepare_sql(SQL, Params, PrepSQL),</L>
                 <L>              \+ find_param_list(Scope, TypeNextStep, PK,</L>
@@ -1594,48 +1656,42 @@
                 <L>    !.</L>
                 <L></L>
                 <L>% выгрузка выходных данных по сотруднику</L>
-                <L>avg_wage_out(EmplKey, AvgWage) :-</L>
+                <L>avg_wage_out(EmplKey, AvgWage, Variant) :-</L>
                 <L>    Scope = wg_avg_wage, Type = out,</L>
                 <L>    PK = [pEmplKey-EmplKey],</L>
                 <L>    get_param_list(Scope, Type, PK, Pairs),</L>
-                <L>    once( member(pAvgWage-AvgWage, Pairs) ).</L>
+                <L>    once( member_list([pAvgWage-AvgWage,pVariant-Variant], Pairs) ).</L>
                 <L></L>
-                <L>% выгрузка выходных данных в файл twg_avg_wage_out_params.pl</L>
-                <L>avg_wage_out :-</L>
-                <L>    working_directory(CWD, CWD),</L>
-                <L>    working_directory(_, 'd:/latunov/gd_pl/'),</L>
-                <L>    % создать файл</L>
-                <L>    open('twg_avg_wage_out_params.pl',</L>
-                <L>            write, Stream,</L>
-                <L>            [alias(result), encoding(utf8)]),</L>
-                <L>    Scope = wg_avg_wage, PK = [pEmplKey-_],</L>
-                <L>    forall(</L>
-                <L>        % для каждого первичного ключа расчета из входных параметров</L>
-                <L>        ( get_param_list(Scope, in, PK, InPairs),</L>
-                <L>        % найти временные параметры по месяцам исчисления</L>
-                <L>        once( ( find_param_list(Scope, temp, PK, [pMonthIncl-MonthIncl|_])</L>
-                <L>              ; MonthIncl = [] )</L>
-                <L>            ),</L>
-                <L>        % найти выходные параметры</L>
-                <L>        find_param_list(Scope, out, PK, OutPairs)</L>
-                <L>        ),</L>
-                <L>        % вывести результат расчета</L>
-                <L>        ( write(Stream, InPairs),</L>
-                <L>          nl(Stream),</L>
-                <L>          write(Stream, OutPairs),</L>
-                <L>          nl(Stream),</L>
-                <L>          forall( member(Y-M-Rule, MonthIncl),</L>
-                <L>                  ( write(Stream, '  '),</L>
-                <L>                  cacl_month_wage(Scope, PK, Y, M, Wage0),</L>
-                <L>                  Wage is float( round(Wage0) ),</L>
-                <L>                  write(Stream, Y-M-Wage-Rule),</L>
-                <L>                  nl(Stream) )</L>
-                <L>                ), nl(Stream)</L>
-                <L>        )</L>
-                <L>          ),</L>
-                <L>    close(Stream, [force(true)]),</L>
-                <L>    working_directory(_, CWD).</L>
-                <L></L>
+                <L>avg_wage_det(EmplKey, Period, Rule, Wage, ModernWage, ModernCoef, TabDays, TabHoures, NormDays, NormHoures) :-</L>
+                <L>    Scope = wg_avg_wage,</L>
+                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    get_periods(Scope, PK, Periods),</L>
+                <L>    member(Y-M, Periods),</L>
+                <L>    atom_date(Period, date(Y, M, 1)),</L>
+                <L>    %</L>
+                <L>    once( ( find_param_list(Scope, temp, PK, [pMonthIncl-MonthIncl|_])</L>
+                <L>            ; MonthIncl = [] ) ),</L>
+                <L>    once( ( member(Y-M-Rule, MonthIncl) ; Rule = none ) ),</L>
+                <L>    %</L>
+                <L>    once( ( get_param_list(Scope, temp, PK, Pairs1),</L>
+                <L>                member_list([pYM-Y-M,</L>
+                <L>                            pWage-Wage, pModernWage-ModernWage,</L>
+                <L>                            pModernCoef-ModernCoef],</L>
+                <L>                    Pairs1)</L>
+                <L>          ;</L>
+                <L>          [Wage, ModernWage, ModernCoef] = [0, 0, 1]</L>
+                <L>        ) ),</L>
+                <L>    %</L>
+                <L>    once( ( get_param_list(Scope, temp, PK, Pairs2),</L>
+                <L>                member_list([pYM-Y-M,</L>
+                <L>                            pTDays-TabDays, pTHoures-TabHoures,</L>
+                <L>                            pNDays-NormDays, pNHoures-NormHoures],</L>
+                <L>                    Pairs2)</L>
+                <L>          ;</L>
+                <L>          [TabDays, TabHoures, NormDays, NormHoures] = [0, 0, 0, 0]</L>
+                <L>        ) ),</L>
+                <L>    %</L>
+                <L>    true.</L>
                 <L> %</L>
                 <L>%%</L>
                 ]]>
@@ -1644,10 +1700,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>28.10.2013 12:48:31</EDITIONDATE>
+              <EDITIONDATE>31.10.2013 13:50:53</EDITIONDATE>
               <_XID>151189370</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>28.10.2013 12:48:31</_MODIFIED>
+              <_MODIFIED>31.10.2013 13:50:53</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -1982,11 +2038,11 @@
                 <L>% 769</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
                 <L>    [pEmplKey-150814111, pDateCalc-'2013-05-01']).</L>
-                <L>*/</L>
+                <L></L>
                 <L>% 316</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
                 <L>    [pEmplKey-148441437, pDateCalc-'2013-07-15']).</L>
-                <L>/*</L>
+                <L></L>
                 <L>% 694</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
                 <L>    [pEmplKey-150453949, pDateCalc-'2013-07-15']).</L>
@@ -2015,10 +2071,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>28.10.2013 15:03:57</EDITIONDATE>
+              <EDITIONDATE>29.10.2013 13:53:25</EDITIONDATE>
               <_XID>151189471</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>28.10.2013 15:03:57</_MODIFIED>
+              <_MODIFIED>29.10.2013 13:53:25</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -2068,13 +2124,9 @@
                 <L>      "SELECT ID, PlaceKey, Name FROM gd_contact"</L>
                 <L>  SQL_place = _</L>
                 <L>      "SELECT ID, Name FROM gd_place"</L>
-                <L>  'Pred = _</L>
-                <L>  '    "bycity(City, Name) :- " + _</L>
-                <L>  '    "  gd_place(CityID, City), " + _</L>
-                <L>  '    "  gd_contact(_, CityID, Name). "</L>
-                <L>      </L>
-                <L>  Set Creator = New TCreator</L>
                 <L></L>
+                <L>  Set Creator = New TCreator</L>
+                <L>  '</L>
                 <L>  Set PL = Creator.GetObject(nil, "TgsPLClient", "")</L>
                 <L>  Ret = PL.Initialise("")</L>
                 <L>  If Not Ret Then Exit Sub</L>
@@ -2090,9 +2142,6 @@
                 <L>          "gd_place", "place")</L>
                 <L></L>
                 <L>  Set Termv = Creator.GetObject(2, "TgsPLTermv", "")</L>
-                <L>  'Termv.PutString 0, "pred"</L>
-                <L>  'Termv.PutString 1, Pred</L>
-                <L>  'Ret = PL.Call("load_atom", Termv)</L>
                 <L>  Ret = PL.LoadScript(pl_GetScriptIDByName("blog_2013_08_29"))</L>
                 <L>  If Not Ret Then Exit Sub</L>
                 <L></L>
@@ -2181,10 +2230,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>28.10.2013 17:33:13</EDITIONDATE>
+              <EDITIONDATE>30.10.2013 10:52:45</EDITIONDATE>
               <_XID>151157714</_XID>
               <_DBID>5956463</_DBID>
-              <_MODIFIED>28.10.2013 17:33:13</_MODIFIED>
+              <_MODIFIED>30.10.2013 10:52:45</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -2299,8 +2348,8 @@
           </METADATA>
           <ROWDATA>
             <ROW>
-              <S_MAINFUNCTIONKEY>151189366</S_MAINFUNCTIONKEY>
-              <S_ADDFUNCTIONKEY>151189365</S_ADDFUNCTIONKEY>
+              <S_MAINFUNCTIONKEY>151162292</S_MAINFUNCTIONKEY>
+              <S_ADDFUNCTIONKEY>151162291</S_ADDFUNCTIONKEY>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
               <_SETTABLE>RP_ADDITIONALFUNCTION</_SETTABLE>
@@ -2344,12 +2393,12 @@
               <ISLOCALEXECUTE>0</ISLOCALEXECUTE>
               <ISREBUILD>0</ISREBUILD>
               <SHORTCUT>0</SHORTCUT>
-              <EDITIONDATE>28.10.2013 17:33:13</EDITIONDATE>
+              <EDITIONDATE>30.10.2013 10:52:45</EDITIONDATE>
               <DISPLAYINMENU>1</DISPLAYINMENU>
               <RUNONLOGIN>0</RUNONLOGIN>
               <_XID>151157712</_XID>
               <_DBID>5956463</_DBID>
-              <_MODIFIED>28.10.2013 17:33:13</_MODIFIED>
+              <_MODIFIED>30.10.2013 10:52:45</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>

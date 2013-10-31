@@ -12,6 +12,7 @@
 %:- new_param_list(wg_avg_wage, in,
 %    [pEmplKey-147068452, pDateCalc-'2012-08-20']).
 
+/*
 % 800
 :- new_param_list(wg_avg_wage, in,
     [pEmplKey-150921260, pDateCalc-'2013-06-01']).
@@ -51,6 +52,6 @@
 % 338
 :- new_param_list(wg_avg_wage, in,
     [pEmplKey-148586355, pDateCalc-'2013-08-14']).
-
+*/
 
 %

@@ -1,6 +1,9 @@
 ﻿% twg_avg_wage
 
-%/* % begin debug comment
+:- retractall(debug_mode).
+
+%/* %%% begin debug mode section
+
 %% saved state
 :- [load_atom, date, dataset].
 %%
@@ -13,12 +16,11 @@
 %#INCLUDE twg_avg_wage_sql
 :- [twg_avg_wage_sql].
 %#INCLUDE twg_avg_wage_in_params
-:- [twg_avg_wage_in_params].
+%:- [twg_avg_wage_in_params].
 %%
 
-%% debug mode facts
+%% facts
 :-
-    init_data,
     [
     usr_wg_MovementLine,
     usr_wg_TblCalDay,
@@ -31,10 +33,17 @@
     usr_wg_BadFeeType
     ].
 %%
-%*/ % end debug comment
 
-debug_mode :-
-    true.
+%% dynamic state
+:-
+    [param_list].
+%%
+
+%% flag
+:- assertz(debug_mode).
+%%
+
+%*/ %%% end debug mode section
 
 % варианты правил расчета
 % [по расчетным месяцам, по среднечасовому]
@@ -42,7 +51,7 @@ wg_valid_rules([by_calc_month, by_avg_houre]).
 % по расчетным месяцам (принятие месяца для исчисления)
 % [соответствие табеля графику по дням и часам, по часам за месяц]
 wg_valid_rules([by_day_houres, by_month_houres]).
-% [заработок больше всех расчетных месяцев, больше среднего, больше любого]
+% [заработок больше всех расчетных месяцев]
 wg_valid_rules([by_month_wage_all]).
 % [отсутствие в месяце плохих типов начислений и часов]
 wg_valid_rules([by_month_no_bad_type]).
@@ -65,15 +74,17 @@ avg_wage:-
     get_param_list(Scope, in, PK),
     % подготовить данные
     engine_loop(Scope, in, PK),
+    get_local_date_time(DT1),
+    new_param_list(Scope, debug, [begin-DT1|PK]),
     % вычислить среднедневной заработок по сотруднику
-    %new_param_list(Scope, debug, [begin|PK]),
     avg_wage(Scope, PK, AvgWage, Variant),
-    %new_param_list(Scope, debug, [end|PK]),
     % сформировать выходные параметры
     once( get_data(Scope, in, usr_wg_MovementLine,
                 [fEmplKey-EmplKey, fMovementType-1, fListNumber-ListNumber]) ),
     append(PK, [pListNumber-ListNumber, pAvgWage-AvgWage, pVariant-Variant], OutPairs),
     new_param_list(Scope, out, OutPairs),
+    get_local_date_time(DT2),
+    new_param_list(Scope, debug, [end-DT2|PK]),
     % найти альтернативу
     fail.
 avg_wage :-
@@ -312,6 +323,12 @@ check_month_tab(Scope, PK, [Y-M|Periods]) :-
     !,
     % проверить остальные месяцы
     check_month_tab(Scope, PK, Periods).
+check_month_tab(Scope, PK, [Y-M|Periods]) :-
+    % расчитать график и табель за месяц
+    calc_month_norm_tab(Scope, PK, Y-M, _, _),
+    !,
+    % проверить остальные месяцы
+    check_month_tab(Scope, PK, Periods).
 check_month_tab(Scope, PK, [_|Periods]) :-
     !,
     % проверить остальные месяцы
@@ -323,10 +340,8 @@ rule_month_tab(Scope, PK, Y-M, Rule) :-
     Rule = by_day_houres,
     % правило действительно
     is_valid_rule(Rule),
-    % расчитать график за месяц
-    calc_month_norm(Scope, PK, Y-M, NormDays),
-    % расчитать табель за месяц
-    calc_month_tab(Scope, PK, Y-M, TabDays),
+    % расчитать график и табель за месяц
+    calc_month_norm_tab(Scope, PK, Y-M, NormDays, TabDays),
     % если все элементы списка графика есть в табеле
     member_list(NormDays, TabDays),
     % то месяц включается в расчет
@@ -336,19 +351,40 @@ rule_month_tab(Scope, PK, Y-M, Rule) :-
     Rule = by_month_houres,
     % правило действительно
     is_valid_rule(Rule),
-    % расчитать график за месяц
-    calc_month_norm(Scope, PK, Y-M, NormDays),
-    % всего часов за месяц по табелю
-    findall( WDuration, member(_-WDuration, NormDays), WDurations),
-    sumlist(WDurations, MonthNorm),
-    % расчитать табель за месяц
-    calc_month_tab(Scope, PK, Y-M, TabDays),
-    % всего часов за месяц по графику
-    findall( Duration, member(_-Duration, TabDays), Durations),
-    sumlist(Durations, MonthTab),
+    % взять итоги по часам для графика и табеля
+    total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab),
     % если табель покрывает график по итогам месяца
     MonthTab >= MonthNorm,
     % то месяц включается в расчет
+    !.
+
+%
+total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab) :-
+    get_param_list(Scope, temp, PK, Pairs),
+    member_list([pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),
+    !.
+total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab) :-
+    calc_month_norm_tab(Scope, PK, Y-M, _, _),
+    get_param_list(Scope, temp, PK, Pairs),
+    member_list([pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),
+    !.
+
+%
+calc_month_norm_tab(Scope, PK, Y-M, NormDays, TabDays) :-
+    % расчитать график за месяц
+    calc_month_norm(Scope, PK, Y-M, NormDays),
+    sum_days_houres(NormDays, NDays, NHoures),
+    % расчитать табель за месяц
+    calc_month_tab(Scope, PK, Y-M, TabDays),
+    sum_days_houres(TabDays, TDays, THoures),
+    % график и табель не пустые
+    \+ NormDays = [], \+ TabDays = [],
+    % занести во временные параметры дни и часы
+    append(PK, [pYM-Y-M,
+                pTDays-TDays, pTHoures-THoures,
+                pNDays-NDays, pNHoures-NHoures],
+                Pairs),
+    new_param_list(Scope, temp, Pairs),
     !.
 
 % расчитать график за месяц
@@ -369,8 +405,6 @@ calc_month_norm(Scope, PK, Y-M, NormDays) :-
             atom_date(TheDay, date(Y, M, _)) ),
     % в список дата/часы графика
             NormDays),
-    % график не пустой
-    \+ NormDays = [],
     !.
 
 % расчитать табель за месяц
@@ -385,9 +419,18 @@ calc_month_tab(Scope, PK, Y-M, TabDays) :-
             atom_date(Date, date(Y, M, _)) ),
     % в список дата/часы табеля
             TabDays),
-    % табель не пустой
-    \+ TabDays = [],
     !.
+
+%
+sum_days_houres(ListDays, Days, Houres) :-
+    sum_days_houres(ListDays, Days, Houres, 0, 0),
+    !.
+sum_days_houres([], Days, Houres, Days, Houres).
+sum_days_houres([_-Duration|ListDays], Days, Houres, Days0, Houres0) :-
+    ( Duration > 0, Days1 is Days0 + 1 ; Days1 = Days0 ),
+    Houres1 is Houres0 + Duration,
+    !,
+    sum_days_houres(ListDays, Days, Houres, Days1, Houres1).
 
 % тип графика
 get_schedule(Scope, PK, TheDay, ScheduleKey) :-
@@ -413,11 +456,15 @@ get_schedule(Scope, PK, TheDay, ScheduleKey) :-
     !.
 
 % расчитать заработок за месяц
-cacl_month_wage(Scope, PK, Y, M, Wage) :-
+cacl_month_wage(Scope, PK, Y, M, ModernWage) :-
+    get_param_list(Scope, temp, PK, Pairs),
+    member_list([pYM-Y-M, pModernWage-ModernWage], Pairs),
+    !.
+cacl_month_wage(Scope, PK, Y, M, ModernWage) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey],
-    % взять формулу
-    findall( Debit*ModernCoef,
+    % взять начисления
+    findall( Debit-ModernCoef,
           % для начисления
           ( get_data(Scope, in, wg_TblCharge, [
                 fEmplKey-EmplKey, fDateBegin-Date,
@@ -432,8 +479,28 @@ cacl_month_wage(Scope, PK, Y, M, Wage) :-
     % в список начислений
              Debits ),
     % всего за месяц
-    sum_list(Debits, Wage),
+    sum_month_debit(Debits, Wage, ModernWage),
+    % средний за месяц коэффициент осовременивания
+    catch( MonthModernCoef is float( round( ModernWage / Wage * 10000 ) / 10000 ), _, fail),
+    % занести во временные параметры заработок
+    append(PK, [pYM-Y-M,
+                pWage-Wage, pModernWage-ModernWage,
+                pModernCoef-MonthModernCoef],
+                Pairs),
+    new_param_list(Scope, temp, Pairs),
     !.
+
+%
+sum_month_debit(Debits, Wage, ModernWage) :-
+    sum_month_debit(Debits, Wage, ModernWage, 0, 0),
+    !.
+sum_month_debit([], Wage, ModernWage, Wage, ModernWage0) :-
+    catch( ModernWage is float( round( ModernWage0 * 10000 ) / 10000 ), _, fail).
+sum_month_debit([Debit-ModernCoef | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
+    Wage1 is Wage0 + Debit,
+    ModernWage1 is ModernWage0 + Debit*ModernCoef,
+    !,
+    sum_month_debit(Debits, Wage, ModernWage, Wage1, ModernWage1).
 
 % коэффициент осовременивания
 get_modern_coef(Scope, PK, TheDay, ModernCoef) :-
@@ -463,7 +530,7 @@ calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef) :
     % то взять последнюю ставку из следующего и всех оставшихся движений
     last([Date2-Rate2 | Movements], _-RateLast),
     % и вычислить коэффициент для текущего движения
-    ModernCoef is float( round( RateLast / Rate1 * 10000 ) / 10000 ),
+    catch( ModernCoef is float( round( RateLast / Rate1 * 10000 ) / 10000 ), _, fail),
     !.
 calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef) :-
     % проверить для остальных движений
@@ -522,23 +589,6 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     over_list(Wage, Wages1),
     % то месяц включается в расчет
     !.
-
-% заработки за проверяемый и один из расчетных месяцев
-month_wage_check_calc(Scope, PK, Y-M, Wage, Wage1) :-
-    % заработок за проверяемый месяц
-    cacl_month_wage(Scope, PK, Y, M, Wage),
-    atom_date(Date, date(Y, M, 1)),
-    get_modern_coef(Scope, PK, Date, ModernCoef),
-    % для расчетного месяца
-    get_month_incl(Scope, PK, Y1, M1, Variant1),
-    atom_date(Date1, date(Y1, M1, 1)),
-    get_modern_coef(Scope, PK, Date1, ModernCoef1),
-    ModernCoef =:= ModernCoef1,
-    % по варианту полного месяца
-    wg_full_month_rules(Rules),
-    member(Variant1, Rules),
-    % заработок за расчетный месяц
-    cacl_month_wage(Scope, PK, Y1, M1, Wage1).
 
 % проверка месяца по типу начислений
 check_month_no_bad_type(_, _, []):-
@@ -623,7 +673,7 @@ usr_wg_TblCalLine1(Scope, PK, FirstMoveKey, Date, Duration, HoureType) :-
     once( ( number(HoureType0), HoureType = HoureType0
             ; atom_number(HoureType0, HoureType)
             ; HoureType is 0 ) ).
-            
+
 
 %% engine_loop(+Scope, +Type, +PK)
 %
@@ -695,13 +745,13 @@ engine_loop(Scope, Type, PK) :-
     new_param_list(Scope, TypeNextStep, PairsNextStep),
     !,
     fail.
-    
+
 %
 engine_data_step(in, run).
 engine_data_step(run, query).
 engine_data_step(query, data).
 %
-engine_deal_step(query) :-
+engine_deal_step(run) :-
     debug_mode,
     !.
 engine_deal_step(data).
@@ -747,7 +797,6 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
     get_param_list(Scope, Type, PK, Pairs),
     member(pConnection-Connection, Pairs),
     forall( ( get_sql(Connection, Query, SQL, Params),
-              dynamic(Query), multifile(Query), discontiguous(Query),
               member_list(Params, Pairs),
               prepare_sql(SQL, Params, PrepSQL),
               \+ find_param_list(Scope, TypeNextStep, PK,
@@ -782,7 +831,7 @@ avg_wage_in(EmplKey, DateCalc0) :-
     ),
     new_param_list(Scope, Type, [pEmplKey-EmplKey, pDateCalc-DateCalc]),
     !.
-    
+
 % загрузка общих входных параметров
 avg_wage_in_public(Connection, MonthQty, AvgDays, FeeGroupKey,
                     BadHourType_xid_IN, BadHourType_dbid_IN,
@@ -830,47 +879,41 @@ avg_wage_kb(EmplKey, Connection, PredicateName, Arity, SQL) :-
     !.
 
 % выгрузка выходных данных по сотруднику
-avg_wage_out(EmplKey, AvgWage) :-
+avg_wage_out(EmplKey, AvgWage, Variant) :-
     Scope = wg_avg_wage, Type = out,
     PK = [pEmplKey-EmplKey],
     get_param_list(Scope, Type, PK, Pairs),
-    once( member(pAvgWage-AvgWage, Pairs) ).
+    once( member_list([pAvgWage-AvgWage,pVariant-Variant], Pairs) ).
 
-% выгрузка выходных данных в файл twg_avg_wage_out_params.pl
-avg_wage_out :-
-    working_directory(CWD, CWD),
-    working_directory(_, 'd:/latunov/gd_pl/'),
-    % создать файл
-    open('twg_avg_wage_out_params.pl',
-            write, Stream,
-            [alias(result), encoding(utf8)]),
-    Scope = wg_avg_wage, PK = [pEmplKey-_],
-    forall(
-        % для каждого первичного ключа расчета из входных параметров
-        ( get_param_list(Scope, in, PK, InPairs),
-        % найти временные параметры по месяцам исчисления
-        once( ( find_param_list(Scope, temp, PK, [pMonthIncl-MonthIncl|_])
-              ; MonthIncl = [] )
-            ),
-        % найти выходные параметры
-        find_param_list(Scope, out, PK, OutPairs)
-        ),
-        % вывести результат расчета
-        ( write(Stream, InPairs),
-          nl(Stream),
-          write(Stream, OutPairs),
-          nl(Stream),
-          forall( member(Y-M-Rule, MonthIncl),
-                  ( write(Stream, '  '),
-                  cacl_month_wage(Scope, PK, Y, M, Wage0),
-                  Wage is float( round(Wage0) ),
-                  write(Stream, Y-M-Wage-Rule),
-                  nl(Stream) )
-                ), nl(Stream)
-        )
-          ),
-    close(Stream, [force(true)]),
-    working_directory(_, CWD).
-    
+avg_wage_det(EmplKey, Period, Rule, Wage, ModernWage, ModernCoef, TabDays, TabHoures, NormDays, NormHoures) :-
+    Scope = wg_avg_wage,
+    PK = [pEmplKey-EmplKey],
+    get_periods(Scope, PK, Periods),
+    member(Y-M, Periods),
+    atom_date(Period, date(Y, M, 1)),
+    %
+    once( ( find_param_list(Scope, temp, PK, [pMonthIncl-MonthIncl|_])
+            ; MonthIncl = [] ) ),
+    once( ( member(Y-M-Rule, MonthIncl) ; Rule = none ) ),
+    %
+    once( ( get_param_list(Scope, temp, PK, Pairs1),
+                member_list([pYM-Y-M,
+                            pWage-Wage, pModernWage-ModernWage,
+                            pModernCoef-ModernCoef],
+                    Pairs1)
+          ;
+          [Wage, ModernWage, ModernCoef] = [0, 0, 1]
+        ) ),
+    %
+    once( ( get_param_list(Scope, temp, PK, Pairs2),
+                member_list([pYM-Y-M,
+                            pTDays-TabDays, pTHoures-TabHoures,
+                            pNDays-NormDays, pNHoures-NormHoures],
+                    Pairs2)
+          ;
+          [TabDays, TabHoures, NormDays, NormHoures] = [0, 0, 0, 0]
+        ) ),
+    %
+    true.
  %
 %%

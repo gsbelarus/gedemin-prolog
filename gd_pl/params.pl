@@ -3,7 +3,10 @@
 %:- ensure_loaded(lib).
 /* ground_list, remove_list, member_list */
 
-:- dynamic(param_list/3).
+:-
+    dynamic(param_list/3),
+    multifile(param_list/3),
+    discontiguous(param_list/3).
 
 % param_list(?Scope, ?Type, ?Pairs)
 %   Scope - name of context

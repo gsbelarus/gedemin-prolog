@@ -4,12 +4,19 @@ Option Explicit
 Function pl_twg_avg_wage()
 '
   Dim Creator, PL, Ret
-  'avg_wage_run, avg_wage_sql, avg_wage_out
-  Dim Tv_run, Tv_sql, Tv_out
-  Dim Q_run, Q_sql, Q_out
-  Dim EmplKey, DateCalcFrom, DateCalcTo
+  Dim Pred, Tv
+  'avg_wage_in
+  Dim P_in, Tv_in
+  Dim EmplKey, DateCalc
+  'avg_wage_run, avg_wage_sql
+  Dim Tv_run, Q_run, Tv_sql, Q_sql
+  Dim DateCalcFrom, DateCalcTo
   Dim Connection, PredicateName, Arity, SQL
-  Dim AvgWage
+  'avg_wage_out, avg_wage_det
+  Dim Tv_out, Q_out, Tv_det, Q_det
+  Dim AvgWage, AvgWageRule
+  Dim Period, PeriodRule, Wage, ModernWage, ModernCoef
+  Dim TabDays, TabHoures, NormDays, NormHoures
 
   pl_twg_avg_wage = False
   Set Creator = New TCreator
@@ -27,6 +34,18 @@ Function pl_twg_avg_wage()
   If Not Ret Then
     Exit Function
   End If
+
+  'avg_wage_in(EmplKey, DateCalc)
+  P_in = "avg_wage_in"
+  Set Tv_in = Creator.GetObject(2, "TgsPLTermv", "")
+  '
+  Tv_in.PutInteger 0, 150921260
+  Tv_in.PutAtom 1, "2013-06-01"
+  Ret = PL.Call(P_in, Tv_in)
+  '
+  Tv_in.PutInteger 0, 148441437
+  Tv_in.PutAtom 1, "2013-07-15"
+  Ret = PL.Call(P_in, Tv_in)
 
   'avg_wage (prepare data)
   Ret = PL.Call2("avg_wage")
@@ -63,7 +82,9 @@ Function pl_twg_avg_wage()
                 (SQL, _
                 gdcBaseManager.ReadTransaction, _
                 PredicateName, PredicateName)
-      Ret = PL.Call("avg_wage_kb", Tv_sql)
+      If Ret > 0 Then
+         Ret = PL.Call("avg_wage_kb", Tv_sql)
+      End If
       '
       Q_sql.NextSolution
     Loop
@@ -76,62 +97,53 @@ Function pl_twg_avg_wage()
   'avg_wage (calc result)
   Ret = PL.Call2("avg_wage")
 
-  'avg_wage_out(EmplKey, AvgWage)
-  Set Tv_out = Creator.GetObject(2, "TgsPLTermv", "")
+  'avg_wage_out(EmplKey, AvgWage, AvgWageVariant)
+  Set Tv_out = Creator.GetObject(3, "TgsPLTermv", "")
   Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_out.PredicateName = "avg_wage_out"
   Q_out.Termv = Tv_out
+  'avg_wage_det(EmplKey, Period, PeriodRule, Wage, ModernWage, ModernCoef, TabDays, TabHoures, NormDays, NormHoures)
+  Set Tv_det = Creator.GetObject(10, "TgsPLTermv", "")
+  Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
+  Q_det.PredicateName = "avg_wage_det"
+  Q_det.Termv = Tv_det
   '
   Q_out.OpenQuery
+  pl_twg_avg_wage = (Q_out.EOF = False)
   '
   Do Until Q_out.EOF
     EmplKey = Q_out.Termv.ReadInteger(0)
     AvgWage = Q_out.Termv.ReadFloat(1)
+    AvgWageRule = Q_out.Termv.ReadAtom(2)
+    '
+    Tv_det.Reset
+    Tv_det.PutInteger 0, EmplKey
+    Q_det.OpenQuery
+    '
+    Do Until Q_det.EOF
+      Period = Q_det.Termv.ReadDate(1)
+      PeriodRule = Q_det.Termv.ReadAtom(2)
+      Wage = Q_det.Termv.ReadFloat(3)
+      ModernWage = Q_det.Termv.ReadFloat(4)
+      ModernCoef = Q_det.Termv.ReadFloat(5)
+      TabDays = Q_det.Termv.ReadFloat(6)
+      TabHoures = Q_det.Termv.ReadFloat(7)
+      NormDays = Q_det.Termv.ReadFloat(8)
+      NormHoures = Q_det.Termv.ReadFloat(9)
+      '
+      Q_det.NextSolution
+    Loop
+    Q_det.Close
     '
     Q_out.NextSolution
   Loop
   Q_out.Close
-  
-  pl_twg_avg_wage = True
-'
-  Exit Function
-  
-  '''
-  
-  'Ret = PL.Call2("avg_wage_out")
-
-  'Ret = PL.Call2("assert(usr_wg_FeeType(148586355,147060452,147060446))")
-  'Dim Tv_a, Tv_c
-  'Set Tv_a = Creator.GetObject(1, "TgsPLTermv", "")
-  'Set Tv_c = Creator.GetObject(3, "TgsPLTermv", "")
-  'Tv_c.PutInteger 0, 148586355
-  'Tv_c.PutInteger 1, 147060452
-  'Tv_c.PutInteger 2, 147060446
-  'Call PL.Compound(Tv_a.Term(0), "usr_wg_FeeType", Tv_c)
-  'Ret = PL.Call("assert", Tv_a)
-
-  'param_list
-  Dim Tv_p, Q_p, Scope, PType, Pairs
- 'param_list(Scope, PType, Pairs)
-  Set Tv_p = Creator.GetObject(3, "TgsPLTermv", "")
-  Set Q_p = Creator.GetObject(nil, "TgsPLQuery", "")
-  'Q_p.PredicateName = "param_list"
-  Q_p.PredicateName = "usr_wg_FeeType"
-  Q_p.Termv = Tv_p
   '
-  Tv_p.Reset
-  'Tv_p.PutAtom 1, "debug"
-  Q_p.OpenQuery
-  '
-  Do Until Q_p.EOF
-    Scope = Q_p.Termv.ToString(0)
-    PType = Q_p.Termv.ToString(1)
-    Pairs = Q_p.Termv.ToString(2)
-    '
-    Q_p.NextSolution
-  Loop
-  Q_p.Close
-
-  pl_twg_avg_wage = True
+  If PL.Debug Then
+    Pred = "param_list"
+    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+    PL.SavePredicatesToFile Pred, Tv, Pred
+  End If
 '
 End Function
+

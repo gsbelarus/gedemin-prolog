@@ -32,3 +32,7 @@ pl_run(StringIn, StringOut, "true") :-
     string_to_atom(StringOut, Atom).
 pl_run(_, "", "false").
 
+% pl_assert(+Goal)
+pl_assert(Goal) :-
+    assertz(Goal),
+    !.
