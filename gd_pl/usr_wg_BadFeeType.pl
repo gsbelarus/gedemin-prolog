@@ -1,1 +1,2 @@
+usr_wg_BadFeeType(150921260,150998870).
 usr_wg_BadFeeType(148441437,150998870).

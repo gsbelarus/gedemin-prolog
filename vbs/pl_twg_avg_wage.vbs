@@ -1,10 +1,11 @@
 Option Explicit
 '#include pl_GetScriptIDByName
+'#include pl_TermvToDict
 
 Function pl_twg_avg_wage()
 '
   Dim Creator, PL, Ret
-  Dim Pred, Tv
+  Dim Pred, Tv, Append
   'avg_wage_in
   Dim P_in, Tv_in
   Dim EmplKey, DateCalc
@@ -17,7 +18,9 @@ Function pl_twg_avg_wage()
   Dim AvgWage, AvgWageRule
   Dim Period, PeriodRule, Wage, ModernWage, ModernCoef
   Dim TabDays, TabHoures, NormDays, NormHoures
+  Dim T, T1, T2
 
+  T1 = Timer
   pl_twg_avg_wage = False
   Set Creator = New TCreator
   
@@ -63,25 +66,27 @@ Function pl_twg_avg_wage()
   '
   Q_run.OpenQuery
   '
+  Append = False
+  '
   Do Until Q_run.EOF
-    EmplKey = Q_run.Termv.ReadInteger(0)
-    DateCalcFrom = Q_run.Termv.ReadDate(1)
-    DateCalcTo = Q_run.Termv.ReadDate(2)
+    EmplKey = Tv_run.ReadInteger(0)
+    DateCalcFrom = Tv_run.ReadDate(1)
+    DateCalcTo = Tv_run.ReadDate(2)
     '
     Tv_sql.Reset
     Tv_sql.PutInteger 0, EmplKey
     Q_sql.OpenQuery
     '
     Do Until Q_sql.EOF
-      Connection = Q_sql.Termv.ReadAtom(1)
-      PredicateName = Q_sql.Termv.ReadAtom(2)
-      Arity = Q_sql.Termv.ReadInteger(3)
-      SQL = Q_sql.Termv.ReadAtom(4)
+      Connection = Tv_sql.ReadAtom(1)
+      PredicateName = Tv_sql.ReadAtom(2)
+      Arity = Tv_sql.ReadInteger(3)
+      SQL = Tv_sql.ReadAtom(4)
       '
       Ret =  PL.MakePredicatesOfSQLSelect _
                 (SQL, _
                 gdcBaseManager.ReadTransaction, _
-                PredicateName, PredicateName)
+                PredicateName, PredicateName, Append)
       If Ret > 0 Then
          Ret = PL.Call("avg_wage_kb", Tv_sql)
       End If
@@ -89,6 +94,8 @@ Function pl_twg_avg_wage()
       Q_sql.NextSolution
     Loop
     Q_sql.Close
+    '
+    Append = True
     '
     Q_run.NextSolution
   Loop
@@ -107,29 +114,45 @@ Function pl_twg_avg_wage()
   Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_det.PredicateName = "avg_wage_det"
   Q_det.Termv = Tv_det
+  'dict
+  Dim Dict_det
+  Set Dict_det = CreateObject("Scripting.Dictionary")
   '
   Q_out.OpenQuery
   pl_twg_avg_wage = (Q_out.EOF = False)
   '
   Do Until Q_out.EOF
-    EmplKey = Q_out.Termv.ReadInteger(0)
-    AvgWage = Q_out.Termv.ReadFloat(1)
-    AvgWageRule = Q_out.Termv.ReadAtom(2)
+    EmplKey = Tv_out.ReadInteger(0)
+    AvgWage = Tv_out.ReadFloat(1)
+    AvgWageRule = Tv_out.ReadAtom(2)
     '
     Tv_det.Reset
     Tv_det.PutInteger 0, EmplKey
     Q_det.OpenQuery
     '
     Do Until Q_det.EOF
-      Period = Q_det.Termv.ReadDate(1)
-      PeriodRule = Q_det.Termv.ReadAtom(2)
-      Wage = Q_det.Termv.ReadFloat(3)
-      ModernWage = Q_det.Termv.ReadFloat(4)
-      ModernCoef = Q_det.Termv.ReadFloat(5)
-      TabDays = Q_det.Termv.ReadFloat(6)
-      TabHoures = Q_det.Termv.ReadFloat(7)
-      NormDays = Q_det.Termv.ReadFloat(8)
-      NormHoures = Q_det.Termv.ReadFloat(9)
+      'dict
+      pl_TermvToDict _
+        Tv_det, _
+        Array("", "d Period", "PeriodRule", _
+              "Wage", "ModernWage", "ModernCoef", _
+              "TabDays", "TabHoures", "NormDays", "NormHoures"), _
+        Dict_det
+      Dim Keys, Elem, N
+      Keys = Dict_det.Keys
+      For N = 0 To Dict_det.Count - 1
+        Elem = Dict_det.Item(Keys(N))
+      Next
+      '
+      Period = Tv_det.ReadDate(1)
+      PeriodRule = Tv_det.ReadAtom(2)
+      Wage = Tv_det.ReadFloat(3)
+      ModernWage = Tv_det.ReadFloat(4)
+      ModernCoef = Tv_det.ReadFloat(5)
+      TabDays = Tv_det.ReadFloat(6)
+      TabHoures = Tv_det.ReadFloat(7)
+      NormDays = Tv_det.ReadFloat(8)
+      NormHoures = Tv_det.ReadFloat(9)
       '
       Q_det.NextSolution
     Loop
@@ -144,6 +167,9 @@ Function pl_twg_avg_wage()
     Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
     PL.SavePredicatesToFile Pred, Tv, Pred
   End If
+  
+  T2 = Timer
+  T = T2 - T1
 '
 End Function
 

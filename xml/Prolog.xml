@@ -2,8 +2,8 @@
 <SETTING>
   <SETTING_HEADER
     name="Prolog"
-    version="7"
-    modifydate="31.10.2013 15:17:44"
+    version="10"
+    modifydate="01.11.2013 15:43:16"
     xid="151189620"
     dbid="18175251"
     description="Prolog"
@@ -162,6 +162,21 @@
         dbid="5956463"
         _xid="151189633"
         _dbid="18175251"/>
+      <SETTING_POS
+        category="Функция"
+        objectname="pl_TermvToDict"
+        mastercategory=""
+        mastername=""
+        objectorder="11"
+        withdetail="0"
+        needmodify="1"
+        autoadded="0"
+        objectclass="TgdcFunction"
+        subtype=""
+        xid="151162343"
+        dbid="5956463"
+        _xid="151162344"
+        _dbid="5956463"/>
     </SETTING_POS_LIST>
   </SETTING_HEADER>
   <SETTING_DATA>
@@ -185,41 +200,45 @@
           <ITEM
             index="3"
             objectkey="0"
-            recordid="151189369_18175251"/>
+            recordid="151162343_5956463"/>
           <ITEM
             index="4"
             objectkey="0"
-            recordid="151158415_5956463"/>
+            recordid="151189369_18175251"/>
           <ITEM
             index="5"
             objectkey="0"
-            recordid="151189469_18175251"/>
+            recordid="151158415_5956463"/>
           <ITEM
             index="6"
             objectkey="0"
-            recordid="151189468_18175251"/>
+            recordid="151189469_18175251"/>
           <ITEM
             index="7"
             objectkey="0"
-            recordid="151189470_18175251"/>
+            recordid="151189468_18175251"/>
           <ITEM
             index="8"
             objectkey="0"
-            recordid="151189471_18175251"/>
+            recordid="151189470_18175251"/>
           <ITEM
             index="9"
             objectkey="0"
-            recordid="151189370_18175251"/>
+            recordid="151189471_18175251"/>
           <ITEM
             index="10"
             objectkey="0"
-            recordid="151158402_5956463"/>
+            recordid="151189370_18175251"/>
           <ITEM
             index="11"
             objectkey="0"
-            recordid="151157714_5956463"/>
+            recordid="151158402_5956463"/>
           <ITEM
             index="12"
+            objectkey="0"
+            recordid="151157714_5956463"/>
+          <ITEM
+            index="13"
             objectkey="4"
             recordid="151157712_5956463"/>
         </LOADING_ORDER>
@@ -275,11 +294,12 @@
                 <![CDATA[
                 <L>Option Explicit</L>
                 <L>'#include pl_GetScriptIDByName</L>
+                <L>'#include pl_TermvToDict</L>
                 <L></L>
                 <L>Function pl_twg_avg_wage()</L>
                 <L>'</L>
                 <L>  Dim Creator, PL, Ret</L>
-                <L>  Dim Pred, Tv</L>
+                <L>  Dim Pred, Tv, Append</L>
                 <L>  'avg_wage_in</L>
                 <L>  Dim P_in, Tv_in</L>
                 <L>  Dim EmplKey, DateCalc</L>
@@ -292,7 +312,9 @@
                 <L>  Dim AvgWage, AvgWageRule</L>
                 <L>  Dim Period, PeriodRule, Wage, ModernWage, ModernCoef</L>
                 <L>  Dim TabDays, TabHoures, NormDays, NormHoures</L>
+                <L>  Dim T, T1, T2</L>
                 <L></L>
+                <L>  T1 = Timer</L>
                 <L>  pl_twg_avg_wage = False</L>
                 <L>  Set Creator = New TCreator</L>
                 <L>  </L>
@@ -338,25 +360,27 @@
                 <L>  '</L>
                 <L>  Q_run.OpenQuery</L>
                 <L>  '</L>
+                <L>  Append = False</L>
+                <L>  '</L>
                 <L>  Do Until Q_run.EOF</L>
-                <L>    EmplKey = Q_run.Termv.ReadInteger(0)</L>
-                <L>    DateCalcFrom = Q_run.Termv.ReadDate(1)</L>
-                <L>    DateCalcTo = Q_run.Termv.ReadDate(2)</L>
+                <L>    EmplKey = Tv_run.ReadInteger(0)</L>
+                <L>    DateCalcFrom = Tv_run.ReadDate(1)</L>
+                <L>    DateCalcTo = Tv_run.ReadDate(2)</L>
                 <L>    '</L>
                 <L>    Tv_sql.Reset</L>
                 <L>    Tv_sql.PutInteger 0, EmplKey</L>
                 <L>    Q_sql.OpenQuery</L>
                 <L>    '</L>
                 <L>    Do Until Q_sql.EOF</L>
-                <L>      Connection = Q_sql.Termv.ReadAtom(1)</L>
-                <L>      PredicateName = Q_sql.Termv.ReadAtom(2)</L>
-                <L>      Arity = Q_sql.Termv.ReadInteger(3)</L>
-                <L>      SQL = Q_sql.Termv.ReadAtom(4)</L>
+                <L>      Connection = Tv_sql.ReadAtom(1)</L>
+                <L>      PredicateName = Tv_sql.ReadAtom(2)</L>
+                <L>      Arity = Tv_sql.ReadInteger(3)</L>
+                <L>      SQL = Tv_sql.ReadAtom(4)</L>
                 <L>      '</L>
                 <L>      Ret =  PL.MakePredicatesOfSQLSelect _</L>
                 <L>                (SQL, _</L>
                 <L>                gdcBaseManager.ReadTransaction, _</L>
-                <L>                PredicateName, PredicateName)</L>
+                <L>                PredicateName, PredicateName, Append)</L>
                 <L>      If Ret > 0 Then</L>
                 <L>         Ret = PL.Call("avg_wage_kb", Tv_sql)</L>
                 <L>      End If</L>
@@ -364,6 +388,8 @@
                 <L>      Q_sql.NextSolution</L>
                 <L>    Loop</L>
                 <L>    Q_sql.Close</L>
+                <L>    '</L>
+                <L>    Append = True</L>
                 <L>    '</L>
                 <L>    Q_run.NextSolution</L>
                 <L>  Loop</L>
@@ -382,29 +408,45 @@
                 <L>  Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_det.PredicateName = "avg_wage_det"</L>
                 <L>  Q_det.Termv = Tv_det</L>
+                <L>  'dict</L>
+                <L>  Dim Dict_det</L>
+                <L>  Set Dict_det = CreateObject("Scripting.Dictionary")</L>
                 <L>  '</L>
                 <L>  Q_out.OpenQuery</L>
                 <L>  pl_twg_avg_wage = (Q_out.EOF = False)</L>
                 <L>  '</L>
                 <L>  Do Until Q_out.EOF</L>
-                <L>    EmplKey = Q_out.Termv.ReadInteger(0)</L>
-                <L>    AvgWage = Q_out.Termv.ReadFloat(1)</L>
-                <L>    AvgWageRule = Q_out.Termv.ReadAtom(2)</L>
+                <L>    EmplKey = Tv_out.ReadInteger(0)</L>
+                <L>    AvgWage = Tv_out.ReadFloat(1)</L>
+                <L>    AvgWageRule = Tv_out.ReadAtom(2)</L>
                 <L>    '</L>
                 <L>    Tv_det.Reset</L>
                 <L>    Tv_det.PutInteger 0, EmplKey</L>
                 <L>    Q_det.OpenQuery</L>
                 <L>    '</L>
                 <L>    Do Until Q_det.EOF</L>
-                <L>      Period = Q_det.Termv.ReadDate(1)</L>
-                <L>      PeriodRule = Q_det.Termv.ReadAtom(2)</L>
-                <L>      Wage = Q_det.Termv.ReadFloat(3)</L>
-                <L>      ModernWage = Q_det.Termv.ReadFloat(4)</L>
-                <L>      ModernCoef = Q_det.Termv.ReadFloat(5)</L>
-                <L>      TabDays = Q_det.Termv.ReadFloat(6)</L>
-                <L>      TabHoures = Q_det.Termv.ReadFloat(7)</L>
-                <L>      NormDays = Q_det.Termv.ReadFloat(8)</L>
-                <L>      NormHoures = Q_det.Termv.ReadFloat(9)</L>
+                <L>      'dict</L>
+                <L>      pl_TermvToDict _</L>
+                <L>        Tv_det, _</L>
+                <L>        Array("", "d Period", "PeriodRule", _</L>
+                <L>              "Wage", "ModernWage", "ModernCoef", _</L>
+                <L>              "TabDays", "TabHoures", "NormDays", "NormHoures"), _</L>
+                <L>        Dict_det</L>
+                <L>      Dim Keys, Elem, N</L>
+                <L>      Keys = Dict_det.Keys</L>
+                <L>      For N = 0 To Dict_det.Count - 1</L>
+                <L>        Elem = Dict_det.Item(Keys(N))</L>
+                <L>      Next</L>
+                <L>      '</L>
+                <L>      Period = Tv_det.ReadDate(1)</L>
+                <L>      PeriodRule = Tv_det.ReadAtom(2)</L>
+                <L>      Wage = Tv_det.ReadFloat(3)</L>
+                <L>      ModernWage = Tv_det.ReadFloat(4)</L>
+                <L>      ModernCoef = Tv_det.ReadFloat(5)</L>
+                <L>      TabDays = Tv_det.ReadFloat(6)</L>
+                <L>      TabHoures = Tv_det.ReadFloat(7)</L>
+                <L>      NormDays = Tv_det.ReadFloat(8)</L>
+                <L>      NormHoures = Tv_det.ReadFloat(9)</L>
                 <L>      '</L>
                 <L>      Q_det.NextSolution</L>
                 <L>    Loop</L>
@@ -419,6 +461,9 @@
                 <L>    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")</L>
                 <L>    PL.SavePredicatesToFile Pred, Tv, Pred</L>
                 <L>  End If</L>
+                <L>  </L>
+                <L>  T2 = Timer</L>
+                <L>  T = T2 - T1</L>
                 <L>'</L>
                 <L>End Function</L>
                 ]]>
@@ -427,10 +472,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>31.10.2013 13:58:27</EDITIONDATE>
+              <EDITIONDATE>01.11.2013 15:38:50</EDITIONDATE>
               <_XID>151189369</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>31.10.2013 13:58:27</_MODIFIED>
+              <_MODIFIED>01.11.2013 15:38:50</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -480,6 +525,108 @@
               <_XID>151158419</_XID>
               <_DBID>5956463</_DBID>
               <_MODIFIED>11.10.2013 15:45:28</_MODIFIED>
+              <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
+              <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
+            </ROW>
+            <ROW>
+              <OBJECTNAME>APPLICATION</OBJECTNAME>
+              <ID><R>151162343_5956463</R></ID>
+              <MODULE>UNKNOWN</MODULE>
+              <LANGUAGE>VBScript</LANGUAGE>
+              <NAME>pl_TermvToDict</NAME>
+              <SCRIPT>
+                <![CDATA[
+                <L>Option Explicit</L>
+                <L></L>
+                <L>Sub pl_TermvToDict(ByRef Tv, ByRef Spec, ByRef Dict)</L>
+                <L>'</L>
+                <L>  Dim I, L</L>
+                <L>  Dim SpecSub, SpecType, SpecKey</L>
+                <L>  Dim TermType, TermValue, ForAssign</L>
+                <L></L>
+                <L>  L = CLng(Tv.Size) - 1</L>
+                <L>  If Not L = UBound(Spec) Then</L>
+                <L>    Err.Raise -1, "Размеры вектора термов и массива спецификации не совпадают!"</L>
+                <L>    Exit Sub</L>
+                <L>  End If</L>
+                <L></L>
+                <L>  For I = 0 To L</L>
+                <L>    '</L>
+                <L>    SpecSub = Split(Spec(I))</L>
+                <L>    If UBound(SpecSub) = 0 Then</L>
+                <L>      SpecType = ""</L>
+                <L>      SpecKey = Spec(I)</L>
+                <L>    ElseIf UBound(SpecSub) = 1 Then</L>
+                <L>      SpecType = SpecSub(0)</L>
+                <L>      SpecKey = SpecSub(1)</L>
+                <L>    Else</L>
+                <L>      SpecType = ""</L>
+                <L>      SpecKey = ""</L>
+                <L>    End If</L>
+                <L>    '</L>
+                <L>    If Not SpecKey = "" Then</L>
+                <L>      TermType = Tv.DataType(I)</L>
+                <L>      '</L>
+                <L>      Select Case TermType</L>
+                <L>        Case PL_VARIABLE</L>
+                <L>          ForAssign = False</L>
+                <L>          '</L>
+                <L>        Case PL_ATOM, PL_STRING</L>
+                <L>          If SpecType = "d" Or SpecType = "date" Then</L>
+                <L>            TermValue = Tv.ReadDate(I)</L>
+                <L>          Else</L>
+                <L>            TermValue = Tv.ReadString(I)</L>
+                <L>          End If</L>
+                <L>          ForAssign = True</L>
+                <L>          '</L>
+                <L>        Case PL_INTEGER</L>
+                <L>          TermValue = Tv.ReadInteger(I)</L>
+                <L>          ForAssign = True</L>
+                <L>          '</L>
+                <L>        Case PL_FLOAT</L>
+                <L>          TermValue = Tv.ReadFloat(I)</L>
+                <L>          ForAssign = True</L>
+                <L>          '</L>
+                <L>        Case PL_TERM</L>
+                <L>          TermValue = Tv.ToString(I)</L>
+                <L>          ForAssign = True</L>
+                <L>          '</L>
+                <L>        Case Else</L>
+                <L>          TermValue = Tv.ToString(I)</L>
+                <L>          ForAssign = True</L>
+                <L>          '</L>
+                <L>      End Select</L>
+                <L>      '</L>
+                <L>      If ForAssign Then</L>
+                <L>        If Dict.Exists(SpecKey) Then</L>
+                <L>          Dict(SpecKey) = TermValue</L>
+                <L>        Else</L>
+                <L>          Dict.Add SpecKey, TermValue</L>
+                <L>        End If</L>
+                <L>      End If</L>
+                <L>      '</L>
+                <L>    End If</L>
+                <L>    '</L>
+                <L>  Next</L>
+                <L>'</L>
+                <L>End Sub</L>
+                ]]>
+              </SCRIPT>
+              <PUBLICFUNCTION>1</PUBLICFUNCTION>
+              <MODULECODE><R>1010001_17</R></MODULECODE>
+              <ENTEREDPARAMS>
+                <![CDATA[
+                <L>U0xQUlBSU1QCAAAAVFYCAAAAVFYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QEAAAA</L>
+                <L>U1BFQwQAAABTUEVDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNUBAAAAERJQ1QEAAAA</L>
+                <L>RElDVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==</L>
+                ]]>
+              </ENTEREDPARAMS>
+              <INHERITEDRULE>0</INHERITEDRULE>
+              <USEDEBUGINFO>0</USEDEBUGINFO>
+              <EDITIONDATE>01.11.2013 12:39:13</EDITIONDATE>
+              <_XID>151162343</_XID>
+              <_DBID>5956463</_DBID>
+              <_MODIFIED>01.11.2013 12:39:13</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -1665,8 +1812,14 @@
                 <L>avg_wage_det(EmplKey, Period, Rule, Wage, ModernWage, ModernCoef, TabDays, TabHoures, NormDays, NormHoures) :-</L>
                 <L>    Scope = wg_avg_wage,</L>
                 <L>    PK = [pEmplKey-EmplKey],</L>
-                <L>    get_periods(Scope, PK, Periods),</L>
-                <L>    member(Y-M, Periods),</L>
+                <L>    %</L>
+                <L>    get_param_list(Scope, temp, PK, Pairs),</L>
+                <L>    once( member_list([pYM-Y-M,</L>
+                <L>                        pTDays-TabDays, pTHoures-TabHoures,</L>
+                <L>                        pNDays-NormDays, pNHoures-NormHoures],</L>
+                <L>                    Pairs)</L>
+                <L>        ),</L>
+                <L>    %</L>
                 <L>    atom_date(Period, date(Y, M, 1)),</L>
                 <L>    %</L>
                 <L>    once( ( find_param_list(Scope, temp, PK, [pMonthIncl-MonthIncl|_])</L>
@@ -1682,15 +1835,6 @@
                 <L>          [Wage, ModernWage, ModernCoef] = [0, 0, 1]</L>
                 <L>        ) ),</L>
                 <L>    %</L>
-                <L>    once( ( get_param_list(Scope, temp, PK, Pairs2),</L>
-                <L>                member_list([pYM-Y-M,</L>
-                <L>                            pTDays-TabDays, pTHoures-TabHoures,</L>
-                <L>                            pNDays-NormDays, pNHoures-NormHoures],</L>
-                <L>                    Pairs2)</L>
-                <L>          ;</L>
-                <L>          [TabDays, TabHoures, NormDays, NormHoures] = [0, 0, 0, 0]</L>
-                <L>        ) ),</L>
-                <L>    %</L>
                 <L>    true.</L>
                 <L> %</L>
                 <L>%%</L>
@@ -1700,10 +1844,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>31.10.2013 13:50:53</EDITIONDATE>
+              <EDITIONDATE>01.11.2013 11:28:50</EDITIONDATE>
               <_XID>151189370</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>31.10.2013 13:50:53</_MODIFIED>
+              <_MODIFIED>01.11.2013 11:28:50</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -2134,12 +2278,12 @@
                 <L>  Ret = PL.MakePredicatesOfSQLSelect( _</L>
                 <L>          SQL_contact, _</L>
                 <L>          gdcBaseManager.ReadTransaction, _</L>
-                <L>          "gd_contact", "contact")</L>
+                <L>          "gd_contact", "contact", False)</L>
                 <L></L>
                 <L>  Ret = PL.MakePredicatesOfSQLSelect( _</L>
                 <L>          SQL_place, _</L>
                 <L>          gdcBaseManager.ReadTransaction, _</L>
-                <L>          "gd_place", "place")</L>
+                <L>          "gd_place", "place", False)</L>
                 <L></L>
                 <L>  Set Termv = Creator.GetObject(2, "TgsPLTermv", "")</L>
                 <L>  Ret = PL.LoadScript(pl_GetScriptIDByName("blog_2013_08_29"))</L>
@@ -2184,7 +2328,7 @@
                 <L>  Ret = PL.MakePredicatesOfDataSet( _</L>
                 <L>          CDS, _</L>
                 <L>          "City,Name", _</L>
-                <L>          "gd_bycity", "bycity")</L>
+                <L>          "gd_bycity", "bycity", False)</L>
                 <L></L>
                 <L>  Ret = PL.Call2("dynamic(gd_bycity/2)")</L>
                 <L>  Termv.Reset</L>
@@ -2201,7 +2345,7 @@
                 <L>          "TgdcCurr", "", "ByID", Array(200010, 200020), nil, _</L>
                 <L>          "ID,Name", _</L>
                 <L>          gdcBaseManager.ReadTransaction, _</L>
-                <L>          "gd_curr", "curr")</L>
+                <L>          "gd_curr", "curr", False)</L>
                 <L></L>
                 <L>  Termv.Reset</L>
                 <L>  Termv.PutInteger 0, 200020</L>
@@ -2230,10 +2374,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>30.10.2013 10:52:45</EDITIONDATE>
+              <EDITIONDATE>01.11.2013 15:29:27</EDITIONDATE>
               <_XID>151157714</_XID>
               <_DBID>5956463</_DBID>
-              <_MODIFIED>30.10.2013 10:52:45</_MODIFIED>
+              <_MODIFIED>01.11.2013 15:29:27</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -2393,12 +2537,12 @@
               <ISLOCALEXECUTE>0</ISLOCALEXECUTE>
               <ISREBUILD>0</ISREBUILD>
               <SHORTCUT>0</SHORTCUT>
-              <EDITIONDATE>30.10.2013 10:52:45</EDITIONDATE>
+              <EDITIONDATE>01.11.2013 15:29:27</EDITIONDATE>
               <DISPLAYINMENU>1</DISPLAYINMENU>
               <RUNONLOGIN>0</RUNONLOGIN>
               <_XID>151157712</_XID>
               <_DBID>5956463</_DBID>
-              <_MODIFIED>30.10.2013 10:52:45</_MODIFIED>
+              <_MODIFIED>01.11.2013 15:29:27</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>

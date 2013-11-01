@@ -888,8 +888,14 @@ avg_wage_out(EmplKey, AvgWage, Variant) :-
 avg_wage_det(EmplKey, Period, Rule, Wage, ModernWage, ModernCoef, TabDays, TabHoures, NormDays, NormHoures) :-
     Scope = wg_avg_wage,
     PK = [pEmplKey-EmplKey],
-    get_periods(Scope, PK, Periods),
-    member(Y-M, Periods),
+    %
+    get_param_list(Scope, temp, PK, Pairs),
+    once( member_list([pYM-Y-M,
+                        pTDays-TabDays, pTHoures-TabHoures,
+                        pNDays-NormDays, pNHoures-NormHoures],
+                    Pairs)
+        ),
+    %
     atom_date(Period, date(Y, M, 1)),
     %
     once( ( find_param_list(Scope, temp, PK, [pMonthIncl-MonthIncl|_])
@@ -903,15 +909,6 @@ avg_wage_det(EmplKey, Period, Rule, Wage, ModernWage, ModernCoef, TabDays, TabHo
                     Pairs1)
           ;
           [Wage, ModernWage, ModernCoef] = [0, 0, 1]
-        ) ),
-    %
-    once( ( get_param_list(Scope, temp, PK, Pairs2),
-                member_list([pYM-Y-M,
-                            pTDays-TabDays, pTHoures-TabHoures,
-                            pNDays-NormDays, pNHoures-NormHoures],
-                    Pairs2)
-          ;
-          [TabDays, TabHoures, NormDays, NormHoures] = [0, 0, 0, 0]
         ) ),
     %
     true.
