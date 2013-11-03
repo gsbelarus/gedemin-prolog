@@ -11,17 +11,17 @@ init_sql:-
 
 gd_pl_ds(wg_avg_wage, in, usr_wg_MovementLine, 8,
     [
-    fEmplKey-integer, fDocumentKey-integer, fFirstMove-integer,
+    fEmplKey-integer, fDocumentKey-integer, fFirstMoveKey-integer,
     fDateBegin-date, fScheduleKey-integer, fMovementType-integer,
     fRate-float, fListNumber-string
     ]).
-% usr_wg_MovementLine(EmplKey, DocumentKey, FirstMove, DateBegin, ScheduleKey,
+% usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey, DateBegin, ScheduleKey,
 %   MovementType, Rate, ListNumber)
 get_sql(bogem, usr_wg_MovementLine/8,
 'SELECT \c
   ml.USR$EMPLKEY, \c
   ml.DOCUMENTKEY, \c
-  ml.USR$FIRSTMOVE, \c
+  ml.USR$FIRSTMOVE AS FirstMoveKey, \c
   ml.USR$DATEBEGIN, \c
   ml.USR$SCHEDULEKEY, \c
   ml.USR$MOVEMENTTYPE, \c
@@ -31,22 +31,26 @@ FROM \c
   USR$WG_MOVEMENTLINE ml \c
 WHERE \c
   ml.USR$EMPLKEY = pEmplKey \c
+  AND \c
+  ml.USR$FIRSTMOVE = pFirstMoveKey \c
 ORDER BY \c
   ml.USR$EMPLKEY, \c
+  ml.USR$FIRSTMOVE, \c
   ml.USR$DATEBEGIN \c
 ',
-[pEmplKey-_]
+[pEmplKey-_, pFirstMoveKey-_]
     ).
 
-gd_pl_ds(wg_avg_wage, in, usr_wg_TblCalDay, 5,
+gd_pl_ds(wg_avg_wage, in, wg_TblCalDay, 6,
     [
-    fEmplKey-integer, fTheDay-date, fWDuration-float,
+    fEmplKey-integer, fFirstMoveKey-integer, fTheDay-date, fWDuration-float,
     fWorkDay-integer, fTblCalKey-integer
     ]).
-% usr_wg_TblCalDay(EmplKey, TheDay, WDuration, WorkDay, TblCalKey)
-get_sql(bogem, usr_wg_TblCalDay/5,
+% wg_TblCalDay(EmplKey, FirstMoveKey, TheDay, WDuration, WorkDay, TblCalKey)
+get_sql(bogem, wg_TblCalDay/6,
 'SELECT \c
   pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
   tcd.THEDAY, \c
   tcd.WDURATION, \c
   tcd.WORKDAY, \c
@@ -61,7 +65,7 @@ ORDER BY \c
   tcd.TBLCALKEY, \c
   tcd.THEDAY \c
 ',
-[pEmplKey-_, pDateNormFrom-_, pDateNormTo-_]
+[pEmplKey-_, pFirstMoveKey-_, pDateNormFrom-_, pDateNormTo-_]
     ).
 
 gd_pl_ds(wg_avg_wage, in, usr_wg_TblCalLine, 5,
@@ -85,14 +89,17 @@ JOIN \c
 WHERE \c
   tc.USR$EMPLKEY = pEmplKey \c
   AND \c
+  tc.USR$FIRSTMOVEKEY = pFirstMoveKey \c
+  AND \c
   tcl.USR$DATE >= CAST(\'pDateCalcFrom\' AS DATE) \c
   AND \c
   tcl.USR$DATE < CAST(\'pDateCalcTo\' AS DATE) \c
 ORDER BY \c
   tc.USR$EMPLKEY, \c
+  tc.USR$FIRSTMOVEKEY, \c
   tcl.USR$DATE \c
 ',
-[pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
 gd_pl_ds(wg_avg_wage, in, usr_wg_TblCal_FlexLine, 65,
@@ -148,28 +155,34 @@ JOIN \c
 WHERE \c
   tcfl.USR$EMPLKEY = pEmplKey \c
   AND \c
+  tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey \c
+  AND \c
   t.USR$DATEBEGIN >= CAST(\'pDateCalcFrom\' AS DATE) \c
   AND \c
   t.USR$DATEBEGIN < CAST(\'pDateCalcTo\' AS DATE) \c
  ORDER BY \c
    tcfl.USR$EMPLKEY, \c
+   tcfl.USR$FIRSTMOVEKEY, \c
    t.USR$DATEBEGIN \c
 ',
-[pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage, in, usr_wg_HourType, 11,
+gd_pl_ds(wg_avg_wage, in, usr_wg_HourType, 12,
     [
-    fEmplKey-integer, fID-integer, fCode-string, fDigitCode-string,
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fID-integer, fCode-string, fDigitCode-string,
     fDescription-string, fIsWorked-integer, fShortName-string,
     fForCalFlex-integer, fForOverTime-integer, fForFlex-integer,
     fAbsentEEIsm-integer
     ]).
-% usr_wg_HourType(EmplKey, ID, Code, DigitCode, Description, IsWorked, ShortName,
+% usr_wg_HourType(EmplKey, FirstMoveKey,
+%   ID, Code, DigitCode, Description, IsWorked, ShortName,
 %   ForCalFlex, ForOverTime, ForFlex, AbsentEEIsm)
-get_sql(bogem, usr_wg_HourType/11,
+get_sql(bogem, usr_wg_HourType/12,
 'SELECT \c
   pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
   ht.ID, \c
   ht.USR$CODE, \c
   ht.USR$DIGITCODE, \c
@@ -183,16 +196,16 @@ get_sql(bogem, usr_wg_HourType/11,
 FROM \c
   USR$WG_HOURTYPE ht \c
 ',
-[pEmplKey-_]
+[pEmplKey-_, pFirstMoveKey-_]
     ).
 
-gd_pl_ds(wg_avg_wage, in, wg_TblCharge, 5,
+gd_pl_ds(wg_avg_wage, in, usr_wg_TblCharge, 5,
     [
     fEmplKey-integer, fFirstMoveKey-integer, fDateBegin-date,
     fDebit-float, fFeeTypeKey-integer
     ]).
-% wg_TblCharge(EmplKey, FirstMoveKey, DateBegin, Debit, FeeTypeKey)
-get_sql(bogem, wg_TblCharge/5,
+% usr_wg_TblCharge(EmplKey, FirstMoveKey, DateBegin, Debit, FeeTypeKey)
+get_sql(bogem, usr_wg_TblCharge/5,
 'SELECT \c
   tch.USR$EMPLKEY, \c
   tch.USR$FIRSTMOVEKEY, \c
@@ -213,17 +226,19 @@ ORDER BY \c
   tch.USR$EMPLKEY, \c
   tch.USR$DATEBEGIN \c
 ',
-[pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage, in, usr_wg_FeeType, 3,
+gd_pl_ds(wg_avg_wage, in, usr_wg_FeeType, 4,
     [
-    fEmplKey-integer, fFeeGroupKey-integer, fFeeTypeKey-integer
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fFeeGroupKey-integer, fFeeTypeKey-integer
     ]).
 % usr_wg_FeeType(EmplKey, FeeGroupKey, FeeTypeKey)
-get_sql(bogem, usr_wg_FeeType/3,
+get_sql(bogem, usr_wg_FeeType/4,
 'SELECT \c
   pEmplKey AS EmplKey,  \c
+  pFirstMoveKey AS FirstMoveKey, \c
   ft.USR$WG_FEEGROUPKEY, \c
   ft.USR$WG_FEETYPEKEY \c
 FROM \c
@@ -231,17 +246,17 @@ FROM \c
 WHERE
   ft.USR$WG_FEEGROUPKEY = pFeeGroupKey \c
 ',
-[pEmplKey-_, pFeeGroupKey-_]
+[pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey-_]
     ).
 
-gd_pl_ds(wg_avg_wage, in, usr_wg_BadHourType, 2,
+gd_pl_ds(wg_avg_wage, in, usr_wg_BadHourType, 3,
     [
-    fEmplKey-integer, fID-integer
+    fEmplKey-integer, fFirstMoveKey-integer, fID-integer
     ]).
 % usr_wg_BadHourType(EmplKey, ID)
-get_sql(bogem, usr_wg_BadHourType/2,
+get_sql(bogem, usr_wg_BadHourType/3,
 'SELECT \c
-  pEmplKey AS EmplKey, id \c
+  pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c
 FROM USR$WG_HOURTYPE \c
 WHERE id IN \c
 (SELECT id FROM gd_ruid \c
@@ -249,17 +264,17 @@ WHERE xid IN (pBadHourType_xid_IN) \c
 AND dbid IN (pBadHourType_dbid_IN) \c
 ) \c
 ',
-[pEmplKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid_IN-_]
+[pEmplKey-_, pFirstMoveKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid_IN-_]
     ).
 
-gd_pl_ds(wg_avg_wage, in, usr_wg_BadFeeType, 2,
+gd_pl_ds(wg_avg_wage, in, usr_wg_BadFeeType, 3,
     [
-    fEmplKey-integer, fID-integer
+    fEmplKey-integer, fFirstMoveKey-integer, fID-integer
     ]).
 % usr_wg_BadFeeType(EmplKey, ID)
-get_sql(bogem, usr_wg_BadFeeType/2,
+get_sql(bogem, usr_wg_BadFeeType/3,
 'SELECT \c
-  pEmplKey AS EmplKey, id \c
+  pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c
 FROM USR$WG_FEETYPE \c
 WHERE id IN \c
 (SELECT id FROM gd_ruid \c
@@ -267,7 +282,7 @@ WHERE xid IN (pBadFeeType_xid_IN) \c
 AND dbid IN (pBadFeeType_dbid_IN) \c
 ) \c
 ',
-[pEmplKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid_IN-_]
+[pEmplKey-_, pFirstMoveKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid_IN-_]
     ).
 
 %
