@@ -1,6 +1,6 @@
 Option Explicit
 
-Sub pl_TermvToDict(ByRef Tv, ByRef Spec, ByRef Dict)
+Sub pl_TermvToDict(ByRef Tv, ByVal Spec, ByRef Dict)
 '
   Dim I, L
   Dim SpecSub, SpecType, SpecKey
@@ -14,19 +14,18 @@ Sub pl_TermvToDict(ByRef Tv, ByRef Spec, ByRef Dict)
 
   For I = 0 To L
     '
-    SpecSub = Split(Spec(I))
+    SpecType = ""
+    SpecKey = ""
+    SpecSub = Split(Spec(I), ":")
+    '
     If UBound(SpecSub) = 0 Then
-      SpecType = ""
       SpecKey = Spec(I)
-    ElseIf UBound(SpecSub) = 1 Then
+    ElseIf UBound(SpecSub) > 0 Then
       SpecType = SpecSub(0)
       SpecKey = SpecSub(1)
-    Else
-      SpecType = ""
-      SpecKey = ""
     End If
     '
-    If Not SpecKey = "" Then
+    If Not (SpecType = "-" Or SpecKey = "") Then
       TermType = Tv.DataType(I)
       '
       Select Case TermType
