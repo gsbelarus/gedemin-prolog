@@ -25,9 +25,12 @@
             clean_data_spec/0,
             init_data/0,
             clean_data/0,
-            get_data/2,         % +Name, ?FieldValuePairs
-            get_data/3,         % +Type, +Name, ?FieldValuePairs
-            get_data/4          % +Scope, +Type, +Name, ?FieldValuePairs
+            get_data/2,     % +Name, ?FieldValuePairs
+            get_data/3,       % +Type, +Name, ?FieldValuePairs
+            get_data/4,         % +Scope, +Type, +Name, ?FieldValuePairs
+            del_data/2,     % +Name, ?FieldValuePairs
+            del_data/3,       % +Type, +Name, ?FieldValuePairs
+            del_data/4          % +Scope, +Type, +Name, ?FieldValuePairs
             ]).
 
 % first, call init_data_spec then assert spec facts gd_pl_ds
@@ -90,8 +93,28 @@ get_data(Scope, Type, Name, FieldValuePairs) :-
     check_fields(FieldValuePairs, FieldTypePairs),
     prepare_args(FieldTypePairs, FieldArgPairs, Args),
     Term =.. [Name|Args],
-    catch( call( user:Term ), _, fail ),
+    catch( user:Term, _, fail ),
     unify_args(FieldValuePairs, FieldArgPairs).
+
+%
+del_data(Name, FieldValuePairs) :-
+    del_data(global, none, Name, FieldValuePairs).
+del_data(Type, Name, FieldValuePairs) :-
+    del_data(global, Type, Name, FieldValuePairs).
+del_data(Scope, Type, Name, FieldValuePairs) :-
+    ground(Scope), ground(Type), ground(Name),
+    get_data_spec(Scope, Type, Name, Arity, FieldTypePairs),
+    catch( length(FieldTypePairs, Arity), _, fail ),
+    current_functor(Name, Arity),
+    check_fields(FieldValuePairs, FieldTypePairs),
+    prepare_args(FieldTypePairs, FieldArgPairs, Args),
+    Term =.. [Name|Args],
+    catch( user:Term, _, fail ),
+    unify_args(FieldValuePairs, FieldArgPairs),
+    retractall( user:Term ),
+    fail.
+del_data(_, _, _, _) :-
+    !.
 
 %
 check_fields([], _) :-

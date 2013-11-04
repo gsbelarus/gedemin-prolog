@@ -2,8 +2,8 @@
 <SETTING>
   <SETTING_HEADER
     name="Prolog"
-    version="10"
-    modifydate="01.11.2013 15:43:16"
+    version="16"
+    modifydate="04.11.2013 15:32:02"
     xid="151189620"
     dbid="18175251"
     description="Prolog"
@@ -177,6 +177,21 @@
         dbid="5956463"
         _xid="151162344"
         _dbid="5956463"/>
+      <SETTING_POS
+        category="Функция"
+        objectname="pl_DictToTermv"
+        mastercategory=""
+        mastername=""
+        objectorder="12"
+        withdetail="0"
+        needmodify="1"
+        autoadded="0"
+        objectclass="TgdcFunction"
+        subtype=""
+        xid="151162345"
+        dbid="5956463"
+        _xid="151162346"
+        _dbid="5956463"/>
     </SETTING_POS_LIST>
   </SETTING_HEADER>
   <SETTING_DATA>
@@ -204,41 +219,45 @@
           <ITEM
             index="4"
             objectkey="0"
-            recordid="151189369_18175251"/>
+            recordid="151162345_5956463"/>
           <ITEM
             index="5"
             objectkey="0"
-            recordid="151158415_5956463"/>
+            recordid="151189369_18175251"/>
           <ITEM
             index="6"
             objectkey="0"
-            recordid="151189469_18175251"/>
+            recordid="151158415_5956463"/>
           <ITEM
             index="7"
             objectkey="0"
-            recordid="151189468_18175251"/>
+            recordid="151189469_18175251"/>
           <ITEM
             index="8"
             objectkey="0"
-            recordid="151189470_18175251"/>
+            recordid="151189468_18175251"/>
           <ITEM
             index="9"
             objectkey="0"
-            recordid="151189471_18175251"/>
+            recordid="151189470_18175251"/>
           <ITEM
             index="10"
             objectkey="0"
-            recordid="151189370_18175251"/>
+            recordid="151189471_18175251"/>
           <ITEM
             index="11"
             objectkey="0"
-            recordid="151158402_5956463"/>
+            recordid="151189370_18175251"/>
           <ITEM
             index="12"
             objectkey="0"
-            recordid="151157714_5956463"/>
+            recordid="151158402_5956463"/>
           <ITEM
             index="13"
+            objectkey="0"
+            recordid="151157714_5956463"/>
+          <ITEM
+            index="14"
             objectkey="4"
             recordid="151157712_5956463"/>
         </LOADING_ORDER>
@@ -294,15 +313,18 @@
                 <![CDATA[
                 <L>Option Explicit</L>
                 <L>'#include pl_GetScriptIDByName</L>
+                <L>'#include pl_DictToTermv</L>
                 <L>'#include pl_TermvToDict</L>
                 <L></L>
                 <L>Function pl_twg_avg_wage()</L>
                 <L>'</L>
                 <L>  Dim Creator, PL, Ret</L>
                 <L>  Dim Pred, Tv, Append</L>
+                <L>  'avg_wage</L>
+                <L>  Dim Tv_main, Q_main</L>
                 <L>  'avg_wage_in</L>
-                <L>  Dim P_in, Tv_in</L>
-                <L>  Dim EmplKey, DateCalc</L>
+                <L>  Dim P_in, Tv_in, P_clean, Tv_clean</L>
+                <L>  Dim EmplKey, FirstMoveKey, DateCalc</L>
                 <L>  'avg_wage_run, avg_wage_sql</L>
                 <L>  Dim Tv_run, Q_run, Tv_sql, Q_sql</L>
                 <L>  Dim DateCalcFrom, DateCalcTo</L>
@@ -325,35 +347,67 @@
                 <L>    Exit Function</L>
                 <L>  End If</L>
                 <L>  'debug</L>
-                <L>  PL.Debug = False</L>
+                <L>  PL.Debug = true</L>
                 <L>  'load</L>
                 <L>  Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))</L>
                 <L>  If Not Ret Then</L>
                 <L>    Exit Function</L>
                 <L>  End If</L>
                 <L></L>
-                <L>  'avg_wage_in(EmplKey, DateCalc)</L>
+                <L>  'avg_wage_in(EmplKey, FirstMoveKey, DateCalc)</L>
                 <L>  P_in = "avg_wage_in"</L>
-                <L>  Set Tv_in = Creator.GetObject(2, "TgsPLTermv", "")</L>
+                <L>  Set Tv_in = Creator.GetObject(4, "TgsPLTermv", "")</L>
+                <L>  'dict in</L>
+                <L>  Dim Dict_in</L>
+                <L>  Set Dict_in = CreateObject("Scripting.Dictionary")</L>
                 <L>  '</L>
-                <L>  Tv_in.PutInteger 0, 150921260</L>
-                <L>  Tv_in.PutAtom 1, "2013-06-01"</L>
+                <L>  Dict_in.Add "EmplKey", 150921260</L>
+                <L>  Dict_in.Add "FirstMoveKey", 150977072</L>
+                <L>  Dict_in.Add "DateCalc", "2013-06-01"</L>
+                <L>  Dict_in.Add "MonthOffset", 0</L>
+                <L>  pl_DictToTermv _</L>
+                <L>    Dict_in, _</L>
+                <L>    Array("i:EmplKey", "i:FirstMoveKey", "d:DateCalc", "i:MonthOffset"), _</L>
+                <L>    Tv_in</L>
+                <L>  'Tv_in.PutInteger 0, 150921260</L>
+                <L>  'Tv_in.PutInteger 1, 150977072</L>
+                <L>  'Tv_in.PutDate 2, "2013-06-01"</L>
+                <L>  'Tv_in.PutInteger 3, 0</L>
                 <L>  Ret = PL.Call(P_in, Tv_in)</L>
                 <L>  '</L>
-                <L>  Tv_in.PutInteger 0, 148441437</L>
-                <L>  Tv_in.PutAtom 1, "2013-07-15"</L>
+                <L>  Dict_in("EmplKey") = 148441437</L>
+                <L>  Dict_in("FirstMoveKey") = 148454058</L>
+                <L>  Dict_in("DateCalc") = "2013-07-15"</L>
+                <L>  Dict_in("MonthOffset") = 0</L>
+                <L>  pl_DictToTermv _</L>
+                <L>    Dict_in, _</L>
+                <L>    Array("i:EmplKey", "i:FirstMoveKey", "d:DateCalc", "i:MonthOffset"), _</L>
+                <L>    Tv_in</L>
+                <L>  'Tv_in.PutInteger 0, 148441437</L>
+                <L>  'Tv_in.PutInteger 1, 148454058</L>
+                <L>  'Tv_in.PutDate 2, "2013-07-15"</L>
+                <L>  'Tv_in.PutInteger 3, 0</L>
                 <L>  Ret = PL.Call(P_in, Tv_in)</L>
                 <L></L>
-                <L>  'avg_wage (prepare data)</L>
-                <L>  Ret = PL.Call2("avg_wage")</L>
+                <L>  'avg_wage(Stage)</L>
+                <L>  Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")</L>
+                <L>  Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")</L>
+                <L>  Q_main.PredicateName = "avg_wage"</L>
+                <L>  Q_main.Termv = Tv_main</L>
+                <L>  'avg_wage(1) - prepare data</L>
+                <L>  Tv_main.PutInteger 0, 1</L>
+                <L>  Q_main.OpenQuery</L>
+                <L>  Ret = Not Q_main.EOF</L>
+                <L>  Q_main.Close</L>
+                <L>  'Ret = PL.Call2("avg_wage(1)")</L>
                 <L></L>
-                <L>  'avg_wage_run(EmplKey, DateCalcFrom, DateCalcTo)</L>
-                <L>  Set Tv_run = Creator.GetObject(3, "TgsPLTermv", "")</L>
+                <L>  'avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)</L>
+                <L>  Set Tv_run = Creator.GetObject(4, "TgsPLTermv", "")</L>
                 <L>  Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_run.PredicateName = "avg_wage_run"</L>
                 <L>  Q_run.Termv = Tv_run</L>
-                <L>  'avg_wage_sql(EmplKey, Connection, PredicateName, Arity, SQL)</L>
-                <L>  Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")</L>
+                <L>  'avg_wage_sql(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL)</L>
+                <L>  Set Tv_sql = Creator.GetObject(6, "TgsPLTermv", "")</L>
                 <L>  Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_sql.PredicateName = "avg_wage_sql"</L>
                 <L>  Q_sql.Termv = Tv_sql</L>
@@ -364,18 +418,20 @@
                 <L>  '</L>
                 <L>  Do Until Q_run.EOF</L>
                 <L>    EmplKey = Tv_run.ReadInteger(0)</L>
-                <L>    DateCalcFrom = Tv_run.ReadDate(1)</L>
-                <L>    DateCalcTo = Tv_run.ReadDate(2)</L>
+                <L>    FirstMoveKey = Tv_run.ReadInteger(1)</L>
+                <L>    DateCalcFrom = Tv_run.ReadDate(2)</L>
+                <L>    DateCalcTo = Tv_run.ReadDate(3)</L>
                 <L>    '</L>
                 <L>    Tv_sql.Reset</L>
                 <L>    Tv_sql.PutInteger 0, EmplKey</L>
+                <L>    Tv_sql.PutInteger 1, FirstMoveKey</L>
                 <L>    Q_sql.OpenQuery</L>
                 <L>    '</L>
                 <L>    Do Until Q_sql.EOF</L>
-                <L>      Connection = Tv_sql.ReadAtom(1)</L>
-                <L>      PredicateName = Tv_sql.ReadAtom(2)</L>
-                <L>      Arity = Tv_sql.ReadInteger(3)</L>
-                <L>      SQL = Tv_sql.ReadAtom(4)</L>
+                <L>      Connection = Tv_sql.ReadAtom(2)</L>
+                <L>      PredicateName = Tv_sql.ReadAtom(3)</L>
+                <L>      Arity = Tv_sql.ReadInteger(4)</L>
+                <L>      SQL = Tv_sql.ReadAtom(5)</L>
                 <L>      '</L>
                 <L>      Ret =  PL.MakePredicatesOfSQLSelect _</L>
                 <L>                (SQL, _</L>
@@ -395,58 +451,81 @@
                 <L>  Loop</L>
                 <L>  Q_run.Close</L>
                 <L></L>
-                <L>  'avg_wage (calc result)</L>
-                <L>  Ret = PL.Call2("avg_wage")</L>
+                <L>  'avg_wage_clean(EmplKey, FirstMoveKey)</L>
+                <L>  P_clean = "avg_wage_clean"</L>
+                <L>  Set Tv_clean = Creator.GetObject(2, "TgsPLTermv", "")</L>
+                <L>  Tv_clean.PutInteger 0, 150921260</L>
+                <L>  Tv_clean.PutInteger 1, 150977072</L>
+                <L>  'Ret = PL.Call(P_clean, Tv_clean)</L>
                 <L></L>
-                <L>  'avg_wage_out(EmplKey, AvgWage, AvgWageVariant)</L>
-                <L>  Set Tv_out = Creator.GetObject(3, "TgsPLTermv", "")</L>
+                <L>  'save param_list</L>
+                <L>  If PL.Debug Then</L>
+                <L>    Pred = "param_list"</L>
+                <L>    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")</L>
+                <L>    PL.SavePredicatesToFile Pred, Tv, Pred</L>
+                <L>  End If</L>
+                <L></L>
+                <L>  'avg_wage(2) - calc result</L>
+                <L>  Tv_main.PutInteger 0, 2</L>
+                <L>  Q_main.OpenQuery</L>
+                <L>  Ret = Not Q_main.EOF</L>
+                <L>  Q_main.Close</L>
+                <L>  'Ret = PL.Call2("avg_wage(2)")</L>
+                <L></L>
+                <L>  'avg_wage_out(EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)</L>
+                <L>  Set Tv_out = Creator.GetObject(4, "TgsPLTermv", "")</L>
                 <L>  Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_out.PredicateName = "avg_wage_out"</L>
                 <L>  Q_out.Termv = Tv_out</L>
-                <L>  'avg_wage_det(EmplKey, Period, PeriodRule, Wage, ModernWage, ModernCoef, TabDays, TabHoures, NormDays, NormHoures)</L>
-                <L>  Set Tv_det = Creator.GetObject(10, "TgsPLTermv", "")</L>
+                <L>  'avg_wage_det(EmplKey, FirstMoveKey,</L>
+                <L>  '   Period, PeriodRule, Wage, ModernWage, ModernCoef,</L>
+                <L>  '   TabDays, TabHoures, NormDays, NormHoures)</L>
+                <L>  Set Tv_det = Creator.GetObject(11, "TgsPLTermv", "")</L>
                 <L>  Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")</L>
                 <L>  Q_det.PredicateName = "avg_wage_det"</L>
                 <L>  Q_det.Termv = Tv_det</L>
-                <L>  'dict</L>
+                <L>  'dict det</L>
                 <L>  Dim Dict_det</L>
                 <L>  Set Dict_det = CreateObject("Scripting.Dictionary")</L>
                 <L>  '</L>
                 <L>  Q_out.OpenQuery</L>
-                <L>  pl_twg_avg_wage = (Q_out.EOF = False)</L>
+                <L>  pl_twg_avg_wage = Not Q_out.EOF</L>
                 <L>  '</L>
                 <L>  Do Until Q_out.EOF</L>
                 <L>    EmplKey = Tv_out.ReadInteger(0)</L>
-                <L>    AvgWage = Tv_out.ReadFloat(1)</L>
-                <L>    AvgWageRule = Tv_out.ReadAtom(2)</L>
+                <L>    FirstMoveKey = Tv_out.ReadInteger(1)</L>
+                <L>    AvgWage = Tv_out.ReadFloat(2)</L>
+                <L>    AvgWageRule = Tv_out.ReadAtom(3)</L>
                 <L>    '</L>
                 <L>    Tv_det.Reset</L>
                 <L>    Tv_det.PutInteger 0, EmplKey</L>
+                <L>    Tv_det.PutInteger 1, FirstMoveKey</L>
                 <L>    Q_det.OpenQuery</L>
                 <L>    '</L>
                 <L>    Do Until Q_det.EOF</L>
-                <L>      'dict</L>
+                <L>      'dict det</L>
                 <L>      pl_TermvToDict _</L>
                 <L>        Tv_det, _</L>
-                <L>        Array("", "d Period", "PeriodRule", _</L>
-                <L>              "Wage", "ModernWage", "ModernCoef", _</L>
+                <L>        Array("EmplKey", "FirstMoveKey", _</L>
+                <L>              "d:Period", "PeriodRule", "Wage", "ModernWage", "ModernCoef", _</L>
                 <L>              "TabDays", "TabHoures", "NormDays", "NormHoures"), _</L>
                 <L>        Dict_det</L>
+                <L>      '</L>
                 <L>      Dim Keys, Elem, N</L>
                 <L>      Keys = Dict_det.Keys</L>
                 <L>      For N = 0 To Dict_det.Count - 1</L>
                 <L>        Elem = Dict_det.Item(Keys(N))</L>
                 <L>      Next</L>
                 <L>      '</L>
-                <L>      Period = Tv_det.ReadDate(1)</L>
-                <L>      PeriodRule = Tv_det.ReadAtom(2)</L>
-                <L>      Wage = Tv_det.ReadFloat(3)</L>
-                <L>      ModernWage = Tv_det.ReadFloat(4)</L>
-                <L>      ModernCoef = Tv_det.ReadFloat(5)</L>
-                <L>      TabDays = Tv_det.ReadFloat(6)</L>
-                <L>      TabHoures = Tv_det.ReadFloat(7)</L>
-                <L>      NormDays = Tv_det.ReadFloat(8)</L>
-                <L>      NormHoures = Tv_det.ReadFloat(9)</L>
+                <L>      Period = Tv_det.ReadDate(2)</L>
+                <L>      PeriodRule = Tv_det.ReadAtom(3)</L>
+                <L>      Wage = Tv_det.ReadFloat(4)</L>
+                <L>      ModernWage = Tv_det.ReadFloat(5)</L>
+                <L>      ModernCoef = Tv_det.ReadFloat(6)</L>
+                <L>      TabDays = Tv_det.ReadFloat(7)</L>
+                <L>      TabHoures = Tv_det.ReadFloat(8)</L>
+                <L>      NormDays = Tv_det.ReadFloat(9)</L>
+                <L>      NormHoures = Tv_det.ReadFloat(10)</L>
                 <L>      '</L>
                 <L>      Q_det.NextSolution</L>
                 <L>    Loop</L>
@@ -456,12 +535,6 @@
                 <L>  Loop</L>
                 <L>  Q_out.Close</L>
                 <L>  '</L>
-                <L>  If PL.Debug Then</L>
-                <L>    Pred = "param_list"</L>
-                <L>    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")</L>
-                <L>    PL.SavePredicatesToFile Pred, Tv, Pred</L>
-                <L>  End If</L>
-                <L>  </L>
                 <L>  T2 = Timer</L>
                 <L>  T = T2 - T1</L>
                 <L>'</L>
@@ -472,10 +545,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>01.11.2013 15:38:50</EDITIONDATE>
+              <EDITIONDATE>04.11.2013 15:31:10</EDITIONDATE>
               <_XID>151189369</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>01.11.2013 15:38:50</_MODIFIED>
+              <_MODIFIED>04.11.2013 15:31:10</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -538,7 +611,7 @@
                 <![CDATA[
                 <L>Option Explicit</L>
                 <L></L>
-                <L>Sub pl_TermvToDict(ByRef Tv, ByRef Spec, ByRef Dict)</L>
+                <L>Sub pl_TermvToDict(ByRef Tv, ByVal Spec, ByRef Dict)</L>
                 <L>'</L>
                 <L>  Dim I, L</L>
                 <L>  Dim SpecSub, SpecType, SpecKey</L>
@@ -552,19 +625,18 @@
                 <L></L>
                 <L>  For I = 0 To L</L>
                 <L>    '</L>
-                <L>    SpecSub = Split(Spec(I))</L>
+                <L>    SpecType = ""</L>
+                <L>    SpecKey = ""</L>
+                <L>    SpecSub = Split(Spec(I), ":")</L>
+                <L>    '</L>
                 <L>    If UBound(SpecSub) = 0 Then</L>
-                <L>      SpecType = ""</L>
                 <L>      SpecKey = Spec(I)</L>
-                <L>    ElseIf UBound(SpecSub) = 1 Then</L>
+                <L>    ElseIf UBound(SpecSub) > 0 Then</L>
                 <L>      SpecType = SpecSub(0)</L>
                 <L>      SpecKey = SpecSub(1)</L>
-                <L>    Else</L>
-                <L>      SpecType = ""</L>
-                <L>      SpecKey = ""</L>
                 <L>    End If</L>
                 <L>    '</L>
-                <L>    If Not SpecKey = "" Then</L>
+                <L>    If Not (SpecType = "-" Or SpecKey = "") Then</L>
                 <L>      TermType = Tv.DataType(I)</L>
                 <L>      '</L>
                 <L>      Select Case TermType</L>
@@ -623,10 +695,96 @@
               </ENTEREDPARAMS>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>01.11.2013 12:39:13</EDITIONDATE>
+              <EDITIONDATE>02.11.2013 14:33:42</EDITIONDATE>
               <_XID>151162343</_XID>
               <_DBID>5956463</_DBID>
-              <_MODIFIED>01.11.2013 12:39:13</_MODIFIED>
+              <_MODIFIED>02.11.2013 14:33:42</_MODIFIED>
+              <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
+              <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
+            </ROW>
+            <ROW>
+              <OBJECTNAME>APPLICATION</OBJECTNAME>
+              <ID><R>151162345_5956463</R></ID>
+              <MODULE>UNKNOWN</MODULE>
+              <LANGUAGE>VBScript</LANGUAGE>
+              <NAME>pl_DictToTermv</NAME>
+              <SCRIPT>
+                <![CDATA[
+                <L>Option Explicit</L>
+                <L></L>
+                <L>Sub pl_DictToTermv(ByRef Dict, ByVal Spec, ByRef Tv)</L>
+                <L>'</L>
+                <L>  Dim I, L</L>
+                <L>  Dim SpecSub, SpecType, SpecKey</L>
+                <L></L>
+                <L>  L = CLng(Tv.Size) - 1</L>
+                <L>  If Not L = UBound(Spec) Then</L>
+                <L>    Err.Raise -1, "Размеры массива спецификации и вектора термов не совпадают!"</L>
+                <L>    Exit Sub</L>
+                <L>  End If</L>
+                <L></L>
+                <L>  For I = 0 To L</L>
+                <L>    '</L>
+                <L>    SpecType = ""</L>
+                <L>    SpecKey = ""</L>
+                <L>    SpecSub = Split(Spec(I), ":")</L>
+                <L>    '</L>
+                <L>    If UBound(SpecSub) = 0 Then</L>
+                <L>      SpecKey = Spec(I)</L>
+                <L>    ElseIf UBound(SpecSub) > 0 Then</L>
+                <L>      SpecType = SpecSub(0)</L>
+                <L>      SpecKey = SpecSub(1)</L>
+                <L>    End If</L>
+                <L>    '</L>
+                <L>    If Not (SpecType = "-" Or SpecKey = "") _</L>
+                <L>        And Dict.Exists(SpecKey) _</L>
+                <L>          Then</L>
+                <L>      '</L>
+                <L>      Select Case SpecType</L>
+                <L>        Case "a", "atom"</L>
+                <L>          Tv.PutAtom I, CStr(Dict(SpecKey))</L>
+                <L>          '</L>
+                <L>        Case "d", "date"</L>
+                <L>          Tv.PutDate I, CDate(Dict(SpecKey))</L>
+                <L>          '</L>
+                <L>        Case "f", "float"</L>
+                <L>          Tv.PutFloat I, CDbl(Dict(SpecKey))</L>
+                <L>          '</L>
+                <L>        Case "i", "integer"</L>
+                <L>          Tv.PutInteger I, CLng(Dict(SpecKey))</L>
+                <L>          '</L>
+                <L>        Case "s", "string"</L>
+                <L>          Tv.PutString I, CStr(Dict(SpecKey))</L>
+                <L>          '</L>
+                <L>        Case "v", "variable"</L>
+                <L>          Tv.PutVariable I</L>
+                <L>          '</L>
+                <L>        Case Else</L>
+                <L>          '</L>
+                <L>      End Select</L>
+                <L>      '</L>
+                <L>    End If</L>
+                <L>    '</L>
+                <L>  Next</L>
+                <L>'</L>
+                <L>End Sub</L>
+                ]]>
+              </SCRIPT>
+              <PUBLICFUNCTION>1</PUBLICFUNCTION>
+              <MODULECODE><R>1010001_17</R></MODULECODE>
+              <ENTEREDPARAMS>
+                <![CDATA[
+                <L>U0xQUlBSU1QEAAAARElDVAQAAABESUNUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNU</L>
+                <L>BAAAAFNQRUMEAAAAU1BFQwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNUUFJTVAIAAABUVgIA</L>
+                <L>AABUVgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==</L>
+                ]]>
+              </ENTEREDPARAMS>
+              <INHERITEDRULE>0</INHERITEDRULE>
+              <USEDEBUGINFO>0</USEDEBUGINFO>
+              <EDITIONDATE>02.11.2013 14:32:09</EDITIONDATE>
+              <_XID>151162345</_XID>
+              <_DBID>5956463</_DBID>
+              <_MODIFIED>02.11.2013 14:32:09</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -944,14 +1102,14 @@
                 <L>%%</L>
                 <L></L>
                 <L>%% facts</L>
-                <L>:-</L>
+                <L>:-  init_data,</L>
                 <L>    [</L>
                 <L>    usr_wg_MovementLine,</L>
-                <L>    usr_wg_TblCalDay,</L>
+                <L>    wg_TblCalDay,</L>
                 <L>    usr_wg_TblCalLine,</L>
                 <L>    usr_wg_TblCal_FlexLine,</L>
                 <L>    usr_wg_HourType,</L>
-                <L>    wg_TblCharge,</L>
+                <L>    usr_wg_TblCharge,</L>
                 <L>    usr_wg_FeeType,</L>
                 <L>    usr_wg_BadHourType,</L>
                 <L>    usr_wg_BadFeeType</L>
@@ -959,8 +1117,7 @@
                 <L>%%</L>
                 <L></L>
                 <L>%% dynamic state</L>
-                <L>:-</L>
-                <L>    [param_list].</L>
+                <L>:- [param_list].</L>
                 <L>%%</L>
                 <L></L>
                 <L>%% flag</L>
@@ -991,32 +1148,34 @@
                 <L>    !.</L>
                 <L></L>
                 <L>% среднедневной заработок</L>
-                <L>avg_wage:-</L>
+                <L>avg_wage(Stage) :-</L>
                 <L>    % объявить параметры контекста</L>
-                <L>    Scope = wg_avg_wage, PK = [pEmplKey-EmplKey],</L>
+                <L>    Scope = wg_avg_wage,</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % для каждого первичного ключа расчета из входных параметров</L>
                 <L>    get_param_list(Scope, in, PK),</L>
                 <L>    % подготовить данные</L>
                 <L>    engine_loop(Scope, in, PK),</L>
                 <L>    get_local_date_time(DT1),</L>
-                <L>    new_param_list(Scope, debug, [begin-DT1|PK]),</L>
+                <L>    new_param_list(Scope, debug, [begin-Stage-DT1|PK]),</L>
                 <L>    % вычислить среднедневной заработок по сотруднику</L>
-                <L>    avg_wage(Scope, PK, AvgWage, Variant),</L>
+                <L>    calc_avg_wage(Scope, PK, AvgWage, Variant),</L>
                 <L>    % сформировать выходные параметры</L>
                 <L>    once( get_data(Scope, in, usr_wg_MovementLine,</L>
-                <L>                [fEmplKey-EmplKey, fMovementType-1, fListNumber-ListNumber]) ),</L>
+                <L>                [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>                 fMovementType-1, fListNumber-ListNumber]) ),</L>
                 <L>    append(PK, [pListNumber-ListNumber, pAvgWage-AvgWage, pVariant-Variant], OutPairs),</L>
                 <L>    new_param_list(Scope, out, OutPairs),</L>
                 <L>    get_local_date_time(DT2),</L>
-                <L>    new_param_list(Scope, debug, [end-DT2|PK]),</L>
+                <L>    new_param_list(Scope, debug, [end-Stage-DT2|PK]),</L>
                 <L>    % найти альтернативу</L>
                 <L>    fail.</L>
-                <L>avg_wage :-</L>
+                <L>avg_wage(_) :-</L>
                 <L>    % больше альтернатив нет</L>
                 <L>    !.</L>
                 <L></L>
                 <L>% среднедневной заработок по сотруднику (по расчетным месяцам)</L>
-                <L>avg_wage(Scope, PK, AvgWage, Rule) :-</L>
+                <L>calc_avg_wage(Scope, PK, AvgWage, Rule) :-</L>
                 <L>    Rule = by_calc_month,</L>
                 <L>    % правило действительно</L>
                 <L>    is_valid_rule(Rule),</L>
@@ -1055,12 +1214,12 @@
                 <L>    AvgWage is float( round(AvgWage0) ),</L>
                 <L>    !.</L>
                 <L>% среднедневной заработок по сотруднику (по среднечасовому)</L>
-                <L>avg_wage(Scope, PK, AvgWage, Rule) :-</L>
+                <L>calc_avg_wage(Scope, PK, AvgWage, Rule) :-</L>
                 <L>    Rule = by_avg_houre,</L>
                 <L>    % правило действительно</L>
                 <L>    is_valid_rule(Rule),</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % периоды для проверки</L>
                 <L>    get_periods(Scope, PK, Periods),</L>
                 <L>    % взять заработок</L>
@@ -1079,7 +1238,7 @@
                 <L>             % за период проверки</L>
                 <L>             ( member(Y-M, Periods),</L>
                 <L>             % для отработанного дня</L>
-                <L>             usr_wg_TblCalLine1(Scope, PK, _, Date, Duration, _),</L>
+                <L>             usr_wg_TblCalLine1(Scope, PK, Date, Duration, _),</L>
                 <L>             % с контролем наличия часов</L>
                 <L>             Duration > 0,</L>
                 <L>             % дата для которого совпадает с проверяемым месяцем</L>
@@ -1097,8 +1256,9 @@
                 <L>    % взять часы</L>
                 <L>    findall( WDuration,</L>
                 <L>            % для рабочего дня</L>
-                <L>            ( get_data(Scope, in, usr_wg_TblCalDay, [</L>
-                <L>                fEmplKey-EmplKey, fTheDay-TheDay, fWDuration-WDuration,</L>
+                <L>            ( get_data(Scope, in, wg_TblCalDay, [</L>
+                <L>                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>                fTheDay-TheDay, fWDuration-WDuration,</L>
                 <L>                fWorkDay-1, fTblCalKey-TblCalKey ]),</L>
                 <L>            % с контролем наличия часов</L>
                 <L>            WDuration > 0,</L>
@@ -1139,10 +1299,11 @@
                 <L>% первый месяц работы</L>
                 <L>is_first_month(Scope, PK, Y-M) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % для первого движения по типу 1 (прием на работу)</L>
                 <L>    get_data(Scope, in, usr_wg_MovementLine,</L>
-                <L>        [fEmplKey-EmplKey, fDateBegin-DateBegin, fMovementType-1]),</L>
+                <L>        [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>         fDateBegin-DateBegin, fMovementType-1]),</L>
                 <L>    % дата совпадает с проверяемым месяцем</L>
                 <L>    atom_date(DateBegin, date(Y, M, _)),</L>
                 <L>    !.</L>
@@ -1160,17 +1321,17 @@
                 <L>% первый месяц работы полный или это не первый месяц работы</L>
                 <L>is_full_first_month(Scope, PK, Y-M) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % если для первого движения по типу 1 (прием на работу)</L>
                 <L>    get_data(Scope, in, usr_wg_MovementLine, [</L>
-                <L>        fEmplKey-EmplKey, fDocumentKey-DocKey, fFirstMove-DocKey,</L>
+                <L>        fEmplKey-EmplKey, fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,</L>
                 <L>        fDateBegin-DateBegin, fScheduleKey-ScheduleKey, fMovementType-1 ]),</L>
                 <L>    % где дата совпадает с проверяемым месяцем</L>
                 <L>    atom_date(DateBegin, date(Y, M, _)),</L>
                 <L>    % первый рабочий день по типу графика первого движения</L>
-                <L>    once( ( get_data(Scope, in, usr_wg_TblCalDay, [</L>
-                <L>                fEmplKey-EmplKey, fTheDay-TheDay,</L>
-                <L>                fWorkDay-1, fTblCalKey-ScheduleKey ]),</L>
+                <L>    once( ( get_data(Scope, in, wg_TblCalDay, [</L>
+                <L>                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>                fTheDay-TheDay, fWorkDay-1, fTblCalKey-ScheduleKey ]),</L>
                 <L>    % дата для которого совпадает с проверяемым месяцем</L>
                 <L>    atom_date(TheDay, date(Y, M, _)) ) ),</L>
                 <L>    !,</L>
@@ -1185,7 +1346,7 @@
                 <L>% в месяце есть отработанные часы</L>
                 <L>is_month_worked(Scope, PK, Y-M) :-</L>
                 <L>    % если есть хотя бы один рабочий день</L>
-                <L>    usr_wg_TblCalLine1(Scope, PK, _, Date, Duration, _),</L>
+                <L>    usr_wg_TblCalLine1(Scope, PK, Date, Duration, _),</L>
                 <L>    % с контролем наличия часов</L>
                 <L>    Duration > 0,</L>
                 <L>    % дата для которого совпадает с проверяемым месяцем</L>
@@ -1196,13 +1357,14 @@
                 <L>% в месяце есть оплата</L>
                 <L>is_month_paid(Scope, PK, Y-M) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % если есть хотя бы одно начисление</L>
-                <L>    get_data(Scope, in, wg_TblCharge, [</L>
-                <L>        fEmplKey-EmplKey, fDateBegin-Date, fFeeTypeKey-FeeTypeKey ]),</L>
+                <L>    get_data(Scope, in, usr_wg_TblCharge, [</L>
+                <L>        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>        fDateBegin-Date, fFeeTypeKey-FeeTypeKey ]),</L>
                 <L>    % соответствующего типа</L>
                 <L>    get_data(Scope, in, usr_wg_FeeType, [</L>
-                <L>        fEmplKey-EmplKey, fFeeTypeKey-FeeTypeKey ]),</L>
+                <L>        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fFeeTypeKey-FeeTypeKey ]),</L>
                 <L>    % где дата совпадает с проверяемым месяцем</L>
                 <L>    atom_date(Date, date(Y, M, _)),</L>
                 <L>    % то в месяце есть оплата</L>
@@ -1314,12 +1476,13 @@
                 <L>% расчитать график за месяц</L>
                 <L>calc_month_norm(Scope, PK, Y-M, NormDays) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % взять дату/часы</L>
                 <L>    findall( TheDay-WDuration,</L>
                 <L>            % для рабочего дня</L>
-                <L>            ( get_data(Scope, in, usr_wg_TblCalDay, [</L>
-                <L>                fEmplKey-EmplKey, fTheDay-TheDay, fWDuration-WDuration,</L>
+                <L>            ( get_data(Scope, in, wg_TblCalDay, [</L>
+                <L>                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>                fTheDay-TheDay, fWDuration-WDuration,</L>
                 <L>                fWorkDay-1, fTblCalKey-TblCalKey ]),</L>
                 <L>            % с контролем наличия часов</L>
                 <L>            WDuration > 0,</L>
@@ -1336,7 +1499,7 @@
                 <L>    % взять дату/часы</L>
                 <L>    findall( Date-Duration,</L>
                 <L>            % для отработанного дня</L>
-                <L>            ( usr_wg_TblCalLine1(Scope, PK, _, Date, Duration, _),</L>
+                <L>            ( usr_wg_TblCalLine1(Scope, PK, Date, Duration, _),</L>
                 <L>            % с контролем наличия часов</L>
                 <L>            Duration > 0,</L>
                 <L>            % дата для которого совпадает с проверяемым месяцем</L>
@@ -1359,13 +1522,13 @@
                 <L>% тип графика</L>
                 <L>get_schedule(Scope, PK, TheDay, ScheduleKey) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    findall( % взять тип графика</L>
                 <L>             DateBegin-ScheduleKey0,</L>
                 <L>               % где для движения</L>
                 <L>             ( get_data(Scope, in, usr_wg_MovementLine, [</L>
-                <L>                     fEmplKey-EmplKey, fDateBegin-DateBegin,</L>
-                <L>                     fScheduleKey-ScheduleKey0 ]),</L>
+                <L>                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>                     fDateBegin-DateBegin, fScheduleKey-ScheduleKey0 ]),</L>
                 <L>               % начальная дата меньше или равна проверяемой дате</L>
                 <L>               once( ( DateBegin @=< TheDay</L>
                 <L>               % либо первый день месяца меньше или равен проверяемой дате</L>
@@ -1386,16 +1549,17 @@
                 <L>    !.</L>
                 <L>cacl_month_wage(Scope, PK, Y, M, ModernWage) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % взять начисления</L>
                 <L>    findall( Debit-ModernCoef,</L>
                 <L>          % для начисления</L>
-                <L>          ( get_data(Scope, in, wg_TblCharge, [</L>
-                <L>                fEmplKey-EmplKey, fDateBegin-Date,</L>
-                <L>                fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),</L>
+                <L>          ( get_data(Scope, in, usr_wg_TblCharge, [</L>
+                <L>                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>                fDateBegin-Date, fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),</L>
                 <L>          % соответствующего типа</L>
                 <L>          get_data(Scope, in, usr_wg_FeeType, [</L>
-                <L>                fEmplKey-EmplKey, fFeeTypeKey-FeeTypeKey ]),</L>
+                <L>                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>                fFeeTypeKey-FeeTypeKey ]),</L>
                 <L>          % где дата совпадает с проверяемым месяцем</L>
                 <L>          atom_date(Date, date(Y, M, _)),</L>
                 <L>          % с коэффициентом осовременивания</L>
@@ -1429,14 +1593,15 @@
                 <L>% коэффициент осовременивания</L>
                 <L>get_modern_coef(Scope, PK, TheDay, ModernCoef) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % дата расчета</L>
                 <L>    find_param(Scope, run, PK, pDateCalc-DateCalc),</L>
                 <L>    % взять дату и ставку</L>
                 <L>    findall( DateBegin-Rate,</L>
                 <L>             % где для движения</L>
                 <L>             ( get_data(Scope, in, usr_wg_MovementLine, [</L>
-                <L>                     fEmplKey-EmplKey, fDateBegin-DateBegin, fRate-Rate ]),</L>
+                <L>                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>                     fDateBegin-DateBegin, fRate-Rate ]),</L>
                 <L>             % дата меньше расчетной</L>
                 <L>             DateBegin @< DateCalc ),</L>
                 <L>    % в список движений</L>
@@ -1550,35 +1715,38 @@
                 <L>% есть плохой тип часов</L>
                 <L>month_bad_type(Scope, PK, Y-M) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % если есть хотя бы один день по табелю</L>
-                <L>    usr_wg_TblCalLine1(Scope, PK, _, Date, _, HoureType),</L>
+                <L>    usr_wg_TblCalLine1(Scope, PK, Date, _, HoureType),</L>
                 <L>    % дата для которого совпадает с проверяемым месяцем</L>
                 <L>    atom_date(Date, date(Y, M, _)),</L>
                 <L>    % с плохим типом часов</L>
-                <L>    get_data(Scope, in, usr_wg_BadHourType, [fEmplKey-EmplKey, fID-HoureType]),</L>
+                <L>    get_data(Scope, in, usr_wg_BadHourType, [</L>
+                <L>        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]),</L>
                 <L>    !.</L>
                 <L>% есть плохой тип начислений</L>
                 <L>month_bad_type(Scope, PK, Y-M) :-</L>
                 <L>    % разложить первичный ключ</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    % если есть хотя бы одно начисление</L>
-                <L>    get_data(Scope, in, wg_TblCharge, [</L>
-                <L>        fEmplKey-EmplKey, fDateBegin-Date, fFeeTypeKey-FeeTypeKey ]),</L>
+                <L>    get_data(Scope, in, usr_wg_TblCharge, [</L>
+                <L>        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,</L>
+                <L>        fDateBegin-Date, fFeeTypeKey-FeeTypeKey ]),</L>
                 <L>    % где дата совпадает с проверяемым месяцем</L>
                 <L>    atom_date(Date, date(Y, M, _)),</L>
                 <L>    % с плохим типом начисления</L>
-                <L>    get_data(Scope, in, usr_wg_BadFeeType, [fEmplKey-EmplKey, fID-FeeTypeKey]),</L>
+                <L>    get_data(Scope, in, usr_wg_BadFeeType,</L>
+                <L>        [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-FeeTypeKey]),</L>
                 <L>    !.</L>
                 <L></L>
                 <L>% день по табелю</L>
-                <L>usr_wg_TblCalLine1(Scope, PK, FirstMoveKey, Date, Duration, HoureType) :-</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>usr_wg_TblCalLine1(Scope, PK, Date, Duration, HoureType) :-</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    gd_pl_ds(Scope, in, usr_wg_TblCalLine, 5, _),</L>
                 <L>    catch( usr_wg_TblCalLine(EmplKey, FirstMoveKey, Date, Duration, HoureType), _, fail).</L>
                 <L>% или по табелю мастера</L>
-                <L>usr_wg_TblCalLine1(Scope, PK, FirstMoveKey, Date, Duration, HoureType) :-</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>usr_wg_TblCalLine1(Scope, PK, Date, Duration, HoureType) :-</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    gd_pl_ds(Scope, in, usr_wg_TblCal_FlexLine, 65, _),</L>
                 <L>    make_list(62, TeilArgs),</L>
                 <L>    Term =.. [ usr_wg_TblCal_FlexLine, EmplKey, FirstMoveKey, DateBegin | TeilArgs ],</L>
@@ -1653,8 +1821,8 @@
                 <L>            ( length(PK, Len),</L>
                 <L>              Arity1 is Arity - Len,</L>
                 <L>              make_list(Arity1, TeilArgs),</L>
-                <L>              PK = [pEmplKey-EmplKey],</L>
-                <L>              append([EmplKey], TeilArgs, Args),</L>
+                <L>              PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
+                <L>              append([EmplKey, FirstMoveKey], TeilArgs, Args),</L>
                 <L>              Term =.. [Query | Args ],</L>
                 <L>              retractall( Term ) )</L>
                 <L>            ),</L>
@@ -1699,10 +1867,13 @@
                 <L>    get_param_list(Scope, Type,</L>
                 <L>            [pConnection-_, pMonthQty-MonthQty], ConnectionPairs),</L>
                 <L>    get_param_list(Scope, Type, PK, Pairs),</L>
-                <L>    member_list([pDateCalc-DateCalc], Pairs),</L>
+                <L>    member_list([pDateCalc-DateCalc, pMonthOffset-MonthOffset], Pairs),</L>
                 <L>    %</L>
-                <L>    atom_date(DateCalc, date(Y, M, _)), atom_date(DateCalcTo, date(Y, M, 1)),</L>
-                <L>    MonthAdd is -MonthQty, date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),</L>
+                <L>    atom_date(DateCalc, date(Y, M, _)), atom_date(DateCalcTo0, date(Y, M, 1)),</L>
+                <L>    MonthOffset1 is (- MonthOffset),</L>
+                <L>    date_add(DateCalcTo0, MonthOffset1, month, DateCalcTo),</L>
+                <L>    MonthAdd is (- MonthQty),</L>
+                <L>    date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),</L>
                 <L>    atom_date(DateNormFrom0, date(Y, 1, 1)),</L>
                 <L>    ( DateNormFrom0 @> DateCalcFrom, DateNormFrom = DateCalcFrom</L>
                 <L>      ; DateNormFrom = DateNormFrom0 ),</L>
@@ -1741,19 +1912,23 @@
                 <L> %</L>
                 <L>%%</L>
                 <L></L>
-                <L></L>
                 <L>%% расширение для клиента</L>
                 <L>%</L>
                 <L></L>
                 <L>% загрузка входных данных по сотруднику</L>
-                <L>avg_wage_in(EmplKey, DateCalc0) :-</L>
+                <L>avg_wage_in(EmplKey, FirstMoveKey, DateCalc) :-</L>
+                <L>    avg_wage_in(EmplKey, FirstMoveKey, DateCalc, 0).</L>
+                <L>%</L>
+                <L>avg_wage_in(EmplKey, FirstMoveKey, DateCalc0, MonthOffset) :-</L>
                 <L>    Scope = wg_avg_wage, Type = in,</L>
                 <L>    ( is_date(DateCalc0), DateCalc = DateCalc0</L>
                 <L>      ;</L>
                 <L>      atom_chars(DateCalc0, [D1, D2, '.', M1, M2, '.', Y1, Y2, Y3, Y4]),</L>
                 <L>      atom_chars(DateCalc, [Y1, Y2, Y3, Y4, '-', M1, M2, '-', D1, D2])</L>
                 <L>    ),</L>
-                <L>    new_param_list(Scope, Type, [pEmplKey-EmplKey, pDateCalc-DateCalc]),</L>
+                <L>    new_param_list(Scope, Type,</L>
+                <L>        [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,</L>
+                <L>         pDateCalc-DateCalc, pMonthOffset-MonthOffset]),</L>
                 <L>    !.</L>
                 <L></L>
                 <L>% загрузка общих входных параметров</L>
@@ -1771,27 +1946,29 @@
                 <L>    !.</L>
                 <L></L>
                 <L>% выгрузка данных выполнения по сотруднику</L>
-                <L>avg_wage_run(EmplKey, DateCalcFrom, DateCalcTo) :-</L>
+                <L>avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo) :-</L>
                 <L>    Scope = wg_avg_wage, Type = run,</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    get_param_list(Scope, Type, PK, Pairs),</L>
                 <L>    once( member_list(</L>
                 <L>            [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo],</L>
                 <L>            Pairs) ).</L>
                 <L></L>
                 <L>% выгрузка SQL-запросов по сотруднику</L>
-                <L>avg_wage_sql(EmplKey, Connection, PredicateName, Arity, SQL) :-</L>
+                <L>avg_wage_sql(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL) :-</L>
                 <L>    Scope = wg_avg_wage, Type = query, TypeNextStep = data,</L>
-                <L>    PK = [pEmplKey-EmplKey], Query = PredicateName/Arity,</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
+                <L>    Query = PredicateName/Arity,</L>
                 <L>    find_param_list(Scope, Type, PK,</L>
                 <L>            [pConnection-Connection, pQuery-Query, pSQL-SQL]),</L>
                 <L>    \+ find_param_list(Scope, TypeNextStep, PK,</L>
                 <L>            [pConnection-Connection, pQuery-Query, pSQL-SQL]).</L>
                 <L></L>
                 <L>% подтвеждение формирования фактов по сотруднику</L>
-                <L>avg_wage_kb(EmplKey, Connection, PredicateName, Arity, SQL) :-</L>
+                <L>avg_wage_kb(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL) :-</L>
                 <L>    Scope = wg_avg_wage, Type = query, TypeNextStep = data,</L>
-                <L>    PK = [pEmplKey-EmplKey], Query = PredicateName/Arity,</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
+                <L>    Query = PredicateName/Arity,</L>
                 <L>    find_param_list(Scope, Type, PK,</L>
                 <L>            [pConnection-Connection, pQuery-Query, pSQL-SQL]),</L>
                 <L>    \+ find_param_list(Scope, TypeNextStep, PK,</L>
@@ -1803,15 +1980,17 @@
                 <L>    !.</L>
                 <L></L>
                 <L>% выгрузка выходных данных по сотруднику</L>
-                <L>avg_wage_out(EmplKey, AvgWage, Variant) :-</L>
+                <L>avg_wage_out(EmplKey, FirstMoveKey, AvgWage, Variant) :-</L>
                 <L>    Scope = wg_avg_wage, Type = out,</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    get_param_list(Scope, Type, PK, Pairs),</L>
-                <L>    once( member_list([pAvgWage-AvgWage,pVariant-Variant], Pairs) ).</L>
-                <L></L>
-                <L>avg_wage_det(EmplKey, Period, Rule, Wage, ModernWage, ModernCoef, TabDays, TabHoures, NormDays, NormHoures) :-</L>
+                <L>    once( member_list([pAvgWage-AvgWage, pVariant-Variant], Pairs) ).</L>
+                <L>% выгрузка детальных выходных данных по сотруднику</L>
+                <L>avg_wage_det(EmplKey, FirstMoveKey,</L>
+                <L>                Period, Rule, Wage, ModernWage, ModernCoef,</L>
+                <L>                TabDays, TabHoures, NormDays, NormHoures) :-</L>
                 <L>    Scope = wg_avg_wage,</L>
-                <L>    PK = [pEmplKey-EmplKey],</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
                 <L>    %</L>
                 <L>    get_param_list(Scope, temp, PK, Pairs),</L>
                 <L>    once( member_list([pYM-Y-M,</L>
@@ -1836,6 +2015,24 @@
                 <L>        ) ),</L>
                 <L>    %</L>
                 <L>    true.</L>
+                <L></L>
+                <L>% удаление данных по сотруднику</L>
+                <L>avg_wage_clean(EmplKey, FirstMoveKey) :-</L>
+                <L>    Scope = wg_avg_wage,</L>
+                <L>    get_type_list(TypeList),</L>
+                <L>    member(Type, TypeList),</L>
+                <L>    gd_pl_ds(Scope, Type, Name, _, _),</L>
+                <L>    del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),</L>
+                <L>    fail.</L>
+                <L>avg_wage_clean(EmplKey, FirstMoveKey) :-</L>
+                <L>    Scope = wg_avg_wage,</L>
+                <L>    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],</L>
+                <L>    get_param_list(Scope, Type, PK, Pairs),</L>
+                <L>    dispose_param_list(Scope, Type, Pairs),</L>
+                <L>    fail.</L>
+                <L>avg_wage_clean(_, _) :-</L>
+                <L>    !.</L>
+                <L></L>
                 <L> %</L>
                 <L>%%</L>
                 ]]>
@@ -1844,10 +2041,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>01.11.2013 11:28:50</EDITIONDATE>
+              <EDITIONDATE>04.11.2013 15:22:13</EDITIONDATE>
               <_XID>151189370</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>01.11.2013 11:28:50</_MODIFIED>
+              <_MODIFIED>04.11.2013 15:22:13</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -1872,17 +2069,17 @@
                 <L></L>
                 <L>gd_pl_ds(wg_avg_wage, in, usr_wg_MovementLine, 8,</L>
                 <L>    [</L>
-                <L>    fEmplKey-integer, fDocumentKey-integer, fFirstMove-integer,</L>
+                <L>    fEmplKey-integer, fDocumentKey-integer, fFirstMoveKey-integer,</L>
                 <L>    fDateBegin-date, fScheduleKey-integer, fMovementType-integer,</L>
                 <L>    fRate-float, fListNumber-string</L>
                 <L>    ]).</L>
-                <L>% usr_wg_MovementLine(EmplKey, DocumentKey, FirstMove, DateBegin, ScheduleKey,</L>
+                <L>% usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey, DateBegin, ScheduleKey,</L>
                 <L>%   MovementType, Rate, ListNumber)</L>
                 <L>get_sql(bogem, usr_wg_MovementLine/8,</L>
                 <L>'SELECT \c</L>
                 <L>  ml.USR$EMPLKEY, \c</L>
                 <L>  ml.DOCUMENTKEY, \c</L>
-                <L>  ml.USR$FIRSTMOVE, \c</L>
+                <L>  ml.USR$FIRSTMOVE AS FirstMoveKey, \c</L>
                 <L>  ml.USR$DATEBEGIN, \c</L>
                 <L>  ml.USR$SCHEDULEKEY, \c</L>
                 <L>  ml.USR$MOVEMENTTYPE, \c</L>
@@ -1892,22 +2089,26 @@
                 <L>  USR$WG_MOVEMENTLINE ml \c</L>
                 <L>WHERE \c</L>
                 <L>  ml.USR$EMPLKEY = pEmplKey \c</L>
+                <L>  AND \c</L>
+                <L>  ml.USR$FIRSTMOVE = pFirstMoveKey \c</L>
                 <L>ORDER BY \c</L>
                 <L>  ml.USR$EMPLKEY, \c</L>
+                <L>  ml.USR$FIRSTMOVE, \c</L>
                 <L>  ml.USR$DATEBEGIN \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_]</L>
                 <L>    ).</L>
                 <L></L>
-                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_TblCalDay, 5,</L>
+                <L>gd_pl_ds(wg_avg_wage, in, wg_TblCalDay, 6,</L>
                 <L>    [</L>
-                <L>    fEmplKey-integer, fTheDay-date, fWDuration-float,</L>
+                <L>    fEmplKey-integer, fFirstMoveKey-integer, fTheDay-date, fWDuration-float,</L>
                 <L>    fWorkDay-integer, fTblCalKey-integer</L>
                 <L>    ]).</L>
-                <L>% usr_wg_TblCalDay(EmplKey, TheDay, WDuration, WorkDay, TblCalKey)</L>
-                <L>get_sql(bogem, usr_wg_TblCalDay/5,</L>
+                <L>% wg_TblCalDay(EmplKey, FirstMoveKey, TheDay, WDuration, WorkDay, TblCalKey)</L>
+                <L>get_sql(bogem, wg_TblCalDay/6,</L>
                 <L>'SELECT \c</L>
                 <L>  pEmplKey AS EmplKey, \c</L>
+                <L>  pFirstMoveKey AS FirstMoveKey, \c</L>
                 <L>  tcd.THEDAY, \c</L>
                 <L>  tcd.WDURATION, \c</L>
                 <L>  tcd.WORKDAY, \c</L>
@@ -1922,7 +2123,7 @@
                 <L>  tcd.TBLCALKEY, \c</L>
                 <L>  tcd.THEDAY \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_, pDateNormFrom-_, pDateNormTo-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_, pDateNormFrom-_, pDateNormTo-_]</L>
                 <L>    ).</L>
                 <L></L>
                 <L>gd_pl_ds(wg_avg_wage, in, usr_wg_TblCalLine, 5,</L>
@@ -1946,14 +2147,17 @@
                 <L>WHERE \c</L>
                 <L>  tc.USR$EMPLKEY = pEmplKey \c</L>
                 <L>  AND \c</L>
+                <L>  tc.USR$FIRSTMOVEKEY = pFirstMoveKey \c</L>
+                <L>  AND \c</L>
                 <L>  tcl.USR$DATE >= CAST(\'pDateCalcFrom\' AS DATE) \c</L>
                 <L>  AND \c</L>
                 <L>  tcl.USR$DATE < CAST(\'pDateCalcTo\' AS DATE) \c</L>
                 <L>ORDER BY \c</L>
                 <L>  tc.USR$EMPLKEY, \c</L>
+                <L>  tc.USR$FIRSTMOVEKEY, \c</L>
                 <L>  tcl.USR$DATE \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]</L>
                 <L>    ).</L>
                 <L></L>
                 <L>gd_pl_ds(wg_avg_wage, in, usr_wg_TblCal_FlexLine, 65,</L>
@@ -2009,28 +2213,34 @@
                 <L>WHERE \c</L>
                 <L>  tcfl.USR$EMPLKEY = pEmplKey \c</L>
                 <L>  AND \c</L>
+                <L>  tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey \c</L>
+                <L>  AND \c</L>
                 <L>  t.USR$DATEBEGIN >= CAST(\'pDateCalcFrom\' AS DATE) \c</L>
                 <L>  AND \c</L>
                 <L>  t.USR$DATEBEGIN < CAST(\'pDateCalcTo\' AS DATE) \c</L>
                 <L> ORDER BY \c</L>
                 <L>   tcfl.USR$EMPLKEY, \c</L>
+                <L>   tcfl.USR$FIRSTMOVEKEY, \c</L>
                 <L>   t.USR$DATEBEGIN \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]</L>
                 <L>    ).</L>
                 <L></L>
-                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_HourType, 11,</L>
+                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_HourType, 12,</L>
                 <L>    [</L>
-                <L>    fEmplKey-integer, fID-integer, fCode-string, fDigitCode-string,</L>
+                <L>    fEmplKey-integer, fFirstMoveKey-integer,</L>
+                <L>    fID-integer, fCode-string, fDigitCode-string,</L>
                 <L>    fDescription-string, fIsWorked-integer, fShortName-string,</L>
                 <L>    fForCalFlex-integer, fForOverTime-integer, fForFlex-integer,</L>
                 <L>    fAbsentEEIsm-integer</L>
                 <L>    ]).</L>
-                <L>% usr_wg_HourType(EmplKey, ID, Code, DigitCode, Description, IsWorked, ShortName,</L>
+                <L>% usr_wg_HourType(EmplKey, FirstMoveKey,</L>
+                <L>%   ID, Code, DigitCode, Description, IsWorked, ShortName,</L>
                 <L>%   ForCalFlex, ForOverTime, ForFlex, AbsentEEIsm)</L>
-                <L>get_sql(bogem, usr_wg_HourType/11,</L>
+                <L>get_sql(bogem, usr_wg_HourType/12,</L>
                 <L>'SELECT \c</L>
                 <L>  pEmplKey AS EmplKey, \c</L>
+                <L>  pFirstMoveKey AS FirstMoveKey, \c</L>
                 <L>  ht.ID, \c</L>
                 <L>  ht.USR$CODE, \c</L>
                 <L>  ht.USR$DIGITCODE, \c</L>
@@ -2044,16 +2254,16 @@
                 <L>FROM \c</L>
                 <L>  USR$WG_HOURTYPE ht \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_]</L>
                 <L>    ).</L>
                 <L></L>
-                <L>gd_pl_ds(wg_avg_wage, in, wg_TblCharge, 5,</L>
+                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_TblCharge, 5,</L>
                 <L>    [</L>
                 <L>    fEmplKey-integer, fFirstMoveKey-integer, fDateBegin-date,</L>
                 <L>    fDebit-float, fFeeTypeKey-integer</L>
                 <L>    ]).</L>
-                <L>% wg_TblCharge(EmplKey, FirstMoveKey, DateBegin, Debit, FeeTypeKey)</L>
-                <L>get_sql(bogem, wg_TblCharge/5,</L>
+                <L>% usr_wg_TblCharge(EmplKey, FirstMoveKey, DateBegin, Debit, FeeTypeKey)</L>
+                <L>get_sql(bogem, usr_wg_TblCharge/5,</L>
                 <L>'SELECT \c</L>
                 <L>  tch.USR$EMPLKEY, \c</L>
                 <L>  tch.USR$FIRSTMOVEKEY, \c</L>
@@ -2074,17 +2284,19 @@
                 <L>  tch.USR$EMPLKEY, \c</L>
                 <L>  tch.USR$DATEBEGIN \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]</L>
                 <L>    ).</L>
                 <L></L>
-                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_FeeType, 3,</L>
+                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_FeeType, 4,</L>
                 <L>    [</L>
-                <L>    fEmplKey-integer, fFeeGroupKey-integer, fFeeTypeKey-integer</L>
+                <L>    fEmplKey-integer, fFirstMoveKey-integer,</L>
+                <L>    fFeeGroupKey-integer, fFeeTypeKey-integer</L>
                 <L>    ]).</L>
                 <L>% usr_wg_FeeType(EmplKey, FeeGroupKey, FeeTypeKey)</L>
-                <L>get_sql(bogem, usr_wg_FeeType/3,</L>
+                <L>get_sql(bogem, usr_wg_FeeType/4,</L>
                 <L>'SELECT \c</L>
                 <L>  pEmplKey AS EmplKey,  \c</L>
+                <L>  pFirstMoveKey AS FirstMoveKey, \c</L>
                 <L>  ft.USR$WG_FEEGROUPKEY, \c</L>
                 <L>  ft.USR$WG_FEETYPEKEY \c</L>
                 <L>FROM \c</L>
@@ -2092,17 +2304,17 @@
                 <L>WHERE</L>
                 <L>  ft.USR$WG_FEEGROUPKEY = pFeeGroupKey \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_, pFeeGroupKey-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey-_]</L>
                 <L>    ).</L>
                 <L></L>
-                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_BadHourType, 2,</L>
+                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_BadHourType, 3,</L>
                 <L>    [</L>
-                <L>    fEmplKey-integer, fID-integer</L>
+                <L>    fEmplKey-integer, fFirstMoveKey-integer, fID-integer</L>
                 <L>    ]).</L>
                 <L>% usr_wg_BadHourType(EmplKey, ID)</L>
-                <L>get_sql(bogem, usr_wg_BadHourType/2,</L>
+                <L>get_sql(bogem, usr_wg_BadHourType/3,</L>
                 <L>'SELECT \c</L>
-                <L>  pEmplKey AS EmplKey, id \c</L>
+                <L>  pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c</L>
                 <L>FROM USR$WG_HOURTYPE \c</L>
                 <L>WHERE id IN \c</L>
                 <L>(SELECT id FROM gd_ruid \c</L>
@@ -2110,17 +2322,17 @@
                 <L>AND dbid IN (pBadHourType_dbid_IN) \c</L>
                 <L>) \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid_IN-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid_IN-_]</L>
                 <L>    ).</L>
                 <L></L>
-                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_BadFeeType, 2,</L>
+                <L>gd_pl_ds(wg_avg_wage, in, usr_wg_BadFeeType, 3,</L>
                 <L>    [</L>
-                <L>    fEmplKey-integer, fID-integer</L>
+                <L>    fEmplKey-integer, fFirstMoveKey-integer, fID-integer</L>
                 <L>    ]).</L>
                 <L>% usr_wg_BadFeeType(EmplKey, ID)</L>
-                <L>get_sql(bogem, usr_wg_BadFeeType/2,</L>
+                <L>get_sql(bogem, usr_wg_BadFeeType/3,</L>
                 <L>'SELECT \c</L>
-                <L>  pEmplKey AS EmplKey, id \c</L>
+                <L>  pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c</L>
                 <L>FROM USR$WG_FEETYPE \c</L>
                 <L>WHERE id IN \c</L>
                 <L>(SELECT id FROM gd_ruid \c</L>
@@ -2128,7 +2340,7 @@
                 <L>AND dbid IN (pBadFeeType_dbid_IN) \c</L>
                 <L>) \c</L>
                 <L>',</L>
-                <L>[pEmplKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid_IN-_]</L>
+                <L>[pEmplKey-_, pFirstMoveKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid_IN-_]</L>
                 <L>    ).</L>
                 <L></L>
                 <L>%</L>
@@ -2138,10 +2350,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>27.10.2013 17:51:18</EDITIONDATE>
+              <EDITIONDATE>02.11.2013 17:56:34</EDITIONDATE>
               <_XID>151189470</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>27.10.2013 17:51:18</_MODIFIED>
+              <_MODIFIED>02.11.2013 17:56:34</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>
@@ -2165,47 +2377,48 @@
                 <L></L>
                 <L>% 82</L>
                 <L>%:- new_param_list(wg_avg_wage, in,</L>
-                <L>%    [pEmplKey-147068452, pDateCalc-'2012-08-20']).</L>
+                <L>%    [pEmplKey-147068452, pFirstMoveKey-147068708, pDateCalc-'2012-08-20']).</L>
+                <L></L>
                 <L>/*</L>
                 <L>% 800</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-150921260, pDateCalc-'2013-06-01']).</L>
+                <L>    [pEmplKey-150921260, pFirstMoveKey-150977072, pDateCalc-'2013-06-01']).</L>
                 <L></L>
                 <L>% 479</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-149432423, pDateCalc-'2013-04-05']).</L>
+                <L>    [pEmplKey-149432423, pFirstMoveKey-149432435, pDateCalc-'2013-04-05']).</L>
                 <L></L>
                 <L>% 661</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-150379016, pDateCalc-'2013-04-18']).</L>
+                <L>    [pEmplKey-150379016, pFirstMoveKey-150390461, pDateCalc-'2013-04-18']).</L>
                 <L></L>
                 <L>% 769</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-150814111, pDateCalc-'2013-05-01']).</L>
+                <L>    [pEmplKey-150814111, pFirstMoveKey-150814114, pDateCalc-'2013-05-01']).</L>
                 <L></L>
                 <L>% 316</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-148441437, pDateCalc-'2013-07-15']).</L>
+                <L>    [pEmplKey-148441437, pFirstMoveKey-148454058, pDateCalc-'2013-07-15']).</L>
                 <L></L>
                 <L>% 694</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-150453949, pDateCalc-'2013-07-15']).</L>
+                <L>    [pEmplKey-150453949, pFirstMoveKey-150453952, pDateCalc-'2013-07-15']).</L>
                 <L></L>
                 <L>% 224</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-147445266, pDateCalc-'2013-07-22']).</L>
+                <L>    [pEmplKey-147445266, pFirstMoveKey-147447159, pDateCalc-'2013-07-22']).</L>
                 <L></L>
                 <L>% 282</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-148178017, pDateCalc-'2013-07-22']).</L>
+                <L>    [pEmplKey-148178017, pFirstMoveKey-148178019, pDateCalc-'2013-07-22']).</L>
                 <L></L>
                 <L>% 606</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-150214232, pDateCalc-'2013-08-12']).</L>
+                <L>    [pEmplKey-150214232, pFirstMoveKey-150214316, pDateCalc-'2013-08-12']).</L>
                 <L></L>
                 <L>% 338</L>
                 <L>:- new_param_list(wg_avg_wage, in,</L>
-                <L>    [pEmplKey-148586355, pDateCalc-'2013-08-14']).</L>
+                <L>    [pEmplKey-148586355, pFirstMoveKey-148586358, pDateCalc-'2013-08-14']).</L>
                 <L>*/</L>
                 <L></L>
                 <L>%</L>
@@ -2215,10 +2428,10 @@
               <MODULECODE><R>1010001_17</R></MODULECODE>
               <INHERITEDRULE>0</INHERITEDRULE>
               <USEDEBUGINFO>0</USEDEBUGINFO>
-              <EDITIONDATE>29.10.2013 13:53:25</EDITIONDATE>
+              <EDITIONDATE>02.11.2013 17:31:36</EDITIONDATE>
               <_XID>151189471</_XID>
               <_DBID>18175251</_DBID>
-              <_MODIFIED>29.10.2013 13:53:25</_MODIFIED>
+              <_MODIFIED>02.11.2013 17:31:36</_MODIFIED>
               <_INSERTFROMSTREAM>True</_INSERTFROMSTREAM>
               <_MODIFYFROMSTREAM>True</_MODIFYFROMSTREAM>
             </ROW>

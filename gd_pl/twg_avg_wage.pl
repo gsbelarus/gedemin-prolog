@@ -20,7 +20,7 @@
 %%
 
 %% facts
-:-
+:-  init_data,
     [
     usr_wg_MovementLine,
     wg_TblCalDay,
@@ -35,8 +35,7 @@
 %%
 
 %% dynamic state
-:-
-    [param_list].
+:- [param_list].
 %%
 
 %% flag
@@ -67,7 +66,7 @@ is_valid_rule(Rule) :-
     !.
 
 % среднедневной заработок
-avg_wage:-
+avg_wage(Stage) :-
     % объявить параметры контекста
     Scope = wg_avg_wage,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
@@ -76,9 +75,9 @@ avg_wage:-
     % подготовить данные
     engine_loop(Scope, in, PK),
     get_local_date_time(DT1),
-    new_param_list(Scope, debug, [begin-DT1|PK]),
+    new_param_list(Scope, debug, [begin-Stage-DT1|PK]),
     % вычислить среднедневной заработок по сотруднику
-    avg_wage(Scope, PK, AvgWage, Variant),
+    calc_avg_wage(Scope, PK, AvgWage, Variant),
     % сформировать выходные параметры
     once( get_data(Scope, in, usr_wg_MovementLine,
                 [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
@@ -86,15 +85,15 @@ avg_wage:-
     append(PK, [pListNumber-ListNumber, pAvgWage-AvgWage, pVariant-Variant], OutPairs),
     new_param_list(Scope, out, OutPairs),
     get_local_date_time(DT2),
-    new_param_list(Scope, debug, [end-DT2|PK]),
+    new_param_list(Scope, debug, [end-Stage-DT2|PK]),
     % найти альтернативу
     fail.
-avg_wage :-
+avg_wage(_) :-
     % больше альтернатив нет
     !.
 
 % среднедневной заработок по сотруднику (по расчетным месяцам)
-avg_wage(Scope, PK, AvgWage, Rule) :-
+calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     Rule = by_calc_month,
     % правило действительно
     is_valid_rule(Rule),
@@ -133,7 +132,7 @@ avg_wage(Scope, PK, AvgWage, Rule) :-
     AvgWage is float( round(AvgWage0) ),
     !.
 % среднедневной заработок по сотруднику (по среднечасовому)
-avg_wage(Scope, PK, AvgWage, Rule) :-
+calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     Rule = by_avg_houre,
     % правило действительно
     is_valid_rule(Rule),
@@ -640,8 +639,8 @@ month_bad_type(Scope, PK, Y-M) :-
     % дата для которого совпадает с проверяемым месяцем
     atom_date(Date, date(Y, M, _)),
     % с плохим типом часов
-    get_data(Scope, in, usr_wg_BadHourType,
-        [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]),
+    get_data(Scope, in, usr_wg_BadHourType, [
+        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]),
     !.
 % есть плохой тип начислений
 month_bad_type(Scope, PK, Y-M) :-
@@ -786,10 +785,13 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
     get_param_list(Scope, Type,
             [pConnection-_, pMonthQty-MonthQty], ConnectionPairs),
     get_param_list(Scope, Type, PK, Pairs),
-    member_list([pDateCalc-DateCalc], Pairs),
+    member_list([pDateCalc-DateCalc, pMonthOffset-MonthOffset], Pairs),
     %
-    atom_date(DateCalc, date(Y, M, _)), atom_date(DateCalcTo, date(Y, M, 1)),
-    MonthAdd is -MonthQty, date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),
+    atom_date(DateCalc, date(Y, M, _)), atom_date(DateCalcTo0, date(Y, M, 1)),
+    MonthOffset1 is (- MonthOffset),
+    date_add(DateCalcTo0, MonthOffset1, month, DateCalcTo),
+    MonthAdd is (- MonthQty),
+    date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),
     atom_date(DateNormFrom0, date(Y, 1, 1)),
     ( DateNormFrom0 @> DateCalcFrom, DateNormFrom = DateCalcFrom
       ; DateNormFrom = DateNormFrom0 ),
@@ -828,12 +830,14 @@ prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
  %
 %%
 
-
 %% расширение для клиента
 %
 
 % загрузка входных данных по сотруднику
-avg_wage_in(EmplKey, FirstMoveKey, DateCalc0) :-
+avg_wage_in(EmplKey, FirstMoveKey, DateCalc) :-
+    avg_wage_in(EmplKey, FirstMoveKey, DateCalc, 0).
+%
+avg_wage_in(EmplKey, FirstMoveKey, DateCalc0, MonthOffset) :-
     Scope = wg_avg_wage, Type = in,
     ( is_date(DateCalc0), DateCalc = DateCalc0
       ;
@@ -841,7 +845,8 @@ avg_wage_in(EmplKey, FirstMoveKey, DateCalc0) :-
       atom_chars(DateCalc, [Y1, Y2, Y3, Y4, '-', M1, M2, '-', D1, D2])
     ),
     new_param_list(Scope, Type,
-        [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey, pDateCalc-DateCalc]),
+        [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+         pDateCalc-DateCalc, pMonthOffset-MonthOffset]),
     !.
 
 % загрузка общих входных параметров
@@ -898,7 +903,7 @@ avg_wage_out(EmplKey, FirstMoveKey, AvgWage, Variant) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     get_param_list(Scope, Type, PK, Pairs),
     once( member_list([pAvgWage-AvgWage, pVariant-Variant], Pairs) ).
-
+% выгрузка детальных выходных данных по сотруднику
 avg_wage_det(EmplKey, FirstMoveKey,
                 Period, Rule, Wage, ModernWage, ModernCoef,
                 TabDays, TabHoures, NormDays, NormHoures) :-
@@ -928,5 +933,23 @@ avg_wage_det(EmplKey, FirstMoveKey,
         ) ),
     %
     true.
+
+% удаление данных по сотруднику
+avg_wage_clean(EmplKey, FirstMoveKey) :-
+    Scope = wg_avg_wage,
+    get_type_list(TypeList),
+    member(Type, TypeList),
+    gd_pl_ds(Scope, Type, Name, _, _),
+    del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
+    fail.
+avg_wage_clean(EmplKey, FirstMoveKey) :-
+    Scope = wg_avg_wage,
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    get_param_list(Scope, Type, PK, Pairs),
+    dispose_param_list(Scope, Type, Pairs),
+    fail.
+avg_wage_clean(_, _) :-
+    !.
+
  %
 %%
