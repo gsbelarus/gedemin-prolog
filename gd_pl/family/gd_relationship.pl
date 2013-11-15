@@ -1,0 +1,12 @@
+gd_relationship(147055133,"дочь").
+gd_relationship(147055134,"сын").
+gd_relationship(147055135,"муж").
+gd_relationship(147055136,"жена").
+gd_relationship(147055137,"отец").
+gd_relationship(147055138,"мать").
+gd_relationship(147055139,"дед").
+gd_relationship(147055140,"бабка").
+gd_relationship(147055141,"внук").
+gd_relationship(147055142,"внучка").
+gd_relationship(147055143,"брат").
+gd_relationship(147055144,"сестра").
