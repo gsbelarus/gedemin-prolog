@@ -51,11 +51,9 @@ usr :-
     working_directory(_, PathUser),
     use_module([]),
     load_files([load_atom, date, dataset], [silent(false)]).
-
 %
 fsp :-
    retractall(file_search_path(_, _)).
-
 %
 flg :-
     set_prolog_flag(gui, false),
@@ -68,7 +66,6 @@ flg :-
     set_prolog_flag(stream_type_check, false),
     set_prolog_flag(user_flags, silent),
     set_prolog_flag(verbose, silent).
-
 %
 gd :-
     gd_pl_path( bin(PathBin) ),

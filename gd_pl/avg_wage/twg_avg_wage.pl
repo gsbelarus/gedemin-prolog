@@ -5,7 +5,7 @@
 %/* %%% begin debug mode section
 
 %% saved state
-:- [load_atom, date, dataset].
+:- ['../gd_pl_state/load_atom', '../gd_pl_state/date', '../gd_pl_state/dataset'].
 %%
 
 %% include
@@ -23,7 +23,8 @@
 :-  init_data,
     [
     usr_wg_MovementLine,
-    wg_TblCalDay,
+    usr_wg_TblDayNorm,
+    usr_wg_TblYearNorm,
     usr_wg_TblCalLine,
     usr_wg_TblCal_FlexLine,
     usr_wg_HourType,
@@ -66,7 +67,7 @@ is_valid_rule(Rule) :-
     !.
 
 % среднедневной заработок
-avg_wage(Stage) :-
+avg_wage(Variant) :-
     % объявить параметры контекста
     Scope = wg_avg_wage,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
@@ -75,7 +76,7 @@ avg_wage(Stage) :-
     % подготовить данные
     engine_loop(Scope, in, PK),
     get_local_date_time(DT1),
-    new_param_list(Scope, debug, [begin-Stage-DT1|PK]),
+    new_param_list(Scope, debug, [begin-DT1|PK]),
     % вычислить среднедневной заработок по сотруднику
     calc_avg_wage(Scope, PK, AvgWage, Variant),
     % сформировать выходные параметры
@@ -85,7 +86,7 @@ avg_wage(Stage) :-
     append(PK, [pListNumber-ListNumber, pAvgWage-AvgWage, pVariant-Variant], OutPairs),
     new_param_list(Scope, out, OutPairs),
     get_local_date_time(DT2),
-    new_param_list(Scope, debug, [end-Stage-DT2|PK]),
+    new_param_list(Scope, debug, [end-DT2|PK]),
     % найти альтернативу
     fail.
 avg_wage(_) :-
@@ -156,7 +157,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
              % за период проверки
              ( member(Y-M, Periods),
              % для отработанного дня
-             usr_wg_TblCalLine1(Scope, PK, Date, Duration, _),
+             usr_wg_TblCalLine_mix(Scope, PK, Date, Duration, _),
              % с контролем наличия часов
              Duration > 0,
              % дата для которого совпадает с проверяемым месяцем
@@ -167,27 +168,10 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     sum_list(Durations, TotalTab),
     % среднечасовой заработок
     catch( AvgHoureWage is Amount / TotalTab, _, fail ),
-    % дата расчета
-    find_param(Scope, run, PK, pDateCalc-DateCalc),
-    % год расчета
-    atom_date(DateCalc, date(CalcYear, _, _)),
-    % взять часы
-    findall( WDuration,
-            % для рабочего дня
-            ( get_data(Scope, in, wg_TblCalDay, [
+    % всего часов по графику за расчетный год
+    get_data(Scope, in, usr_wg_TblYearNorm, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fTheDay-TheDay, fWDuration-WDuration,
-                fWorkDay-1, fTblCalKey-TblCalKey ]),
-            % с контролем наличия часов
-            WDuration > 0,
-            % по типу графика
-            get_schedule(Scope, PK, TheDay, TblCalKey),
-            % дата для которого совпадает с проверяемым годом
-            atom_date(TheDay, date(CalcYear, _, _)) ),
-    % в список часов графика
-            WDurations),
-    % всего часов по графику
-    sum_list(WDurations, TotalNorm),
+                fWHoures-TotalNorm]),
     % среднемесячное количество расчетных рабочих часов
     catch( AvgMonthNorm is TotalNorm / 12, _, fail ),
     % среднемесячное количество календарных дней
@@ -214,18 +198,6 @@ make_periods(DateFrom, DateTo, [Y-M|Periods]) :-
     make_periods(DateFrom1, DateTo, Periods).
 make_periods(_, _, []).
 
-% первый месяц работы
-is_first_month(Scope, PK, Y-M) :-
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    % для первого движения по типу 1 (прием на работу)
-    get_data(Scope, in, usr_wg_MovementLine,
-        [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-         fDateBegin-DateBegin, fMovementType-1]),
-    % дата совпадает с проверяемым месяцем
-    atom_date(DateBegin, date(Y, M, _)),
-    !.
-
 % месяц значимый
 is_value_month(Scope, PK, Y-M) :-
     % первый месяц работы полный или это не первый месяц работы
@@ -243,15 +215,13 @@ is_full_first_month(Scope, PK, Y-M) :-
     % если для первого движения по типу 1 (прием на работу)
     get_data(Scope, in, usr_wg_MovementLine, [
         fEmplKey-EmplKey, fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
-        fDateBegin-DateBegin, fScheduleKey-ScheduleKey, fMovementType-1 ]),
+        fDateBegin-DateBegin, fMovementType-1 ]),
     % где дата совпадает с проверяемым месяцем
     atom_date(DateBegin, date(Y, M, _)),
-    % первый рабочий день по типу графика первого движения
-    once( ( get_data(Scope, in, wg_TblCalDay, [
-                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fTheDay-TheDay, fWorkDay-1, fTblCalKey-ScheduleKey ]),
-    % дата для которого совпадает с проверяемым месяцем
-    atom_date(TheDay, date(Y, M, _)) ) ),
+    % первый рабочий день по графику для проверяемого месяца
+    once( get_data(Scope, in, usr_wg_TblDayNorm, [
+            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+            fTheDay-TheDay, fWYear-Y, fWMonth-M, fWorkDay-1 ]) ),
     !,
     % больше или равен дате первого движения
     TheDay @>= DateBegin,
@@ -264,7 +234,7 @@ is_full_first_month(_, _, _) :-
 % в месяце есть отработанные часы
 is_month_worked(Scope, PK, Y-M) :-
     % если есть хотя бы один рабочий день
-    usr_wg_TblCalLine1(Scope, PK, Date, Duration, _),
+    usr_wg_TblCalLine_mix(Scope, PK, Date, Duration, _),
     % с контролем наличия часов
     Duration > 0,
     % дата для которого совпадает с проверяемым месяцем
@@ -303,7 +273,7 @@ take_month_incl(Scope, PK, Y, M, Variant) :-
     dispose_param_list(Scope, temp, Pairs),
     new_param_list(Scope, temp, Pairs1),
     !.
- take_month_incl(Scope, PK, Y, M, Variant) :-
+take_month_incl(Scope, PK, Y, M, Variant) :-
     append(PK, [pMonthIncl-[Y-M-Variant]], Pairs),
     new_param_list(Scope, temp, Pairs),
     !.
@@ -362,7 +332,7 @@ rule_month_tab(Scope, PK, Y-M, Rule) :-
     % то месяц включается в расчет
     !.
 
-%
+% итоги по часам для графика и табеля
 total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab) :-
     get_param_list(Scope, temp, PK, Pairs),
     member_list([pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),
@@ -373,16 +343,20 @@ total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab) :-
     member_list([pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),
     !.
 
-%
+% расчитать график и табель за месяц
 calc_month_norm_tab(Scope, PK, Y-M, NormDays, TabDays) :-
     % расчитать график за месяц
     calc_month_norm(Scope, PK, Y-M, NormDays),
-    sum_days_houres(NormDays, NDays, NHoures),
+    % график не пустой
+    \+ NormDays = [],
     % расчитать табель за месяц
     calc_month_tab(Scope, PK, Y-M, TabDays),
+    % табель не пустой
+    \+ TabDays = [],
+    % сумма дней и часов по графику
+    sum_days_houres(NormDays, NDays, NHoures),
+    % сумма дней и часов по табелю
     sum_days_houres(TabDays, TDays, THoures),
-    % график и табель не пустые
-    \+ NormDays = [], \+ TabDays = [],
     % занести во временные параметры дни и часы
     append(PK, [pYM-Y-M,
                 pTDays-TDays, pTHoures-THoures,
@@ -398,16 +372,12 @@ calc_month_norm(Scope, PK, Y-M, NormDays) :-
     % взять дату/часы
     findall( TheDay-WDuration,
             % для рабочего дня
-            ( get_data(Scope, in, wg_TblCalDay, [
+            ( get_data(Scope, in, usr_wg_TblDayNorm, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fTheDay-TheDay, fWDuration-WDuration,
-                fWorkDay-1, fTblCalKey-TblCalKey ]),
+                fTheDay-TheDay, fWYear-Y, fWMonth-M,
+                fWDuration-WDuration, fWorkDay-1 ]),
             % с контролем наличия часов
-            WDuration > 0,
-            % по типу графика
-            get_schedule(Scope, PK, TheDay, TblCalKey),
-            % дата для которого совпадает с проверяемым месяцем
-            atom_date(TheDay, date(Y, M, _)) ),
+            WDuration > 0 ),
     % в список дата/часы графика
             NormDays),
     !.
@@ -417,7 +387,7 @@ calc_month_tab(Scope, PK, Y-M, TabDays) :-
     % взять дату/часы
     findall( Date-Duration,
             % для отработанного дня
-            ( usr_wg_TblCalLine1(Scope, PK, Date, Duration, _),
+            ( usr_wg_TblCalLine_mix(Scope, PK, Date, Duration, _),
             % с контролем наличия часов
             Duration > 0,
             % дата для которого совпадает с проверяемым месяцем
@@ -426,7 +396,7 @@ calc_month_tab(Scope, PK, Y-M, TabDays) :-
             TabDays),
     !.
 
-%
+% сумма дней и часов
 sum_days_houres(ListDays, Days, Houres) :-
     sum_days_houres(ListDays, Days, Houres, 0, 0),
     !.
@@ -437,29 +407,6 @@ sum_days_houres([_-Duration|ListDays], Days, Houres, Days0, Houres0) :-
     !,
     sum_days_houres(ListDays, Days, Houres, Days1, Houres1).
 
-% тип графика
-get_schedule(Scope, PK, TheDay, ScheduleKey) :-
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    findall( % взять тип графика
-             DateBegin-ScheduleKey0,
-               % где для движения
-             ( get_data(Scope, in, usr_wg_MovementLine, [
-                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                     fDateBegin-DateBegin, fScheduleKey-ScheduleKey0 ]),
-               % начальная дата меньше или равна проверяемой дате
-               once( ( DateBegin @=< TheDay
-               % либо первый день месяца меньше или равен проверяемой дате
-                       ; atom_date(DateBegin, date(Y, M, _)),
-                       atom_date(DateBegin1, date(Y, M, 1)),
-                       DateBegin1 @=< TheDay ) )
-             ),
-             % в список типов
-             ScheduleKeys ),
-    % взять последний тип из списка
-    last(ScheduleKeys, _-ScheduleKey),
-    !.
-
 % расчитать заработок за месяц
 cacl_month_wage(Scope, PK, Y, M, ModernWage) :-
     get_param_list(Scope, temp, PK, Pairs),
@@ -469,47 +416,51 @@ cacl_month_wage(Scope, PK, Y, M, ModernWage) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % взять начисления
-    findall( Debit-ModernCoef,
+    findall( Debit-ModernCoef-Rate0-RateLast0,
           % для начисления
           ( get_data(Scope, in, usr_wg_TblCharge, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fDateBegin-Date, fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),
+                fDateBegin-TheDay, fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),
           % соответствующего типа
           get_data(Scope, in, usr_wg_FeeType, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                 fFeeTypeKey-FeeTypeKey ]),
           % где дата совпадает с проверяемым месяцем
-          atom_date(Date, date(Y, M, _)),
+          atom_date(TheDay, date(Y, M, _)),
           % с коэффициентом осовременивания
-          get_modern_coef(Scope, PK, Date, ModernCoef) ),
+          get_modern_coef(Scope, PK, TheDay, ModernCoef, Rate0, RateLast0) ),
     % в список начислений
              Debits ),
+    % оклад и текущий оклад от первого начисления
+    Debits = [ _-_-Rate-RateLast | _ ],
     % всего за месяц
     sum_month_debit(Debits, Wage, ModernWage),
     % средний за месяц коэффициент осовременивания
     catch( MonthModernCoef is float( round( ModernWage / Wage * 10000 ) / 10000 ), _, fail),
-    % занести во временные параметры заработок
+    % занести во временные параметры данные по заработку
     append(PK, [pYM-Y-M,
                 pWage-Wage, pModernWage-ModernWage,
-                pModernCoef-MonthModernCoef],
+                pModernCoef-MonthModernCoef,
+                pRate-Rate, pRateLast-RateLast],
                 Pairs),
     new_param_list(Scope, temp, Pairs),
     !.
 
-%
+% итого зарплата и осовремененная зарплата за месяц
 sum_month_debit(Debits, Wage, ModernWage) :-
     sum_month_debit(Debits, Wage, ModernWage, 0, 0),
     !.
 sum_month_debit([], Wage, ModernWage, Wage, ModernWage0) :-
-    catch( ModernWage is float( round( ModernWage0 * 10000 ) / 10000 ), _, fail).
-sum_month_debit([Debit-ModernCoef | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
+    catch( ModernWage is float( round( ModernWage0 * 10000 ) / 10000 ), _, fail),
+    !.
+sum_month_debit([Debit-ModernCoef-_-_ | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
     Wage1 is Wage0 + Debit,
     ModernWage1 is ModernWage0 + Debit*ModernCoef,
     !,
     sum_month_debit(Debits, Wage, ModernWage, Wage1, ModernWage1).
 
 % коэффициент осовременивания
-get_modern_coef(Scope, PK, TheDay, ModernCoef) :-
+get_modern_coef(Scope, PK, TheDay, ModernCoef, Rate1, RateLast) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % дата расчета
@@ -525,11 +476,14 @@ get_modern_coef(Scope, PK, TheDay, ModernCoef) :-
     % в список движений
             Movements ),
     % вычислить коэффициент
-    calc_modern_coef(TheDay, Movements, ModernCoef),
+    calc_modern_coef(TheDay, Movements, ModernCoef, Rate1, RateLast),
     !.
 
 % вычислить коэффициент
-calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef) :-
+calc_modern_coef(_, [ _-RateLast | [] ], 1.0, RateLast, RateLast) :-
+    % если последнее движение, то коэффициент 1
+    !.
+calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef, Rate1, RateLast) :-
     % если проверяемая дата больше или равна даты текущего движения
     TheDay @>= Date1,
     % и меньше даты следующего движения
@@ -537,15 +491,13 @@ calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef) :
     % то взять последнюю ставку из следующего и всех оставшихся движений
     last([Date2-Rate2 | Movements], _-RateLast),
     % и вычислить коэффициент для текущего движения
-    catch( ModernCoef is float( round( RateLast / Rate1 * 10000 ) / 10000 ), _, fail),
+    catch( ModernCoef0 is float( round( RateLast / Rate1 * 10000 ) / 10000 ), _, fail),
+    ( ModernCoef0 < 1.0, ModernCoef = 1.0 ; ModernCoef = ModernCoef0 ),
     !.
-calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef) :-
+calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef, Rate, RateLast) :-
     % проверить для остальных движений
     !,
-    calc_modern_coef(TheDay, Movements, ModernCoef).
-calc_modern_coef(_, _, 1.0) :-
-    % если коэффициент не может быть вычислен, то его значение 1
-    !.
+    calc_modern_coef(TheDay, Movements, ModernCoef, Rate, RateLast).
 
 % проверка месяца по заработку
 check_month_wage(_, _, []):-
@@ -575,14 +527,14 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     cacl_month_wage(Scope, PK, Y, M, Wage),
     % с коэффициентом осовременивания на первое число месяца
     atom_date(Date, date(Y, M, 1)),
-    get_modern_coef(Scope, PK, Date, ModernCoef),
+    get_modern_coef(Scope, PK, Date, ModernCoef, _, _),
     % взять заработок
     findall( Wage1,
             % для расчетного месяца
             ( get_month_incl(Scope, PK, Y1, M1, Variant1),
             % с коэффициентом осовременивания на первое число месяца
             atom_date(Date1, date(Y1, M1, 1)),
-            get_modern_coef(Scope, PK, Date1, ModernCoef1),
+            get_modern_coef(Scope, PK, Date1, ModernCoef1, _, _),
             % где коэффициент для проверяемого и расчетного равны
             ModernCoef =:= ModernCoef1,
             % который принят для исчисления по варианту полного месяца
@@ -635,7 +587,7 @@ month_bad_type(Scope, PK, Y-M) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % если есть хотя бы один день по табелю
-    usr_wg_TblCalLine1(Scope, PK, Date, _, HoureType),
+    usr_wg_TblCalLine_mix(Scope, PK, Date, _, HoureType),
     % дата для которого совпадает с проверяемым месяцем
     atom_date(Date, date(Y, M, _)),
     % с плохим типом часов
@@ -658,12 +610,12 @@ month_bad_type(Scope, PK, Y-M) :-
     !.
 
 % день по табелю
-usr_wg_TblCalLine1(Scope, PK, Date, Duration, HoureType) :-
+usr_wg_TblCalLine_mix(Scope, PK, Date, Duration, HoureType) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     gd_pl_ds(Scope, in, usr_wg_TblCalLine, 5, _),
     catch( usr_wg_TblCalLine(EmplKey, FirstMoveKey, Date, Duration, HoureType), _, fail).
 % или по табелю мастера
-usr_wg_TblCalLine1(Scope, PK, Date, Duration, HoureType) :-
+usr_wg_TblCalLine_mix(Scope, PK, Date, Duration, HoureType) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     gd_pl_ds(Scope, in, usr_wg_TblCal_FlexLine, 65, _),
     make_list(62, TeilArgs),
@@ -787,15 +739,17 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
     get_param_list(Scope, Type, PK, Pairs),
     member_list([pDateCalc-DateCalc, pMonthOffset-MonthOffset], Pairs),
     %
-    atom_date(DateCalc, date(Y, M, _)), atom_date(DateCalcTo0, date(Y, M, 1)),
+    atom_date(DateCalc, date(Y0, M0, _)),
+    atom_date(DateCalcTo0, date(Y0, M0, 1)),
     MonthOffset1 is (- MonthOffset),
     date_add(DateCalcTo0, MonthOffset1, month, DateCalcTo),
     MonthAdd is (- MonthQty),
     date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),
-    atom_date(DateNormFrom0, date(Y, 1, 1)),
-    ( DateNormFrom0 @> DateCalcFrom, DateNormFrom = DateCalcFrom
-      ; DateNormFrom = DateNormFrom0 ),
-    Y1 is Y + 1, atom_date(DateNormTo, date(Y1, 1, 1)),
+    date_add(DateCalcTo, -1, day, DateCalcTo1),
+    atom_date(DateCalcTo1, date(Y, _, _)),
+    atom_date(DateNormFrom, date(Y, 1, 1)),
+    Y1 is Y + 1,
+    atom_date(DateNormTo, date(Y1, 1, 1)),
     %
     append(Pairs,
             [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
@@ -907,6 +861,15 @@ avg_wage_out(EmplKey, FirstMoveKey, AvgWage, Variant) :-
 avg_wage_det(EmplKey, FirstMoveKey,
                 Period, Rule, Wage, ModernWage, ModernCoef,
                 TabDays, TabHoures, NormDays, NormHoures) :-
+    avg_wage_det(EmplKey, FirstMoveKey,
+                    Period, Rule, Wage, ModernWage, ModernCoef,
+                    TabDays, TabHoures, NormDays, NormHoures,
+                    _, _).
+%
+avg_wage_det(EmplKey, FirstMoveKey,
+                Period, Rule, Wage, ModernWage, ModernCoef,
+                TabDays, TabHoures, NormDays, NormHoures,
+                Rate, RateLast) :-
     Scope = wg_avg_wage,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     %
@@ -926,7 +889,8 @@ avg_wage_det(EmplKey, FirstMoveKey,
     once( ( get_param_list(Scope, temp, PK, Pairs1),
                 member_list([pYM-Y-M,
                             pWage-Wage, pModernWage-ModernWage,
-                            pModernCoef-ModernCoef],
+                            pModernCoef-ModernCoef,
+                            pRate-Rate, pRateLast-RateLast],
                     Pairs1)
           ;
           [Wage, ModernWage, ModernCoef] = [0, 0, 1]

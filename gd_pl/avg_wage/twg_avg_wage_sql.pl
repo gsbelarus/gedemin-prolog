@@ -41,29 +41,33 @@ ORDER BY \c
 [pEmplKey-_, pFirstMoveKey-_]
     ).
 
-gd_pl_ds(wg_avg_wage, in, wg_TblCalDay, 6,
+gd_pl_ds(wg_avg_wage, in, usr_wg_TblDayNorm, 8,
     [
-    fEmplKey-integer, fFirstMoveKey-integer, fTheDay-date, fWDuration-float,
-    fWorkDay-integer, fTblCalKey-integer
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fTheDay-date, fWYear-integer, fWMonth-integer, fWDay-integer,
+    fWDuration-float, fWorkDay-integer
     ]).
-% wg_TblCalDay(EmplKey, FirstMoveKey, TheDay, WDuration, WorkDay, TblCalKey)
-get_sql(bogem, wg_TblCalDay/6,
-'SELECT \c
-  pEmplKey AS EmplKey, \c
-  pFirstMoveKey AS FirstMoveKey, \c
-  tcd.THEDAY, \c
-  tcd.WDURATION, \c
-  tcd.WORKDAY, \c
-  tcd.TBLCALKEY \c
-FROM \c
-  WG_TBLCALDAY tcd \c
-WHERE \c
-  tcd.THEDAY >= CAST(\'pDateNormFrom\' AS DATE) \c
-  AND \c
-  tcd.THEDAY < CAST(\'pDateNormTo\' AS DATE) \c
-ORDER BY \c
-  tcd.TBLCALKEY, \c
-  tcd.THEDAY \c
+% usr_wg_TblDayNorm(EmplKey, FirstMoveKey, TheDay, WYear, WMonth, WDay, WDuration, WorkDay)
+get_sql(bogem, usr_wg_TblDayNorm/8,
+'\c
+SELECT EmplKey, FirstMoveKey, TheDay, WYear, WMonth, WDay, WDuration, WorkDay \c
+FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\') \c
+',
+[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+    ).
+
+gd_pl_ds(wg_avg_wage, in, usr_wg_TblYearNorm, 5,
+    [
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fWYear-integer,
+    fWHoures-float, fWDays-integer
+    ]).
+% usr_wg_TblYearNorm(EmplKey, FirstMoveKey, WYear, WHoures, WDays)
+get_sql(bogem, usr_wg_TblYearNorm/5,
+'\c
+SELECT EmplKey, FirstMoveKey, WYear, SUM(WDuration) AS WHoures, SUM(WorkDay) AS WDays \c
+FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateNormFrom\', \'pDateNormTo\') \c
+GROUP BY EmplKey, FirstMoveKey, WYear \c
 ',
 [pEmplKey-_, pFirstMoveKey-_, pDateNormFrom-_, pDateNormTo-_]
     ).
@@ -91,9 +95,9 @@ WHERE \c
   AND \c
   tc.USR$FIRSTMOVEKEY = pFirstMoveKey \c
   AND \c
-  tcl.USR$DATE >= CAST(\'pDateCalcFrom\' AS DATE) \c
+  tcl.USR$DATE >= \'pDateCalcFrom\' \c
   AND \c
-  tcl.USR$DATE < CAST(\'pDateCalcTo\' AS DATE) \c
+  tcl.USR$DATE < \'pDateCalcTo\' \c
 ORDER BY \c
   tc.USR$EMPLKEY, \c
   tc.USR$FIRSTMOVEKEY, \c
@@ -157,9 +161,9 @@ WHERE \c
   AND \c
   tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey \c
   AND \c
-  t.USR$DATEBEGIN >= CAST(\'pDateCalcFrom\' AS DATE) \c
+  t.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
   AND \c
-  t.USR$DATEBEGIN < CAST(\'pDateCalcTo\' AS DATE) \c
+  t.USR$DATEBEGIN < \'pDateCalcTo\' \c
  ORDER BY \c
    tcfl.USR$EMPLKEY, \c
    tcfl.USR$FIRSTMOVEKEY, \c
@@ -219,9 +223,9 @@ WHERE \c
   AND \c
   tch.USR$DEBIT > 0 \c
   AND \c
-  tch.USR$DATEBEGIN >= CAST(\'pDateCalcFrom\' AS DATE) \c
+  tch.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
   AND \c
-  tch.USR$DATEBEGIN < CAST(\'pDateCalcTo\' AS DATE) \c
+  tch.USR$DATEBEGIN < \'pDateCalcTo\' \c
 ORDER BY \c
   tch.USR$EMPLKEY, \c
   tch.USR$DATEBEGIN \c
