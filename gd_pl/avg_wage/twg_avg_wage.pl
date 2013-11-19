@@ -95,9 +95,6 @@ avg_wage(_) :-
 
 % среднедневной заработок по сотруднику (по расчетным месяцам)
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
-    Rule = by_calc_month,
-    % правило действительно
-    is_valid_rule(Rule),
     % удаление временных параметров
     forall( get_param_list(Scope, temp, PK, Pairs),
             dispose_param_list(Scope, temp, Pairs) ),
@@ -105,6 +102,12 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     get_periods(Scope, PK, Periods),
     % проверка по табелю
     check_month_tab(Scope, PK, Periods),
+    % добавление во временные параметры данных по заработку
+    add_month_wage(Scope, PK, Periods),
+    % проверка дальнейшего расчета
+    Rule = by_calc_month,
+    % правило действительно
+    is_valid_rule(Rule),
     % если есть хотя бы один расчетный месяц
     ( exist_month_incl(Scope, PK),
     % то проверка по заработку
@@ -298,8 +301,8 @@ check_month_tab(Scope, PK, [Y-M|Periods]) :-
     % проверить остальные месяцы
     check_month_tab(Scope, PK, Periods).
 check_month_tab(Scope, PK, [Y-M|Periods]) :-
-    % расчитать график и табель за месяц
-    calc_month_norm_tab(Scope, PK, Y-M, _, _),
+    % проверить расчет по часам для графика и табеля
+    total_houres_norm_tab(Scope, PK, Y-M, _, _),
     !,
     % проверить остальные месяцы
     check_month_tab(Scope, PK, Periods).
@@ -307,6 +310,21 @@ check_month_tab(Scope, PK, [_|Periods]) :-
     !,
     % проверить остальные месяцы
     check_month_tab(Scope, PK, Periods).
+
+% добавление временных данных по расчету заработков
+add_month_wage(_, _, []):-
+    % больше месяцев для проверки нет
+    !.
+add_month_wage(Scope, PK, [Y-M|Periods]) :-
+    % расчитать заработок
+    cacl_month_wage(Scope, PK, Y, M, _),
+    !,
+    % проверить остальные месяцы
+    add_month_wage(Scope, PK, Periods).
+add_month_wage(Scope, PK, [_|Periods]) :-
+    !,
+    % проверить остальные месяцы
+    add_month_wage(Scope, PK, Periods).
 
 % правила включения месяца в расчет
 rule_month_tab(Scope, PK, Y-M, Rule) :-
@@ -857,17 +875,9 @@ avg_wage_out(EmplKey, FirstMoveKey, AvgWage, Variant) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     get_param_list(Scope, Type, PK, Pairs),
     once( member_list([pAvgWage-AvgWage, pVariant-Variant], Pairs) ).
+
 % выгрузка детальных выходных данных по сотруднику
-avg_wage_det(EmplKey, FirstMoveKey,
-                Period, Rule, Wage, ModernWage, ModernCoef,
-                TabDays, TabHoures, NormDays, NormHoures) :-
-    avg_wage_det(EmplKey, FirstMoveKey,
-                    Period, Rule, Wage, ModernWage, ModernCoef,
-                    TabDays, TabHoures, NormDays, NormHoures,
-                    _, _).
-%
-avg_wage_det(EmplKey, FirstMoveKey,
-                Period, Rule, Wage, ModernWage, ModernCoef,
+avg_wage_det(EmplKey, FirstMoveKey, Period, Rule, Wage, ModernWage, ModernCoef,
                 TabDays, TabHoures, NormDays, NormHoures,
                 Rate, RateLast) :-
     Scope = wg_avg_wage,
@@ -893,7 +903,7 @@ avg_wage_det(EmplKey, FirstMoveKey,
                             pRate-Rate, pRateLast-RateLast],
                     Pairs1)
           ;
-          [Wage, ModernWage, ModernCoef] = [0, 0, 1]
+          [Wage, ModernWage, ModernCoef, Rate, RateLast] = [0, 0, 1, 0, 0]
         ) ),
     %
     true.
