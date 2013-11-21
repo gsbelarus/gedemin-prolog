@@ -2,11 +2,14 @@
 
 :- new_param_list(wg_avg_wage, in,
     [pConnection-bogem,
-    pMonthQty-12, pAvgDays-29.7, pFeeGroupKey-147060452,
+    pMonthQty-12, pAvgDays-29.7,
+    pFeeGroupKey_xid-147071456,
+    pFeeGroupKey_dbid-274788016,
     pBadHourType_xid_IN-'147650804, 147650786, 147650802',
-    pBadHourType_dbid_IN-'119619099',
+    pBadHourType_dbid-119619099,
     pBadFeeType_xid_IN-'151000730',
-    pBadFeeType_dbid_IN-'2109681374']).
+    pBadFeeType_dbid-2109681374
+    ]).
 
 % 82
 %:- new_param_list(wg_avg_wage, in,

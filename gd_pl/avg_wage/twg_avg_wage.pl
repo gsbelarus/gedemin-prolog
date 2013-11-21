@@ -263,14 +263,15 @@ is_month_paid(Scope, PK, Y-M) :-
 
 % взять расчетный месяц
 get_month_incl(Scope, PK, Y, M, Variant) :-
-    get_param_list(Scope, temp, PK, Pairs),
+    append(PK, [pMonthIncl-MonthInclList], Pairs),
+    get_param_list(Scope, temp, Pairs),
     member(pMonthIncl-MonthInclList, Pairs),
     member(Y-M-Variant, MonthInclList).
 
 % принять месяц для исчисления
 take_month_incl(Scope, PK, Y, M, Variant) :-
-    get_param_list(Scope, temp, PK, Pairs),
-    member(pMonthIncl-MonthInclList, Pairs),
+    append(PK, [pMonthIncl-MonthInclList], Pairs),
+    get_param_list(Scope, temp, Pairs),
     keysort([Y-M-Variant | MonthInclList], MonthInclList1),
     append(PK, [pMonthIncl-MonthInclList1], Pairs1),
     dispose_param_list(Scope, temp, Pairs),
@@ -352,13 +353,13 @@ rule_month_tab(Scope, PK, Y-M, Rule) :-
 
 % итоги по часам для графика и табеля
 total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab) :-
-    get_param_list(Scope, temp, PK, Pairs),
-    member_list([pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),
+    append(PK, [pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),
+    get_param_list(Scope, temp, Pairs),
     !.
 total_houres_norm_tab(Scope, PK, Y-M, MonthNorm, MonthTab) :-
     calc_month_norm_tab(Scope, PK, Y-M, _, _),
-    get_param_list(Scope, temp, PK, Pairs),
-    member_list([pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),
+    append(PK, [pYM-Y-M, pTHoures-MonthTab, pNHoures-MonthNorm], Pairs),
+    get_param_list(Scope, temp, Pairs),
     !.
 
 % расчитать график и табель за месяц
@@ -367,12 +368,10 @@ calc_month_norm_tab(Scope, PK, Y-M, NormDays, TabDays) :-
     calc_month_norm(Scope, PK, Y-M, NormDays),
     % график не пустой
     \+ NormDays = [],
-    % расчитать табель за месяц
-    calc_month_tab(Scope, PK, Y-M, TabDays),
-    % табель не пустой
-    \+ TabDays = [],
     % сумма дней и часов по графику
     sum_days_houres(NormDays, NDays, NHoures),
+    % расчитать табель за месяц
+    calc_month_tab(Scope, PK, Y-M, TabDays),
     % сумма дней и часов по табелю
     sum_days_houres(TabDays, TDays, THoures),
     % занести во временные параметры дни и часы
@@ -427,8 +426,8 @@ sum_days_houres([_-Duration|ListDays], Days, Houres, Days0, Houres0) :-
 
 % расчитать заработок за месяц
 cacl_month_wage(Scope, PK, Y, M, ModernWage) :-
-    get_param_list(Scope, temp, PK, Pairs),
-    member_list([pYM-Y-M, pModernWage-ModernWage], Pairs),
+    append(PK, [pYM-Y-M, pModernWage-ModernWage], Pairs),
+    get_param_list(Scope, temp, Pairs),
     !.
 cacl_month_wage(Scope, PK, Y, M, ModernWage) :-
     % разложить первичный ключ
@@ -822,28 +821,29 @@ avg_wage_in(EmplKey, FirstMoveKey, DateCalc0, MonthOffset) :-
     !.
 
 % загрузка общих входных параметров
-avg_wage_in_public(Connection, MonthQty, AvgDays, FeeGroupKey,
-                    BadHourType_xid_IN, BadHourType_dbid_IN,
-                    BadFeeType_xid_IN, BadFeeType_dbid_IN) :-
+avg_wage_in_public(Connection, MonthQty, AvgDays,
+                    FeeGroupKey_xid, FeeGroupKey_dbid,
+                    BadHourType_xid_IN, BadHourType_dbid,
+                    BadFeeType_xid_IN, BadFeeType_dbid) :-
     Scope = wg_avg_wage, Type = in,
     new_param_list(Scope, Type,
         [pConnection-Connection,
-        pMonthQty-MonthQty, pAvgDays-AvgDays, pFeeGroupKey-FeeGroupKey,
+        pMonthQty-MonthQty, pAvgDays-AvgDays,
+        pFeeGroupKey_xid-FeeGroupKey_xid,
+        pFeeGroupKey_dbid-FeeGroupKey_dbid,
         pBadHourType_xid_IN-BadHourType_xid_IN,
-        pBadHourType_dbid_IN-BadHourType_dbid_IN,
+        pBadHourType_dbid-BadHourType_dbid,
         pBadFeeType_xid_IN-BadFeeType_xid_IN,
-        pBadFeeType_dbid_IN-BadFeeType_dbid_IN]),
+        pBadFeeType_dbid-BadFeeType_dbid]),
     !.
 
 % выгрузка данных выполнения по сотруднику
 avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo) :-
     Scope = wg_avg_wage, Type = run,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    get_param_list(Scope, Type, PK, Pairs),
-    once( member_list(
-            [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo],
-            Pairs) ).
-
+    append(PK, [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo], Pairs),
+    get_param_list(Scope, Type, Pairs).
+    
 % выгрузка SQL-запросов по сотруднику
 avg_wage_sql(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL) :-
     Scope = wg_avg_wage, Type = query, TypeNextStep = data,
@@ -873,8 +873,8 @@ avg_wage_kb(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL) :-
 avg_wage_out(EmplKey, FirstMoveKey, AvgWage, Variant) :-
     Scope = wg_avg_wage, Type = out,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    get_param_list(Scope, Type, PK, Pairs),
-    once( member_list([pAvgWage-AvgWage, pVariant-Variant], Pairs) ).
+    append(PK, [pAvgWage-AvgWage, pVariant-Variant], Pairs),
+    get_param_list(Scope, Type, Pairs).
 
 % выгрузка детальных выходных данных по сотруднику
 avg_wage_det(EmplKey, FirstMoveKey, Period, Rule, Wage, ModernWage, ModernCoef,
@@ -883,12 +883,11 @@ avg_wage_det(EmplKey, FirstMoveKey, Period, Rule, Wage, ModernWage, ModernCoef,
     Scope = wg_avg_wage,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     %
-    get_param_list(Scope, temp, PK, Pairs),
-    once( member_list([pYM-Y-M,
-                        pTDays-TabDays, pTHoures-TabHoures,
-                        pNDays-NormDays, pNHoures-NormHoures],
-                    Pairs)
-        ),
+    append(PK, [pYM-Y-M,
+                    pTDays-TabDays, pTHoures-TabHoures,
+                    pNDays-NormDays, pNHoures-NormHoures],
+            Pairs),
+    get_param_list(Scope, temp, Pairs),
     %
     atom_date(Period, date(Y, M, 1)),
     %
@@ -896,15 +895,15 @@ avg_wage_det(EmplKey, FirstMoveKey, Period, Rule, Wage, ModernWage, ModernCoef,
             ; MonthIncl = [] ) ),
     once( ( member(Y-M-Rule, MonthIncl) ; Rule = none ) ),
     %
-    once( ( get_param_list(Scope, temp, PK, Pairs1),
-                member_list([pYM-Y-M,
+    once( ( ( append(PK, [pYM-Y-M,
                             pWage-Wage, pModernWage-ModernWage,
                             pModernCoef-ModernCoef,
                             pRate-Rate, pRateLast-RateLast],
-                    Pairs1)
-          ;
-          [Wage, ModernWage, ModernCoef, Rate, RateLast] = [0, 0, 1, 0, 0]
-        ) ),
+                    Pairs1),
+              get_param_list(Scope, temp, Pairs1) )
+            ;
+              [Wage, ModernWage, ModernCoef, Rate, RateLast] = [0, 0, 1, 0, 0]
+          ) ),
     %
     true.
 

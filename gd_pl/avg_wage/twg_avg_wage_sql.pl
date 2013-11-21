@@ -247,10 +247,14 @@ get_sql(bogem, usr_wg_FeeType/4,
   ft.USR$WG_FEETYPEKEY \c
 FROM \c
   USR$CROSS179_256548741 ft \c
-WHERE
-  ft.USR$WG_FEEGROUPKEY = pFeeGroupKey \c
+WHERE \c
+  ft.USR$WG_FEEGROUPKEY IN \c
+(SELECT id FROM gd_ruid \c
+WHERE xid = pFeeGroupKey_xid \c
+AND dbid = pFeeGroupKey_dbid \c
+) \c
 ',
-[pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey-_]
+[pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_xid-_, pFeeGroupKey_dbid-_]
     ).
 
 gd_pl_ds(wg_avg_wage, in, usr_wg_BadHourType, 3,
@@ -265,10 +269,10 @@ FROM USR$WG_HOURTYPE \c
 WHERE id IN \c
 (SELECT id FROM gd_ruid \c
 WHERE xid IN (pBadHourType_xid_IN) \c
-AND dbid IN (pBadHourType_dbid_IN) \c
+AND dbid = pBadHourType_dbid \c
 ) \c
 ',
-[pEmplKey-_, pFirstMoveKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid_IN-_]
+[pEmplKey-_, pFirstMoveKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid-_]
     ).
 
 gd_pl_ds(wg_avg_wage, in, usr_wg_BadFeeType, 3,
@@ -283,10 +287,10 @@ FROM USR$WG_FEETYPE \c
 WHERE id IN \c
 (SELECT id FROM gd_ruid \c
 WHERE xid IN (pBadFeeType_xid_IN) \c
-AND dbid IN (pBadFeeType_dbid_IN) \c
+AND dbid = pBadFeeType_dbid \c
 ) \c
 ',
-[pEmplKey-_, pFirstMoveKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid_IN-_]
+[pEmplKey-_, pFirstMoveKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid-_]
     ).
 
 %
