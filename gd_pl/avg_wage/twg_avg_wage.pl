@@ -642,13 +642,13 @@ usr_wg_TblCalLine_mix(Scope, PK, Date, Duration, HoureType) :-
     member(D, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
                 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]),
     atom_date(Date, date(Y, M, D)),
-    S is (D - 1) * 2 + 1,
+    S is (D - 1) * 2 + 4,
     H is S + 1,
-    nth1(S, TeilArgs, Duration0),
+    arg(S, Term, Duration0),
     once( ( number(Duration0), Duration = Duration0
             ; atom_number(Duration0, Duration)
             ; Duration is 0 ) ),
-    nth1(H, TeilArgs, HoureType0),
+    arg(H, Term, HoureType0),
     once( ( number(HoureType0), HoureType = HoureType0
             ; atom_number(HoureType0, HoureType)
             ; HoureType is 0 ) ).
@@ -713,7 +713,6 @@ engine_loop(Scope, Type, PK) :-
               Term =.. [Query | Args ],
               retractall( Term ) )
             ),
-    garbage_collect,
     !.
 % error handler
 engine_loop(Scope, Type, PK) :-

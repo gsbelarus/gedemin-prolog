@@ -92,9 +92,9 @@ get_data(Scope, Type, Name, FieldValuePairs) :-
     current_functor(Name, Arity),
     check_fields(FieldValuePairs, FieldTypePairs),
     prepare_args(FieldTypePairs, FieldArgPairs, Args),
+    unify_args(FieldValuePairs, FieldArgPairs),
     Term =.. [Name|Args],
-    catch( user:Term, _, fail ),
-    unify_args(FieldValuePairs, FieldArgPairs).
+    catch( user:Term, _, fail ).
 
 %
 del_data(Name, FieldValuePairs) :-
@@ -108,9 +108,9 @@ del_data(Scope, Type, Name, FieldValuePairs) :-
     current_functor(Name, Arity),
     check_fields(FieldValuePairs, FieldTypePairs),
     prepare_args(FieldTypePairs, FieldArgPairs, Args),
+    unify_args(FieldValuePairs, FieldArgPairs),
     Term =.. [Name|Args],
     catch( user:Term, _, fail ),
-    unify_args(FieldValuePairs, FieldArgPairs),
     retractall( user:Term ),
     fail.
 del_data(_, _, _, _) :-
