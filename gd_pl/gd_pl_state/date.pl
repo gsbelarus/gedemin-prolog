@@ -6,11 +6,14 @@
                                     % 'yyyy-mm-dd', 'hh:nn:ss'
             date_add/4,             %% +Date, +Add, +Part, -Date1
                                     % Part: year; month; day
+            date_diff/3,            %% +Date, ?Add, +Date1
+                                    %
             atom_date/2,            %% ?Atom, ?Date
                                     % 'yyyy-mm-dd', date(Y,M,D)
             is_date/1,              %% +Date
                                     % 'yyyy-mm-dd' or date(Y,M,D)
             month_days/3            %% +Year, ?Month, ?Days
+                                    %
             ]).
 
 %
@@ -35,6 +38,7 @@ get_local_date_time(Date, Time) :-
 date_add(Date, Add, Part, Date1) :-
     is_date(Date), integer(Add), date_part(Part),
     ( atom(Date), atom_date(Date, Date2) ; Date2 = Date ),
+    !,
     date_shift(Date2, Add, Part, Date3),
     ( atom(Date), atom_date(Date1, Date3) ; Date1 = Date3 ),
     !.
@@ -48,6 +52,25 @@ date_shift(Date, 0, _, Date) :-
     Add1 is Add - Shift,
     !,
     date_shift(Date2, Add1, Part, Date1).
+
+%
+date_diff(Date, Add, Date1) :-
+    is_date(Date), is_date(Date1),
+    ( atom(Date), atom_date(Date, Date2) ; Date2 = Date ),
+    ( atom(Date1), atom_date(Date1, Date3) ; Date3 = Date1 ),
+    ( Date @< Date1, Shift = 1; Date @> Date1, Shift = -1 ; Shift = 0),
+    !,
+    date_diff(Date2, Add, day, Date3, Shift, 0),
+    !.
+
+%
+date_diff(Date, Add, _, Date, _, Add) :-
+    !.
+date_diff(Date, Add, Part, Date1, Shift, Add0) :-
+    date_shift_one(Date, Part, Date2, Shift),
+    Add1 is Add0 + Shift,
+    !,
+    date_diff(Date2, Add, Part, Date1, Shift, Add1).
 
 %
 date_shift_one(date(Y, M, D), day, date(Y, M, D1), Shift) :-
