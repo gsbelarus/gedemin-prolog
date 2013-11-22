@@ -905,6 +905,8 @@ avg_wage_det(EmplKey, FirstMoveKey, Period, Rule, Wage, ModernWage, ModernCoef,
               [Wage, ModernWage, ModernCoef, Rate, RateLast] = [0, 0, 1, 0, 0]
           ) ),
     %
+    TabHoures > 0, Wage > 0,
+    %
     true.
 
 % удаление данных по сотруднику
