@@ -22,12 +22,13 @@
 %% facts
 :-  init_data,
     [
+    %usr_wg_DbfSums,
     usr_wg_MovementLine,
     usr_wg_TblDayNorm,
     usr_wg_TblYearNorm,
     usr_wg_TblCalLine,
     usr_wg_TblCal_FlexLine,
-    usr_wg_HourType,
+    %usr_wg_HourType,
     usr_wg_TblCharge,
     usr_wg_FeeType,
     usr_wg_BadHourType,
@@ -71,10 +72,24 @@ avg_wage(Variant) :-
     % объявить параметры контекста
     Scope = wg_avg_wage_vacation,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    avg_wage(Scope, PK),
+    avg_wage(Scope, PK, Variant),
+    !.
+% prepare data
+avg_wage(Scope, PK) :-
     % для каждого первичного ключа расчета из входных параметров
     get_param_list(Scope, in, PK),
     % подготовить данные
     engine_loop(Scope, in, PK),
+    % найти альтернативу
+    fail.
+avg_wage(_, _) :-
+    % больше альтернатив нет
+    !.
+% calc result
+avg_wage(Scope, PK, Variant) :-
+    % для каждого первичного ключа расчета из входных параметров
+    get_param_list(Scope, in, PK),
     get_local_date_time(DT1),
     new_param_list(Scope, debug, [begin-DT1|PK]),
     % вычислить среднедневной заработок по сотруднику
@@ -89,7 +104,7 @@ avg_wage(Variant) :-
     new_param_list(Scope, debug, [end-DT2|PK]),
     % найти альтернативу
     fail.
-avg_wage(_) :-
+avg_wage(_, _, _) :-
     % больше альтернатив нет
     !.
 

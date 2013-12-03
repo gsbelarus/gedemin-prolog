@@ -9,13 +9,13 @@
 
 %
 wg_valid_sql([
-            usr_wg_DbfSums/6,
+            -usr_wg_DbfSums/6,
             usr_wg_MovementLine/8,
             usr_wg_TblDayNorm/8,
             usr_wg_TblYearNorm/5,
             usr_wg_TblCalLine/7,
             usr_wg_TblCal_FlexLine/67,
-            usr_wg_HourType/12,
+            -usr_wg_HourType/12,
             usr_wg_TblCharge/7,
             usr_wg_FeeType/4,
             usr_wg_BadHourType/3,
