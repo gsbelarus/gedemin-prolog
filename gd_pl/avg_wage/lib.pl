@@ -23,28 +23,49 @@ make_list(Num, [_|Tail], Zero) :-
 
 % replace(+In, +Search, +Replace, -Out)
 replace(In, Search, Replace, Out) :-
-    atomic_list([In, Search, Replace]),
-    term_to_atom_list([In, Search, Replace], [In1, Search1, Replace1]),
-    atom_chars_list([In1, Search1, Replace1], [InChars, SearchChars, ReplaceChars]),
-    replace_list(InChars, SearchChars, ReplaceChars, OutChars),
-    atom_chars(Out, OutChars),
+    text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
+    replace_list(InCodes, SearchCodes, ReplaceCodes, OutCodes),
+    text_in_out(In, OutCodes, Out),
     !.
-
-% replace_all(+In, +Search, +Replace, -Out)
-replace_all(In, Search, Replace, Out) :-
-    replace(In, Search, Replace, In1),
-    !,
-    replace_all(In1, Search, Replace, Out).
-replace_all(In, _, _, In).
+replace(In, _, _, In).
 
 %
-replace_list(InChars, SearchChars, ReplaceChars, OutChars) :-
-    append(SearchChars, RestChars, InChars),
+text_list([], []) :-
+    !.
+text_list([Head|Teil], [Head1|Rest]) :-
+    text_in_out(Head, Head1, Head),
+    !,
+    text_list(Teil, Rest).
+
+%
+text_in_out(In, OutCodes, Out) :-
+    ( atom(In), atom_codes(Out, OutCodes)
+    ; string(In), string_codes(Out, OutCodes)
+    ; number(In), number_codes(Out, OutCodes)
+    ; integer_list(In), Out = In ),
+    !,
+    \+ In = [].
+
+%
+replace_list([InHead1,InHead2,InHead3|InChars], [InHead1,InHead2,InHead3|SearchChars], ReplaceChars, OutChars) :-
+    append([InHead1,InHead2,InHead3|SearchChars], RestChars, [InHead1,InHead2,InHead3|InChars]),
+    append(ReplaceChars, RestChars, OutChars),
+    !.
+replace_list([InHead|InChars], [InHead|SearchChars], ReplaceChars, OutChars) :-
+    append([InHead|SearchChars], RestChars, [InHead|InChars]),
     append(ReplaceChars, RestChars, OutChars),
     !.
 replace_list([InHead|InTail], SearchChars, ReplaceChars, [InHead|OutChars]) :-
     !,
     replace_list(InTail, SearchChars, ReplaceChars, OutChars).
+
+% replace_all(+In, +Search, +Replace, -Out)
+replace_all(In, Search, Replace, Out) :-
+    replace(In, Search, Replace, In1),
+    \+ In = In1,
+    !,
+    replace_all(In1, Search, Replace, Out).
+replace_all(In, _, _, In).
 
 %
 term_to_atom_list([], []).
@@ -97,5 +118,11 @@ atomic_list([]).
 atomic_list([Head|Tail]) :-
     atomic(Head),
     atomic_list(Tail).
-    
+
+%
+integer_list([]).
+integer_list([Head|Tail]) :-
+    integer(Head),
+    integer_list(Tail).
+
 %
