@@ -2,6 +2,8 @@
 
 :- retractall(debug_mode).
 
+:- ps32k_lgt(1, 2, 1).
+
 %/* %%% begin debug mode section
 
 %% saved state
@@ -71,7 +73,7 @@ is_valid_rule(Rule) :-
 avg_wage(Variant) :-
     % объявить параметры контекста
     Scope = wg_avg_wage_vacation,
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    PK = [pEmplKey-_, pFirstMoveKey-_],
     avg_wage(Scope, PK),
     avg_wage(Scope, PK, Variant),
     !.
@@ -90,6 +92,8 @@ avg_wage(_, _) :-
 avg_wage(Scope, PK, Variant) :-
     % для каждого первичного ключа расчета из входных параметров
     get_param_list(Scope, in, PK),
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     get_local_date_time(DT1),
     new_param_list(Scope, debug, [begin-DT1|PK]),
     % вычислить среднедневной заработок по сотруднику
@@ -981,3 +985,16 @@ avg_wage_clean(_, _) :-
 
  %
 %%
+
+%
+compile_sql:-
+    findall( Query/Arity,
+            ( get_sql(_, Query/Arity, _, _),
+              current_functor(Query, Arity),
+              is_valid_sql(Query/Arity) ),
+            Predicates
+            ),
+    compile_predicates(Predicates),
+    !.
+
+%

@@ -41,8 +41,10 @@ pl_assert(Goal) :-
     assertz(Goal),
     !.
 
-ps(1) :-
-    set_prolog_stack(local, min_free(131072)),
-    set_prolog_stack(global, min_free(65536)),
-    set_prolog_stack(trail, min_free(65536)),
+% ps32k_lgt(+Local, +Global, +Trail) % by 32k
+ps32k_lgt(Local, Global, Trail) :-
+    integer(Local), integer(Global), integer(Trail),
+    set_prolog_stack(local, min_free(Local*2**13)),
+    set_prolog_stack(global, min_free(Global*2**13)),
+    set_prolog_stack(trail, min_free(Trail*2**13)),
     !.
