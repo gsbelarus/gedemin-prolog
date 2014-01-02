@@ -4,20 +4,21 @@
     GetSQL = [gd_pl_ds/5, get_sql/4],
     dynamic(GetSQL),
     multifile(GetSQL),
-    discontiguous(GetSQL),
-    !.
+    discontiguous(GetSQL).
 
 %
 wg_valid_sql([
             -usr_wg_DbfSums/6,
             usr_wg_MovementLine/8,
+            usr_wg_FCRateSum/4,
             usr_wg_TblDayNorm/8,
             usr_wg_TblYearNorm/5,
             usr_wg_TblCalLine/7,
             usr_wg_TblCal_FlexLine/67,
             -usr_wg_HourType/12,
-            usr_wg_TblCharge/7,
-            usr_wg_FeeType/4,
+            usr_wg_TblCharge/9,
+            usr_wg_FeeType/5,
+            usr_wg_FeeTypeNoCoef/4,
             usr_wg_BadHourType/3,
             usr_wg_BadFeeType/3
             ]).
@@ -60,15 +61,15 @@ ORDER BY \c
 [pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_MovementLine, 8,
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_MovementLine, 9,
     [
     fEmplKey-integer, fDocumentKey-integer, fFirstMoveKey-integer,
     fDateBegin-date, fScheduleKey-integer, fMovementType-integer,
-    fRate-float, fListNumber-string
+    fRate-float, fListNumber-string, fMSalary-float
     ]).
 % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey, DateBegin, ScheduleKey,
-%   MovementType, Rate, ListNumber)
-get_sql(gsdb, usr_wg_MovementLine/8,
+%   MovementType, Rate, ListNumber, MSalary)
+get_sql(gsdb, usr_wg_MovementLine/9,
 "SELECT \c
   ml.USR$EMPLKEY, \c
   ml.DOCUMENTKEY, \c
@@ -77,7 +78,8 @@ get_sql(gsdb, usr_wg_MovementLine/8,
   ml.USR$SCHEDULEKEY, \c
   ml.USR$MOVEMENTTYPE, \c
   ml.USR$RATE, \c
-  ml.USR$LISTNUMBER \c
+  ml.USR$LISTNUMBER, \c
+  ml.USR$MSALARY \c
 FROM \c
   USR$WG_MOVEMENTLINE ml \c
 WHERE \c
@@ -88,6 +90,26 @@ ORDER BY \c
   ml.USR$EMPLKEY, \c
   ml.USR$FIRSTMOVE, \c
   ml.USR$DATEBEGIN \c
+",
+[pEmplKey-_, pFirstMoveKey-_]
+    ).
+
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FCRate, 4,
+    [
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fDate-date, fFCRateSum-float
+    ]).
+% usr_wg_FCRate(EmplKey, FirstMoveKey, Date, FCRateSum)
+get_sql(gsdb, usr_wg_FCRate/4,
+"SELECT \c
+  pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
+  fc.USR$WG_DATE, \c
+  fc.USR$WG_FCRATESUM \c
+FROM \c
+  USR$WG_FCRATE fc \c
+ORDER BY \c
+  fc.USR$WG_DATE \c
 ",
 [pEmplKey-_, pFirstMoveKey-_]
     ).
@@ -260,14 +282,15 @@ FROM \c
 [pEmplKey-_, pFirstMoveKey-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCharge, 7,
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCharge, 9,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
     fCalYear-integer, fCalMonth-integer, fDateBegin-date,
-    fDebit-float, fFeeTypeKey-integer
+    fDebit-float, fFeeTypeKey-integer, fDOW-float, fHOW-float
     ]).
-% usr_wg_TblCharge(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, FeeTypeKey)
-get_sql(gsdb, usr_wg_TblCharge/7,
+% usr_wg_TblCharge(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin,
+%   Debit, FeeTypeKey, DOW, HOW)
+get_sql(gsdb, usr_wg_TblCharge/9,
 "SELECT \c
   tch.USR$EMPLKEY, \c
   tch.USR$FIRSTMOVEKEY, \c
@@ -275,7 +298,9 @@ get_sql(gsdb, usr_wg_TblCharge/7,
   EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth, \c
   tch.USR$DATEBEGIN, \c
   tch.USR$DEBIT, \c
-  tch.USR$FEETYPEKEY \c
+  tch.USR$FEETYPEKEY, \c
+  tch.USR$DOW, \c
+  tch.USR$HOW \c
 FROM \c
   USR$WG_TBLCHARGE tch \c
 WHERE \c
@@ -293,20 +318,24 @@ ORDER BY \c
 [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FeeType, 4,
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FeeType, 5,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
-    fFeeGroupKey-integer, fFeeTypeKey-integer
+    fFeeGroupKey-integer, fFeeTypeKey-integer, fAvgDayHOW-integer
     ]).
-% usr_wg_FeeType(EmplKey, FeeGroupKey, FeeTypeKey)
-get_sql(gsdb, usr_wg_FeeType/4,
+% usr_wg_FeeType(EmplKey, FirstMoveKey, FeeGroupKey, FeeTypeKey, AvgDayHOW)
+get_sql(gsdb, usr_wg_FeeType/5,
 "SELECT \c
   pEmplKey AS EmplKey,  \c
   pFirstMoveKey AS FirstMoveKey, \c
   ft.USR$WG_FEEGROUPKEY, \c
-  ft.USR$WG_FEETYPEKEY \c
+  ft.USR$WG_FEETYPEKEY, \c
+  ft_avg.USR$AVGDAYHOW \c
 FROM \c
   USR$CROSS179_256548741 ft \c
+JOIN \c
+  USR$WG_FEETYPE ft_avg \c
+    ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \c
 WHERE \c
   ft.USR$WG_FEEGROUPKEY IN \c
 (SELECT id FROM gd_ruid \c
@@ -317,11 +346,38 @@ AND dbid = pFeeGroupKey_dbid \c
 [pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_xid-_, pFeeGroupKey_dbid-_]
     ).
 
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FeeTypeNoCoef, 4,
+    [
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fFeeGroupKeyNoCoef-integer, fFeeTypeKeyNoCoef-integer
+    ]).
+% usr_wg_FeeTypeNoCoef(EmplKey, FirstMoveKey, FeeGroupKeyNoCoef, FeeTypeKeyNoCoef)
+get_sql(gsdb, usr_wg_FeeTypeNoCoef/4,
+"SELECT \c
+  pEmplKey AS EmplKey,  \c
+  pFirstMoveKey AS FirstMoveKey, \c
+  ft.USR$WG_FEEGROUPKEY, \c
+  ft.USR$WG_FEETYPEKEY \c
+FROM \c
+  USR$CROSS179_256548741 ft \c
+JOIN \c
+  USR$WG_FEETYPE ft_avg \c
+    ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \c
+WHERE \c
+  ft.USR$WG_FEEGROUPKEY IN \c
+(SELECT id FROM gd_ruid \c
+WHERE xid = pFeeGroupKeyNoCoef_xid \c
+AND dbid = pFeeGroupKeyNoCoef_dbid \c
+) \c
+",
+[pEmplKey-_, pFirstMoveKey-_, pFeeGroupKeyNoCoef_xid-_, pFeeGroupKeyNoCoef_dbid-_]
+    ).
+
 gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_BadHourType, 3,
     [
     fEmplKey-integer, fFirstMoveKey-integer, fID-integer
     ]).
-% usr_wg_BadHourType(EmplKey, ID)
+% usr_wg_BadHourType(EmplKey, FirstMoveKey, ID)
 get_sql(gsdb, usr_wg_BadHourType/3,
 "SELECT \c
   pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c
@@ -339,7 +395,7 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_BadFeeType, 3,
     [
     fEmplKey-integer, fFirstMoveKey-integer, fID-integer
     ]).
-% usr_wg_BadFeeType(EmplKey, ID)
+% usr_wg_BadFeeType(EmplKey, FirstMoveKey, ID)
 get_sql(gsdb, usr_wg_BadFeeType/3,
 "SELECT \c
   pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c

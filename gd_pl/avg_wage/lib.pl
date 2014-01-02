@@ -1,12 +1,10 @@
 ﻿% lib
 
-% over_list(+Over, +List)
-over_list(Over, [Head|[]]) :-
-    Over >= Head.
-over_list(Over, [Head|Tail]) :-
-    Over >= Head,
-    !,
-    over_list(Over, Tail).
+% to_currency(+NumIn, -NumOut)
+to_currency(NumIn, NumOut) :-
+    number(NumIn),
+    NumOut is float( round(NumIn * 10000) / 10000 ),
+    !.
 
 % make_list(+Num, -List)
 make_list(Num, List) :-
@@ -20,6 +18,14 @@ make_list(Num, [_|Tail], Zero) :-
     Num1 is Num - 1,
     !,
     make_list(Num1, Tail, Zero).
+
+% replace_all(+In, +Search, +Replace, -Out)
+replace_all(In, Search, Replace, Out) :-
+    replace(In, Search, Replace, In1),
+    \+ In = In1,
+    !,
+    replace_all(In1, Search, Replace, Out).
+replace_all(In, _, _, In).
 
 % replace(+In, +Search, +Replace, -Out)
 replace(In, Search, Replace, Out) :-
@@ -47,6 +53,12 @@ text_in_out(In, OutCodes, Out) :-
     \+ In = [].
 
 %
+integer_list([]).
+integer_list([Head|Tail]) :-
+    integer(Head),
+    integer_list(Tail).
+
+%
 replace_list([InHead1,InHead2,InHead3|InChars], [InHead1,InHead2,InHead3|SearchChars], ReplaceChars, OutChars) :-
     append([InHead1,InHead2,InHead3|SearchChars], RestChars, [InHead1,InHead2,InHead3|InChars]),
     append(ReplaceChars, RestChars, OutChars),
@@ -58,28 +70,6 @@ replace_list([InHead|InChars], [InHead|SearchChars], ReplaceChars, OutChars) :-
 replace_list([InHead|InTail], SearchChars, ReplaceChars, [InHead|OutChars]) :-
     !,
     replace_list(InTail, SearchChars, ReplaceChars, OutChars).
-
-% replace_all(+In, +Search, +Replace, -Out)
-replace_all(In, Search, Replace, Out) :-
-    replace(In, Search, Replace, In1),
-    \+ In = In1,
-    !,
-    replace_all(In1, Search, Replace, Out).
-replace_all(In, _, _, In).
-
-%
-term_to_atom_list([], []).
-term_to_atom_list([Head|Tail], [Head1|Tail1]) :-
-    ( atom(Head), Head1 = Head ; term_to_atom(Head, Head1) ),
-    !,
-    term_to_atom_list(Tail, Tail1).
-
-%
-atom_chars_list([], []).
-atom_chars_list([Head|Tail], [Head1|Tail1]) :-
-    atom_chars(Head, Head1),
-    !,
-    atom_chars_list(Tail, Tail1).
 
 %
 remove_list(_, [], []) :-
@@ -100,29 +90,5 @@ member_list([], _).
 member_list([Head|Tail], List) :-
     member(Head, List),
     member_list(Tail, List).
-
-%
-ground_list([]).
-ground_list([Head|Tail]) :-
-    ground(Head),
-    ground_list(Tail).
-
-%
-atom_list([]).
-atom_list([Head|Tail]) :-
-    atom(Head),
-    atom_list(Tail).
-
-%
-atomic_list([]).
-atomic_list([Head|Tail]) :-
-    atomic(Head),
-    atomic_list(Tail).
-
-%
-integer_list([]).
-integer_list([Head|Tail]) :-
-    integer(Head),
-    integer_list(Tail).
 
 %

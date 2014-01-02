@@ -1,7 +1,7 @@
 ﻿% params
 
 %:- ensure_loaded(lib).
-/* ground_list, remove_list, member_list */
+/* remove_list, member_list */
 
 :-
     dynamic(param_list/3),
@@ -17,9 +17,9 @@
 
 % new_param_list(+Scope, +Type, +Pairs)
 new_param_list(Scope, Type, Pairs) :-
-    ground_list([Scope, Type, Pairs]),
+    ground([Scope, Type, Pairs]),
     ( \+ param_list(Scope, Type, Pairs),
-      assert( param_list(Scope, Type, Pairs) ) ; true ),
+      assertz( param_list(Scope, Type, Pairs) ) ; true ),
     !.
 
 % dispose_param_list(?Scope, ?Type, ?Pairs)
