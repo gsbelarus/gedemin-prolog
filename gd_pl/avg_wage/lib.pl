@@ -86,9 +86,11 @@ remove_list(Elem, [Head|Tail], [Head|Rest]) :-
     remove_list(Elem, Tail, Rest).
 
 %
-member_list([], _).
+member_list([], _) :-
+    !.
 member_list([Head|Tail], List) :-
     member(Head, List),
+    !,
     member_list(Tail, List).
 
 %

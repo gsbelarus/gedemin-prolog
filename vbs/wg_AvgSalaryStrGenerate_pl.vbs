@@ -1,6 +1,6 @@
 Option Explicit
-'#include wg_EnableFieldChange
-'#include wg_GetAvgSalarySum
+'wg_EnableFieldChange
+'wg_GetAvgSalarySum
 '
 '#include pl_GetScriptIDByName
 
@@ -12,10 +12,10 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   '
   Dim PL, Ret, Pred, Tv, Append
   'avg_wage
-  Dim P_main, Tv_main
+  Dim P_main, Tv_main, Q_main
   'avg_wage_in
-  Dim P_in, Tv_in
-  Dim EmplKey, FirstMoveKey, DateCalc
+  Dim P_in, Tv_in, Q_in
+  Dim EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption
   'avg_wage_run, avg_wage_sql
   Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
   Dim DateCalcFrom, DateCalcTo
@@ -25,7 +25,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Dim AvgWage, AvgWageRule
   Dim Period, PeriodRule, Wage, ModernWage, ModernCoef
   Dim TabDays, TabHoures, NormDays, NormHoures
-  Dim Rate, RateLast, IsFull, IsCheck
+  Dim IsFull, IsCheck
 
   T1 = Timer
   wg_AvgSalaryStrGenerate_pl = False
@@ -56,17 +56,10 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
   end if
   '
-
-  Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
+  MonthOffset = 0
+  'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
+  CoefOption = "fc_fcratesum"
   '
-  Call wg_DisableFieldChange(gdcSalary, "AVGSALARYCALC")
-  '
-  gdcSalary.First
-  While Not gdcSalary.EOF
-    gdcSalary.Delete
-  Wend
-  '
-  Sender.Repaint
 
   'init
   Set PL = Creator.GetObject(nil, "TgsPLClient", "")
@@ -82,25 +75,48 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     Exit Function
   End If
 
-  'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset)
+  Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
+  '
+  'Call wg_DisableFieldChange(gdcSalary, "AVGSALARYCALC")
+  '
+  gdcSalary.First
+  While Not gdcSalary.EOF
+    gdcSalary.Delete
+  Wend
+  '
+  Sender.Repaint
+
+  'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption)
   P_in = "avg_wage_in"
-  Set Tv_in = Creator.GetObject(4, "TgsPLTermv", "")
+  Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
+  Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
   Tv_in.PutInteger 0, EmplKey
   Tv_in.PutInteger 1, FirstMoveKey
   Tv_in.PutDate 2, DateCalc
-  Tv_in.PutInteger 3, 0
-  Ret = PL.Call(P_in, Tv_in)
-  If Not Ret Then
+  Tv_in.PutInteger 3, MonthOffset
+  Tv_in.PutAtom 4, CoefOption
+  '
+  Q_in.PredicateName = P_in
+  Q_in.Termv = Tv_in
+  '
+  Q_in.OpenQuery
+  If Q_in.EOF Then
     Exit Function
   End If
+  Q_in.Close
 
   'avg_wage(Rule) - prepare data
   P_main = "avg_wage"
   Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
-  Ret = PL.Call(P_main, Tv_main)
-  If Not Ret Then
+  Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
+  Q_main.PredicateName = P_main
+  Q_main.Termv = Tv_main
+  '
+  Q_main.OpenQuery
+  If Q_main.EOF Then
     Exit Function
   End If
+  Q_main.Close
 
   'avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)
   P_run = "avg_wage_run"
@@ -166,10 +182,11 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   End If
 
   'avg_wage(Rule) - calc result
-  Ret = PL.Call(P_main, Tv_main)
-  If Not Ret Then
+  Q_main.OpenQuery
+  If Q_main.EOF Then
     Exit Function
   End If
+  Q_main.Close
 
   'avg_wage_out(EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
   P_out = "avg_wage_out"
@@ -178,9 +195,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Q_out.PredicateName = P_out
   Q_out.Termv = Tv_out
   'avg_wage_det(EmplKey, FirstMoveKey,
-  '   Period, PeriodRule, Wage, ModernWage, ModernCoef,
-  '   TabDays, TabHoures, NormDays, NormHoures,
-  '   Rate, RateLast)
+  '   Period, PeriodRule, Wage, ModernCoef, ModernWage,
+  '   TabDays, NormDays, TabHoures, NormHoures)
   P_det = "avg_wage_det"
   Set Tv_det = Creator.GetObject(13, "TgsPLTermv", "")
   Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
@@ -206,13 +222,13 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     Do Until Q_det.EOF
       Period = Tv_det.ReadDate(2)
       PeriodRule = Tv_det.ReadAtom(3)
-      IsFull = Abs( PeriodRule = "by_day_houres" Or PeriodRule = "by_month_houres" )
+      IsFull = Abs( PeriodRule = "by_days_houres" Or PeriodRule = "by_houres" )
       IsCheck = Abs( Not (PeriodRule = "none") )
       Select Case PeriodRule
-        Case "by_day_houres"
-          PeriodRule = "табель покрывает график по дням и часам"
-        Case "by_month_houres"
-          PeriodRule = "табель покрывает график по сумме часов"
+        Case "by_days_houres"
+          PeriodRule = "табель равен графику по дням и часам"
+        Case "by_houres"
+          PeriodRule = "табель покрывает график по часам"
         Case "by_month_wage_all"
           PeriodRule = "по размеру заработка"
         Case "by_month_no_bad_type"
@@ -221,25 +237,22 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
           PeriodRule = ""
       End Select
       Wage = Tv_det.ReadFloat(4)
-      ModernWage = Tv_det.ReadFloat(5)
-      ModernCoef = Tv_det.ReadFloat(6)
+      ModernCoef = Tv_det.ReadFloat(5)
+      ModernWage = Tv_det.ReadFloat(6)
       TabDays = Tv_det.ReadFloat(7)
-      TabHoures = Tv_det.ReadFloat(8)
-      NormDays = Tv_det.ReadFloat(9)
+      NormDays = Tv_det.ReadFloat(8)
+      TabHoures = Tv_det.ReadFloat(9)
       NormHoures = Tv_det.ReadFloat(10)
-      Rate = Tv_det.ReadFloat(11)
-      RateLast = Tv_det.ReadFloat(12)
       '
       gdcSalary.Append
       gdcSalary.FieldByName("USR$DATE").AsVariant = Period
       gdcSalary.FieldByName("USR$SALARY").AsVariant = Wage
       gdcSalary.FieldByName("USR$COEFF").AsVariant = ModernCoef
+      gdcSalary.FieldByName("USR$MODERNSALARY").AsVariant = ModernWage
       gdcSalary.FieldByName("USR$DOW").AsVariant = TabDays
       gdcSalary.FieldByName("USR$HOW").AsVariant = TabHoures
       gdcSalary.FieldByName("USR$SCHEDULERDOW").AsVariant = NormDays
       gdcSalary.FieldByName("USR$SCHEDULERHOW").AsVariant = NormHoures
-      gdcSalary.FieldByName("USR$OLDSALARY").AsVariant = Rate
-      gdcSalary.FieldByName("USR$NEWSALARY").AsVariant = RateLast
       gdcSalary.FieldByName("USR$ISCHECK").AsVariant = IsCheck
       gdcSalary.FieldByName("USR$ISFULL").AsVariant = IsFull
       gdcSalary.FieldByName("USR$DESCRIPTION").AsVariant = PeriodRule
@@ -257,7 +270,10 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   gdcSalary.First
   '
   Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
-  wg_GetAvgSalarySum(gdcSalary)
+
+  'wg_GetAvgSalarySum(gdcSalary)
+  gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
+  gdcObject.Post
 
   wg_AvgSalaryStrGenerate_pl = True
   

@@ -56,13 +56,13 @@ find_param(Scope, Type, Pairs0, Key-Value) :-
 
 % find_param_list(+Scope, +Type, +Key-Value, ?Pairs)
 find_param_list(Scope, Type, Key-Value, Pairs) :-
-    ground_list([Scope, Type, Key-Value]),
+    ground([Scope, Type, Key-Value]),
     param_list(Scope, Type, Pairs0),
     once( member(Key-Value, Pairs0) ),
     remove_list(Key-Value, Pairs0, Pairs).
 % find_param_list(+Scope, +Type, +Pairs0, ?Pairs)
 find_param_list(Scope, Type, Pairs0, Pairs) :-
-    ground_list([Scope, Type, Pairs0]),
+    ground([Scope, Type, Pairs0]),
     Pairs0 = [Key-Value|Tail],
     find_param_list(Scope, Type, Key-Value, Pairs1),
     once( member_list(Tail, Pairs1) ),

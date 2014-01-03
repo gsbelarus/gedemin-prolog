@@ -8,7 +8,7 @@
 
 % ! при использовании в ТП Гедымин
 % ! для begin & end debug mode section
-% ! убрать первый символ процента
+% ! убрать символ процента из первой позиции
 %/* %%% begin debug mode section
 
 %% saved state
@@ -34,8 +34,8 @@
     usr_wg_FCRateSum,
     usr_wg_TblDayNorm,
     usr_wg_TblYearNorm,
-    usr_wg_TblCalLine,
-    usr_wg_TblCal_FlexLine,
+    %usr_wg_TblCalLine,
+    %usr_wg_TblCal_FlexLine,
     %usr_wg_HourType,
     usr_wg_TblCharge,
     usr_wg_FeeType,
@@ -55,7 +55,7 @@
 
 % ! при использовании в ТП Гедымин
 % ! для begin & end debug mode section
-% ! убрать первый символ процента
+% ! убрать символ процента из первой позиции
 %*/ %%% end debug mode section
 
 :- ps32k_lgt(2, 4, 2).
@@ -296,17 +296,16 @@ get_month_wage(Scope, PK, Y, M, ModernWage) :-
     !.
 get_month_wage(Scope, PK, Y, M, ModernWage) :-
     % расчитать заработок за месяц
-    cacl_month_wage(Scope, PK, Y, M, Wage, ModernWage, MonthModernCoef),
+    cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage),
     % записать во временные параметры данные по заработку
     append(PK, [pYM-Y-M,
-                pWage-Wage, pModernWage-ModernWage,
-                pModernCoef-MonthModernCoef],
+                pWage-Wage, pModernCoef-MonthModernCoef, pModernWage-ModernWage],
             Pairs),
     new_param_list(Scope, temp, Pairs),
     !.
 
 % расчитать заработок за месяц
-cacl_month_wage(Scope, PK, Y, M, Wage, ModernWage, MonthModernCoef) :-
+cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % взять начисления
@@ -762,29 +761,16 @@ usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
 usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
     get_data(Scope, Type, usr_wg_TblCharge, ArgPairs).
 
-% табель дни-часы из начислений
-usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, 0) :-
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    ArgPairs = [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fCalYear-Y, fCalMonth-M, fDateBegin-Date,
-                fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
-    get_data(Scope, Type, usr_wg_TblCharge, ArgPairs),
-    once( get_data(Scope, Type, usr_wg_FeeType, [
-                    fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                    fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
-                
 % день месяца из dbf (часы)
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, InHoures, 0) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
     gd_pl_ds(Scope, Type, usr_wg_DbfSums, 6, _),
     catch( usr_wg_DbfSums(EmplKey, _, InHoures, Y, M, Date), _, fail).
-    
 % день месяца по табелю
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     gd_pl_ds(Scope, Type, usr_wg_TblCalLine, 7, _),
     catch( usr_wg_TblCalLine(EmplKey, FirstMoveKey, Y, M, Date, Duration, HoureType), _, fail).
-
 % или по табелю мастера
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
@@ -806,13 +792,23 @@ usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType) :-
     once( ( number(HoureType0), HoureType = HoureType0
             ; atom_number(HoureType0, HoureType)
             ; HoureType is 0 ) ).
+% табель дни-часы из начислений
+usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, 0) :-
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    ArgPairs = [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fCalYear-Y, fCalMonth-M, fDateBegin-Date,
+                fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
+    get_data(Scope, Type, usr_wg_TblCharge, ArgPairs),
+    once( get_data(Scope, Type, usr_wg_FeeType, [
+                    fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                    fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
 
 %% engine_loop(+Scope, +Type, +PK)
 %
 
 % args handler
 engine_loop(Scope, Type, PK) :-
-    \+ ground_list([Scope, Type, PK]),
+    \+ ground([Scope, Type, PK]),
     !,
     fail.
 % fail handler
@@ -961,20 +957,24 @@ prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
 %
 
 % загрузка общих входных параметров
-avg_wage_in_public(Connection, MonthQty, AvgDays,
+avg_wage_in_public(Connection,
+                    MonthQty, AvgDays,
                     FeeGroupKey_xid, FeeGroupKey_dbid,
+                    FeeGroupKeyNoCoef_xid, FeeGroupKeyNoCoef_dbid,
                     BadHourType_xid_IN, BadHourType_dbid,
                     BadFeeType_xid_IN, BadFeeType_dbid) :-
     Scope = wg_avg_wage_vacation, Type = in,
-    new_param_list(Scope, Type,
-        [pConnection-Connection,
-        pMonthQty-MonthQty, pAvgDays-AvgDays,
-        pFeeGroupKey_xid-FeeGroupKey_xid,
-        pFeeGroupKey_dbid-FeeGroupKey_dbid,
-        pBadHourType_xid_IN-BadHourType_xid_IN,
-        pBadHourType_dbid-BadHourType_dbid,
-        pBadFeeType_xid_IN-BadFeeType_xid_IN,
-        pBadFeeType_dbid-BadFeeType_dbid]),
+    new_param_list(Scope, Type, [
+                    pConnection-Connection,
+                    pMonthQty-MonthQty, pAvgDays-AvgDays,
+                    pFeeGroupKey_xid-FeeGroupKey_xid,
+                    pFeeGroupKey_dbid-FeeGroupKey_dbid,
+                    pFeeGroupKeyNoCoef_xid-FeeGroupKeyNoCoef_xid,
+                    pFeeGroupKeyNoCoef_dbid-FeeGroupKeyNoCoef_dbid,
+                    pBadHourType_xid_IN-BadHourType_xid_IN,
+                    pBadHourType_dbid-BadHourType_dbid,
+                    pBadFeeType_xid_IN-BadFeeType_xid_IN,
+                    pBadFeeType_dbid-BadFeeType_dbid]),
     !.
 
 % загрузка входных данных по сотруднику
@@ -1021,41 +1021,45 @@ avg_wage_kb(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL) :-
 
 % выгрузка выходных данных по сотруднику
 avg_wage_out(EmplKey, FirstMoveKey, AvgWage, Variant) :-
+    % параметры контекста
     Scope = wg_avg_wage_vacation, Type = out,
+    % шаблон первичного ключа
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % взять данные по результатам расчета
     append(PK, [pAvgWage-AvgWage, pVariant-Variant], Pairs),
     get_param_list(Scope, Type, Pairs).
 
 % выгрузка детальных выходных данных по сотруднику
-avg_wage_det(EmplKey, FirstMoveKey, Period, Rule, Wage, ModernWage, ModernCoef,
-                TabDays, TabHoures, NormDays, NormHoures,
-                Rate, RateLast) :-
-    Scope = wg_avg_wage_vacation,
+avg_wage_det(EmplKey, FirstMoveKey,
+                Period, Rule, Wage, ModernCoef, ModernWage,
+                TabDays, NormDays, TabHoures, NormHoures) :-
+    % параметры контекста
+    Scope = wg_avg_wage_vacation, Type = temp,
+    % шаблон первичного ключа
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    %
+    % для каждого периода
+    % взять данные по табелю и графику
     append(PK, [pYM-Y-M,
                     pTDays-TabDays, pTHoures-TabHoures,
                     pNDays-NormDays, pNHoures-NormHoures],
             Pairs),
-    get_param_list(Scope, temp, Pairs),
-    %
+    get_param_list(Scope, Type, Pairs),
+    % где есть отработанные часы
+    TabHoures > 0,
+    % сформировать дату периода
     atom_date(Period, date(Y, M, 1)),
-    %
-    once( ( find_param_list(Scope, temp, PK, [pMonthIncl-MonthIncl|_])
+    % взять данные по правилам расчета
+    once( ( ( append(PK, [pMonthIncl-MonthIncl], Pairs1),
+              get_param_list(Scope, Type, Pairs1) )
             ; MonthIncl = [] ) ),
     once( ( member(Y-M-Rule, MonthIncl) ; Rule = none ) ),
-    %
+    % взять данные по заработку
     once( ( ( append(PK, [pYM-Y-M,
-                            pWage-Wage, pModernWage-ModernWage,
-                            pModernCoef-ModernCoef,
-                            pRate-Rate, pRateLast-RateLast],
-                    Pairs1),
-              get_param_list(Scope, temp, Pairs1) )
-            ;
-              [Wage, ModernWage, ModernCoef, Rate, RateLast] = [0, 0, 1, 0, 0]
-          ) ),
-    %
-    Wage > 0,
+                            pWage-Wage, pModernCoef-ModernCoef,
+                            pModernWage-ModernWage],
+                        Pairs2),
+              get_param_list(Scope, Type, Pairs2) )
+              ; [Wage, ModernCoef, ModernWage] = [0, 1, 0] ) ),
     %
     true.
 
