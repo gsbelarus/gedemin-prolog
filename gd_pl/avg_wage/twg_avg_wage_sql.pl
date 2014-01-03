@@ -9,8 +9,8 @@
 %
 wg_valid_sql([
             -usr_wg_DbfSums/6,
-            usr_wg_MovementLine/8,
-            usr_wg_FCRateSum/4,
+            usr_wg_MovementLine/9,
+            usr_wg_FCRate/4,
             usr_wg_TblDayNorm/8,
             usr_wg_TblYearNorm/5,
             -usr_wg_TblCalLine/7,

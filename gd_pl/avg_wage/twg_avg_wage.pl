@@ -31,7 +31,7 @@
     [
     %usr_wg_DbfSums,
     usr_wg_MovementLine,
-    usr_wg_FCRateSum,
+    usr_wg_FCRate,
     usr_wg_TblDayNorm,
     usr_wg_TblYearNorm,
     %usr_wg_TblCalLine,
@@ -58,7 +58,7 @@
 % ! убрать символ процента из первой позиции
 %*/ %%% end debug mode section
 
-:- ps32k_lgt(2, 4, 2).
+:- ps32k_lgt(1, 2, 1).
 
 /* реализация */
 
@@ -92,28 +92,20 @@ avg_wage(Variant) :-
     Scope = wg_avg_wage_vacation,
     % шаблон первичного ключа
     PK = [pEmplKey-_, pFirstMoveKey-_],
-    % подготовка данных
-    avg_wage(Scope, PK),
-    % выполнение расчета
-    avg_wage(Scope, PK, Variant),
-    !.
-
-% подготовка данных
-avg_wage(Scope, PK) :-
     % для каждого первичного ключа расчета из входных параметров
     get_param_list(Scope, in, PK),
-    % подготовить данные
+    % запустить цикл механизма подготовки данных
     engine_loop(Scope, in, PK),
+    % выполнить расчет
+    avg_wage(Scope, PK, Variant),
     % найти альтернативу
     fail.
-avg_wage(_, _) :-
+avg_wage(_) :-
     % больше альтернатив нет
     !.
 
-% выполнение расчета
+% выполнить расчет
 avg_wage(Scope, PK, Variant) :-
-    % для каждого первичного ключа расчета из входных параметров
-    get_param_list(Scope, in, PK),
     % взять локальное время
     get_local_date_time(DT1),
     % записать отладочную информацию
@@ -129,10 +121,6 @@ avg_wage(Scope, PK, Variant) :-
     get_local_date_time(DT2),
     % записать отладочную информацию
     new_param_list(Scope, debug, [end-DT2|PK]),
-    % найти альтернативу
-    fail.
-avg_wage(_, _, _) :-
-    % больше альтернатив нет
     !.
 
 % записать результат
@@ -173,7 +161,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
                % за каждый расчетный месяц
              ( get_month_incl(Scope, PK, Y, M, _),
                % взять данные по заработку
-               get_month_wage(Scope, PK, Y, M, Wage) ),
+               get_month_wage(Scope, PK, Y, M, _, Wage) ),
     % в список заработков
     Wages ),
     % итоговый заработок за расчетные месяцы
@@ -198,7 +186,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
                % за каждый период проверки
              ( member(Y-M, Periods),
                % взять данные по заработку
-               get_month_wage(Scope, PK, Y, M, Wage) ),
+               get_month_wage(Scope, PK, Y, M, _, Wage) ),
     % в список заработков
     Wages ),
     % итоговый заработок
@@ -279,7 +267,7 @@ add_month_wage(_, _, []):-
     !.
 add_month_wage(Scope, PK, [Y-M|Periods]) :-
     % проверить данные по заработку
-    get_month_wage(Scope, PK, Y, M, _),
+    get_month_wage(Scope, PK, Y, M, _, _),
     !,
     % проверить остальные месяцы
     add_month_wage(Scope, PK, Periods).
@@ -289,12 +277,13 @@ add_month_wage(Scope, PK, [_|Periods]) :-
     add_month_wage(Scope, PK, Periods).
 
 % взять данные по заработку за месяц
-get_month_wage(Scope, PK, Y, M, ModernWage) :-
+get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
     % взять из временных параметров данные по заработку
-    append(PK, [pYM-Y-M, pModernWage-ModernWage], Pairs),
+    append(PK, [pYM-Y-M, pModernCoef-MonthModernCoef, pModernWage-ModernWage],
+            Pairs),
     get_param_list(Scope, temp, Pairs),
     !.
-get_month_wage(Scope, PK, Y, M, ModernWage) :-
+get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
     % расчитать заработок за месяц
     cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage),
     % записать во временные параметры данные по заработку
@@ -356,8 +345,8 @@ get_modern_coef(Scope, PK, _, FeeTypeKey, 1.0) :-
                 fFeeTypeKeyNoCoef-FeeTypeKey ]),
     !.
 get_modern_coef(Scope, PK, TheDay, _, ModernCoef) :-
-    % взять параметр коэфициента и дату расчета
-    append(PK, [pCoefOption-CoefOption, pDateCalcTo-DateTo], Pairs),
+    % взять параметр коэфициента и дату ограничения расчета
+    append(PK, [pDateCalcTo-DateTo, pCoefOption-CoefOption], Pairs),
     get_param_list(Scope, run, Pairs),
     % сформировать список движений дата-сумма
     findall( Date-Amount,
@@ -654,11 +643,8 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     Rule = by_month_wage_all,
     % правило действительно
     is_valid_rule(Rule),
-    % взять заработок за проверяемый месяц
-    get_month_wage(Scope, PK, Y, M, Wage),
-    % с коэффициентом осовременивания на первое число месяца
-    atom_date(Date, date(Y, M, 1)),
-    get_modern_coef(Scope, PK, Date, ModernCoef),
+    % взять заработок и коэффициент осовременивания за проверяемый месяц
+    get_month_wage(Scope, PK, Y, M, ModernCoef, Wage),
     % взять заработок
     findall( Wage1,
               % для расчетного месяца
@@ -666,13 +652,10 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
               % который принят для исчисления по варианту полного месяца
               wg_full_month_rules(Rules),
               member(Variant1, Rules),
-              % с коэффициентом осовременивания на первое число месяца
-              atom_date(Date1, date(Y1, M1, 1)),
-              get_modern_coef(Scope, PK, Date1, ModernCoef1),
-              % где коэффициент для проверяемого и расчетного равны
-              ModernCoef =:= ModernCoef1,
-              % с заработком за месяц
-              get_month_wage(Scope, PK, Y1, M1, Wage1) ),
+              % с заработком и коэффициентом осовременивания за месяц
+              get_month_wage(Scope, PK, Y1, M1, ModernCoef1, Wage1),
+              % где коэффициенты для проверяемого и расчетного равны
+              ModernCoef =:= ModernCoef1 ),
     % в список заработков
     Wages1 ),
     % если заработок проверяемого месяца покрывает все из расчетных
@@ -984,7 +967,7 @@ avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption) :-
     new_param_list(Scope, Type,
         [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
          pDateCalc-DateCalc, pMonthOffset-MonthOffset,
-         fCoefOption-CoefOption]),
+         pCoefOption-CoefOption]),
     !.
 
 % выгрузка данных выполнения по сотруднику
