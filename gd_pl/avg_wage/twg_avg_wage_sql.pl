@@ -306,7 +306,7 @@ FROM \c
 WHERE \c
   tch.USR$EMPLKEY = pEmplKey \c
   AND \c
-  tch.USR$DEBIT > 0 \c
+  NOT tch.USR$DEBIT = 0 \c
   AND \c
   tch.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
   AND \c

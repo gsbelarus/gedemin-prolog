@@ -84,6 +84,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     gdcSalary.Delete
   Wend
   '
+  gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = 0
+  '
   Sender.Repaint
 
   'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption)
@@ -105,8 +107,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   End If
   Q_in.Close
 
-  'avg_wage(Rule) - prepare data
-  P_main = "avg_wage"
+  'avg_wage1(_) - prepare data
+  P_main = "avg_wage1"
   Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
   Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_main.PredicateName = P_main
@@ -154,7 +156,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
       Connection = Tv_sql.ReadAtom(2)
       PredicateName = Tv_sql.ReadAtom(3)
       Arity = Tv_sql.ReadInteger(4)
-      SQL = Tv_sql.ReadAtom(5)
+      SQL = Tv_sql.ReadString(5)
       '
       Ret =  PL.MakePredicatesOfSQLSelect _
                 (SQL, _
@@ -181,7 +183,9 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     PL.SavePredicatesToFile Pred, Tv, Pred
   End If
 
-  'avg_wage(Rule) - calc result
+  'avg_wage2(Rule) - calc result
+  P_main = "avg_wage2"
+  Q_main.PredicateName = P_main
   Q_main.OpenQuery
   If Q_main.EOF Then
     Exit Function
@@ -198,7 +202,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   '   Period, PeriodRule, Wage, ModernCoef, ModernWage,
   '   TabDays, NormDays, TabHoures, NormHoures)
   P_det = "avg_wage_det"
-  Set Tv_det = Creator.GetObject(13, "TgsPLTermv", "")
+  Set Tv_det = Creator.GetObject(11, "TgsPLTermv", "")
   Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_det.PredicateName = P_det
   Q_det.Termv = Tv_det
@@ -269,11 +273,12 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
 
   gdcSalary.First
   '
-  Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
-
+  'Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
   'wg_GetAvgSalarySum(gdcSalary)
   gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
   gdcObject.Post
+  '
+  Sender.Repaint
 
   wg_AvgSalaryStrGenerate_pl = True
   

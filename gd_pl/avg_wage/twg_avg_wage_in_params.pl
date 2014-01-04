@@ -12,3 +12,15 @@
     pBadFeeType_xid_IN-'151000730',
     pBadFeeType_dbid-2109681374
     ]).
+
+/*
+:- new_param_list(wg_avg_wage_sick, in,
+    [pConnection-gsdb,
+    pMonthQty-6,
+    pFeeGroupKey_xid-147071457,
+    pFeeGroupKey_dbid-274788016,
+    pPropFeeGroupKey_xid-147119175,
+    pPropFeeGroupKey_dbid-1354510846
+    % pExclHourType
+    ]).
+*/

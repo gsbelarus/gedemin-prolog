@@ -58,7 +58,7 @@
 % ! убрать символ процента из первой позиции
 %*/ %%% end debug mode section
 
-:- ps32k_lgt(1, 2, 1).
+:- ps32k_lgt(4, 8, 4).
 
 /* реализация */
 
@@ -87,7 +87,7 @@ is_valid_rule(Rule) :-
 
 % среднедневной заработок
 % - для отпусков
-avg_wage(Variant) :-
+avg_wage1(_) :-
     % параметры контекста
     Scope = wg_avg_wage_vacation,
     % шаблон первичного ключа
@@ -96,16 +96,29 @@ avg_wage(Variant) :-
     get_param_list(Scope, in, PK),
     % запустить цикл механизма подготовки данных
     engine_loop(Scope, in, PK),
-    % выполнить расчет
-    avg_wage(Scope, PK, Variant),
     % найти альтернативу
     fail.
-avg_wage(_) :-
+avg_wage1(_) :-
+    % больше альтернатив нет
+    !.
+%
+avg_wage2(Variant) :-
+    % параметры контекста
+    Scope = wg_avg_wage_vacation,
+    % шаблон первичного ключа
+    PK = [pEmplKey-_, pFirstMoveKey-_],
+    % для каждого первичного ключа расчета из входных параметров
+    get_param_list(Scope, in, PK),
+    % выполнить расчет
+    eval_avg_wage(Scope, PK, Variant),
+    % найти альтернативу
+    fail.
+avg_wage2(_) :-
     % больше альтернатив нет
     !.
 
 % выполнить расчет
-avg_wage(Scope, PK, Variant) :-
+eval_avg_wage(Scope, PK, Variant) :-
     % взять локальное время
     get_local_date_time(DT1),
     % записать отладочную информацию
@@ -172,7 +185,8 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     get_param(Scope, in, pAvgDays-AvgDays),
     % среднедневной заработок
     catch( AvgWage0 is Amount / Num / AvgDays, _, fail),
-    to_currency(AvgWage0, AvgWage),
+    to_currency(AvgWage0, AvgWage1),
+    AvgWage is round(AvgWage1),
     !.
 % среднедневной заработок по сотруднику (по среднечасовому)
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
@@ -216,7 +230,8 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     get_param(Scope, in, pAvgDays-AvgDays),
     % среднедневной заработок
     catch( AvgWage0 is AvgHoureWage * AvgMonthNorm / AvgDays, _, fail),
-    to_currency(AvgWage0, AvgWage),
+    to_currency(AvgWage0, AvgWage1),
+    AvgWage is round(AvgWage1),
     !.
 
 % подготовка временных данных для расчета
@@ -466,7 +481,7 @@ is_month_paid(Scope, PK, Y-M) :-
         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
         fCalYear-Y, fCalMonth-M, fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),
     % с контролем суммы
-    Debit > 0,
+    \+ Debit = 0,
     % соответствующего типа
     once( get_data(Scope, in, usr_wg_FeeType, [
                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
@@ -643,6 +658,8 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     Rule = by_month_wage_all,
     % правило действительно
     is_valid_rule(Rule),
+    % варианты правил полных месяцев
+    wg_full_month_rules(FullMonthRules),
     % взять заработок и коэффициент осовременивания за проверяемый месяц
     get_month_wage(Scope, PK, Y, M, ModernCoef, Wage),
     % взять заработок
@@ -650,8 +667,7 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
               % для расчетного месяца
             ( get_month_incl(Scope, PK, Y1, M1, Variant1),
               % который принят для исчисления по варианту полного месяца
-              wg_full_month_rules(Rules),
-              member(Variant1, Rules),
+              once( member(Variant1, FullMonthRules) ),
               % с заработком и коэффициентом осовременивания за месяц
               get_month_wage(Scope, PK, Y1, M1, ModernCoef1, Wage1),
               % где коэффициенты для проверяемого и расчетного равны
