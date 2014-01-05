@@ -56,15 +56,31 @@ fsp :-
    retractall(file_search_path(_, _)).
 %
 flg :-
-    set_prolog_flag(gui, false),
-    set_prolog_flag(debug, false),
-    set_prolog_flag(debug_on_error, false),
-    set_prolog_flag(generate_debug_info, false),
-    set_prolog_flag(history, 0),
-    set_prolog_flag(report_error, false),
-    set_prolog_flag(runtime, true),
-    set_prolog_flag(stream_type_check, false),
+    % silent if the flag is not known
     set_prolog_flag(user_flags, silent),
+    % disables atom garbage collection
+    set_prolog_flag(agc_margin, 0),
+    % disables colored output
+    set_prolog_flag(color_term, false),
+    % debugging mode off
+    set_prolog_flag(debug, false),
+    % do not start the tracer after an error is detected
+    set_prolog_flag(debug_on_error, false),
+    % neither garbage collection, nor stack shifts will take place,
+    % even not on explicit request
+    set_prolog_flag(gc, false),
+    % last-call optimisation is enabled
+    set_prolog_flag(last_call_optimisation, true),
+    % do not generate code that can be debugged
+    set_prolog_flag(generate_debug_info, false),
+    % suppress error messages
+    set_prolog_flag(report_error, false),
+    % no checking stream type
+    set_prolog_flag(stream_type_check, false),
+    % garbage collections and stack-shifts
+    % will not be reported on the terminal
+    set_prolog_flag(trace_gc, false),
+    % messages of type informational and banner are suppressed
     set_prolog_flag(verbose, silent).
 %
 gd :-

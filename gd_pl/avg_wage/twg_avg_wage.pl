@@ -58,7 +58,7 @@
 % ! убрать символ процента из первой позиции
 %*/ %%% end debug mode section
 
-:- ps32k_lgt(4, 8, 4).
+:- ps32k_lgt(64, 128, 64).
 
 /* реализация */
 
@@ -87,7 +87,7 @@ is_valid_rule(Rule) :-
 
 % среднедневной заработок
 % - для отпусков
-avg_wage1(_) :-
+avg_wage(Variant) :-
     % параметры контекста
     Scope = wg_avg_wage_vacation,
     % шаблон первичного ключа
@@ -96,24 +96,11 @@ avg_wage1(_) :-
     get_param_list(Scope, in, PK),
     % запустить цикл механизма подготовки данных
     engine_loop(Scope, in, PK),
-    % найти альтернативу
-    fail.
-avg_wage1(_) :-
-    % больше альтернатив нет
-    !.
-%
-avg_wage2(Variant) :-
-    % параметры контекста
-    Scope = wg_avg_wage_vacation,
-    % шаблон первичного ключа
-    PK = [pEmplKey-_, pFirstMoveKey-_],
-    % для каждого первичного ключа расчета из входных параметров
-    get_param_list(Scope, in, PK),
     % выполнить расчет
     eval_avg_wage(Scope, PK, Variant),
     % найти альтернативу
     fail.
-avg_wage2(_) :-
+avg_wage(_) :-
     % больше альтернатив нет
     !.
 
@@ -341,8 +328,10 @@ sum_month_debit(Debits, Wage, ModernWage) :-
     !.
 %
 sum_month_debit([], Wage, ModernWage, Wage0, ModernWage0) :-
-    to_currency(Wage0, Wage),
-    to_currency(ModernWage0, ModernWage),
+    to_currency(Wage0, Wage1),
+    Wage is round(Wage1),
+    to_currency(ModernWage0, ModernWage1),
+    ModernWage is round(ModernWage1),
     !.
 sum_month_debit([Debit-ModernCoef | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
     Wage1 is Wage0 + Debit,
@@ -481,7 +470,7 @@ is_month_paid(Scope, PK, Y-M) :-
         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
         fCalYear-Y, fCalMonth-M, fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),
     % с контролем суммы
-    \+ Debit = 0,
+    Debit > 0,
     % соответствующего типа
     once( get_data(Scope, in, usr_wg_FeeType, [
                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
@@ -493,7 +482,6 @@ is_month_paid(Scope, PK, Y-M) :-
 get_month_incl(Scope, PK, Y, M, Variant) :-
     append(PK, [pMonthIncl-MonthInclList], Pairs),
     get_param_list(Scope, temp, Pairs),
-    member(pMonthIncl-MonthInclList, Pairs),
     member(Y-M-Variant, MonthInclList).
 
 % принять месяц для исчисления
@@ -582,8 +570,6 @@ get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
 calc_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
     % расчитать график за месяц
     calc_month_norm(Scope, PK, Y-M, NormDays),
-    % график не пустой
-    \+ NormDays = [],
     % сумма дней и часов по графику
     sum_days_houres(NormDays, NDays, NHoures),
     % расчитать табель за месяц
@@ -637,7 +623,7 @@ sum_days_houres([_-DOW-HOW|ListDays], Days, Houres, Days0, Houres0) :-
 % проверка месяца по заработку
 check_month_wage(_, _, []):-
     % больше месяцев для проверки нет
-    true.
+    !.
 check_month_wage(Scope, PK, [Y-M|Periods]) :-
     % если месяц еще не включен в расчет
     \+ get_month_incl(Scope, PK, Y, M, _),
@@ -691,7 +677,7 @@ wage_over_list(Over, [Head|Tail]) :-
 % проверка месяца по типу начислений
 check_month_no_bad_type(_, _, []):-
     % больше месяцев для проверки нет
-    true.
+    !.
 check_month_no_bad_type(Scope, PK, [Y-M|Periods]) :-
     % если месяц еще не включен в расчет
     \+ get_month_incl(Scope, PK, Y, M, _),
