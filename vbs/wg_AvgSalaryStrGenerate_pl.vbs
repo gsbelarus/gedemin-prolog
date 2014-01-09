@@ -1,6 +1,5 @@
 Option Explicit
-'wg_EnableFieldChange
-'wg_GetAvgSalarySum
+'#include wg_EnableFieldChange
 '
 '#include pl_GetScriptIDByName
 
@@ -15,7 +14,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Dim P_main, Tv_main, Q_main
   'avg_wage_in
   Dim P_in, Tv_in, Q_in
-  Dim EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption
+  Dim EmplKey, FirstMoveKey, DateCalc
+  Dim MonthOffset, CoefOption, TabelOption
   'avg_wage_run, avg_wage_sql
   Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
   Dim DateCalcFrom, DateCalcTo
@@ -59,6 +59,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   MonthOffset = 0
   'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
   CoefOption = "fc_fcratesum"
+  'TabelOption: tbl_charge ; tbl_cal
+  TabelOption = "tbl_charge"
   '
 
   'init
@@ -77,7 +79,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
 
   Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
   '
-  'Call wg_DisableFieldChange(gdcSalary, "AVGSALARYCALC")
+  Call wg_DisableFieldChange(gdcSalary, "AVGSALARYCALC")
   '
   gdcSalary.First
   While Not gdcSalary.EOF
@@ -90,13 +92,14 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
 
   'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption)
   P_in = "avg_wage_in"
-  Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
+  Set Tv_in = Creator.GetObject(6, "TgsPLTermv", "")
   Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
   Tv_in.PutInteger 0, EmplKey
   Tv_in.PutInteger 1, FirstMoveKey
   Tv_in.PutDate 2, DateCalc
   Tv_in.PutInteger 3, MonthOffset
   Tv_in.PutAtom 4, CoefOption
+  Tv_in.PutAtom 5, TabelOption
   '
   Q_in.PredicateName = P_in
   Q_in.Termv = Tv_in
@@ -107,8 +110,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   End If
   Q_in.Close
 
-  'avg_wage1(_) - prepare data
-  P_main = "avg_wage1"
+  'avg_wage(_) - prepare data
+  P_main = "avg_wage"
   Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
   Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_main.PredicateName = P_main
@@ -183,9 +186,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     PL.SavePredicatesToFile Pred, Tv, Pred
   End If
 
-  'avg_wage2(Rule) - calc result
-  P_main = "avg_wage2"
-  Q_main.PredicateName = P_main
+  'avg_wage(Variant) - calc result
   Q_main.OpenQuery
   If Q_main.EOF Then
     Exit Function
@@ -273,12 +274,11 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
 
   gdcSalary.First
   '
-  'Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
-  'wg_GetAvgSalarySum(gdcSalary)
+  Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
+  '
   gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
   gdcObject.Post
   '
-  Sender.Repaint
 
   wg_AvgSalaryStrGenerate_pl = True
   

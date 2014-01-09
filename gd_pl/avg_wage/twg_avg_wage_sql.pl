@@ -13,8 +13,8 @@ wg_valid_sql([
             usr_wg_FCRate/4,
             usr_wg_TblDayNorm/8,
             usr_wg_TblYearNorm/5,
-            -usr_wg_TblCalLine/7,
-            -usr_wg_TblCal_FlexLine/67,
+            usr_wg_TblCalLine/7,
+            usr_wg_TblCal_FlexLine/67,
             -usr_wg_HourType/12,
             usr_wg_TblCharge/9,
             usr_wg_FeeType/5,
@@ -205,7 +205,7 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCal_FlexLine, 67,
     ]).
 % usr_wg_TblCal_FlexLine(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
 get_sql(gsdb, usr_wg_TblCal_FlexLine/67,
-"SELECT \c
+"SELECT DISTINCT \c
   tcfl.USR$EMPLKEY, \c
   tcfl.USR$FIRSTMOVEKEY, \c
   EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear, \c
