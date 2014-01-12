@@ -413,31 +413,20 @@ calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef) :-
     !,
     calc_modern_coef(TheDay, Movements, ModernCoef).
 
-% месяц значимый
-is_value_month(Scope, PK, Y-M) :-
-    % месяц работы полный
-    is_full_month(Scope, PK, Y-M),
-    % в месяце есть отработанные часы
-    is_month_worked(Scope, PK, Y-M),
-    % в месяце есть оплата
-    is_month_paid(Scope, PK, Y-M),
-    !.
-
 % месяц работы полный
 is_full_month(Scope, PK, Y-M) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % если для первого движения по типу 1 (прием на работу)
+    % где дата совпадает с проверяемым месяцем
     get_data(Scope, in, usr_wg_MovementLine, [
         fEmplKey-EmplKey, fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
-        fDateBegin-DateBegin, fMovementType-1 ]),
-    % где дата совпадает с проверяемым месяцем
-    atom_date(DateBegin, date(Y, M, _)),
+        fMoveYear-Y, fMoveMonth-M, fDateBegin-DateBegin, fMovementType-1 ]),
     !,
     % первый рабочий день по графику для проверяемого месяца
     once( get_data(Scope, in, usr_wg_TblDayNorm, [
             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-            fTheDay-TheDay, fWYear-Y, fWMonth-M, fWorkDay-1 ]) ),
+            fWYear-Y, fWMonth-M, fTheDay-TheDay, fWorkDay-1 ]) ),
     !,
     % больше или равен дате первого движения
     TheDay @>= DateBegin,
@@ -498,8 +487,12 @@ check_month_tab(_, _, []):-
     % больше месяцев для проверки нет
     !.
 check_month_tab(Scope, PK, [Y-M|Periods]) :-
-    % если месяц значимый
-    is_value_month(Scope, PK, Y-M),
+    % месяц работы полный
+    is_full_month(Scope, PK, Y-M),
+    % в месяце есть отработанные часы
+    is_month_worked(Scope, PK, Y-M),
+    % в месяце есть оплата
+    is_month_paid(Scope, PK, Y-M),
     % и выполняется одно из правил
     rule_month_tab(Scope, PK, Y-M, Variant),
     % то принять месяц для исчисления
@@ -577,7 +570,7 @@ calc_month_norm(Scope, PK, Y-M, NormDays) :-
             % для рабочего дня
             ( get_data(Scope, in, usr_wg_TblDayNorm, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fTheDay-TheDay, fWYear-Y, fWMonth-M,
+                fWYear-Y, fWMonth-M, fTheDay-TheDay,
                 fWDuration-WDuration, fWorkDay-1 ]),
             % с контролем наличия часов
             WDuration > 0 ),
@@ -664,7 +657,7 @@ wage_over_list(Over, [Head|Tail]) :-
     !,
     wage_over_list(Over, Tail).
 
-% проверка месяца по типу начислений
+% проверка месяца по типу начислений и типу часов
 check_month_no_bad_type(_, _, []):-
     % больше месяцев для проверки нет
     !.
@@ -1034,14 +1027,19 @@ avg_wage_det(EmplKey, FirstMoveKey,
                     pNDays-NormDays, pNHoures-NormHoures],
             Pairs),
     get_param_list(Scope, Type, Pairs),
-    % где есть отработанные часы
-    TabHoures > 0,
-    % сформировать дату периода
-    atom_date(Period, date(Y, M, 1)),
+    % если для первого движения по типу 1 (прием на работу)
+    % дата совпадает с проверяемым месяцем, то период есть дата начала работы
+    once( (
+        get_data(Scope, in, usr_wg_MovementLine, [
+        fEmplKey-EmplKey, fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
+        fMoveYear-Y, fMoveMonth-M, fDateBegin-Period, fMovementType-1 ])
+        ;
+    % иначе сформировать дату периода, как первый день месяца
+        atom_date(Period, date(Y, M, 1))
+        ) ),
     % взять данные по правилам расчета
-    once( ( ( append(PK, [pMonthIncl-MonthIncl], Pairs1),
-              get_param_list(Scope, Type, Pairs1) )
-            ; MonthIncl = [] ) ),
+    append(PK, [pMonthIncl-MonthIncl], Pairs1),
+    once( ( get_param_list(Scope, Type, Pairs1) ; MonthIncl = [] ) ),
     once( ( member(Y-M-Rule, MonthIncl) ; Rule = none ) ),
     % взять данные по заработку
     once( ( ( append(PK, [pYM-Y-M,
@@ -1051,7 +1049,8 @@ avg_wage_det(EmplKey, FirstMoveKey,
               get_param_list(Scope, Type, Pairs2) )
               ; [Wage, ModernCoef, ModernWage] = [0, 1, 0] ) ),
     %
-    true.
+    % есть отработанные часы или заработок
+    once( ( TabHoures > 0 ; ModernWage > 0 ) ).
 
 % удаление данных по сотруднику
 avg_wage_clean(EmplKey, FirstMoveKey) :-

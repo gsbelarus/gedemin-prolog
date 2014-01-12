@@ -9,7 +9,7 @@
 %
 wg_valid_sql([
             -usr_wg_DbfSums/6,
-            usr_wg_MovementLine/9,
+            usr_wg_MovementLine/11,
             usr_wg_FCRate/4,
             usr_wg_TblDayNorm/8,
             usr_wg_TblYearNorm/5,
@@ -61,25 +61,29 @@ ORDER BY \c
 [pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_MovementLine, 9,
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_MovementLine, 11,
     [
     fEmplKey-integer, fDocumentKey-integer, fFirstMoveKey-integer,
-    fDateBegin-date, fScheduleKey-integer, fMovementType-integer,
+    fMoveYear-integer, fMoveMonth-integer, fDateBegin-date,
+    fScheduleKey-integer, fMovementType-integer,
     fRate-float, fListNumber-string, fMSalary-float
     ]).
-% usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey, DateBegin, ScheduleKey,
-%   MovementType, Rate, ListNumber, MSalary)
-get_sql(gsdb, usr_wg_MovementLine/9,
+% usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
+%   MoveYear, MoveMonth, DateBegin,
+%   ScheduleKey, MovementType, Rate, ListNumber, MSalary)
+get_sql(gsdb, usr_wg_MovementLine/11,
 "SELECT \c
   ml.USR$EMPLKEY, \c
   ml.DOCUMENTKEY, \c
   ml.USR$FIRSTMOVE AS FirstMoveKey, \c
+  EXTRACT(YEAR FROM ml.USR$DATEBEGIN) AS MoveYear, \c
+  EXTRACT(MONTH FROM ml.USR$DATEBEGIN) AS MoveMonth, \c
   ml.USR$DATEBEGIN, \c
   ml.USR$SCHEDULEKEY, \c
   ml.USR$MOVEMENTTYPE, \c
-  ml.USR$RATE, \c
+  COALESCE(ml.USR$RATE, 0) AS Rate, \c
   ml.USR$LISTNUMBER, \c
-  ml.USR$MSALARY \c
+  COALESCE(ml.USR$MSALARY, 0) AS MSalary \c
 FROM \c
   USR$WG_MOVEMENTLINE ml \c
 WHERE \c
@@ -117,13 +121,13 @@ ORDER BY \c
 gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblDayNorm, 8,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
-    fTheDay-date, fWYear-integer, fWMonth-integer, fWDay-integer,
+    fWYear-integer, fWMonth-integer, fTheDay-date, fWDay-integer,
     fWDuration-float, fWorkDay-integer
     ]).
-% usr_wg_TblDayNorm(EmplKey, FirstMoveKey, TheDay, WYear, WMonth, WDay, WDuration, WorkDay)
+% usr_wg_TblDayNorm(EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay)
 get_sql(gsdb, usr_wg_TblDayNorm/8,
 "\c
-SELECT EmplKey, FirstMoveKey, TheDay, WYear, WMonth, WDay, WDuration, WorkDay \c
+SELECT EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay \c
 FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\') \c
 ",
 [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
