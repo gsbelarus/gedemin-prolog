@@ -439,7 +439,7 @@ is_full_month(_, _, _) :-
 % в месяце есть отработанные часы
 is_month_worked(Scope, PK, Y-M) :-
     % если есть хотя бы один рабочий день
-    get_usr_wg_TblCalLine(Scope, in, PK, Y-M, _, _, Duration, _),
+    usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, _, _, Duration, _, _),
     % с контролем наличия часов
     Duration > 0,
     % то в месяце есть отработанные часы
@@ -580,14 +580,22 @@ calc_month_norm(Scope, PK, Y-M, NormDays) :-
 
 % расчитать табель за месяц
 calc_month_tab(Scope, PK, Y-M, TabDays) :-
-    % взять дату/часы
+    calc_month_tab(Scope, PK, Y-M, TabDays, tbl_cal),
+    \+ TabDays = [],
+    !.
+calc_month_tab(Scope, PK, Y-M, TabDays) :-
+    calc_month_tab(Scope, PK, Y-M, TabDays, tbl_charge),
+    !.
+%
+calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
+    % взять данные табеля
     findall( Date-DOW-HOW,
-            % для отработанного дня
-            ( get_usr_wg_TblCalLine(Scope, in, PK, Y-M, Date, DOW, HOW, _),
+            % для проверяемого месяца
+            ( usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, Date, DOW, HOW, _, TabelOption),
             % с контролем наличия часов
             HOW > 0
             ),
-    % в список дата/часы табеля
+    % в список дата-день-часы
     TabDays),
     !.
 
@@ -695,7 +703,7 @@ month_bad_type(Scope, PK, Y-M) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % если есть хотя бы один день по табелю
-    get_usr_wg_TblCalLine(Scope, in, PK, Y-M, _, _, _, HoureType),
+    usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, _, _, _, HoureType, _),
     % с плохим типом часов
     get_data(Scope, in, usr_wg_BadHourType, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]),
@@ -731,13 +739,6 @@ usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
     get_data(Scope, Type, usr_wg_TblCharge, ArgPairs).
 
 % взять данные по табелю
-get_usr_wg_TblCalLine(Scope, Type, PK, Y-M, Date, DOW, HOW, HoureType) :-
-    % взять параметр табеля
-    append(PK, [pTabelOption-TabelOption], Pairs),
-    get_param_list(Scope, run, Pairs),
-    % данные по табелю согласно параметру
-    usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, HoureType, TabelOption).
-
 % день месяца из dbf (часы)
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, InHoures, 0, _) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
@@ -746,7 +747,7 @@ usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, InHoures, 0, _) :-
                 fInYear-Y, fInMonth-M, fDateBegin-Date]).
 % день месяца по табелю
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelOption) :-
-    nonvar(TabelOption), TabelOption = tbl_cal,
+    TabelOption = tbl_cal,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     get_data(Scope, Type, usr_wg_TblCalLine, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
@@ -754,7 +755,7 @@ usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelO
                 fDuration-Duration, fHoureType-HoureType]).
 % или по табелю мастера
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelOption) :-
-    nonvar(TabelOption), TabelOption = tbl_cal,
+    TabelOption = tbl_cal,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     gd_pl_ds(Scope, Type, usr_wg_TblCal_FlexLine, 67, _),
     make_list(62, TeilArgs),
@@ -775,7 +776,7 @@ usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelO
             ; HoureType is 0 ) ).
 % табель дни-часы из начислений
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
-    nonvar(TabelOption), TabelOption = tbl_charge,
+    TabelOption = tbl_charge,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     ArgPairs = [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                 fCalYear-Y, fCalMonth-M, fDateBegin-Date,
@@ -961,13 +962,12 @@ avg_wage_in_public(Connection,
 
 % загрузка входных данных по сотруднику
 % CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
-% TabelOption: tbl_charge ; tbl_cal
-avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption, TabelOption) :-
+avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption) :-
     Scope = wg_avg_wage_vacation, Type = in,
     new_param_list(Scope, Type,
         [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
          pDateCalc-DateCalc, pMonthOffset-MonthOffset,
-         pCoefOption-CoefOption, pTabelOption-TabelOption]),
+         pCoefOption-CoefOption]),
     !.
 
 % выгрузка данных выполнения по сотруднику

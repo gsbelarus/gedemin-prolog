@@ -1,6 +1,6 @@
 Option Explicit
+'#include wg_WageSettings
 '#include wg_EnableFieldChange
-'
 '#include pl_GetScriptIDByName
 
 Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
@@ -15,7 +15,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   'avg_wage_in
   Dim P_in, Tv_in, Q_in
   Dim EmplKey, FirstMoveKey, DateCalc
-  Dim MonthOffset, CoefOption, TabelOption
+  Dim InflType, InflFCType
+  Dim MonthOffset, CoefOption
   'avg_wage_run, avg_wage_sql
   Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
   Dim DateCalcFrom, DateCalcTo
@@ -57,10 +58,20 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   end if
   '
   MonthOffset = 0
+  '
+  InflType = wg_WageSettings.Inflation.InflType
+  InflFCType = wg_WageSettings.Inflation.InflFCType
   'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
   CoefOption = "fc_fcratesum"
-  'TabelOption: tbl_charge ; tbl_cal
-  TabelOption = "tbl_charge"
+  Select Case InflType
+    Case 1
+      Select Case InflFCType
+        Case 2
+          CoefOption = "ml_rate"
+      End Select
+    Case 0
+      CoefOption = "ml_msalary"
+  End Select
   '
 
   'init
@@ -92,14 +103,13 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
 
   'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption)
   P_in = "avg_wage_in"
-  Set Tv_in = Creator.GetObject(6, "TgsPLTermv", "")
+  Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
   Tv_in.PutInteger 0, EmplKey
   Tv_in.PutInteger 1, FirstMoveKey
   Tv_in.PutDate 2, DateCalc
   Tv_in.PutInteger 3, MonthOffset
   Tv_in.PutAtom 4, CoefOption
-  Tv_in.PutAtom 5, TabelOption
   '
   Q_in.PredicateName = P_in
   Q_in.Termv = Tv_in
@@ -237,7 +247,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
         Case "by_month_wage_all"
           PeriodRule = "по размеру заработка"
         Case "by_month_no_bad_type"
-          PeriodRule = "типы начислений и типы часов в порядке"
+          PeriodRule = "виды начислений и типы часов в норме"
         Case Else
           PeriodRule = ""
       End Select
