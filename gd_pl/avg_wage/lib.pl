@@ -2,8 +2,12 @@
 
 % to_currency(+NumIn, -NumOut)
 to_currency(NumIn, NumOut) :-
-    number(NumIn),
-    NumOut is float( round(NumIn * 10000) / 10000 ),
+    to_currency(NumIn, NumOut, 4),
+    !.
+% to_currency(+NumIn, -NumOut, +Round)
+to_currency(NumIn, NumOut, Round) :-
+    number(NumIn), integer(Round),
+    NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
     !.
 
 % make_list(+Num, -List)

@@ -237,13 +237,18 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     Do Until Q_det.EOF
       Period = Tv_det.ReadDate(2)
       PeriodRule = Tv_det.ReadAtom(3)
-      IsFull = Abs( PeriodRule = "by_days_houres" Or PeriodRule = "by_houres" )
+      IsFull = _
+        Abs( PeriodRule = "by_days_houres" _
+            Or PeriodRule = "by_houres" _
+            Or PeriodRule = "by_days" )
       IsCheck = Abs( Not (PeriodRule = "none") )
       Select Case PeriodRule
         Case "by_days_houres"
           PeriodRule = "табель равен графику по дням и часам"
         Case "by_houres"
           PeriodRule = "табель покрывает график по часам"
+        Case "by_days"
+          PeriodRule = "табель покрывает график по дням"
         Case "by_month_wage_all"
           PeriodRule = "по размеру заработка"
         Case "by_month_no_bad_type"
@@ -287,7 +292,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
   '
   gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
-  gdcObject.Post
+  'gdcObject.Post
   '
 
   wg_AvgSalaryStrGenerate_pl = True

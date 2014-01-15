@@ -66,8 +66,8 @@
 % [по расчетным месяцам, по среднечасовому]
 wg_valid_rules([by_calc_month, by_avg_houre]).
 %% варианты правил включения месяца в расчет
-% табель за месяц покрывает график [по дням и часам, по часам]
-wg_valid_rules([by_days_houres, by_houres]).
+% табель за месяц покрывает график [по дням и часам, по часам, по дням]
+wg_valid_rules([by_days_houres, by_houres, by_days]).
 %% дополнительные правила для включения месяца в расчет
 % [заработок за месяц выше или на уровне каждого из полных месяцев]
 % (для одинаковых коэфициентов осовременивания)
@@ -76,8 +76,8 @@ wg_valid_rules([by_month_wage_all]).
 wg_valid_rules([by_month_no_bad_type]).
 
 %% варианты правил полных месяцев
-% табель за месяц покрывает график [по дням и часам, по часам]
-wg_full_month_rules([by_days_houres, by_houres]).
+% табель за месяц покрывает график [по дням и часам, по часам, по дням]
+wg_full_month_rules([by_days_houres, by_houres, by_days]).
 
 % правило действительно
 is_valid_rule(Rule) :-
@@ -317,7 +317,7 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage) :-
     sum_month_debit(Debits, Wage, ModernWage0),
     % средний за месяц коэффициент осовременивания
     catch( MonthModernCoef0 is ModernWage0 / Wage, _, fail),
-    to_currency(MonthModernCoef0, MonthModernCoef),
+    to_currency(MonthModernCoef0, MonthModernCoef, 2),
     ModernWage is round(Wage * MonthModernCoef),
     !.
 
@@ -528,7 +528,18 @@ rule_month_tab(Scope, PK, Y-M, Rule) :-
     THoures >= NHoures,
     % то месяц включается в расчет
     !.
-    
+rule_month_tab(Scope, PK, Y-M, Rule) :-
+    % по дням за месяц
+    Rule = by_days,
+    % правило действительно
+    is_valid_rule(Rule),
+    % взять данные по графику и табелю за месяц
+    get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, _, _),
+    % если табель покрывает график по дням
+    TDays >= NDays,
+    % то месяц включается в расчет
+    !.
+
 % взять данные по графику и табелю за месяц
 get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
     % взять из временных параметров дни и часы
@@ -593,7 +604,7 @@ calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
             % для проверяемого месяца
             ( usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, Date, DOW, HOW, _, TabelOption),
             % с контролем наличия часов
-            HOW > 0
+            once( (DOW > 0 ; HOW > 0 ) )
             ),
     % в список дата-день-часы
     TabDays),
