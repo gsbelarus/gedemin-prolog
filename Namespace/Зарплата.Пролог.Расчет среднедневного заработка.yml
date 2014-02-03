@@ -1,0 +1,2730 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 151163573_5956463
+  Name: "Зарплата.Пролог.Расчет среднедневного заработка"
+  Caption: "Начисление отпускных (Пролог-скрипт)"
+  Version: "1.0.0.45"
+  Optional: False
+  Internal: True
+Uses: 
+  - "147698171_43451302 Зарплата"
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151189468_18175251
+      AlwaysOverwrite: True
+      DontRemove: True
+      IncludeSiblings: False
+      HeadObject: 151189370_18175251
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "params"
+      COMMENT: ~
+      SCRIPT: | 
+        % params
+        
+        %:- ensure_loaded(lib).
+        /* remove_list, member_list */
+        
+        :-
+            dynamic(param_list/3),
+            multifile(param_list/3),
+            discontiguous(param_list/3).
+        
+        % param_list(?Scope, ?Type, ?Pairs)
+        %   Scope - name of context
+        %   Type  - protocol support
+        %       Client: in; data; got; restart; test; ...
+        %       Server: run; query; temp; log; out; clean; error; ...
+        %   Pairs - list of pairs Key-Value or mixed with other
+        
+        % new_param_list(+Scope, +Type, +Pairs)
+        new_param_list(Scope, Type, Pairs) :-
+            ground([Scope, Type, Pairs]),
+            ( \+ param_list(Scope, Type, Pairs),
+              assertz( param_list(Scope, Type, Pairs) ) ; true ),
+            !.
+        
+        % dispose_param_list(?Scope, ?Type, ?Pairs)
+        dispose_param_list(Scope, Type, Pairs) :-
+            retractall( param_list(Scope, Type, Pairs) ),
+            !.
+        
+        % get_param(?Scope, ?Type, ?Param)
+        get_param(Scope, Type, Param) :-
+            param_list(Scope, Type, Pairs),
+            once( member(Param, Pairs) ).
+        % get_param(?Scope, ?Type, ?Param, ?Pairs)
+        get_param(Scope, Type, Param, Pairs) :-
+            param_list(Scope, Type, Pairs),
+            once( member(Param, Pairs) ).
+        
+        % get_param_list(?Scope, ?Type, ?Params)
+        get_param_list(Scope, Type, Params) :-
+            param_list(Scope, Type, Pairs),
+            once( member_list(Params, Pairs) ).
+        % get_param_list(?Scope, ?Type, ?Params, ?Pairs)
+        get_param_list(Scope, Type, Params, Pairs) :-
+            param_list(Scope, Type, Pairs),
+            once( member_list(Params, Pairs) ).
+        
+        % find_param(+Scope, +Type, +Key1-Value1, ?Key2-Value2)
+        find_param(Scope, Type, Key1-Value1, Key2-Value2) :-
+            find_param_list(Scope, Type, Key1-Value1, Pairs),
+            once( member(Key2-Value2, Pairs) ).
+        % find_param(+Scope, +Type, +Pairs0, ?Key-Value)
+        find_param(Scope, Type, Pairs0, Key-Value) :-
+            find_param_list(Scope, Type, Pairs0, Pairs),
+            once( member(Key-Value, Pairs) ).
+        
+        % find_param_list(+Scope, +Type, +Key-Value, ?Pairs)
+        find_param_list(Scope, Type, Key-Value, Pairs) :-
+            ground([Scope, Type, Key-Value]),
+            param_list(Scope, Type, Pairs0),
+            once( member(Key-Value, Pairs0) ),
+            remove_list(Key-Value, Pairs0, Pairs).
+        % find_param_list(+Scope, +Type, +Pairs0, ?Pairs)
+        find_param_list(Scope, Type, Pairs0, Pairs) :-
+            ground([Scope, Type, Pairs0]),
+            Pairs0 = [Key-Value|Tail],
+            find_param_list(Scope, Type, Key-Value, Pairs1),
+            once( member_list(Tail, Pairs1) ),
+            remove_list(Tail, Pairs1, Pairs).
+        
+        %
+        get_scope(Scope) :-
+            findall(Scope0, param_list(Scope0, _, _), ScopeList0),
+            sort(ScopeList0, ScopeList),
+            member(Scope, ScopeList).
+        
+        %
+        get_scope_list(ScopeList) :-
+            findall(Scope0, param_list(Scope0, _, _), ScopeList0),
+            sort(ScopeList0, ScopeList),
+            !.
+        
+        %
+        get_type(Type) :-
+            findall(Type0, param_list(_, Type0, _), TypeList0),
+            sort(TypeList0, TypeList),
+            member(Type, TypeList).
+        
+        %
+        get_type_list(TypeList) :-
+            findall(Type0, param_list(_, Type0, _), TypeList0),
+            sort(TypeList0, TypeList),
+            !.
+        
+        %
+        get_scope_type(Scope-Type) :-
+            findall(Scope0-Type0, param_list(Scope0, Type0, _), ScopeTypeList0),
+            sort(ScopeTypeList0, ScopeTypeList),
+            member(Scope-Type, ScopeTypeList).
+        
+        %
+        get_scope_type_list(ScopeTypeList) :-
+            findall(Scope0-Type0, param_list(Scope0, Type0, _), ScopeTypeList0),
+            sort(ScopeTypeList0, ScopeTypeList),
+            !.
+        
+        %
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-03T15:11:52+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151189469_18175251
+      AlwaysOverwrite: True
+      DontRemove: True
+      IncludeSiblings: False
+      HeadObject: 151189370_18175251
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "lib"
+      COMMENT: ~
+      SCRIPT: | 
+        % lib
+        
+        % to_currency(+NumIn, -NumOut)
+        to_currency(NumIn, NumOut) :-
+            to_currency(NumIn, NumOut, 4),
+            !.
+        % to_currency(+NumIn, -NumOut, +Round)
+        to_currency(NumIn, NumOut, Round) :-
+            number(NumIn), integer(Round),
+            NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
+            !.
+        
+        % make_list(+Num, -List)
+        make_list(Num, List) :-
+            integer(Num),
+            make_list(Num, List, 0),
+            !.
+        
+        make_list(Num, [], Num) :-
+            !.
+        make_list(Num, [_|Tail], Zero) :-
+            Num1 is Num - 1,
+            !,
+            make_list(Num1, Tail, Zero).
+        
+        % replace_all(+In, +Search, +Replace, -Out)
+        replace_all(In, Search, Replace, Out) :-
+            replace(In, Search, Replace, In1),
+            \+ In = In1,
+            !,
+            replace_all(In1, Search, Replace, Out).
+        replace_all(In, _, _, In).
+        
+        % replace(+In, +Search, +Replace, -Out)
+        replace(In, Search, Replace, Out) :-
+            text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
+            replace_list(InCodes, SearchCodes, ReplaceCodes, OutCodes),
+            text_in_out(In, OutCodes, Out),
+            !.
+        replace(In, _, _, In).
+        
+        %
+        text_list([], []) :-
+            !.
+        text_list([Head|Teil], [Head1|Rest]) :-
+            text_in_out(Head, Head1, Head),
+            !,
+            text_list(Teil, Rest).
+        
+        %
+        text_in_out(In, OutCodes, Out) :-
+            ( atom(In), atom_codes(Out, OutCodes)
+            ; string(In), string_codes(Out, OutCodes)
+            ; number(In), number_codes(Out, OutCodes)
+            ; integer_list(In), Out = In ),
+            !,
+            \+ In = [].
+        
+        %
+        integer_list([]).
+        integer_list([Head|Tail]) :-
+            integer(Head),
+            integer_list(Tail).
+        
+        %
+        replace_list([InHead1,InHead2,InHead3|InChars], [InHead1,InHead2,InHead3|SearchChars], ReplaceChars, OutChars) :-
+            append([InHead1,InHead2,InHead3|SearchChars], RestChars, [InHead1,InHead2,InHead3|InChars]),
+            append(ReplaceChars, RestChars, OutChars),
+            !.
+        replace_list([InHead|InChars], [InHead|SearchChars], ReplaceChars, OutChars) :-
+            append([InHead|SearchChars], RestChars, [InHead|InChars]),
+            append(ReplaceChars, RestChars, OutChars),
+            !.
+        replace_list([InHead|InTail], SearchChars, ReplaceChars, [InHead|OutChars]) :-
+            !,
+            replace_list(InTail, SearchChars, ReplaceChars, OutChars).
+        
+        %
+        remove_list(_, [], []) :-
+            !.
+        remove_list([Elem|Elems], List, Rest) :-
+            remove_list(Elem, List, List1),
+            remove_list(Elems, List1, Rest),
+            !.
+        remove_list(Elem, [Elem|[]], []).
+        remove_list(Elem, [Elem|Tail], Rest) :-
+            remove_list(Elem, Tail, Rest),
+            !.
+        remove_list(Elem, [Head|Tail], [Head|Rest]) :-
+            remove_list(Elem, Tail, Rest).
+        
+        %
+        member_list([], _) :-
+            !.
+        member_list([Head|Tail], List) :-
+            member(Head, List),
+            !,
+            member_list(Tail, List).
+        
+        %
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-14T15:13:14+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151189470_18175251
+      AlwaysOverwrite: True
+      DontRemove: True
+      IncludeSiblings: False
+      HeadObject: 151189370_18175251
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "twg_avg_wage_sql"
+      COMMENT: ~
+      SCRIPT: | 
+        % twg_avg_wage_sql
+        
+        :-
+            GetSQL = [gd_pl_ds/5, get_sql/4],
+            dynamic(GetSQL),
+            multifile(GetSQL),
+            discontiguous(GetSQL).
+        
+        %
+        wg_valid_sql([
+                    -usr_wg_DbfSums/6,
+                    usr_wg_MovementLine/11,
+                    usr_wg_FCRate/4,
+                    usr_wg_TblDayNorm/8,
+                    usr_wg_TblYearNorm/5,
+                    usr_wg_TblCalLine/7,
+                    usr_wg_TblCal_FlexLine/67,
+                    -usr_wg_HourType/12,
+                    usr_wg_TblCharge/9,
+                    usr_wg_FeeType/5,
+                    usr_wg_FeeTypeNoCoef/4,
+                    usr_wg_BadHourType/3,
+                    usr_wg_BadFeeType/3
+                    ]).
+        
+        %
+        is_valid_sql(Functor/Arity) :-
+            wg_valid_sql(ValidSQL),
+            member(Functor/Arity, ValidSQL),
+            !.
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_DbfSums, 6,
+            [
+            fEmplKey-integer, fInSum-float, fInHoures-float,
+            fInYear-integer, fInMonth-integer, fDateBegin-date
+            ]).
+        % usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin)
+        get_sql(gsdb, usr_wg_DbfSums/6,
+        "SELECT \c
+          Z.USR$EMPLKEY, \c
+          COALESCE(Z.USR$SUM, 0) AS INSUM, \c
+          COALESCE(Z.USR$MID_HOW, 0) AS INHOURES, \c
+          EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear, \c
+          EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth, \c
+          IDK.USR$DATEBEGIN \c
+        FROM \c
+          USR$GMK_SUMS Z \c
+        JOIN \c
+          USR$WG_TOTAL IDK \c
+            ON IDK.DOCUMENTKEY  =  Z.USR$INDOCKEY \c
+        WHERE \c
+          Z.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          IDK.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
+          AND \c
+          IDK.USR$DATEBEGIN < \'pDateCalcTo\' \c
+        ORDER BY \c
+          Z.USR$EMPLKEY, \c
+          IDK.USR$DATEBEGIN \c
+        ",
+        [pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_MovementLine, 11,
+            [
+            fEmplKey-integer, fDocumentKey-integer, fFirstMoveKey-integer,
+            fMoveYear-integer, fMoveMonth-integer, fDateBegin-date,
+            fScheduleKey-integer, fMovementType-integer,
+            fRate-float, fListNumber-string, fMSalary-float
+            ]).
+        % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
+        %   MoveYear, MoveMonth, DateBegin,
+        %   ScheduleKey, MovementType, Rate, ListNumber, MSalary)
+        get_sql(gsdb, usr_wg_MovementLine/11,
+        "SELECT \c
+          ml.USR$EMPLKEY, \c
+          ml.DOCUMENTKEY, \c
+          ml.USR$FIRSTMOVE AS FirstMoveKey, \c
+          EXTRACT(YEAR FROM ml.USR$DATEBEGIN) AS MoveYear, \c
+          EXTRACT(MONTH FROM ml.USR$DATEBEGIN) AS MoveMonth, \c
+          ml.USR$DATEBEGIN, \c
+          ml.USR$SCHEDULEKEY, \c
+          ml.USR$MOVEMENTTYPE, \c
+          COALESCE(ml.USR$RATE, 0) AS Rate, \c
+          ml.USR$LISTNUMBER, \c
+          COALESCE(ml.USR$MSALARY, 0) AS MSalary \c
+        FROM \c
+          USR$WG_MOVEMENTLINE ml \c
+        WHERE \c
+          ml.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          ml.USR$FIRSTMOVE = pFirstMoveKey \c
+        ORDER BY \c
+          ml.USR$EMPLKEY, \c
+          ml.USR$FIRSTMOVE, \c
+          ml.USR$DATEBEGIN \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FCRate, 4,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fDate-date, fFCRateSum-float
+            ]).
+        % usr_wg_FCRate(EmplKey, FirstMoveKey, Date, FCRateSum)
+        get_sql(gsdb, usr_wg_FCRate/4,
+        "SELECT \c
+          pEmplKey AS EmplKey, \c
+          pFirstMoveKey AS FirstMoveKey, \c
+          fc.USR$WG_DATE, \c
+          fc.USR$WG_FCRATESUM \c
+        FROM \c
+          USR$WG_FCRATE fc \c
+        ORDER BY \c
+          fc.USR$WG_DATE \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblDayNorm, 8,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fWYear-integer, fWMonth-integer, fTheDay-date, fWDay-integer,
+            fWDuration-float, fWorkDay-integer
+            ]).
+        % usr_wg_TblDayNorm(EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay)
+        get_sql(gsdb, usr_wg_TblDayNorm/8,
+        "\c
+        SELECT EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay \c
+        FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\') \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblYearNorm, 5,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fWYear-integer,
+            fWHoures-float, fWDays-integer
+            ]).
+        % usr_wg_TblYearNorm(EmplKey, FirstMoveKey, WYear, WHoures, WDays)
+        get_sql(gsdb, usr_wg_TblYearNorm/5,
+        "\c
+        SELECT EmplKey, FirstMoveKey, WYear, SUM(WDuration) AS WHoures, SUM(WorkDay) AS WDays \c
+        FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateNormFrom\', \'pDateNormTo\') \c
+        GROUP BY EmplKey, FirstMoveKey, WYear \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pDateNormFrom-_, pDateNormTo-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCalLine, 7,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDate-date,
+            fDuration-float, fHoureType-integer
+            ]).
+        % usr_wg_TblCalLine(EmplKey, FirstMoveKey, CalYear, CalMonth, Date, Duration, HoureType)
+        get_sql(gsdb, usr_wg_TblCalLine/7,
+        "SELECT \c
+          tc.USR$EMPLKEY, \c
+          tc.USR$FIRSTMOVEKEY, \c
+          EXTRACT(YEAR FROM tcl.USR$DATE) AS CalYear, \c
+          EXTRACT(MONTH FROM tcl.USR$DATE) AS CalMonth, \c
+          tcl.USR$DATE, \c
+          tcl.USR$DURATION, \c
+          tcl.USR$HOURTYPE \c
+        FROM \c
+          USR$WG_TBLCAL tc \c
+        JOIN \c
+          USR$WG_TBLCALLINE tcl \c
+            ON tcl.MASTERKEY = tc.DOCUMENTKEY \c
+        WHERE \c
+          tc.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          tc.USR$FIRSTMOVEKEY = pFirstMoveKey \c
+          AND \c
+          tcl.USR$DATE >= \'pDateCalcFrom\' \c
+          AND \c
+          tcl.USR$DATE < \'pDateCalcTo\' \c
+        ORDER BY \c
+          tc.USR$EMPLKEY, \c
+          tc.USR$FIRSTMOVEKEY, \c
+          tcl.USR$DATE \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCal_FlexLine, 67,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+            fS1-variant, fH1-variant, fS2-variant, fH2-variant,
+            fS3-variant, fH3-variant, fS4-variant, fH4-variant,
+            fS5-variant, fH5-variant, fS6-variant, fH6-variant,
+            fS7-variant, fH7-variant, fS8-variant, fH8-variant,
+            fS9-variant, fH9-variant, fS10-variant, fH10-variant,
+            fS11-variant, fH11-variant, fS12-variant, fH12-variant,
+            fS13-variant, fH13-variant, fS14-variant, fH14-variant,
+            fS15-variant, fH15-variant, fS16-variant, fH16-variant,
+            fS17-variant, fH17-variant, fS18-variant, fH18-variant,
+            fS19-variant, fH19-variant, fS20-variant, fH20-variant,
+            fS21-variant, fH21-variant, fS22-variant, fH22-variant,
+            fS23-variant, fH23-variant, fS24-variant, fH24-variant,
+            fS25-variant, fH25-variant, fS26-variant, fH26-variant,
+            fS27-variant, fH27-variant, fS28-variant, fH28-variant,
+            fS29-variant, fH29-variant, fS30-variant, fH30-variant,
+            fS31-variant, fH31-variant
+            ]).
+        % usr_wg_TblCal_FlexLine(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
+        get_sql(gsdb, usr_wg_TblCal_FlexLine/67,
+        "SELECT DISTINCT \c
+          tcfl.USR$EMPLKEY, \c
+          tcfl.USR$FIRSTMOVEKEY, \c
+          EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear, \c
+          EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth, \c
+          t.USR$DATEBEGIN, \c
+          tcfl.USR$S1, tcfl.USR$H1, tcfl.USR$S2, tcfl.USR$H2, \c
+          tcfl.USR$S3, tcfl.USR$H3, tcfl.USR$S4, tcfl.USR$H4, \c
+          tcfl.USR$S5, tcfl.USR$H5, tcfl.USR$S6, tcfl.USR$H6, \c
+          tcfl.USR$S7, tcfl.USR$H7, tcfl.USR$S8, tcfl.USR$H8, \c
+          tcfl.USR$S9, tcfl.USR$H9, tcfl.USR$S10, tcfl.USR$H10, \c
+          tcfl.USR$S11, tcfl.USR$H11, tcfl.USR$S12, tcfl.USR$H12, \c
+          tcfl.USR$S13, tcfl.USR$H13, tcfl.USR$S14, tcfl.USR$H14, \c
+          tcfl.USR$S15, tcfl.USR$H15, tcfl.USR$S16, tcfl.USR$H16, \c
+          tcfl.USR$S17, tcfl.USR$H17, tcfl.USR$S18, tcfl.USR$H18, \c
+          tcfl.USR$S19, tcfl.USR$H19, tcfl.USR$S20, tcfl.USR$H20, \c
+          tcfl.USR$S21, tcfl.USR$H21, tcfl.USR$S22, tcfl.USR$H22, \c
+          tcfl.USR$S23, tcfl.USR$H23, tcfl.USR$S24, tcfl.USR$H24, \c
+          tcfl.USR$S25, tcfl.USR$H25, tcfl.USR$S26, tcfl.USR$H26, \c
+          tcfl.USR$S27, tcfl.USR$H27, tcfl.USR$S28, tcfl.USR$H28, \c
+          tcfl.USR$S29, tcfl.USR$H29, tcfl.USR$S30, tcfl.USR$H30, \c
+          tcfl.USR$S31, tcfl.USR$H31 \c
+        FROM \c
+          USR$WG_TBLCAL_FLEXLINE tcfl \c
+        JOIN \c
+          USR$WG_TBLCAL_FLEX tcf \c
+            ON tcf.DOCUMENTKEY = tcfl.MASTERKEY \c
+        JOIN \c
+          USR$WG_TOTAL t \c
+            ON t.DOCUMENTKEY = tcf.USR$TOTALDOCKEY \c
+        WHERE \c
+          tcfl.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey \c
+          AND \c
+          t.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
+          AND \c
+          t.USR$DATEBEGIN < \'pDateCalcTo\' \c
+         ORDER BY \c
+           tcfl.USR$EMPLKEY, \c
+           tcfl.USR$FIRSTMOVEKEY, \c
+           t.USR$DATEBEGIN \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_HourType, 12,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fID-integer, fCode-string, fDigitCode-string,
+            fDescription-string, fIsWorked-integer, fShortName-string,
+            fForCalFlex-integer, fForOverTime-integer, fForFlex-integer,
+            fAbsentEEIsm-integer
+            ]).
+        % usr_wg_HourType(EmplKey, FirstMoveKey,
+        %   ID, Code, DigitCode, Description, IsWorked, ShortName,
+        %   ForCalFlex, ForOverTime, ForFlex, AbsentEEIsm)
+        get_sql(gsdb, usr_wg_HourType/12,
+        "SELECT \c
+          pEmplKey AS EmplKey, \c
+          pFirstMoveKey AS FirstMoveKey, \c
+          ht.ID, \c
+          ht.USR$CODE, \c
+          ht.USR$DIGITCODE, \c
+          ht.USR$DISCRIPTION \c,
+          ht.USR$ISWORKED, \c
+          ht.USR$SHORTNAME, \c
+          ht.USR$FORCALFLEX, \c
+          ht.USR$FOROVERTIME, \c
+          ht.USR$FORFLEX, \c
+          ht.USR$ABSENTEEISM \c
+        FROM \c
+          USR$WG_HOURTYPE ht \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCharge, 9,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+            fDebit-float, fFeeTypeKey-integer, fDOW-float, fHOW-float
+            ]).
+        % usr_wg_TblCharge(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin,
+        %   Debit, FeeTypeKey, DOW, HOW)
+        get_sql(gsdb, usr_wg_TblCharge/9,
+        "SELECT \c
+          tch.USR$EMPLKEY, \c
+          tch.USR$FIRSTMOVEKEY, \c
+          EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear, \c
+          EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth, \c
+          tch.USR$DATEBEGIN, \c
+          tch.USR$DEBIT, \c
+          tch.USR$FEETYPEKEY, \c
+          tch.USR$DOW, \c
+          tch.USR$HOW \c
+        FROM \c
+          USR$WG_TBLCHARGE tch \c
+        WHERE \c
+          tch.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          NOT tch.USR$DEBIT = 0 \c
+          AND \c
+          tch.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
+          AND \c
+          tch.USR$DATEBEGIN < \'pDateCalcTo\' \c
+        ORDER BY \c
+          tch.USR$EMPLKEY, \c
+          tch.USR$DATEBEGIN \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FeeType, 5,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fFeeGroupKey-integer, fFeeTypeKey-integer, fAvgDayHOW-integer
+            ]).
+        % usr_wg_FeeType(EmplKey, FirstMoveKey, FeeGroupKey, FeeTypeKey, AvgDayHOW)
+        get_sql(gsdb, usr_wg_FeeType/5,
+        "SELECT \c
+          pEmplKey AS EmplKey,  \c
+          pFirstMoveKey AS FirstMoveKey, \c
+          ft.USR$WG_FEEGROUPKEY, \c
+          ft.USR$WG_FEETYPEKEY, \c
+          ft_avg.USR$AVGDAYHOW \c
+        FROM \c
+          USR$CROSS179_256548741 ft \c
+        JOIN \c
+          USR$WG_FEETYPE ft_avg \c
+            ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \c
+        WHERE \c
+          ft.USR$WG_FEEGROUPKEY IN \c
+        (SELECT id FROM gd_ruid \c
+        WHERE xid = pFeeGroupKey_xid \c
+        AND dbid = pFeeGroupKey_dbid \c
+        ) \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_xid-_, pFeeGroupKey_dbid-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FeeTypeNoCoef, 4,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fFeeGroupKeyNoCoef-integer, fFeeTypeKeyNoCoef-integer
+            ]).
+        % usr_wg_FeeTypeNoCoef(EmplKey, FirstMoveKey, FeeGroupKeyNoCoef, FeeTypeKeyNoCoef)
+        get_sql(gsdb, usr_wg_FeeTypeNoCoef/4,
+        "SELECT \c
+          pEmplKey AS EmplKey,  \c
+          pFirstMoveKey AS FirstMoveKey, \c
+          ft.USR$WG_FEEGROUPKEY, \c
+          ft.USR$WG_FEETYPEKEY \c
+        FROM \c
+          USR$CROSS179_256548741 ft \c
+        JOIN \c
+          USR$WG_FEETYPE ft_avg \c
+            ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \c
+        WHERE \c
+          ft.USR$WG_FEEGROUPKEY IN \c
+        (SELECT id FROM gd_ruid \c
+        WHERE xid = pFeeGroupKeyNoCoef_xid \c
+        AND dbid = pFeeGroupKeyNoCoef_dbid \c
+        ) \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pFeeGroupKeyNoCoef_xid-_, pFeeGroupKeyNoCoef_dbid-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_BadHourType, 3,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer, fID-integer
+            ]).
+        % usr_wg_BadHourType(EmplKey, FirstMoveKey, ID)
+        get_sql(gsdb, usr_wg_BadHourType/3,
+        "SELECT \c
+          pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c
+        FROM USR$WG_HOURTYPE \c
+        WHERE id IN \c
+        (SELECT id FROM gd_ruid \c
+        WHERE xid IN (pBadHourType_xid_IN) \c
+        AND dbid = pBadHourType_dbid \c
+        ) \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid-_]
+            ).
+        
+        gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_BadFeeType, 3,
+            [
+            fEmplKey-integer, fFirstMoveKey-integer, fID-integer
+            ]).
+        % usr_wg_BadFeeType(EmplKey, FirstMoveKey, ID)
+        get_sql(gsdb, usr_wg_BadFeeType/3,
+        "SELECT \c
+          pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c
+        FROM USR$WG_FEETYPE \c
+        WHERE id IN \c
+        (SELECT id FROM gd_ruid \c
+        WHERE xid IN (pBadFeeType_xid_IN) \c
+        AND dbid = pBadFeeType_dbid \c
+        ) \c
+        ",
+        [pEmplKey-_, pFirstMoveKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid-_]
+            ).
+        
+        %
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-10T14:13:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151189471_18175251
+      AlwaysOverwrite: True
+      DontRemove: True
+      IncludeSiblings: False
+      HeadObject: 151189370_18175251
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "twg_avg_wage_in_params"
+      COMMENT: ~
+      SCRIPT: | 
+        % twg_avg_wage_in_params
+        
+        :- new_param_list(wg_avg_wage_vacation, in,
+            [pConnection-gsdb,
+            pMonthQty-12, pAvgDays-29.7,
+            pFeeGroupKey_xid-147071456,
+            pFeeGroupKey_dbid-274788016,
+            pFeeGroupKeyNoCoef_xid-147757383,
+            pFeeGroupKeyNoCoef_dbid-84733194,
+            pBadHourType_xid_IN-'147650804, 147650786, 147650802',
+            pBadHourType_dbid-119619099,
+            pBadFeeType_xid_IN-'151000730',
+            pBadFeeType_dbid-2109681374
+            ]).
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-08T17:45:23+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151189370_18175251
+      AlwaysOverwrite: True
+      DontRemove: True
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "twg_avg_wage"
+      COMMENT: ~
+      SCRIPT: | 
+        % twg_avg_wage
+        
+        % среднедневной заработок
+        % - для отпусков
+        %
+        
+        :- retractall(debug_mode).
+        
+        % ! при использовании в ТП Гедымин
+        % ! для begin & end debug mode section
+        % ! убрать символ процента из первой позиции
+        /* %%% begin debug mode section
+        
+        %% saved state
+        :- ['../gd_pl_state/load_atom', '../gd_pl_state/date', '../gd_pl_state/dataset'].
+        %%
+        
+        %% include
+        %#INCLUDE lib
+        :- [lib].
+        %#INCLUDE params
+        :- [params].
+        %#INCLUDE twg_avg_wage_sql
+        :- [twg_avg_wage_sql].
+        %#INCLUDE twg_avg_wage_in_params
+        %:- [twg_avg_wage_in_params].
+        %%
+        
+        %% facts
+        :-  init_data,
+            [
+            %usr_wg_DbfSums,
+            usr_wg_MovementLine,
+            usr_wg_FCRate,
+            usr_wg_TblDayNorm,
+            usr_wg_TblYearNorm,
+            usr_wg_TblCalLine,
+            usr_wg_TblCal_FlexLine,
+            %usr_wg_HourType,
+            usr_wg_TblCharge,
+            usr_wg_FeeType,
+            usr_wg_FeeTypeNoCoef,
+            usr_wg_BadHourType,
+            usr_wg_BadFeeType
+            ].
+        %%
+        
+        %% dynamic state
+        :- [param_list].
+        %%
+        
+        %% flag
+        :- assertz(debug_mode).
+        %%
+        
+        % ! при использовании в ТП Гедымин
+        % ! для begin & end debug mode section
+        % ! убрать символ процента из первой позиции
+        */ %%% end debug mode section
+        
+        :- ps32k_lgt(64, 128, 64).
+        
+        /* реализация */
+        
+        %% варианты правил расчета для отпусков
+        % [по расчетным месяцам, по среднечасовому]
+        wg_valid_rules([by_calc_month, by_avg_houre]).
+        %% варианты правил включения месяца в расчет
+        % табель за месяц покрывает график [по дням и часам, по часам, по дням]
+        wg_valid_rules([by_days_houres, by_houres, by_days]).
+        %% дополнительные правила для включения месяца в расчет
+        % [заработок за месяц выше или на уровне каждого из полных месяцев]
+        % (для одинаковых коэфициентов осовременивания)
+        wg_valid_rules([by_month_wage_all]).
+        % [отсутствие в месяце плохих типов начислений и часов]
+        wg_valid_rules([by_month_no_bad_type]).
+        
+        %% варианты правил полных месяцев
+        % табель за месяц покрывает график [по дням и часам, по часам, по дням]
+        wg_full_month_rules([by_days_houres, by_houres, by_days]).
+        
+        % правило действительно
+        is_valid_rule(Rule) :-
+            wg_valid_rules(ValidRules),
+            member(Rule, ValidRules),
+            !.
+        
+        % среднедневной заработок
+        % - для отпусков
+        avg_wage(Variant) :-
+            % параметры контекста
+            Scope = wg_avg_wage_vacation,
+            % шаблон первичного ключа
+            PK = [pEmplKey-_, pFirstMoveKey-_],
+            % для каждого первичного ключа расчета из входных параметров
+            get_param_list(Scope, in, PK),
+            % запустить цикл механизма подготовки данных
+            engine_loop(Scope, in, PK),
+            % выполнить расчет
+            eval_avg_wage(Scope, PK, Variant),
+            % найти альтернативу
+            fail.
+        avg_wage(_) :-
+            % больше альтернатив нет
+            !.
+        
+        % выполнить расчет
+        eval_avg_wage(Scope, PK, Variant) :-
+            % взять локальное время
+            get_local_date_time(DT1),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [begin-DT1|PK]),
+            % удалить временные данные по расчету
+            forall( get_param_list(Scope, temp, PK, Pairs),
+                    dispose_param_list(Scope, temp, Pairs) ),
+            % вычислить среднедневной заработок по сотруднику
+            calc_avg_wage(Scope, PK, AvgWage, Variant),
+            % записать результат
+            ret_avg_wage(Scope, PK, AvgWage, Variant),
+            % взять локальное время
+            get_local_date_time(DT2),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [end-DT2|PK]),
+            !.
+        
+        % записать результат
+        ret_avg_wage(Scope, PK, AvgWage, Variant) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять дополнительные данные из первого движения
+            get_data(Scope, in, usr_wg_MovementLine, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fMovementType-1, fListNumber-ListNumber]),
+            % записать выходные данные
+            append(PK, [pListNumber-ListNumber,
+                        pAvgWage-AvgWage, pVariant-Variant],
+                    OutPairs),
+            new_param_list(Scope, out, OutPairs),
+            !.
+        
+        % среднедневной заработок по сотруднику (по расчетным месяцам)
+        calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+            Rule = by_calc_month,
+            % правило действительно
+            is_valid_rule(Rule),
+            % подготовка временных данных для расчета
+            prep_avg_wage(Scope, PK, Periods),
+            % проверка по табелю
+            check_month_tab(Scope, PK, Periods),
+            % если есть хотя бы один расчетный месяц
+            ( once( get_month_incl(Scope, PK, _, _, _) ),
+            % то проверка по заработку
+              check_month_wage(Scope, PK, Periods)
+              ; true ),
+            % проверка на отсутствие плохих типов начислений и часов
+            check_month_no_bad_type(Scope, PK, Periods),
+            % есть хотя бы один расчетный месяц
+            once( get_month_incl(Scope, PK, _, _, _) ),
+            % взять заработок
+            findall( Wage,
+                       % за каждый расчетный месяц
+                     ( get_month_incl(Scope, PK, Y, M, _),
+                       % взять данные по заработку
+                       get_month_wage(Scope, PK, Y, M, _, Wage) ),
+            % в список заработков
+            Wages ),
+            % итоговый заработок за расчетные месяцы
+            sum_list(Wages, Amount),
+            % количество расчетных месяцев
+            length(Wages, Num),
+            % среднемесячное количество календарных дней
+            get_param(Scope, in, pAvgDays-AvgDays),
+            % среднедневной заработок
+            catch( AvgWage0 is Amount / Num / AvgDays, _, fail),
+            AvgWage is round(AvgWage0),
+            !.
+        % среднедневной заработок по сотруднику (по среднечасовому)
+        calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+            Rule = by_avg_houre,
+            % правило действительно
+            is_valid_rule(Rule),
+            % подготовка временных данных для расчета
+            prep_avg_wage(Scope, PK, Periods),
+            % взять заработок
+            findall( Wage,
+                       % за каждый период проверки
+                     ( member(Y-M, Periods),
+                       % взять данные по заработку
+                       get_month_wage(Scope, PK, Y, M, _, Wage) ),
+            % в список заработков
+            Wages ),
+            % итоговый заработок
+            sum_list(Wages, Amount),
+            % взять часы
+            findall( THoures,
+                     % за период проверки
+                     ( member(Y-M, Periods),
+                     % взять данные по часам за месяц
+                     get_month_norm_tab(Scope, PK, Y-M, _, _, _, THoures)
+                     ),
+            % в список часов
+            Durations),
+            % всего часов по табелю
+            sum_list(Durations, TotalTab),
+            % среднечасовой заработок
+            catch( AvgHoureWage is Amount / TotalTab, _, fail ),
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % всего часов по графику за расчетный год
+            get_data(Scope, in, usr_wg_TblYearNorm, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fWHoures-TotalNorm]),
+            % среднемесячное количество расчетных рабочих часов
+            AvgMonthNorm is TotalNorm / 12,
+            % среднемесячное количество календарных дней
+            get_param(Scope, in, pAvgDays-AvgDays),
+            % среднедневной заработок
+            catch( AvgWage0 is AvgHoureWage * AvgMonthNorm / AvgDays, _, fail),
+            AvgWage is round(AvgWage0),
+            !.
+        
+        % подготовка временных данных для расчета
+        prep_avg_wage(Scope, PK, Periods) :-
+            % периоды для проверки
+            get_periods(Scope, PK, Periods),
+            % добавление временных данных по расчету дней и часов
+            add_month_norm_tab(Scope, PK, Periods),
+            % добавление временных данных по расчету заработков
+            add_month_wage(Scope, PK, Periods),
+            !.
+        
+        % периоды для проверки
+        get_periods(Scope, PK, Periods) :-
+            append(PK, [pDateCalcFrom-DateFrom, pDateCalcTo-DateTo], Pairs),
+            get_param_list(Scope, run, Pairs),
+            make_periods(DateFrom, DateTo, Periods),
+            !.
+        
+        % создать список периодов
+        make_periods(DateFrom, DateTo, [Y-M|Periods]) :-
+            DateFrom @< DateTo,
+            atom_date(DateFrom, date(Y, M, D)),
+            date_add(date(Y, M, D), 1, month, DateFrom0),
+            atom_date(DateFrom1, DateFrom0),
+            !,
+            make_periods(DateFrom1, DateTo, Periods).
+        make_periods(_, _, []).
+        
+        % добавление временных данных по расчету дней и часов
+        add_month_norm_tab(_, _, []):-
+            % больше месяцев для проверки нет
+            !.
+        add_month_norm_tab(Scope, PK, [Y-M|Periods]) :-
+            % проверить данные по графику и табелю за месяц
+            get_month_norm_tab(Scope, PK, Y-M, _, _, _, _),
+            !,
+            % проверить остальные месяцы
+            add_month_norm_tab(Scope, PK, Periods).
+        add_month_norm_tab(Scope, PK, [_|Periods]) :-
+            !,
+            % проверить остальные месяцы
+            add_month_norm_tab(Scope, PK, Periods).
+        
+        % добавление временных данных по расчету заработков
+        add_month_wage(_, _, []):-
+            % больше месяцев для проверки нет
+            !.
+        add_month_wage(Scope, PK, [Y-M|Periods]) :-
+            % проверить данные по заработку
+            get_month_wage(Scope, PK, Y, M, _, _),
+            !,
+            % проверить остальные месяцы
+            add_month_wage(Scope, PK, Periods).
+        add_month_wage(Scope, PK, [_|Periods]) :-
+            !,
+            % проверить остальные месяцы
+            add_month_wage(Scope, PK, Periods).
+        
+        % взять данные по заработку за месяц
+        get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
+            % взять из временных параметров данные по заработку
+            append(PK, [pYM-Y-M, pModernCoef-MonthModernCoef, pModernWage-ModernWage],
+                    Pairs),
+            get_param_list(Scope, temp, Pairs),
+            !.
+        get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
+            % расчитать заработок за месяц
+            cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage),
+            % записать во временные параметры данные по заработку
+            append(PK, [pYM-Y-M,
+                        pWage-Wage, pModernCoef-MonthModernCoef, pModernWage-ModernWage],
+                    Pairs),
+            new_param_list(Scope, temp, Pairs),
+            !.
+        
+        % расчитать заработок за месяц
+        cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять начисления
+            findall( Debit-ModernCoef,
+                  % для начисления
+                  % где дата совпадает с проверяемым месяцем
+                  ( usr_wg_TblCharge_mix(Scope, in, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fCalYear-Y, fCalMonth-M, fDateBegin-TheDay,
+                        fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),
+                  % и соответствующего типа
+                  once( get_data(Scope, in, usr_wg_FeeType, [
+                                    fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                                    fFeeTypeKey-FeeTypeKey ]) ),
+                  % с коэффициентом осовременивания
+                  get_modern_coef(Scope, PK, TheDay, FeeTypeKey, ModernCoef) ),
+            % в список начислений
+            Debits ),
+            % всего за месяц
+            sum_month_debit(Debits, Wage, ModernWage0),
+            % средний за месяц коэффициент осовременивания
+            catch( MonthModernCoef0 is ModernWage0 / Wage, _, fail),
+            to_currency(MonthModernCoef0, MonthModernCoef, 2),
+            ModernWage is round(Wage * MonthModernCoef),
+            !.
+        
+        % итого зарплата и осовремененная зарплата за месяц
+        sum_month_debit(Debits, Wage, ModernWage) :-
+            sum_month_debit(Debits, Wage, ModernWage, 0, 0),
+            !.
+        %
+        sum_month_debit([], Wage, ModernWage, Wage, ModernWage) :-
+            !.
+        sum_month_debit([Debit-ModernCoef | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
+            Wage1 is Wage0 + Debit,
+            ModernWage1 is ModernWage0 + Debit*ModernCoef,
+            !,
+            sum_month_debit(Debits, Wage, ModernWage, Wage1, ModernWage1).
+        
+        % коэффициент осовременивания
+        get_modern_coef(Scope, PK, _, FeeTypeKey, 1.0) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % проверить тип начисления на исключение для осовременивания
+            get_data(Scope, in, usr_wg_FeeTypeNoCoef, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fFeeTypeKeyNoCoef-FeeTypeKey ]),
+            !.
+        get_modern_coef(Scope, PK, TheDay, _, ModernCoef) :-
+            % взять параметр коэфициента и дату ограничения расчета
+            append(PK, [pDateCalcTo-DateTo, pCoefOption-CoefOption], Pairs),
+            get_param_list(Scope, run, Pairs),
+            % сформировать список движений дата-сумма
+            findall( Date-Amount,
+                     get_modern_coef_data(PK, Scope, Date, Amount, CoefOption, DateTo),
+            Movements ),
+            % вычислить коэффициент
+            calc_modern_coef(TheDay, Movements, ModernCoef),
+            !.
+        
+        % взять данные для расчета коэфициента осовременивания
+        %
+        get_modern_coef_data(PK, Scope, Date, FCRateSum, CoefOption, DateTo) :-
+            % справочник базовых величин - тарифная ставка 1-го разряда
+            nonvar(CoefOption), CoefOption = fc_fcratesum,
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять данные из справочника по ставке
+            get_data(Scope, in, usr_wg_FCRate, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fDate-Date, fFCRateSum-FCRateSum ]),
+            % где дата меньше расчетной
+            Date @< DateTo.
+        %
+        get_modern_coef_data(PK, Scope, DateBegin, Rate, CoefOption, DateTo) :-
+            % движение - тарифная ставка 1-го разряда
+            nonvar(CoefOption), CoefOption = ml_rate,
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять данные из движения по ставке
+            get_data(Scope, in, usr_wg_MovementLine, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fDateBegin-DateBegin, fRate-Rate ]),
+            % где дата меньше расчетной
+            DateBegin @< DateTo.
+        %
+        get_modern_coef_data(PK, Scope, DateBegin, MSalary, CoefOption, DateTo) :-
+            % движение - оклад
+            nonvar(CoefOption), CoefOption = ml_msalary,
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять данные из движения по окладу
+            get_data(Scope, in, usr_wg_MovementLine, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fDateBegin-DateBegin, fMSalary-MSalary ]),
+            % где дата меньше расчетной
+            DateBegin @< DateTo.
+        
+        % вычислить коэффициент
+        calc_modern_coef(_, [ _ | [] ], 1.0) :-
+            % если последнее движение, то коэффициент 1
+            !.
+        calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef) :-
+            % если проверяемая дата больше или равна даты текущего движения
+            TheDay @>= Date1,
+            % и меньше даты следующего движения
+            TheDay @< Date2,
+            % то взять последнюю ставку из следующего и всех оставшихся движений
+            last([Date2-Rate2 | Movements], _-RateLast),
+            % и вычислить коэффициент для текущего движения
+            catch( ModernCoef0 is RateLast / Rate1, _, fail),
+            ( ModernCoef0 < 1.0, ModernCoef = 1.0 ; ModernCoef = ModernCoef0 ),
+            !.
+        calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef) :-
+            % проверить для остальных движений
+            !,
+            calc_modern_coef(TheDay, Movements, ModernCoef).
+        
+        % месяц работы полный
+        is_full_month(Scope, PK, Y-M) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % если для первого движения по типу 1 (прием на работу)
+            % где дата совпадает с проверяемым месяцем
+            get_data(Scope, in, usr_wg_MovementLine, [
+                fEmplKey-EmplKey, fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
+                fMoveYear-Y, fMoveMonth-M, fDateBegin-DateBegin, fMovementType-1 ]),
+            !,
+            % первый рабочий день по графику для проверяемого месяца
+            once( get_data(Scope, in, usr_wg_TblDayNorm, [
+                    fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                    fWYear-Y, fWMonth-M, fTheDay-TheDay, fWorkDay-1 ]) ),
+            !,
+            % больше или равен дате первого движения
+            TheDay @>= DateBegin,
+            % то первый месяц работы полный
+            !.
+        is_full_month(_, _, _) :-
+            % проверяемый месяц не является первым месяцем работы
+            !.
+        
+        % в месяце есть отработанные часы
+        is_month_worked(Scope, PK, Y-M) :-
+            % если есть хотя бы один рабочий день
+            usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, _, _, Duration, _, _),
+            % с контролем наличия часов
+            Duration > 0,
+            % то в месяце есть отработанные часы
+            !.
+        
+        % в месяце есть оплата
+        is_month_paid(Scope, PK, Y-M) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % если есть хотя бы одно начисление
+            usr_wg_TblCharge_mix(Scope, in, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fCalYear-Y, fCalMonth-M, fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),
+            % с контролем суммы
+            Debit > 0,
+            % соответствующего типа
+            once( get_data(Scope, in, usr_wg_FeeType, [
+                            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                            fFeeTypeKey-FeeTypeKey ]) ),
+            % то в месяце есть оплата
+            !.
+        
+        % взять расчетный месяц
+        get_month_incl(Scope, PK, Y, M, Variant) :-
+            append(PK, [pMonthIncl-MonthInclList], Pairs),
+            get_param_list(Scope, temp, Pairs),
+            member(Y-M-Variant, MonthInclList).
+        
+        % принять месяц для исчисления
+        take_month_incl(Scope, PK, Y, M, Variant) :-
+            append(PK, [pMonthIncl-MonthInclList], Pairs),
+            get_param_list(Scope, temp, Pairs),
+            keysort([Y-M-Variant | MonthInclList], MonthInclList1),
+            append(PK, [pMonthIncl-MonthInclList1], Pairs1),
+            dispose_param_list(Scope, temp, Pairs),
+            new_param_list(Scope, temp, Pairs1),
+            !.
+        take_month_incl(Scope, PK, Y, M, Variant) :-
+            append(PK, [pMonthIncl-[Y-M-Variant]], Pairs),
+            new_param_list(Scope, temp, Pairs),
+            !.
+        
+        % проверка месяца по табелю
+        check_month_tab(_, _, []):-
+            % больше месяцев для проверки нет
+            !.
+        check_month_tab(Scope, PK, [Y-M|Periods]) :-
+            % месяц работы полный
+            is_full_month(Scope, PK, Y-M),
+            % в месяце есть отработанные часы
+            is_month_worked(Scope, PK, Y-M),
+            % в месяце есть оплата
+            is_month_paid(Scope, PK, Y-M),
+            % и выполняется одно из правил
+            rule_month_tab(Scope, PK, Y-M, Variant),
+            % то принять месяц для исчисления
+            take_month_incl(Scope, PK, Y, M, Variant),
+            !,
+            % проверить остальные месяцы
+            check_month_tab(Scope, PK, Periods).
+        check_month_tab(Scope, PK, [_|Periods]) :-
+            !,
+            % проверить остальные месяцы
+            check_month_tab(Scope, PK, Periods).
+        
+        % правила включения месяца в расчет
+        rule_month_tab(Scope, PK, Y-M, Rule) :-
+            % по дням и часам за месяц
+            Rule = by_days_houres,
+            % правило действительно
+            is_valid_rule(Rule),
+            % взять данные по графику и табелю за месяц
+            get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures),
+            % если табель равен графику по дням и часам
+            TDays =:= NDays, THoures =:= NHoures,
+            % то месяц включается в расчет
+            !.
+        rule_month_tab(Scope, PK, Y-M, Rule) :-
+            % по часам за месяц
+            Rule = by_houres,
+            % правило действительно
+            is_valid_rule(Rule),
+            % взять данные по графику и табелю за месяц
+            get_month_norm_tab(Scope, PK, Y-M, _, _, NHoures, THoures),
+            % если табель покрывает график по часам
+            THoures >= NHoures,
+            % то месяц включается в расчет
+            !.
+        rule_month_tab(Scope, PK, Y-M, Rule) :-
+            % по дням за месяц
+            Rule = by_days,
+            % правило действительно
+            is_valid_rule(Rule),
+            % взять данные по графику и табелю за месяц
+            get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, _, _),
+            % если табель покрывает график по дням
+            TDays >= NDays,
+            % то месяц включается в расчет
+            !.
+        
+        % взять данные по графику и табелю за месяц
+        get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
+            % взять из временных параметров дни и часы
+            append(PK, [pYM-Y-M,
+                        pTDays-TDays, pTHoures-THoures,
+                        pNDays-NDays, pNHoures-NHoures],
+                        Pairs),
+            get_param_list(Scope, temp, Pairs),
+            !.
+        get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
+            % расчитать график и табель за месяц
+            calc_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures),
+            % записать во временные параметры дни и часы
+            append(PK, [pYM-Y-M,
+                        pTDays-TDays, pTHoures-THoures,
+                        pNDays-NDays, pNHoures-NHoures],
+                        Pairs),
+            new_param_list(Scope, temp, Pairs),
+            !.
+        
+        % расчитать график и табель за месяц
+        calc_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
+            % расчитать график за месяц
+            calc_month_norm(Scope, PK, Y-M, NormDays),
+            % сумма дней и часов по графику
+            sum_days_houres(NormDays, NDays, NHoures),
+            % расчитать табель за месяц
+            calc_month_tab(Scope, PK, Y-M, TabDays),
+            % сумма дней и часов по табелю
+            sum_days_houres(TabDays, TDays, THoures),
+            !.
+        
+        % расчитать график за месяц
+        calc_month_norm(Scope, PK, Y-M, NormDays) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять дату/часы
+            findall( TheDay-1-WDuration,
+                    % для рабочего дня
+                    ( get_data(Scope, in, usr_wg_TblDayNorm, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fWYear-Y, fWMonth-M, fTheDay-TheDay,
+                        fWDuration-WDuration, fWorkDay-1 ]),
+                    % с контролем наличия часов
+                    WDuration > 0 ),
+            % в список дата/часы графика
+            NormDays),
+            !.
+        
+        % расчитать табель за месяц
+        calc_month_tab(Scope, PK, Y-M, TabDays) :-
+            calc_month_tab(Scope, PK, Y-M, TabDays, tbl_cal),
+            \+ TabDays = [],
+            !.
+        calc_month_tab(Scope, PK, Y-M, TabDays) :-
+            calc_month_tab(Scope, PK, Y-M, TabDays, tbl_charge),
+            !.
+        %
+        calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
+            % взять данные табеля
+            findall( Date-DOW-HOW,
+                    % для проверяемого месяца
+                    ( usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, Date, DOW, HOW, _, TabelOption),
+                    % с контролем наличия часов
+                    once( (DOW > 0 ; HOW > 0 ) )
+                    ),
+            % в список дата-день-часы
+            TabDays),
+            !.
+        
+        % сумма дней и часов
+        sum_days_houres(ListDays, Days, Houres) :-
+            sum_days_houres(ListDays, Days, Houres, 0, 0),
+            !.
+        %
+        sum_days_houres([], Days, Houres, Days, Houres).
+        sum_days_houres([_-DOW-HOW|ListDays], Days, Houres, Days0, Houres0) :-
+            Days1 is Days0 + DOW,
+            Houres1 is Houres0 + HOW,
+            !,
+            sum_days_houres(ListDays, Days, Houres, Days1, Houres1).
+        
+        % проверка месяца по заработку
+        check_month_wage(_, _, []):-
+            % больше месяцев для проверки нет
+            !.
+        check_month_wage(Scope, PK, [Y-M|Periods]) :-
+            % если месяц еще не включен в расчет
+            \+ get_month_incl(Scope, PK, Y, M, _),
+            % и выполняется одно из правил
+            rule_month_wage(Scope, PK, Y-M, Variant),
+            % то принять месяц для исчисления
+            take_month_incl(Scope, PK, Y, M, Variant),
+            !,
+            % проверить следующий месяц
+            check_month_wage(Scope, PK, Periods).
+        check_month_wage(Scope, PK, [_|Periods]) :-
+            !,
+            % проверить следующий месяц
+            check_month_wage(Scope, PK, Periods).
+        
+        % заработок за месяц выше или на уровне каждого из полных месяцев
+        rule_month_wage(Scope, PK, Y-M, Rule) :-
+            Rule = by_month_wage_all,
+            % правило действительно
+            is_valid_rule(Rule),
+            % варианты правил полных месяцев
+            wg_full_month_rules(FullMonthRules),
+            % взять заработок и коэффициент осовременивания за проверяемый месяц
+            get_month_wage(Scope, PK, Y, M, ModernCoef, Wage),
+            % взять заработок
+            findall( Wage1,
+                      % для расчетного месяца
+                    ( get_month_incl(Scope, PK, Y1, M1, Variant1),
+                      % который принят для исчисления по варианту полного месяца
+                      once( member(Variant1, FullMonthRules) ),
+                      % с заработком и коэффициентом осовременивания за месяц
+                      get_month_wage(Scope, PK, Y1, M1, ModernCoef1, Wage1),
+                      % где коэффициенты для проверяемого и расчетного равны
+                      ModernCoef =:= ModernCoef1 ),
+            % в список заработков
+            Wages1 ),
+            % если заработок проверяемого месяца покрывает все из расчетных
+            wage_over_list(Wage, Wages1),
+            % то месяц включается в расчет
+            !.
+        
+        % заработок покрывает все значения из списка
+        wage_over_list(Over, [Head|[]]) :-
+            Over >= Head,
+            !.
+        wage_over_list(Over, [Head|Tail]) :-
+            Over >= Head,
+            !,
+            wage_over_list(Over, Tail).
+        
+        % проверка месяца по типу начислений и типу часов
+        check_month_no_bad_type(_, _, []):-
+            % больше месяцев для проверки нет
+            !.
+        check_month_no_bad_type(Scope, PK, [Y-M|Periods]) :-
+            % если месяц еще не включен в расчет
+            \+ get_month_incl(Scope, PK, Y, M, _),
+            % месяц работы полный
+            is_full_month(Scope, PK, Y-M),
+            % в месяце есть оплата
+            is_month_paid(Scope, PK, Y-M),
+            % и выполняется одно из правил
+            rule_month_no_bad_type(Scope, PK, Y-M, Variant),
+            % то принять месяц для исчисления
+            take_month_incl(Scope, PK, Y, M, Variant),
+            !,
+            % проверить следующий месяц
+            check_month_no_bad_type(Scope, PK, Periods).
+        check_month_no_bad_type(Scope, PK, [_|Periods]) :-
+            !,
+            % проверить следующий месяц
+            check_month_no_bad_type(Scope, PK, Periods).
+        
+        % отсутствие плохих типов начислений и часов
+        rule_month_no_bad_type(Scope, PK, Y-M, Rule) :-
+            Rule = by_month_no_bad_type,
+            % правило действительно
+            is_valid_rule(Rule),
+            % если нет плохих типов начислений и часов
+            \+ month_bad_type(Scope, PK, Y-M),
+            % то месяц включается в расчет
+            !.
+        
+        % есть плохой тип часов
+        month_bad_type(Scope, PK, Y-M) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % если есть хотя бы один день по табелю
+            usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, _, _, _, HoureType, _),
+            % с плохим типом часов
+            get_data(Scope, in, usr_wg_BadHourType, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]),
+            !.
+        % есть плохой тип начислений
+        month_bad_type(Scope, PK, Y-M) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % если есть хотя бы одно начисление
+            % где дата совпадает с проверяемым месяцем
+            usr_wg_TblCharge_mix(Scope, in, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fCalYear-Y, fCalMonth-M, fFeeTypeKey-FeeTypeKey ]),
+            % с плохим типом начисления
+            nonvar(FeeTypeKey),
+            get_data(Scope, in, usr_wg_BadFeeType, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-FeeTypeKey]),
+            !.
+        
+        
+        % начисление из dbf
+        usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
+            ValuePairs = [
+                        fEmplKey-EmplKey, fFirstMoveKey-_,
+                        fCalYear-CalYear, fCalMonth-CalMonth, fDateBegin-DateBegin,
+                        fDebit-Debit, fFeeTypeKey-_
+                        ],
+            member_list(ArgPairs, ValuePairs),
+            gd_pl_ds(Scope, Type, usr_wg_DbfSums, 6, _),
+            catch( usr_wg_DbfSums(EmplKey, Debit, _, CalYear, CalMonth, DateBegin), _, fail).
+        % начисление из TblCharge
+        usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
+            get_data(Scope, Type, usr_wg_TblCharge, ArgPairs).
+        
+        % взять данные по табелю
+        % день месяца из dbf (часы)
+        usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, InHoures, 0, _) :-
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
+            get_data(Scope, Type, usr_wg_DbfSums, [
+                        fEmplKey-EmplKey, fInHoures-InHoures,
+                        fInYear-Y, fInMonth-M, fDateBegin-Date]).
+        % день месяца по табелю
+        usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelOption) :-
+            TabelOption = tbl_cal,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            get_data(Scope, Type, usr_wg_TblCalLine, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fCalYear-Y, fCalMonth-M, fDate-Date,
+                        fDuration-Duration, fHoureType-HoureType]).
+        % или по табелю мастера
+        usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelOption) :-
+            TabelOption = tbl_cal,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            gd_pl_ds(Scope, Type, usr_wg_TblCal_FlexLine, 67, _),
+            make_list(62, TeilArgs),
+            Term =..[ usr_wg_TblCal_FlexLine, EmplKey, FirstMoveKey, Y, M, _ | TeilArgs ],
+            catch( call( Term ), _, fail),
+            member(D, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]),
+            atom_date(Date, date(Y, M, D)),
+            S is (D - 1) * 2 + 6,
+            H is S + 1,
+            arg(S, Term, Duration0),
+            once( ( number(Duration0), Duration = Duration0
+                    ; atom_number(Duration0, Duration)
+                    ; Duration is 0 ) ),
+            arg(H, Term, HoureType0),
+            once( ( number(HoureType0), HoureType = HoureType0
+                    ; atom_number(HoureType0, HoureType)
+                    ; HoureType is 0 ) ).
+        % табель дни-часы из начислений
+        usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
+            TabelOption = tbl_charge,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            ArgPairs = [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fCalYear-Y, fCalMonth-M, fDateBegin-Date,
+                        fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
+            get_data(Scope, Type, usr_wg_TblCharge, ArgPairs),
+            once( get_data(Scope, Type, usr_wg_FeeType, [
+                            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                            fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
+        
+        %% engine_loop(+Scope, +Type, +PK)
+        %
+        
+        % args handler
+        engine_loop(Scope, Type, PK) :-
+            \+ ground([Scope, Type, PK]),
+            !,
+            fail.
+        % fail handler
+        engine_loop(Scope, _, PK) :-
+            engine_fail_step(Type),
+            get_param_list(Scope, Type, PK),
+            !,
+            fail.
+        % deal handler
+        engine_loop(Scope, Type, PK) :-
+            engine_deal_step(Type),
+            !,
+            get_param_list(Scope, Type, PK),
+            !.
+        % data handler
+        engine_loop(Scope, Type, PK) :-
+            engine_data_step(Type, TypeNextStep),
+            get_param_list(Scope, Type, PK),
+            \+ get_param_list(Scope, TypeNextStep, PK),
+            prepare_data(Scope, Type, PK, TypeNextStep),
+            !,
+            engine_loop(Scope, TypeNextStep, PK).
+        engine_loop(Scope, Type, PK) :-
+            engine_data_step(Type, TypeNextStep),
+            !,
+            engine_loop(Scope, TypeNextStep, PK).
+        % restart handler
+        engine_loop(Scope, Type, PK) :-
+            engine_restart_step(Type, TypeNextStep),
+            forall( ( get_param_list(Scope, ParamType, PK, Pairs),
+                      \+ ParamType = TypeNextStep ),
+                    dispose_param_list(Scope, ParamType, Pairs)
+                  ),
+            !,
+            engine_loop(Scope, TypeNextStep, PK).
+        % clean handler
+        engine_loop(Scope, Type, PK) :-
+            engine_clean_step(Type, CleanType, NextType),
+            forall( ( get_param_list(Scope, ParamType, PK, Pairs),
+                      ParamType = CleanType ),
+                    dispose_param_list(Scope, ParamType, Pairs)
+                  ),
+            once( find_param(Scope, NextType, PK, pConnection-Connection) ),
+            forall( ( get_sql(Connection, Query/Arity, _, _),
+                      current_functor(Query, Arity),
+                      is_valid_sql(Query/Arity) ),
+                    ( length(PK, Len),
+                      Arity1 is Arity - Len,
+                      make_list(Arity1, TeilArgs),
+                      PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+                      append([EmplKey, FirstMoveKey], TeilArgs, Args),
+                      Term =.. [Query | Args ],
+                      retractall( Term ) )
+                    ),
+            !.
+        % error handler
+        engine_loop(Scope, Type, PK) :-
+            engine_error_step(TypeNextStep),
+            \+ get_param_list(Scope, TypeNextStep, PK),
+            get_local_date_time(DT),
+            append(PK, [Type, DT], PairsNextStep),
+            new_param_list(Scope, TypeNextStep, PairsNextStep),
+            !,
+            fail.
+        
+        %
+        engine_data_step(in, run).
+        engine_data_step(run, query).
+        engine_data_step(query, data).
+        %
+        engine_deal_step(run) :-
+            debug_mode,
+            !.
+        engine_deal_step(data).
+        %
+        engine_fail_step(out).
+        engine_fail_step(error).
+        %
+        engine_restart_step(restart, in).
+        %
+        engine_clean_step(clean, data, query).
+        %
+        engine_error_step(error).
+        
+         %
+        %%
+        
+        %% prepare_data(+Scope, +Type, +PK, +TypeNextStep)
+        % wg_avg_wage_vacation-in-run
+        prepare_data(Scope, Type, PK, TypeNextStep) :-
+            Scope = wg_avg_wage_vacation, Type = in, TypeNextStep = run,
+            get_param_list(Scope, Type,
+                    [pConnection-_, pMonthQty-MonthQty], ConnectionPairs),
+            get_param_list(Scope, Type, PK, Pairs),
+            member_list([pDateCalc-DateCalc, pMonthOffset-MonthOffset], Pairs),
+            %
+            atom_date(DateCalc, date(Y0, M0, _)),
+            atom_date(DateCalcTo0, date(Y0, M0, 1)),
+            MonthOffset1 is (- MonthOffset),
+            date_add(DateCalcTo0, MonthOffset1, month, DateCalcTo),
+            MonthAdd is (- MonthQty),
+            date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),
+            date_add(DateCalcTo, -1, day, DateCalcTo1),
+            atom_date(DateCalcTo1, date(Y, _, _)),
+            atom_date(DateNormFrom, date(Y, 1, 1)),
+            Y1 is Y + 1,
+            atom_date(DateNormTo, date(Y1, 1, 1)),
+            %
+            append(Pairs,
+                    [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
+                    pDateNormFrom-DateNormFrom, pDateNormTo-DateNormTo
+                    |ConnectionPairs],
+                PairsNextStep),
+            new_param_list(Scope, TypeNextStep, PairsNextStep),
+            !.
+        % wg_avg_wage_vacation-run-query
+        prepare_data(Scope, Type, PK, TypeNextStep) :-
+            Scope = wg_avg_wage_vacation, Type = run, TypeNextStep = query,
+            get_param_list(Scope, Type, PK, Pairs),
+            member(pConnection-Connection, Pairs),
+            forall( ( get_sql(Connection, Query, SQL, Params),
+                      is_valid_sql(Query),
+                      member_list(Params, Pairs),
+                      prepare_sql(SQL, Params, PrepSQL),
+                      \+ find_param_list(Scope, TypeNextStep, PK,
+                            [pConnection-Connection, pQuery-Query, pSQL-PrepSQL])
+                    ),
+                    ( append(PK,
+                        [pConnection-Connection, pQuery-Query, pSQL-PrepSQL],
+                        PairsNextStep),
+                      new_param_list(Scope, TypeNextStep, PairsNextStep)
+                    )
+                  ),
+            !.
+        % подготовка SQL-строки
+        prepare_sql(InSQL, [], InSQL) :-
+            !.
+        prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
+            replace_all(InSQL, Key, Value, InSQL1),
+            !,
+            prepare_sql(InSQL1, Pairs, OutSQL).
+         %
+        %%
+        
+        %% расширение для клиента
+        %
+        
+        % загрузка общих входных параметров
+        avg_wage_in_public(Connection,
+                            MonthQty, AvgDays,
+                            FeeGroupKey_xid, FeeGroupKey_dbid,
+                            FeeGroupKeyNoCoef_xid, FeeGroupKeyNoCoef_dbid,
+                            BadHourType_xid_IN, BadHourType_dbid,
+                            BadFeeType_xid_IN, BadFeeType_dbid) :-
+            Scope = wg_avg_wage_vacation, Type = in,
+            new_param_list(Scope, Type, [
+                            pConnection-Connection,
+                            pMonthQty-MonthQty, pAvgDays-AvgDays,
+                            pFeeGroupKey_xid-FeeGroupKey_xid,
+                            pFeeGroupKey_dbid-FeeGroupKey_dbid,
+                            pFeeGroupKeyNoCoef_xid-FeeGroupKeyNoCoef_xid,
+                            pFeeGroupKeyNoCoef_dbid-FeeGroupKeyNoCoef_dbid,
+                            pBadHourType_xid_IN-BadHourType_xid_IN,
+                            pBadHourType_dbid-BadHourType_dbid,
+                            pBadFeeType_xid_IN-BadFeeType_xid_IN,
+                            pBadFeeType_dbid-BadFeeType_dbid]),
+            !.
+        
+        % загрузка входных данных по сотруднику
+        % CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
+        avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption) :-
+            Scope = wg_avg_wage_vacation, Type = in,
+            new_param_list(Scope, Type,
+                [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+                 pDateCalc-DateCalc, pMonthOffset-MonthOffset,
+                 pCoefOption-CoefOption]),
+            !.
+        
+        % выгрузка данных выполнения по сотруднику
+        avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo) :-
+            Scope = wg_avg_wage_vacation, Type = run,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            append(PK, [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo], Pairs),
+            get_param_list(Scope, Type, Pairs).
+        
+        % выгрузка SQL-запросов по сотруднику
+        avg_wage_sql(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL) :-
+            Scope = wg_avg_wage_vacation, Type = query, TypeNextStep = data,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            Query = PredicateName/Arity,
+            find_param_list(Scope, Type, PK,
+                    [pConnection-Connection, pQuery-Query, pSQL-SQL]),
+            \+ find_param_list(Scope, TypeNextStep, PK,
+                    [pConnection-Connection, pQuery-Query, pSQL-SQL]).
+        
+        % подтвеждение формирования фактов по сотруднику
+        avg_wage_kb(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL) :-
+            Scope = wg_avg_wage_vacation, Type = query, TypeNextStep = data,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            Query = PredicateName/Arity,
+            find_param_list(Scope, Type, PK,
+                    [pConnection-Connection, pQuery-Query, pSQL-SQL]),
+            \+ find_param_list(Scope, TypeNextStep, PK,
+                    [pConnection-Connection, pQuery-Query, pSQL-SQL]),
+            append(PK,
+                    [pConnection-Connection, pQuery-Query, pSQL-SQL],
+                    PairsNextStep),
+            new_param_list(Scope, TypeNextStep, PairsNextStep),
+            !.
+        
+        % выгрузка выходных данных по сотруднику
+        avg_wage_out(EmplKey, FirstMoveKey, AvgWage, Variant) :-
+            % параметры контекста
+            Scope = wg_avg_wage_vacation, Type = out,
+            % шаблон первичного ключа
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять данные по результатам расчета
+            append(PK, [pAvgWage-AvgWage, pVariant-Variant], Pairs),
+            get_param_list(Scope, Type, Pairs).
+        
+        % выгрузка детальных выходных данных по сотруднику
+        avg_wage_det(EmplKey, FirstMoveKey,
+                        Period, Rule, Wage, ModernCoef, ModernWage,
+                        TabDays, NormDays, TabHoures, NormHoures) :-
+            % параметры контекста
+            Scope = wg_avg_wage_vacation, Type = temp,
+            % шаблон первичного ключа
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % для каждого периода
+            % взять данные по табелю и графику
+            append(PK, [pYM-Y-M,
+                            pTDays-TabDays, pTHoures-TabHoures,
+                            pNDays-NormDays, pNHoures-NormHoures],
+                    Pairs),
+            get_param_list(Scope, Type, Pairs),
+            % если для первого движения по типу 1 (прием на работу)
+            % дата совпадает с проверяемым месяцем, то период есть дата начала работы
+            once( (
+                get_data(Scope, in, usr_wg_MovementLine, [
+                fEmplKey-EmplKey, fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
+                fMoveYear-Y, fMoveMonth-M, fDateBegin-Period, fMovementType-1 ])
+                ;
+            % иначе сформировать дату периода, как первый день месяца
+                atom_date(Period, date(Y, M, 1))
+                ) ),
+            % взять данные по правилам расчета
+            append(PK, [pMonthIncl-MonthIncl], Pairs1),
+            once( ( get_param_list(Scope, Type, Pairs1) ; MonthIncl = [] ) ),
+            once( ( member(Y-M-Rule, MonthIncl) ; Rule = none ) ),
+            % взять данные по заработку
+            once( ( ( append(PK, [pYM-Y-M,
+                                    pWage-Wage, pModernCoef-ModernCoef,
+                                    pModernWage-ModernWage],
+                                Pairs2),
+                      get_param_list(Scope, Type, Pairs2) )
+                      ; [Wage, ModernCoef, ModernWage] = [0, 1, 0] ) ),
+            %
+            % есть отработанные часы или заработок
+            once( ( TabHoures > 0 ; ModernWage > 0 ) ).
+        
+        % удаление данных по сотруднику
+        avg_wage_clean(EmplKey, FirstMoveKey) :-
+            Scope = wg_avg_wage_vacation,
+            get_type_list(TypeList),
+            member(Type, TypeList),
+            gd_pl_ds(Scope, Type, Name, _, _),
+            del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
+            fail.
+        avg_wage_clean(EmplKey, FirstMoveKey) :-
+            Scope = wg_avg_wage_vacation,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            get_param_list(Scope, Type, PK, Pairs),
+            dispose_param_list(Scope, Type, Pairs),
+            fail.
+        avg_wage_clean(_, _) :-
+            !.
+        
+         %
+        %%
+        
+        /**/
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-14T15:12:54+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "151189469_18175251 lib"
+          - 
+            ADDFUNCTIONKEY: "151189468_18175251 params"
+          - 
+            ADDFUNCTIONKEY: "151189470_18175251 twg_avg_wage_sql"
+          - 
+            ADDFUNCTIONKEY: "151189471_18175251 twg_avg_wage_in_params"
+  - 
+    Properties: 
+      Class: "TgdcStoredProc"
+      RUID: 151162335_5956463
+      AlwaysOverwrite: True
+      DontRemove: True
+      IncludeSiblings: False
+    Fields: 
+      RDB$DESCRIPTION: | 
+        USR$WG_TBLCALDAY_P
+      PROCEDURENAME: "USR$WG_TBLCALDAY_P"
+      PROCEDURESOURCE: | 
+        CREATE OR ALTER PROCEDURE USR$WG_TBLCALDAY_P (
+            IN_EMPLKEY INTEGER,
+            IN_FIRSTMOVE INTEGER,
+            IN_DATEFROM DATE,
+            IN_DATETO DATE)
+        RETURNS ( 
+            EMPLKEY INTEGER,
+            FIRSTMOVEKEY INTEGER,
+            THEDAY DATE,
+            WYEAR INTEGER,
+            WMONTH INTEGER,
+            WDAY INTEGER,
+            WDURATION INTEGER,
+            WORKDAY INTEGER,
+            SCHEDULEKEY INTEGER)
+         AS
+         BEGIN
+        FOR
+        
+        SELECT * FROM
+        (
+        SELECT
+          ml.USR$EMPLKEY,
+          ml.USR$FIRSTMOVE AS FirstMoveKey,
+          tcd.THEDAY,
+          EXTRACT(YEAR FROM tcd.THEDAY) AS WYEAR,
+          EXTRACT(MONTH FROM tcd.THEDAY) AS WMONTH,
+          EXTRACT(DAY FROM tcd.THEDAY) AS WDAY,
+          tcd.WDURATION,
+          tcd.WORKDAY,
+          ml.USR$SCHEDULEKEY
+        FROM
+          (
+          SELECT FIRST 1 * FROM USR$WG_MOVEMENTLINE
+          WHERE
+            USR$EMPLKEY = :IN_EMPLKEY
+            AND
+            USR$FIRSTMOVE = :IN_FIRSTMOVE
+          ORDER BY USR$DATEBEGIN
+          ) ml
+        JOIN
+          WG_TBLCAL tc
+            ON tc.ID = ml.USR$SCHEDULEKEY
+        JOIN
+          WG_TBLCALDAY tcd
+            ON tcd.TBLCALKEY = tc.ID
+        WHERE
+          ml.USR$EMPLKEY = :IN_EMPLKEY
+          AND
+          ml.USR$FIRSTMOVE = :IN_FIRSTMOVE
+          AND
+          COALESCE(tcd.WDURATION, 0) > 0
+          AND
+          tcd.THEDAY >= :IN_DATEFROM
+          AND
+          tcd.THEDAY < :IN_DATETO
+          AND
+          tcd.THEDAY < ml.USR$DATEBEGIN
+        UNION ALL
+        SELECT
+          ml.USR$EMPLKEY,
+          ml.USR$FIRSTMOVE AS FirstMoveKey,
+          tcd.THEDAY,
+          EXTRACT(YEAR FROM tcd.THEDAY) AS WYEAR,
+          EXTRACT(MONTH FROM tcd.THEDAY) AS WMONTH,
+          EXTRACT(DAY FROM tcd.THEDAY) AS WDAY,
+          tcd.WDURATION,
+          tcd.WORKDAY,
+          ml.USR$SCHEDULEKEY
+        FROM
+          USR$WG_MOVEMENTLINE ml
+        RIGHT JOIN
+          WG_TBLCAL tc
+            ON tc.ID = ml.USR$SCHEDULEKEY
+        JOIN
+          WG_TBLCALDAY tcd
+            ON tcd.TBLCALKEY = tc.ID
+        WHERE
+          ml.USR$EMPLKEY = :IN_EMPLKEY
+          AND
+          ml.USR$FIRSTMOVE = :IN_FIRSTMOVE
+          AND
+          ml.USR$DATEBEGIN < :IN_DATETO
+          AND
+          COALESCE(tcd.WDURATION, 0) > 0
+          AND
+          tcd.THEDAY >= :IN_DATEFROM
+          AND
+          tcd.THEDAY < :IN_DATETO
+          AND
+          tcd.THEDAY >= ml.USR$DATEBEGIN
+          AND
+          tcd.THEDAY <
+            COALESCE(
+              (
+              SELECT
+                FIRST 1
+                ml_next.USR$DATEBEGIN
+              FROM
+                USR$WG_MOVEMENTLINE ml_next
+              WHERE
+                ml_next.USR$EMPLKEY = :IN_EMPLKEY
+                AND
+                ml_next.USR$FIRSTMOVE = :IN_FIRSTMOVE
+                AND
+                ml_next.USR$DATEBEGIN > ml.USR$DATEBEGIN
+              ORDER BY
+                ml_next.USR$DATEBEGIN
+              ),
+            :IN_DATETO
+            )
+        ) ml_union
+        ORDER BY
+          THEDAY
+        
+        INTO
+            :EMPLKEY,
+            :FirstMoveKey,
+            :THEDAY,
+            :WYEAR,
+            :WMONTH,
+            :WDAY,
+            :WDURATION,
+            :WORKDAY,
+            :SCHEDULEKEY
+        DO
+          SUSPEND;
+        
+        END
+        
+      EDITIONDATE: 2013-11-18T12:13:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151158415_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "CONST"
+      LANGUAGE: "VBScript"
+      NAME: "pl_Const"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        'Константы и переменные Prolog
+        
+        Public Const scrPrologModuleName = "PROLOG"
+        
+        'TERM-TYPE CONSTANTS
+        Public Const PL_VARIABLE = 1
+        Public Const PL_ATOM = 2
+        Public Const PL_INTEGER = 3
+        Public Const PL_FLOAT = 4
+        Public Const PL_STRING = 5
+        Public Const PL_TERM = 6
+        '
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2013-10-11T11:23:43+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151158419_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "pl_GetScriptIDByName"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        
+        'uses pl_Const
+        Function pl_GetScriptIDByName(Name)
+          Dim Creator, ibsql
+        
+          pl_GetScriptIDByName = 0
+        
+          Set Creator = New TCreator
+          Set ibsql = Creator.GetObject(nil, "TIBSQL", "")
+        
+          ibsql.Transaction = gdcBaseManager.ReadTransaction
+          ibsql.SQL.TEXT = _
+              "SELECT * FROM gd_function" & _
+              " WHERE UPPER(name) = UPPER(:name) AND module = :module"
+          ibsql.ParamByName("name").AsString = Name
+          ibsql.ParamByName("module").AsString = scrPrologModuleName
+          ibsql.ExecQuery
+        
+          If Not ibsql.EOF Then
+             pl_GetScriptIDByName = ibsql.FieldByName("id").AsInteger
+          End If
+        End Function
+        
+      DISPLAYSCRIPT: | 
+        PL_GETSCRIPTIDBYNAME
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAATkFNRQQAAABOQU1FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2013-10-11T15:45:28+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151163587_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_AvgSalaryStrGenerate_pl"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        '#include wg_WageSettings
+        '#include wg_EnableFieldChange
+        '#include pl_GetScriptIDByName
+        
+        Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
+        '
+          Dim T, T1, T2
+          
+          Dim Creator, gdcObject, gdcSalary
+          '
+          Dim PL, Ret, Pred, Tv, Append
+          'avg_wage
+          Dim P_main, Tv_main, Q_main
+          'avg_wage_in
+          Dim P_in, Tv_in, Q_in
+          Dim EmplKey, FirstMoveKey, DateCalc
+          Dim InflType, InflFCType
+          Dim MonthOffset, CoefOption
+          'avg_wage_run, avg_wage_sql
+          Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
+          Dim DateCalcFrom, DateCalcTo
+          Dim Connection, PredicateName, Arity, SQL
+          'avg_wage_out, avg_wage_det
+          Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
+          Dim AvgWage, AvgWageRule
+          Dim Period, PeriodRule, Wage, ModernWage, ModernCoef
+          Dim TabDays, TabHoures, NormDays, NormHoures
+          Dim IsFull, IsCheck
+        
+          T1 = Timer
+          wg_AvgSalaryStrGenerate_pl = False
+          Set Creator = New TCreator
+          
+          Sender.GetComponent("actApply").Execute
+        
+          Set gdcObject = Sender.gdcObject
+          '
+          EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
+          FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
+          '
+          if CalcType = 0 then
+            dim IBSQL
+            set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
+            IBSQL.Transaction = gdcBaseManager.ReadTransaction
+            IBSQL.SQL.Text = _
+              "select " & _
+              "  t.USR$DATEBEGIN " & _
+              "from " & _
+              "  usr$wg_total t " & _
+              "where " & _
+              "  t.DOCUMENTKEY = :TDK "
+            IBSQL.ParamByName("TDK").asInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
+            IBSQL.ExecQuery
+            DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
+          else
+            DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
+          end if
+          '
+          MonthOffset = 0
+          '
+          InflType = wg_WageSettings.Inflation.InflType
+          InflFCType = wg_WageSettings.Inflation.InflFCType
+          'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
+          CoefOption = "fc_fcratesum"
+          Select Case InflType
+            Case 1
+              Select Case InflFCType
+                Case 2
+                  CoefOption = "ml_rate"
+              End Select
+            Case 0
+              CoefOption = "ml_msalary"
+          End Select
+          '
+        
+          'init
+          Set PL = Creator.GetObject(nil, "TgsPLClient", "")
+          Ret = PL.Initialise("")
+          If Not Ret Then
+            Exit Function
+          End If
+          'debug
+          PL.Debug = True
+          'load
+          Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
+          If Not Ret Then
+            Exit Function
+          End If
+        
+          Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
+          '
+          Call wg_DisableFieldChange(gdcSalary, "AVGSALARYCALC")
+          '
+          gdcSalary.First
+          While Not gdcSalary.EOF
+            gdcSalary.Delete
+          Wend
+          '
+          gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = 0
+          '
+          Sender.Repaint
+        
+          'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption)
+          P_in = "avg_wage_in"
+          Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
+          Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
+          Tv_in.PutInteger 0, EmplKey
+          Tv_in.PutInteger 1, FirstMoveKey
+          Tv_in.PutDate 2, DateCalc
+          Tv_in.PutInteger 3, MonthOffset
+          Tv_in.PutAtom 4, CoefOption
+          '
+          Q_in.PredicateName = P_in
+          Q_in.Termv = Tv_in
+          '
+          Q_in.OpenQuery
+          If Q_in.EOF Then
+            Exit Function
+          End If
+          Q_in.Close
+        
+          'avg_wage(_) - prepare data
+          P_main = "avg_wage"
+          Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
+          Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_main.PredicateName = P_main
+          Q_main.Termv = Tv_main
+          '
+          Q_main.OpenQuery
+          If Q_main.EOF Then
+            Exit Function
+          End If
+          Q_main.Close
+        
+          'avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)
+          P_run = "avg_wage_run"
+          Set Tv_run = Creator.GetObject(4, "TgsPLTermv", "")
+          Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_run.PredicateName = P_run
+          Q_run.Termv = Tv_run
+          'avg_wage_sql(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL)
+          P_sql = "avg_wage_sql"
+          P_kb = "avg_wage_kb"
+          Set Tv_sql = Creator.GetObject(6, "TgsPLTermv", "")
+          Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_sql.PredicateName = P_sql
+          Q_sql.Termv = Tv_sql
+          '
+          Q_run.OpenQuery
+          If Q_run.EOF Then
+            Exit Function
+          End If
+          '
+          Append = False
+          '
+          Do Until Q_run.EOF
+            EmplKey = Tv_run.ReadInteger(0)
+            FirstMoveKey = Tv_run.ReadInteger(1)
+            DateCalcFrom = Tv_run.ReadDate(2)
+            DateCalcTo = Tv_run.ReadDate(3)
+            '
+            Tv_sql.Reset
+            Tv_sql.PutInteger 0, EmplKey
+            Tv_sql.PutInteger 1, FirstMoveKey
+            Q_sql.OpenQuery
+            '
+            Do Until Q_sql.EOF
+              Connection = Tv_sql.ReadAtom(2)
+              PredicateName = Tv_sql.ReadAtom(3)
+              Arity = Tv_sql.ReadInteger(4)
+              SQL = Tv_sql.ReadString(5)
+              '
+              Ret =  PL.MakePredicatesOfSQLSelect _
+                        (SQL, _
+                        gdcBaseManager.ReadTransaction, _
+                        PredicateName, PredicateName, Append)
+              If Ret >= 0 Then
+                 Ret = PL.Call(P_kb, Tv_sql)
+              End If
+              '
+              Q_sql.NextSolution
+            Loop
+            Q_sql.Close
+            '
+            Append = True
+            '
+            Q_run.NextSolution
+          Loop
+          Q_run.Close
+        
+          'save param_list
+          If PL.Debug Then
+            Pred = "param_list"
+            Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+            PL.SavePredicatesToFile Pred, Tv, Pred
+          End If
+        
+          'avg_wage(Variant) - calc result
+          Q_main.OpenQuery
+          If Q_main.EOF Then
+            Exit Function
+          End If
+          Q_main.Close
+        
+          'avg_wage_out(EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
+          P_out = "avg_wage_out"
+          Set Tv_out = Creator.GetObject(4, "TgsPLTermv", "")
+          Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_out.PredicateName = P_out
+          Q_out.Termv = Tv_out
+          'avg_wage_det(EmplKey, FirstMoveKey,
+          '   Period, PeriodRule, Wage, ModernCoef, ModernWage,
+          '   TabDays, NormDays, TabHoures, NormHoures)
+          P_det = "avg_wage_det"
+          Set Tv_det = Creator.GetObject(11, "TgsPLTermv", "")
+          Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_det.PredicateName = P_det
+          Q_det.Termv = Tv_det
+          '
+          Q_out.OpenQuery
+          If Q_out.EOF Then
+            Exit Function
+          End If
+          '
+          Do Until Q_out.EOF
+            EmplKey = Tv_out.ReadInteger(0)
+            FirstMoveKey = Tv_out.ReadInteger(1)
+            AvgWage = Tv_out.ReadFloat(2)
+            AvgWageRule = Tv_out.ReadAtom(3)
+            '
+            Tv_det.Reset
+            Tv_det.PutInteger 0, EmplKey
+            Tv_det.PutInteger 1, FirstMoveKey
+            Q_det.OpenQuery
+            '
+            Do Until Q_det.EOF
+              Period = Tv_det.ReadDate(2)
+              PeriodRule = Tv_det.ReadAtom(3)
+              IsFull = _
+                Abs( PeriodRule = "by_days_houres" _
+                    Or PeriodRule = "by_houres" _
+                    Or PeriodRule = "by_days" )
+              IsCheck = Abs( Not (PeriodRule = "none") )
+              Select Case PeriodRule
+                Case "by_days_houres"
+                  PeriodRule = "табель равен графику по дням и часам"
+                Case "by_houres"
+                  PeriodRule = "табель покрывает график по часам"
+                Case "by_days"
+                  PeriodRule = "табель покрывает график по дням"
+                Case "by_month_wage_all"
+                  PeriodRule = "по размеру заработка"
+                Case "by_month_no_bad_type"
+                  PeriodRule = "виды начислений и типы часов в норме"
+                Case Else
+                  PeriodRule = ""
+              End Select
+              Wage = Tv_det.ReadFloat(4)
+              ModernCoef = Tv_det.ReadFloat(5)
+              ModernWage = Tv_det.ReadFloat(6)
+              TabDays = Tv_det.ReadFloat(7)
+              NormDays = Tv_det.ReadFloat(8)
+              TabHoures = Tv_det.ReadFloat(9)
+              NormHoures = Tv_det.ReadFloat(10)
+              '
+              gdcSalary.Append
+              gdcSalary.FieldByName("USR$DATE").AsVariant = Period
+              gdcSalary.FieldByName("USR$SALARY").AsVariant = Wage
+              gdcSalary.FieldByName("USR$COEFF").AsVariant = ModernCoef
+              gdcSalary.FieldByName("USR$MODERNSALARY").AsVariant = ModernWage
+              gdcSalary.FieldByName("USR$DOW").AsVariant = TabDays
+              gdcSalary.FieldByName("USR$HOW").AsVariant = TabHoures
+              gdcSalary.FieldByName("USR$SCHEDULERDOW").AsVariant = NormDays
+              gdcSalary.FieldByName("USR$SCHEDULERHOW").AsVariant = NormHoures
+              gdcSalary.FieldByName("USR$ISCHECK").AsVariant = IsCheck
+              gdcSalary.FieldByName("USR$ISFULL").AsVariant = IsFull
+              gdcSalary.FieldByName("USR$DESCRIPTION").AsVariant = PeriodRule
+              gdcSalary.Post
+              '
+              Q_det.NextSolution
+            Loop
+            Q_det.Close
+            '
+            Q_out.NextSolution
+          Loop
+          Q_out.Close
+          '
+        
+          gdcSalary.First
+          '
+          Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
+          '
+          gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
+          'gdcObject.Post
+          '
+        
+          wg_AvgSalaryStrGenerate_pl = True
+          
+          T2 = Timer
+          T = T2 - T1
+        '
+        End function
+        
+      DISPLAYSCRIPT: | 
+        WG_AVGSALARYSTRGENERATE_PL
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        UFJTVAgAAABDQUxDVFlQRQgAAABDQUxDVFlQRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-14T15:13:33+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147019760_119619099 wg_WageSettings"
+          - 
+            ADDFUNCTIONKEY: "147016040_119619099 wg_EnableFieldChange"
+          - 
+            ADDFUNCTIONKEY: "151158419_5956463 pl_GetScriptIDByName"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151164077_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_dlgUserComplexDocument147020774_119619099"
+      MODULE: "MACROS"
+      LANGUAGE: "VBScript"
+      NAME: "Macros151164077_5956463"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        '#include wg_AvgSalaryStrGenerate
+        
+        Sub Macros151164077_5956463(OwnerForm)
+          'Dim Ret
+          
+          call wg_AvgSalaryStrGenerate(OwnerForm, 0)
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        MACROS151164077_5956463
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147021903_119619099 gdc_dlgUserComplexDocument147020774_119619099"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QJAAAAT1dORVJGT1JNCQAAAE9XTkVSRk9STQAAAAAAAAAAAAAAAAsAAAAAAAAAAAAA
+        AABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-10T15:42:52+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147489128_336327731 wg_AvgSalaryStrGenerate"
+  - 
+    Properties: 
+      Class: "TgdcMacros"
+      RUID: 151164075_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_dlgUserComplexDocument147020774_119619099"
+      MACROSGROUPKEY: "147021904_119619099 Локальные макросы"
+      FUNCTIONKEY: "151164077_5956463 Macros151164077_5956463"
+      NAME: "Рассчитать ср. заработок"
+      SERVERKEY: ~
+      ISLOCALEXECUTE: 0
+      ISREBUILD: 0
+      EXECUTEDATE: ~
+      SHORTCUT: 0
+      EDITIONDATE: 2014-01-10T15:42:52+03:00
+      DISPLAYINMENU: 1
+      RUNONLOGIN: 0
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147488905_336327731
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_dlgUserComplexDocument147020774_119619099"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_actAvgGenerateOnExecute"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include wg_AvgSalaryStrGenerate_pl
+        option explicit
+        sub usrg_actAvgGenerateOnExecute(ByVal Sender)
+          'Сбрасываем кэш для Переменных
+          set wg_Variable_ = Nothing
+        
+          Dim Ret
+          Ret = wg_AvgSalaryStrGenerate_pl(Sender.OwnerForm, 0)
+        
+        end sub
+        
+      DISPLAYSCRIPT: | 
+        USRG_ACTAVGGENERATEONEXECUTE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONEXECUTE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147021903_119619099 gdc_dlgUserComplexDocument147020774_119619099"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2014-01-10T15:18:57+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "151163587_5956463 wg_AvgSalaryStrGenerate_pl"
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 155817502_77029543
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 33
+      FIELDNAME: "USR$AVGDAYHOW"
+      RELATIONNAME: "USR$WG_FEETYPE"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147567082_119619099 Виды начислений, USR$WG_FEETYPE"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Дни/часы для среднего"
+      LSHORTNAME: "Дни/часы для среднег"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2013-12-26T14:52:05+03:00
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_FEEGROUP"
+      RUID: 147757383_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147071456_274788016 Все начисления\\Ср. заработок\\Ср. заработок для отпусков"
+      DISABLED: 0
+      EDITIONDATE: 2014-01-08T17:30:20+03:00
+      USR$NAME: "Ср. заработок для отпусков - не осовременивать"
+      USR$DESCRIPTION: ~
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147063986_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990010_17 USER - Administrator"
+      NAME: "gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:32:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147063987_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "ibgrDetail(TgsIBGrid)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:32:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 154648246_77029543
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "pnlMaster(TPanel)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2013-08-12T19:08:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147063989_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "usrg_grAvgSalaryStr(TgsIBGrid)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:32:16+03:00
