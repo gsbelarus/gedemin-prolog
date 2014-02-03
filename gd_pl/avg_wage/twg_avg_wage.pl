@@ -751,21 +751,23 @@ usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
 
 % взять данные по табелю
 % день месяца из dbf (часы)
-usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, InHoures, 0, _) :-
+usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, InHoures, 0, _) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
     get_data(Scope, Type, usr_wg_DbfSums, [
                 fEmplKey-EmplKey, fInHoures-InHoures,
-                fInYear-Y, fInMonth-M, fDateBegin-Date]).
+                fInYear-Y, fInMonth-M, fDateBegin-Date]),
+    once( (InHoures > 0, Days = 1 ; Days = 0) ).
 % день месяца по табелю
-usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelOption) :-
+usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
     TabelOption = tbl_cal,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     get_data(Scope, Type, usr_wg_TblCalLine, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                 fCalYear-Y, fCalMonth-M, fDate-Date,
-                fDuration-Duration, fHoureType-HoureType]).
+                fDuration-Duration, fHoureType-HoureType]),
+    once( (Duration > 0, Days = 1 ; Days = 0) ).
 % или по табелю мастера
-usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelOption) :-
+usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
     TabelOption = tbl_cal,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     gd_pl_ds(Scope, Type, usr_wg_TblCal_FlexLine, 67, _),
@@ -784,7 +786,8 @@ usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 1, Duration, HoureType, TabelO
     arg(H, Term, HoureType0),
     once( ( number(HoureType0), HoureType = HoureType0
             ; atom_number(HoureType0, HoureType)
-            ; HoureType is 0 ) ).
+            ; HoureType is 0 ) ),
+    once( (Duration > 0, Days = 1 ; Days = 0) ).
 % табель дни-часы из начислений
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
     TabelOption = tbl_charge,
