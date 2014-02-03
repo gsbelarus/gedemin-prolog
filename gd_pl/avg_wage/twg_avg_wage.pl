@@ -439,10 +439,10 @@ is_full_month(_, _, _) :-
 % в месяце есть отработанные часы
 is_month_worked(Scope, PK, Y-M) :-
     % если есть хотя бы один рабочий день
-    usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, _, _, Duration, _, _),
-    % с контролем наличия часов
-    Duration > 0,
-    % то в месяце есть отработанные часы
+    usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, _, DOW, HOW, _, _),
+    % с контролем наличия дней или часов
+    once( (DOW > 0 ; HOW > 0 ) ),
+    % то в месяце есть отработанные дни или часы
     !.
 
 % в месяце есть оплата
@@ -603,7 +603,7 @@ calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
     findall( Date-DOW-HOW,
             % для проверяемого месяца
             ( usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, Date, DOW, HOW, _, TabelOption),
-            % с контролем наличия часов
+            % с контролем наличия дней или часов
             once( (DOW > 0 ; HOW > 0 ) )
             ),
     % в список дата-день-часы
