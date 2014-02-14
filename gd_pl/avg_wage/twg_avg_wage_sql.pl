@@ -8,14 +8,14 @@
 
 %
 wg_valid_sql([
-            -usr_wg_DbfSums/6,
+            usr_wg_DbfSums/6,
             usr_wg_MovementLine/11,
             usr_wg_FCRate/4,
             usr_wg_TblDayNorm/8,
             usr_wg_TblYearNorm/5,
             usr_wg_TblCalLine/7,
-            usr_wg_TblCal_FlexLine/67,
-            -usr_wg_HourType/12,
+            usr_wg_TblCal_FlexLine/68,
+            -usr_wg_HourType/11,
             usr_wg_TblCharge/9,
             usr_wg_FeeType/5,
             usr_wg_FeeTypeNoCoef/4,
@@ -186,8 +186,8 @@ ORDER BY \c
 [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCal_FlexLine, 67,
-    [
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCal_FlexLine, 68,
+    [fFlexType-string,
     fEmplKey-integer, fFirstMoveKey-integer,
     fCalYear-integer, fCalMonth-integer, fDateBegin-date,
     fS1-variant, fH1-variant, fS2-variant, fH2-variant,
@@ -207,9 +207,14 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCal_FlexLine, 67,
     fS29-variant, fH29-variant, fS30-variant, fH30-variant,
     fS31-variant, fH31-variant
     ]).
-% usr_wg_TblCal_FlexLine(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
-get_sql(gsdb, usr_wg_TblCal_FlexLine/67,
-"SELECT DISTINCT \c
+% usr_wg_TblCal_FlexLine(FlexType, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
+get_sql(gsdb, usr_wg_TblCal_FlexLine/68,
+"SELECT \c
+  CASE gd.DOCUMENTTYPEKEY \c
+    WHEN pTblCal_DocType_Plan THEN \'plan\' \c
+    WHEN pTblCal_DocType_Fact THEN \'fact\' \c
+  END \c
+    AS FlexType, \c
   tcfl.USR$EMPLKEY, \c
   tcfl.USR$FIRSTMOVEKEY, \c
   EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear, \c
@@ -232,7 +237,10 @@ get_sql(gsdb, usr_wg_TblCal_FlexLine/67,
   tcfl.USR$S29, tcfl.USR$H29, tcfl.USR$S30, tcfl.USR$H30, \c
   tcfl.USR$S31, tcfl.USR$H31 \c
 FROM \c
+  GD_DOCUMENT gd \c
+JOIN \c
   USR$WG_TBLCAL_FLEXLINE tcfl \c
+    ON gd.ID = tcfl.DOCUMENTKEY \c
 JOIN \c
   USR$WG_TBLCAL_FLEX tcf \c
     ON tcf.DOCUMENTKEY = tcfl.MASTERKEY \c
@@ -240,6 +248,8 @@ JOIN \c
   USR$WG_TOTAL t \c
     ON t.DOCUMENTKEY = tcf.USR$TOTALDOCKEY \c
 WHERE \c
+  gd.DOCUMENTTYPEKEY IN(pTblCal_DocType_Plan,pTblCal_DocType_Fact) \c
+  AND \c
   tcfl.USR$EMPLKEY = pEmplKey \c
   AND \c
   tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey \c
@@ -252,21 +262,21 @@ WHERE \c
    tcfl.USR$FIRSTMOVEKEY, \c
    t.USR$DATEBEGIN \c
 ",
-[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+[pTblCal_DocType_Plan-_, pTblCal_DocType_Fact-_,
+pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_HourType, 12,
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_HourType, 11,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
     fID-integer, fCode-string, fDigitCode-string,
-    fDescription-string, fIsWorked-integer, fShortName-string,
-    fForCalFlex-integer, fForOverTime-integer, fForFlex-integer,
-    fAbsentEEIsm-integer
+    fDiscription-string, fIsWorked-integer, fShortName-string,
+    fForCalFlex-integer, fForOverTime-integer, fForFlex-integer
     ]).
 % usr_wg_HourType(EmplKey, FirstMoveKey,
 %   ID, Code, DigitCode, Description, IsWorked, ShortName,
-%   ForCalFlex, ForOverTime, ForFlex, AbsentEEIsm)
-get_sql(gsdb, usr_wg_HourType/12,
+%   ForCalFlex, ForOverTime, ForFlex)
+get_sql(gsdb, usr_wg_HourType/11,
 "SELECT \c
   pEmplKey AS EmplKey, \c
   pFirstMoveKey AS FirstMoveKey, \c
@@ -278,8 +288,7 @@ get_sql(gsdb, usr_wg_HourType/12,
   ht.USR$SHORTNAME, \c
   ht.USR$FORCALFLEX, \c
   ht.USR$FOROVERTIME, \c
-  ht.USR$FORFLEX, \c
-  ht.USR$ABSENTEEISM \c
+  ht.USR$FORFLEX \c
 FROM \c
   USR$WG_HOURTYPE ht \c
 ",

@@ -29,7 +29,7 @@
 %% facts
 :-  init_data,
     [
-    %usr_wg_DbfSums,
+    usr_wg_DbfSums,
     usr_wg_MovementLine,
     usr_wg_FCRate,
     usr_wg_TblDayNorm,
@@ -69,11 +69,14 @@ wg_valid_rules([by_calc_month, by_avg_houre]).
 % табель за месяц покрывает график [по дням и часам, по часам, по дням]
 wg_valid_rules([by_days_houres, by_houres, by_days]).
 %% дополнительные правила для включения месяца в расчет
-% [заработок за месяц выше или на уровне каждого из полных месяцев]
+% [заработок за месяц не меньше каждого из полных месяцев]
 % (для одинаковых коэфициентов осовременивания)
-wg_valid_rules([by_month_wage_all]).
+wg_valid_rules([-by_month_wage_all]).
+% [заработок за месяц не меньше любого из полных месяцев]
+% (для одинаковых коэфициентов осовременивания)
+wg_valid_rules([by_month_wage_any]).
 % [отсутствие в месяце плохих типов начислений и часов]
-wg_valid_rules([by_month_no_bad_type]).
+wg_valid_rules([-by_month_no_bad_type]).
 
 %% варианты правил полных месяцев
 % табель за месяц покрывает график [по дням и часам, по часам, по дням]
@@ -297,14 +300,17 @@ get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
 cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % параметры выбора начислений
+    member(ChargeOption, [tbl_charge, dbf_sums]),
     % взять начисления
     findall( Debit-ModernCoef,
-          % для начисления
+          % для начисления по одному из параметров
           % где дата совпадает с проверяемым месяцем
           ( usr_wg_TblCharge_mix(Scope, in, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                 fCalYear-Y, fCalMonth-M, fDateBegin-TheDay,
-                fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),
+                fDebit-Debit, fFeeTypeKey-FeeTypeKey ],
+                                    ChargeOption),
           % и соответствующего типа
           once( get_data(Scope, in, usr_wg_FeeType, [
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
@@ -313,11 +319,14 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage) :-
           get_modern_coef(Scope, PK, TheDay, FeeTypeKey, ModernCoef) ),
     % в список начислений
     Debits ),
+    % проверить список начислений
+    \+ Debits = [],
     % всего за месяц
     sum_month_debit(Debits, Wage, ModernWage0),
     % средний за месяц коэффициент осовременивания
     catch( MonthModernCoef0 is ModernWage0 / Wage, _, fail),
     to_currency(MonthModernCoef0, MonthModernCoef, 2),
+    % осовремененный заработок
     ModernWage is round(Wage * MonthModernCoef),
     !.
 
@@ -423,10 +432,10 @@ is_full_month(Scope, PK, Y-M) :-
         fEmplKey-EmplKey, fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
         fMoveYear-Y, fMoveMonth-M, fDateBegin-DateBegin, fMovementType-1 ]),
     !,
+    % параметры выбора графика
+    member(NormOption, [tbl_cal_flex, tbl_day_norm]),
     % первый рабочий день по графику для проверяемого месяца
-    once( get_data(Scope, in, usr_wg_TblDayNorm, [
-            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-            fWYear-Y, fWMonth-M, fTheDay-TheDay, fWorkDay-1 ]) ),
+    once( usr_wg_TblDayNorm_mix(Scope, in, PK, Y-M, TheDay, _, 1, NormOption) ),
     !,
     % больше или равен дате первого движения
     TheDay @>= DateBegin,
@@ -452,7 +461,8 @@ is_month_paid(Scope, PK, Y-M) :-
     % если есть хотя бы одно начисление
     usr_wg_TblCharge_mix(Scope, in, [
         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-        fCalYear-Y, fCalMonth-M, fDebit-Debit, fFeeTypeKey-FeeTypeKey ]),
+        fCalYear-Y, fCalMonth-M, fDebit-Debit, fFeeTypeKey-FeeTypeKey ],
+                            _),
     % с контролем суммы
     Debit > 0,
     % соответствующего типа
@@ -572,33 +582,27 @@ calc_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
     sum_days_houres(TabDays, TDays, THoures),
     !.
 
-% расчитать график за месяц
+% расчитать график за месяц по одному из параметров
 calc_month_norm(Scope, PK, Y-M, NormDays) :-
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % параметры выбора графика
+    member(NormOption, [tbl_cal_flex, tbl_day_norm]),
     % взять дату/часы
     findall( TheDay-1-WDuration,
             % для рабочего дня
-            ( get_data(Scope, in, usr_wg_TblDayNorm, [
-                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fWYear-Y, fWMonth-M, fTheDay-TheDay,
-                fWDuration-WDuration, fWorkDay-1 ]),
+            ( usr_wg_TblDayNorm_mix(Scope, in, PK,
+                Y-M, TheDay, WDuration, 1, NormOption),
             % с контролем наличия часов
             WDuration > 0 ),
     % в список дата/часы графика
     NormDays),
+    % проверить список графика
+    \+ NormDays = [],
     !.
 
-% расчитать табель за месяц
+% расчитать табель за месяц по одному из параметров
 calc_month_tab(Scope, PK, Y-M, TabDays) :-
-    calc_month_tab(Scope, PK, Y-M, TabDays, tbl_cal),
-    \+ TabDays = [],
-    !.
-calc_month_tab(Scope, PK, Y-M, TabDays) :-
-    calc_month_tab(Scope, PK, Y-M, TabDays, tbl_charge),
-    !.
-%
-calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
+    % параметры выбора табеля
+    member(TabelOption, [tbl_cal_flex, tbl_cal, tbl_charge, dbf_sums]),
     % взять данные табеля
     findall( Date-DOW-HOW,
             % для проверяемого месяца
@@ -608,6 +612,8 @@ calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
             ),
     % в список дата-день-часы
     TabDays),
+    % проверить список табеля
+    \+ TabDays = [],
     !.
 
 % сумма дней и часов
@@ -666,6 +672,31 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     wage_over_list(Wage, Wages1),
     % то месяц включается в расчет
     !.
+% заработок за месяц больше или равен любого из полных месяцев
+rule_month_wage(Scope, PK, Y-M, Rule) :-
+    Rule = by_month_wage_any,
+    % правило действительно
+    is_valid_rule(Rule),
+    % варианты правил полных месяцев
+    wg_full_month_rules(FullMonthRules),
+    % взять заработок и коэффициент осовременивания за проверяемый месяц
+    get_month_wage(Scope, PK, Y, M, ModernCoef, Wage),
+    % взять заработок
+    findall( Wage1,
+              % для расчетного месяца
+            ( get_month_incl(Scope, PK, Y1, M1, Variant1),
+              % который принят для исчисления по варианту полного месяца
+              once( member(Variant1, FullMonthRules) ),
+              % с заработком и коэффициентом осовременивания за месяц
+              get_month_wage(Scope, PK, Y1, M1, ModernCoef1, Wage1),
+              % где коэффициенты для проверяемого и расчетного равны
+              ModernCoef =:= ModernCoef1 ),
+    % в список заработков
+    Wages1 ),
+    % если заработок проверяемого месяца покрывает любой из расчетных
+    wage_over_any(Wage, Wages1),
+    % то месяц включается в расчет
+    !.
 
 % заработок покрывает все значения из списка
 wage_over_list(Over, [Head|[]]) :-
@@ -675,6 +706,14 @@ wage_over_list(Over, [Head|Tail]) :-
     Over >= Head,
     !,
     wage_over_list(Over, Tail).
+
+% заработок покрывает любое значение из списка
+wage_over_any(Over, [Head|_]) :-
+    Over >= Head,
+    !.
+wage_over_any(Over, [_|Tail]) :-
+    !,
+    wage_over_any(Over, Tail).
 
 % проверка месяца по типу начислений и типу часов
 check_month_no_bad_type(_, _, []):-
@@ -716,8 +755,10 @@ month_bad_type(Scope, PK, Y-M) :-
     % если есть хотя бы один день по табелю
     usr_wg_TblCalLine_mix(Scope, in, PK, Y-M, _, _, _, HoureType, _),
     % с плохим типом часов
-    get_data(Scope, in, usr_wg_BadHourType, [
-                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]),
+    nonvar(HoureType),
+    HoureType > 0,
+    once( get_data(Scope, in, usr_wg_BadHourType, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]) ),
     !.
 % есть плохой тип начислений
 month_bad_type(Scope, PK, Y-M) :-
@@ -727,16 +768,23 @@ month_bad_type(Scope, PK, Y-M) :-
     % где дата совпадает с проверяемым месяцем
     usr_wg_TblCharge_mix(Scope, in, [
         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-        fCalYear-Y, fCalMonth-M, fFeeTypeKey-FeeTypeKey ]),
+        fCalYear-Y, fCalMonth-M, fFeeTypeKey-FeeTypeKey ],
+                            _),
     % с плохим типом начисления
     nonvar(FeeTypeKey),
-    get_data(Scope, in, usr_wg_BadFeeType, [
-                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-FeeTypeKey]),
+    FeeTypeKey > 0,
+    once( get_data(Scope, in, usr_wg_BadFeeType, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-FeeTypeKey]) ),
     !.
 
-
-% начисление из dbf
-usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
+%% взять данные по начислению
+% начисление из TblCharge
+usr_wg_TblCharge_mix(Scope, Type, ArgPairs, ChargeOption) :-
+    ChargeOption = tbl_charge,
+    get_data(Scope, Type, usr_wg_TblCharge, ArgPairs).
+% или начисление из dbf
+usr_wg_TblCharge_mix(Scope, Type, ArgPairs, ChargeOption) :-
+    ChargeOption = dbf_sums,
     ValuePairs = [
                 fEmplKey-EmplKey, fFirstMoveKey-_,
                 fCalYear-CalYear, fCalMonth-CalMonth, fDateBegin-DateBegin,
@@ -745,19 +793,27 @@ usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
     member_list(ArgPairs, ValuePairs),
     gd_pl_ds(Scope, Type, usr_wg_DbfSums, 6, _),
     catch( usr_wg_DbfSums(EmplKey, Debit, _, CalYear, CalMonth, DateBegin), _, fail).
-% начисление из TblCharge
-usr_wg_TblCharge_mix(Scope, Type, ArgPairs) :-
-    get_data(Scope, Type, usr_wg_TblCharge, ArgPairs).
 
-% взять данные по табелю
-% день месяца из dbf (часы)
-usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, InHoures, 0, _) :-
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
-    get_data(Scope, Type, usr_wg_DbfSums, [
-                fEmplKey-EmplKey, fInHoures-InHoures,
-                fInYear-Y, fInMonth-M, fDateBegin-Date]),
-    once( (InHoures > 0, Days = 1 ; Days = 0) ).
-% день месяца по табелю
+%% взять данные по графику
+% день месяца по календарному графику
+usr_wg_TblDayNorm_mix(Scope, Type, PK, Y-M, Date, Duration, WorkDay, NormOption) :-
+    NormOption = tbl_cal_flex,
+    get_Flex_by_type(Scope, Type, PK, Y-M, Date, WorkDay, Duration, _, "plan").
+% или день месяца по справочнику графика рабочего времени
+usr_wg_TblDayNorm_mix(Scope, Type, PK, Y-M, TheDay, WDuration, WorkDay, NormOption) :-
+    NormOption = tbl_day_norm,
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    get_data(Scope, Type, usr_wg_TblDayNorm, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fWYear-Y, fWMonth-M, fTheDay-TheDay,
+                fWDuration-WDuration, fWorkDay-WorkDay ]).
+
+%% взять данные по табелю
+% день месяца по табелю мастера
+usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
+    TabelOption = tbl_cal_flex,
+    get_Flex_by_type(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, "fact").
+% или день месяца по табелю
 usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
     TabelOption = tbl_cal,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
@@ -766,13 +822,33 @@ usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, Tab
                 fCalYear-Y, fCalMonth-M, fDate-Date,
                 fDuration-Duration, fHoureType-HoureType]),
     once( (Duration > 0, Days = 1 ; Days = 0) ).
-% или по табелю мастера
-usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
-    TabelOption = tbl_cal,
+% или табель дни-часы из начислений
+usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
+    TabelOption = tbl_charge,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    gd_pl_ds(Scope, Type, usr_wg_TblCal_FlexLine, 67, _),
+    ArgPairs = [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fCalYear-Y, fCalMonth-M, fDateBegin-Date,
+                fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
+    get_data(Scope, Type, usr_wg_TblCharge, ArgPairs),
+    once( get_data(Scope, Type, usr_wg_FeeType, [
+                    fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                    fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
+% или день месяца из dbf
+usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, InHoures, 0, TabelOption) :-
+    TabelOption = dbf_sums,
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
+    get_data(Scope, Type, usr_wg_DbfSums, [
+                fEmplKey-EmplKey, fInHoures-InHoures,
+                fInYear-Y, fInMonth-M, fDateBegin-Date]),
+    once( (InHoures > 0, Days = 1 ; Days = 0) ).
+
+% день месяца по календарному графику или табелю мастера
+% FlexType: "plan" ; "fact"
+get_Flex_by_type(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, FlexType) :-
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    gd_pl_ds(Scope, Type, usr_wg_TblCal_FlexLine, 68, _),
     make_list(62, TeilArgs),
-    Term =..[ usr_wg_TblCal_FlexLine, EmplKey, FirstMoveKey, Y, M, _ | TeilArgs ],
+    Term =..[ usr_wg_TblCal_FlexLine, FlexType, EmplKey, FirstMoveKey, Y, M, _ | TeilArgs ],
     catch( call( Term ), _, fail),
     member(D, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
                 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]),
@@ -788,18 +864,7 @@ usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, Tab
             ; atom_number(HoureType0, HoureType)
             ; HoureType is 0 ) ),
     once( (Duration > 0, Days = 1 ; Days = 0) ).
-% табель дни-часы из начислений
-usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
-    TabelOption = tbl_charge,
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    ArgPairs = [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fCalYear-Y, fCalMonth-M, fDateBegin-Date,
-                fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
-    get_data(Scope, Type, usr_wg_TblCharge, ArgPairs),
-    once( get_data(Scope, Type, usr_wg_FeeType, [
-                    fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                    fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
-
+    
 %% engine_loop(+Scope, +Type, +PK)
 %
 

@@ -73,6 +73,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
       CoefOption = "ml_msalary"
   End Select
   '
+  CoefOption = "ml_rate" 'только для ММК, иначе эту строку закомментировать
 
   'init
   Set PL = Creator.GetObject(nil, "TgsPLClient", "")
@@ -245,12 +246,14 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
       Select Case PeriodRule
         Case "by_days_houres"
           PeriodRule = "табель равен графику по дням и часам"
-        Case "by_houres"
-          PeriodRule = "табель покрывает график по часам"
         Case "by_days"
           PeriodRule = "табель покрывает график по дням"
+        Case "by_houres"
+          PeriodRule = "табель покрывает график по часам"
         Case "by_month_wage_all"
-          PeriodRule = "по размеру заработка"
+          PeriodRule = "по размеру заработка (не меньше всех полных)"
+        Case "by_month_wage_any"
+          PeriodRule = "по размеру заработка (не меньше любого полного)"
         Case "by_month_no_bad_type"
           PeriodRule = "виды начислений и типы часов в норме"
         Case Else
