@@ -5,7 +5,7 @@ Properties:
   RUID: 151163573_5956463
   Name: "Зарплата.Пролог.Расчет среднедневного заработка"
   Caption: "Начисление отпускных (Пролог-скрипт)"
-  Version: "1.0.0.50"
+  Version: "1.0.0.57"
   Optional: False
   Internal: True
 Uses: 
@@ -13,12 +13,1537 @@ Uses:
 Objects: 
   - 
     Properties: 
-      Class: "TgdcFunction"
-      RUID: 151189468_18175251
+      Class: "TgdcStoredProc"
+      RUID: 151162335_5956463
       AlwaysOverwrite: True
       DontRemove: True
       IncludeSiblings: False
-      HeadObject: 151189370_18175251
+    Fields: 
+      RDB$DESCRIPTION: | 
+        USR$WG_TBLCALDAY_P
+      PROCEDURENAME: "USR$WG_TBLCALDAY_P"
+      PROCEDURESOURCE: | 
+        CREATE OR ALTER PROCEDURE USR$WG_TBLCALDAY_P (
+            IN_EMPLKEY INTEGER,
+            IN_FIRSTMOVE INTEGER,
+            IN_DATEFROM DATE,
+            IN_DATETO DATE)
+        RETURNS ( 
+            EMPLKEY INTEGER,
+            FIRSTMOVEKEY INTEGER,
+            THEDAY DATE,
+            WYEAR INTEGER,
+            WMONTH INTEGER,
+            WDAY INTEGER,
+            WDURATION INTEGER,
+            WORKDAY INTEGER,
+            SCHEDULEKEY INTEGER)
+         AS
+         BEGIN
+        FOR
+        
+        SELECT * FROM
+        (
+        SELECT
+          ml.USR$EMPLKEY,
+          ml.USR$FIRSTMOVE AS FirstMoveKey,
+          tcd.THEDAY,
+          EXTRACT(YEAR FROM tcd.THEDAY) AS WYEAR,
+          EXTRACT(MONTH FROM tcd.THEDAY) AS WMONTH,
+          EXTRACT(DAY FROM tcd.THEDAY) AS WDAY,
+          tcd.WDURATION,
+          tcd.WORKDAY,
+          ml.USR$SCHEDULEKEY
+        FROM
+          (
+          SELECT FIRST 1 * FROM USR$WG_MOVEMENTLINE
+          WHERE
+            USR$EMPLKEY = :IN_EMPLKEY
+            AND
+            USR$FIRSTMOVE = :IN_FIRSTMOVE
+          ORDER BY USR$DATEBEGIN
+          ) ml
+        JOIN
+          WG_TBLCAL tc
+            ON tc.ID = ml.USR$SCHEDULEKEY
+        JOIN
+          WG_TBLCALDAY tcd
+            ON tcd.TBLCALKEY = tc.ID
+        WHERE
+          ml.USR$EMPLKEY = :IN_EMPLKEY
+          AND
+          ml.USR$FIRSTMOVE = :IN_FIRSTMOVE
+          AND
+          COALESCE(tcd.WDURATION, 0) > 0
+          AND
+          tcd.THEDAY >= :IN_DATEFROM
+          AND
+          tcd.THEDAY < :IN_DATETO
+          AND
+          tcd.THEDAY < ml.USR$DATEBEGIN
+        UNION ALL
+        SELECT
+          ml.USR$EMPLKEY,
+          ml.USR$FIRSTMOVE AS FirstMoveKey,
+          tcd.THEDAY,
+          EXTRACT(YEAR FROM tcd.THEDAY) AS WYEAR,
+          EXTRACT(MONTH FROM tcd.THEDAY) AS WMONTH,
+          EXTRACT(DAY FROM tcd.THEDAY) AS WDAY,
+          tcd.WDURATION,
+          tcd.WORKDAY,
+          ml.USR$SCHEDULEKEY
+        FROM
+          USR$WG_MOVEMENTLINE ml
+        RIGHT JOIN
+          WG_TBLCAL tc
+            ON tc.ID = ml.USR$SCHEDULEKEY
+        JOIN
+          WG_TBLCALDAY tcd
+            ON tcd.TBLCALKEY = tc.ID
+        WHERE
+          ml.USR$EMPLKEY = :IN_EMPLKEY
+          AND
+          ml.USR$FIRSTMOVE = :IN_FIRSTMOVE
+          AND
+          ml.USR$DATEBEGIN < :IN_DATETO
+          AND
+          COALESCE(tcd.WDURATION, 0) > 0
+          AND
+          tcd.THEDAY >= :IN_DATEFROM
+          AND
+          tcd.THEDAY < :IN_DATETO
+          AND
+          tcd.THEDAY >= ml.USR$DATEBEGIN
+          AND
+          tcd.THEDAY <
+            COALESCE(
+              (
+              SELECT
+                FIRST 1
+                ml_next.USR$DATEBEGIN
+              FROM
+                USR$WG_MOVEMENTLINE ml_next
+              WHERE
+                ml_next.USR$EMPLKEY = :IN_EMPLKEY
+                AND
+                ml_next.USR$FIRSTMOVE = :IN_FIRSTMOVE
+                AND
+                ml_next.USR$DATEBEGIN > ml.USR$DATEBEGIN
+              ORDER BY
+                ml_next.USR$DATEBEGIN
+              ),
+            :IN_DATETO
+            )
+        ) ml_union
+        ORDER BY
+          THEDAY
+        
+        INTO
+            :EMPLKEY,
+            :FirstMoveKey,
+            :THEDAY,
+            :WYEAR,
+            :WMONTH,
+            :WDAY,
+            :WDURATION,
+            :WORKDAY,
+            :SCHEDULEKEY
+        DO
+          SUSPEND;
+        
+        END
+        
+      EDITIONDATE: 2013-11-18T12:13:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151164077_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_dlgUserComplexDocument147020774_119619099"
+      MODULE: "MACROS"
+      LANGUAGE: "VBScript"
+      NAME: "Macros151164077_5956463"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        '#include wg_AvgSalaryStrGenerate
+        
+        Sub Macros151164077_5956463(OwnerForm)
+          'Dim Ret
+          
+          call wg_AvgSalaryStrGenerate(OwnerForm, 0)
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        MACROS151164077_5956463
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147021903_119619099 gdc_dlgUserComplexDocument147020774_119619099"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QJAAAAT1dORVJGT1JNCQAAAE9XTkVSRk9STQAAAAAAAAAAAAAAAAsAAAAAAAAAAAAA
+        AABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-10T16:42:52+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147489128_336327731 wg_AvgSalaryStrGenerate"
+  - 
+    Properties: 
+      Class: "TgdcMacros"
+      RUID: 151164075_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_dlgUserComplexDocument147020774_119619099"
+      MACROSGROUPKEY: "147021904_119619099 Локальные макросы"
+      FUNCTIONKEY: "151164077_5956463 Macros151164077_5956463"
+      NAME: "Рассчитать ср. заработок"
+      SERVERKEY: ~
+      ISLOCALEXECUTE: 0
+      ISREBUILD: 0
+      EXECUTEDATE: ~
+      SHORTCUT: 0
+      EDITIONDATE: 2014-01-10T16:42:52+03:00
+      DISPLAYINMENU: 1
+      RUNONLOGIN: 0
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 155817502_77029543
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 33
+      FIELDNAME: "USR$AVGDAYHOW"
+      RELATIONNAME: "USR$WG_FEETYPE"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147567082_119619099 Виды начислений, USR$WG_FEETYPE"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Дни/часы для среднего"
+      LSHORTNAME: "Дни/часы для среднег"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2013-12-26T15:52:05+03:00
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_FEEGROUP"
+      RUID: 147757383_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147071456_274788016 Все начисления\\Ср. заработок\\Ср. заработок для отпусков"
+      DISABLED: 0
+      EDITIONDATE: 2014-01-08T18:30:20+03:00
+      USR$NAME: "Ср. заработок для отпусков - не осовременивать"
+      USR$DESCRIPTION: ~
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151158419_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 151163587_5956463
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "pl_GetScriptIDByName"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        
+        'uses pl_Const
+        Function pl_GetScriptIDByName(Name)
+          Dim Creator, ibsql
+        
+          pl_GetScriptIDByName = 0
+        
+          Set Creator = New TCreator
+          Set ibsql = Creator.GetObject(nil, "TIBSQL", "")
+        
+          ibsql.Transaction = gdcBaseManager.ReadTransaction
+          ibsql.SQL.TEXT = _
+              "SELECT * FROM gd_function" & _
+              " WHERE UPPER(name) = UPPER(:name) AND module = :module"
+          ibsql.ParamByName("name").AsString = Name
+          ibsql.ParamByName("module").AsString = scrPrologModuleName
+          ibsql.ExecQuery
+        
+          If Not ibsql.EOF Then
+             pl_GetScriptIDByName = ibsql.FieldByName("id").AsInteger
+          End If
+        End Function
+        
+      DISPLAYSCRIPT: | 
+        PL_GETSCRIPTIDBYNAME
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAATkFNRQQAAABOQU1FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2013-10-11T16:45:28+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 156299481_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 151163587_5956463
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_AvgSalary_CoefOption"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        '#include wg_WageSettings
+        
+        Sub wg_AvgSalary_CoefOption(ByRef Sender)
+        '
+          Dim InflType, InflFCType
+          Dim rbFCRate, rbRateInf, rbMovementRate, rbSalaryInf
+          
+          InflType = wg_WageSettings.Inflation.InflType
+          InflFCType = wg_WageSettings.Inflation.InflFCType
+          '
+          'От оклада
+          Set rbSalaryInf = Sender.GetComponent("usrg_rbSalaryInf")
+          rbSalaryInf.Checked = False
+          'От ставки 1-го разряда
+          Set rbRateInf = Sender.FindComponent("usrg_rbRateInf")
+          rbRateInf.Checked = False
+          '  справочника
+          Set rbFCRate = Sender.FindComponent("usrg_rbFCRate")
+          rbFCRate.Checked = False
+          '  кадрового движения
+          Set rbMovementRate = Sender.FindComponent("usrg_rbMovementRate")
+          rbMovementRate.Checked = False
+          '
+          Select Case InflType
+            'usrg_rbSalaryInf - От оклада
+            Case 0
+              rbSalaryInf.Checked = True
+            'usrg_rbRateInf - От ставки 1-го разряда
+            Case 1
+              rbRateInf.Checked = True
+              '
+              Select Case InflFCType
+                'usrg_rbFCRate - справочника
+                Case 0
+                  rbFCRate.Checked = True
+                'usrg_rbMovementRate - кадрового движения
+                Case 2
+                  rbMovementRate.Checked = True
+              End Select
+              '
+          End Select
+        '
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        WG_AVGSALARY_COEFOPTION
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-02-27T10:57:15+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147019760_119619099 wg_WageSettings"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147016040_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 151163587_5956463
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_EnableFieldChange"
+      COMMENT: ~
+      SCRIPT: | 
+        option explicit
+        
+        sub wg_CheckVariableExists(ByRef Self, ByVal VarName)
+          if not Self.VariableExists(VarName) then
+            Self.AddVariableItem(VarName)
+            Self.Variables(VarName) = 0
+          end if
+        end sub
+        
+        sub wg_CheckObjectExists(ByRef Self, ByVal VarName, ByRef O)
+          if not Self.ObjectExists(VarName) then
+            Self.AddObjectItem(VarName)
+            Self.Objects(VarName) = O
+          end if
+        end sub
+        
+        sub wg_EnableFieldChange(ByRef Self, ByVal VarName)
+          call wg_CheckVariableExists(Self, VarName)
+          if Self.Variables(VarName) > 0 then
+            Self.Variables(VarName) = Self.Variables(VarName) - 1
+          end if
+        end sub
+        
+        sub wg_DisableFieldChange(ByRef Self, ByVal VarName)
+          call wg_CheckVariableExists(Self, VarName)
+          Self.Variables(VarName) = Self.Variables(VarName) + 1
+        end sub
+        
+        function wg_EnabledFieldChange(ByRef Self, ByVal VarName)
+          call wg_CheckVariableExists(Self, VarName)
+          wg_EnabledFieldChange = (Self.Variables(VarName) = 0)
+        end function
+        
+      DISPLAYSCRIPT: | 
+        WG_CHECKVARIABLEEXISTS
+        WG_CHECKOBJECTEXISTS
+        WG_ENABLEFIELDCHANGE
+        WG_DISABLEFIELDCHANGE
+        WG_ENABLEDFIELDCHANGE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNU
+        BwAAAFZBUk5BTUUHAAAAVkFSTkFNRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2007-03-13T16:49:05+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147019760_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 151163587_5956463
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_WageSettings"
+      COMMENT: ~
+      SCRIPT: | 
+        option explicit
+        function wg_WageSettings
+          if not Assigned(wg_WageSettings_) then
+            set wg_WageSettings_ = New Twg_WageSettings
+          end if
+          
+          set wg_WageSettings = wg_WageSettings_
+        end function
+        
+      DISPLAYSCRIPT: | 
+        WG_WAGESETTINGS
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2004-12-24T12:23:47+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151163587_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_AvgSalaryStrGenerate_pl"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        '#include wg_WageSettings
+        '#include wg_EnableFieldChange
+        '#include pl_GetScriptIDByName
+        '#include wg_AvgSalary_CoefOption
+        
+        Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
+        '
+          Dim T, T1, T2
+          
+          Dim Creator, gdcObject, gdcSalary
+          '
+          Dim PL, Ret, Pred, Tv, Append
+          'avg_wage
+          Dim P_main, Tv_main, Q_main
+          'avg_wage_in
+          Dim P_in, Tv_in, Q_in
+          Dim EmplKey, FirstMoveKey, DateCalc
+          Dim InflType, InflFCType
+          Dim MonthOffset, CoefOption
+          'avg_wage_run, avg_wage_sql
+          Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
+          Dim DateCalcFrom, DateCalcTo
+          Dim Connection, PredicateName, Arity, SQL
+          'avg_wage_out, avg_wage_det
+          Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
+          Dim AvgWage, AvgWageRule
+          Dim Period, PeriodRule, Wage, ModernWage, ModernCoef
+          Dim TabDays, TabHoures, NormDays, NormHoures
+          Dim IsFull, IsCheck
+        
+          T1 = Timer
+          wg_AvgSalaryStrGenerate_pl = False
+          Set Creator = New TCreator
+          
+          Sender.GetComponent("actApply").Execute
+        
+          Set gdcObject = Sender.gdcObject
+          '
+          EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
+          FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
+          '
+          if CalcType = 0 then
+            dim IBSQL
+            set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
+            IBSQL.Transaction = gdcBaseManager.ReadTransaction
+            IBSQL.SQL.Text = _
+              "select " & _
+              "  t.USR$DATEBEGIN " & _
+              "from " & _
+              "  usr$wg_total t " & _
+              "where " & _
+              "  t.DOCUMENTKEY = :TDK "
+            IBSQL.ParamByName("TDK").asInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
+            IBSQL.ExecQuery
+            DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
+          else
+            DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
+          end if
+          '
+          MonthOffset = 0
+          '
+          InflType = wg_WageSettings.Inflation.InflType
+          InflFCType = wg_WageSettings.Inflation.InflFCType
+          'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
+          Select Case InflType
+            'usrg_rbSalaryInf - От оклада
+            Case 0
+              CoefOption = "ml_msalary"
+            'usrg_rbRateInf - От ставки 1-го разряда
+            Case 1
+              Select Case InflFCType
+                'usrg_rbFCRate - справочника
+                Case 0
+                  CoefOption = "fc_fcratesum"
+                'usrg_rbMovementRate - кадрового движения
+                Case 2
+                  CoefOption = "ml_rate"
+              End Select
+          End Select
+          '
+        
+          'проблема wg_WageSettings
+          'CoefOption = "ml_rate" 'только для ММК, иначе эту строку закомментировать
+        
+          wg_AvgSalary_CoefOption(Sender)
+        
+          'init
+          Set PL = Creator.GetObject(nil, "TgsPLClient", "")
+          Ret = PL.Initialise("")
+          If Not Ret Then
+            Exit Function
+          End If
+          'debug
+          PL.Debug = True
+          'load
+          Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
+          If Not Ret Then
+            Exit Function
+          End If
+        
+          Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
+          '
+          Call wg_DisableFieldChange(gdcSalary, "AVGSALARYCALC")
+          '
+          gdcSalary.First
+          While Not gdcSalary.EOF
+            gdcSalary.Delete
+          Wend
+          '
+          gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = 0
+          '
+          Sender.Repaint
+        
+          'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption)
+          P_in = "avg_wage_in"
+          Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
+          Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
+          Tv_in.PutInteger 0, EmplKey
+          Tv_in.PutInteger 1, FirstMoveKey
+          Tv_in.PutDate 2, DateCalc
+          Tv_in.PutInteger 3, MonthOffset
+          Tv_in.PutAtom 4, CoefOption
+          '
+          Q_in.PredicateName = P_in
+          Q_in.Termv = Tv_in
+          '
+          Q_in.OpenQuery
+          If Q_in.EOF Then
+            Exit Function
+          End If
+          Q_in.Close
+        
+          'avg_wage(_) - prepare data
+          P_main = "avg_wage"
+          Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
+          Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_main.PredicateName = P_main
+          Q_main.Termv = Tv_main
+          '
+          Q_main.OpenQuery
+          If Q_main.EOF Then
+            Exit Function
+          End If
+          Q_main.Close
+        
+          'avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)
+          P_run = "avg_wage_run"
+          Set Tv_run = Creator.GetObject(4, "TgsPLTermv", "")
+          Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_run.PredicateName = P_run
+          Q_run.Termv = Tv_run
+          'avg_wage_sql(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL)
+          P_sql = "avg_wage_sql"
+          P_kb = "avg_wage_kb"
+          Set Tv_sql = Creator.GetObject(6, "TgsPLTermv", "")
+          Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_sql.PredicateName = P_sql
+          Q_sql.Termv = Tv_sql
+          '
+          Q_run.OpenQuery
+          If Q_run.EOF Then
+            Exit Function
+          End If
+          '
+          Append = False
+          '
+          Do Until Q_run.EOF
+            EmplKey = Tv_run.ReadInteger(0)
+            FirstMoveKey = Tv_run.ReadInteger(1)
+            DateCalcFrom = Tv_run.ReadDate(2)
+            DateCalcTo = Tv_run.ReadDate(3)
+            '
+            Tv_sql.Reset
+            Tv_sql.PutInteger 0, EmplKey
+            Tv_sql.PutInteger 1, FirstMoveKey
+            Q_sql.OpenQuery
+            '
+            Do Until Q_sql.EOF
+              Connection = Tv_sql.ReadAtom(2)
+              PredicateName = Tv_sql.ReadAtom(3)
+              Arity = Tv_sql.ReadInteger(4)
+              SQL = Tv_sql.ReadString(5)
+              '
+              Ret =  PL.MakePredicatesOfSQLSelect _
+                        (SQL, _
+                        gdcBaseManager.ReadTransaction, _
+                        PredicateName, PredicateName, Append)
+              If Ret >= 0 Then
+                 Ret = PL.Call(P_kb, Tv_sql)
+              End If
+              '
+              Q_sql.NextSolution
+            Loop
+            Q_sql.Close
+            '
+            Append = True
+            '
+            Q_run.NextSolution
+          Loop
+          Q_run.Close
+        
+          'save param_list
+          If PL.Debug Then
+            Pred = "param_list"
+            Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+            PL.SavePredicatesToFile Pred, Tv, Pred
+          End If
+        
+          'avg_wage(Variant) - calc result
+          Q_main.OpenQuery
+          If Q_main.EOF Then
+            Exit Function
+          End If
+          Q_main.Close
+        
+          'avg_wage_out(EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
+          P_out = "avg_wage_out"
+          Set Tv_out = Creator.GetObject(4, "TgsPLTermv", "")
+          Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_out.PredicateName = P_out
+          Q_out.Termv = Tv_out
+          'avg_wage_det(EmplKey, FirstMoveKey,
+          '   Period, PeriodRule, Wage, ModernCoef, ModernWage,
+          '   TabDays, NormDays, TabHoures, NormHoures)
+          P_det = "avg_wage_det"
+          Set Tv_det = Creator.GetObject(11, "TgsPLTermv", "")
+          Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_det.PredicateName = P_det
+          Q_det.Termv = Tv_det
+          '
+          Q_out.OpenQuery
+          If Q_out.EOF Then
+            Exit Function
+          End If
+          '
+          Do Until Q_out.EOF
+            EmplKey = Tv_out.ReadInteger(0)
+            FirstMoveKey = Tv_out.ReadInteger(1)
+            AvgWage = Tv_out.ReadFloat(2)
+            AvgWageRule = Tv_out.ReadAtom(3)
+            '
+            Tv_det.Reset
+            Tv_det.PutInteger 0, EmplKey
+            Tv_det.PutInteger 1, FirstMoveKey
+            Q_det.OpenQuery
+            '
+            Do Until Q_det.EOF
+              Period = Tv_det.ReadDate(2)
+              PeriodRule = Tv_det.ReadAtom(3)
+              IsFull = _
+                Abs( PeriodRule = "by_days_houres" _
+                    Or PeriodRule = "by_houres" _
+                    Or PeriodRule = "by_days" )
+              IsCheck = Abs( Not (PeriodRule = "none") )
+              '
+              If AvgWageRule = "by_calc_month" Then
+                Select Case PeriodRule
+                  Case "by_days_houres"
+                    PeriodRule = "табель равен графику по дням и часам"
+                  Case "by_days"
+                    PeriodRule = "табель покрывает график по дням"
+                  Case "by_houres"
+                    PeriodRule = "табель покрывает график по часам"
+                  Case "by_month_wage_all"
+                    PeriodRule = "по размеру заработка (не меньше всех полных)"
+                  Case "by_month_wage_any"
+                    PeriodRule = "по размеру заработка (не меньше любого полного)"
+                  Case "by_month_no_bad_type"
+                    PeriodRule = "виды начислений и типы часов в норме"
+                  Case Else
+                    PeriodRule = ""
+                End Select
+              ElseIf AvgWageRule = "by_avg_houre" Then
+                PeriodRule = "по среднечасовому"
+              End If
+              '
+              Wage = Tv_det.ReadFloat(4)
+              ModernCoef = Tv_det.ReadFloat(5)
+              ModernWage = Tv_det.ReadFloat(6)
+              TabDays = Tv_det.ReadFloat(7)
+              NormDays = Tv_det.ReadFloat(8)
+              TabHoures = Tv_det.ReadFloat(9)
+              NormHoures = Tv_det.ReadFloat(10)
+              '
+              gdcSalary.Append
+              gdcSalary.FieldByName("USR$DATE").AsVariant = Period
+              gdcSalary.FieldByName("USR$SALARY").AsVariant = Wage
+              gdcSalary.FieldByName("USR$COEFF").AsVariant = ModernCoef
+              gdcSalary.FieldByName("USR$MODERNSALARY").AsVariant = ModernWage
+              gdcSalary.FieldByName("USR$DOW").AsVariant = TabDays
+              gdcSalary.FieldByName("USR$HOW").AsVariant = TabHoures
+              gdcSalary.FieldByName("USR$SCHEDULERDOW").AsVariant = NormDays
+              gdcSalary.FieldByName("USR$SCHEDULERHOW").AsVariant = NormHoures
+              gdcSalary.FieldByName("USR$ISCHECK").AsVariant = IsCheck
+              gdcSalary.FieldByName("USR$ISFULL").AsVariant = IsFull
+              gdcSalary.FieldByName("USR$DESCRIPTION").AsVariant = PeriodRule
+              gdcSalary.Post
+              '
+              Q_det.NextSolution
+            Loop
+            Q_det.Close
+            '
+            Q_out.NextSolution
+          Loop
+          Q_out.Close
+          '
+        
+          gdcSalary.First
+          '
+          Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
+          '
+          gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
+          gdcObject.Post
+          '
+        
+          wg_AvgSalaryStrGenerate_pl = True
+          
+          T2 = Timer
+          T = T2 - T1
+        '
+        End function
+        
+      DISPLAYSCRIPT: | 
+        WG_AVGSALARYSTRGENERATE_PL
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        UFJTVAgAAABDQUxDVFlQRQgAAABDQUxDVFlQRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-03-03T12:36:14+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147019760_119619099 wg_WageSettings"
+          - 
+            ADDFUNCTIONKEY: "147016040_119619099 wg_EnableFieldChange"
+          - 
+            ADDFUNCTIONKEY: "151158419_5956463 pl_GetScriptIDByName"
+          - 
+            ADDFUNCTIONKEY: "156299481_119200397 wg_AvgSalary_CoefOption"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 156300136_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_AvgSalaryDetailGenerate_pl"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        '#include pl_GetScriptIDByName
+        
+        Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
+        '
+          Dim Creator, gdcObject, gdcDetail
+          '
+          Dim PL, Ret, Pred, Tv, Append
+          'struct_vacation_sql
+          Dim P_sql, Tv_sql, Q_sql
+          Dim Connection, PredicateName, Arity, SQL
+          'struct_vacation_in
+          Dim P_in, Tv_in, Q_in
+          Dim DateCalc, DateBegin, DateEnd, AvgWage
+          'struct_vacation_out
+          Dim P_out, Tv_out, Q_out
+          Dim AccDate, IncludeDate, Duration, Summa
+          
+          wg_AvgSalaryDetailGenerate_pl = False
+          Set Creator = New TCreator
+        
+          Sender.GetComponent("actApply").Execute
+        
+          Set gdcObject = Sender.gdcObject
+          '
+          DateBegin = gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime
+          DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
+          AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
+          '
+          Dim IBSQL
+          Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
+          IBSQL.Transaction = gdcBaseManager.ReadTransaction
+          IBSQL.SQL.Text = _
+              "select " & _
+              "  t.USR$DATEBEGIN " & _
+              "from " & _
+              "  usr$wg_total t " & _
+              "where " & _
+              "  t.DOCUMENTKEY = :TDK "
+          IBSQL.ParamByName("TDK").asInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
+          IBSQL.ExecQuery
+          DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
+          '
+          
+          'init
+          Set PL = Creator.GetObject(nil, "TgsPLClient", "")
+          Ret = PL.Initialise("")
+          If Not Ret Then
+            Exit Function
+          End If
+          'debug
+          PL.Debug = True
+          'load
+          Ret = PL.LoadScript(pl_GetScriptIDByName("twg_struct"))
+          If Not Ret Then
+            Exit Function
+          End If
+        
+          Set gdcDetail = Sender.gdcDetailObject
+          '
+          gdcDetail.First
+          While Not gdcDetail.EOF
+            gdcDetail.Delete
+          Wend
+          '
+          Sender.Repaint
+        
+          'struct_vacation_sql(DateBegin, DateEnd, Connection, PredicateName, Arity, SQL)
+          P_sql = "struct_vacation_sql"
+          Set Tv_sql = Creator.GetObject(6, "TgsPLTermv", "")
+          Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_sql.PredicateName = P_sql
+          Q_sql.Termv = Tv_sql
+          '
+          Append = False
+          '
+          Tv_sql.PutDate 0, DateBegin
+          Tv_sql.PutDate 1, DateEnd
+          '
+          Q_sql.OpenQuery
+          Do Until Q_sql.EOF
+            Connection = Tv_sql.ReadAtom(2)
+            PredicateName = Tv_sql.ReadAtom(3)
+            Arity = Tv_sql.ReadInteger(4)
+            SQL = Tv_sql.ReadString(5)
+            '
+            Ret =  PL.MakePredicatesOfSQLSelect _
+                      (SQL, _
+                      gdcBaseManager.ReadTransaction, _
+                      PredicateName, PredicateName, Append)
+            '
+            Q_sql.NextSolution
+          Loop
+          Q_sql.Close
+          '
+        
+          'struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage)
+          P_in = "struct_vacation_in"
+          Set Tv_in = Creator.GetObject(4, "TgsPLTermv", "")
+          Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
+          Tv_in.PutDate 0, DateCalc
+          Tv_in.PutDate 1, DateBegin
+          Tv_in.PutDate 2, DateEnd
+          Tv_in.PutFloat 3, AvgWage
+          '
+          Q_in.PredicateName = P_in
+          Q_in.Termv = Tv_in
+          '
+          Q_in.OpenQuery
+          If Q_in.EOF Then
+            Exit Function
+          End If
+          Q_in.Close
+        
+          'struct_vacation_out(AccDate, IncludeDate, Duration, Summa, DateBegin, DateEnd)
+          P_out = "struct_vacation_out"
+          Set Tv_out = Creator.GetObject(6, "TgsPLTermv", "")
+          Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_out.PredicateName = P_out
+          Q_out.Termv = Tv_out
+          Q_out.OpenQuery
+          If Q_out.EOF Then
+            Exit Function
+          End If
+          '
+          Do Until Q_out.EOF
+            '
+            AccDate = Tv_out.ReadDate(0)
+            IncludeDate = Tv_out.ReadDate(1)
+            Duration = Tv_out.ReadInteger(2)
+            Summa = Tv_out.ReadFloat(3)
+            DateBegin = Tv_out.ReadDate(4)
+            DateEnd = Tv_out.ReadDate(5)
+            '
+            gdcDetail.Append
+            gdcDetail.FieldByName("USR$ACCDATE").AsVariant = AccDate
+            gdcDetail.FieldByName("USR$INCLUDEDATE").AsVariant = IncludeDate
+            gdcDetail.FieldByName("USR$DURATION").AsVariant = Duration
+            gdcDetail.FieldByName("USR$SUMMA").AsVariant = Summa
+            gdcDetail.FieldByName("USR$DATEBEGIN").AsVariant = DateBegin
+            gdcDetail.FieldByName("USR$DATEEND").AsVariant = DateEnd
+            gdcDetail.Post
+            '
+            Q_out.NextSolution
+          Loop
+          Q_out.Close
+          '
+          gdcDetail.First
+        
+          wg_AvgSalaryDetailGenerate_pl = True
+        '
+        End function
+        
+      DISPLAYSCRIPT: | 
+        WG_AVGSALARYDETAILGENERATE_PL
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-03-03T11:54:55+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "151158419_5956463 pl_GetScriptIDByName"
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147063986_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+    Fields: 
+      PARENT: "990010_17 USER - Administrator"
+      NAME: "gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:32:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 154648252_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+      HeadObject: 147063986_1439110857
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "WS"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 2
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2013-08-12T19:08:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 154648251_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+      HeadObject: 147063986_1439110857
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "Width"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 1382
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-02-26T10:01:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 154648250_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+      HeadObject: 147063986_1439110857
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "Left"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: -8
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-02-26T10:01:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 154648249_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+      HeadObject: 147063986_1439110857
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "Top"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: -8
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-02-26T10:01:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 154648248_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+      HeadObject: 147063986_1439110857
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "Height"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 744
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-02-26T10:01:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147063987_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "ibgrDetail(TgsIBGrid)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:32:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 147123779_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+      HeadObject: 147063987_1439110857
+    Fields: 
+      PARENT: "147063987_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)\\ibgrDetail(TgsIBGrid)"
+      NAME: "data"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: !!binary > 
+        VFBGMAYNR1JJRF9TVFJFQU1fNAEGBlRhaG9tYQYMY2xXaW5kb3dUZXh0AvUAAggAA8wAAAYIY2xX
+        aW5kb3cBBgZUYWhvbWEGD2NsSGlnaGxpZ2h0VGV4dAL1AAIIAAPMAAAGC2NsSGlnaGxpZ2h0AQYG
+        VGFob21hBgxjbFdpbmRvd1RleHQC9QACCAADzAAABgljbEJ0bkZhY2UJBgkkMDBFN0YzRjcGCSQw
+        MEQ2RTdFNw4ACAgOAAgOAQhFeHBhbmRlZAgJRmllbGROYW1lBgtVU1IkQUNDREFURQ1UaXRsZS5D
+        YXB0aW9uBg/E4PLgIO3g9+jx6+Xt6P8FV2lkdGgCbAdWaXNpYmxlCQABCEV4cGFuZGVkCAlGaWVs
+        ZE5hbWUGD1VTUiRJTkNMVURFREFURQ1UaXRsZS5DYXB0aW9uBg/E4PLgIOfg9+jx6+Xt6P8FV2lk
+        dGgCbAdWaXNpYmxlCQABCUFsaWdubWVudAcOdGFSaWdodEp1c3RpZnkIRXhwYW5kZWQICUZpZWxk
+        TmFtZQYMVVNSJERVUkFUSU9ODVRpdGxlLkNhcHRpb24GA8Tt6AVXaWR0aAIkB1Zpc2libGUJCVRv
+        dGFsVHlwZQcFdHRTdW0AAQlBbGlnbm1lbnQHDnRhUmlnaHRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVs
+        ZE5hbWUGCVVTUiRTVU1NQQ1UaXRsZS5DYXB0aW9uBgXR8+zs4AVXaWR0aAJIB1Zpc2libGUJDURp
+        c3BsYXlGb3JtYXQGBCMuIyMJVG90YWxUeXBlBwV0dFN1bQABCEV4cGFuZGVkCAlGaWVsZE5hbWUG
+        DVVTUiREQVRFQkVHSU4NVGl0bGUuQ2FwdGlvbgYLxODy4CDt4Pfg6+AFV2lkdGgCbAdWaXNpYmxl
+        CQABCEV4cGFuZGVkCAlGaWVsZE5hbWUGC1VTUiREQVRFRU5EDVRpdGxlLkNhcHRpb24GDsTg8uAg
+        7uru7ffg7ej/BVdpZHRoAmwHVmlzaWJsZQkAAQlBbGlnbm1lbnQHDnRhUmlnaHRKdXN0aWZ5CEV4
+        cGFuZGVkCAlGaWVsZE5hbWUGBlNVTU5DVQ1UaXRsZS5DYXB0aW9uBgZzdW1uY3UFV2lkdGgC/wdW
+        aXNpYmxlCAABCEV4cGFuZGVkCAlGaWVsZE5hbWUGDERPQ1VNRU5UREFURQ1UaXRsZS5DYXB0aW9u
+        BgTE4PLgBVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBgtERVNDUklQVElP
+        Tg1UaXRsZS5DYXB0aW9uBgjO7+jx4O3o5QVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZp
+        ZWxkTmFtZQYOVVNSJFNPUlROVU1CRVIIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GFM3u7OXwIOTr
+        /yDx7vDy6PDu4uroBVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBgJJRA1U
+        aXRsZS5DYXB0aW9uBgTK6/73BVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1l
+        BgZQQVJFTlQNVGl0bGUuQ2FwdGlvbgYI0O7k6PLl6/wFV2lkdGgC/wdWaXNpYmxlCAABCEV4cGFu
+        ZGVkCAlGaWVsZE5hbWUGD0RPQ1VNRU5UVFlQRUtFWQ1UaXRsZS5DYXB0aW9uBg3S6O8g5O7q8+zl
+        7fLgBVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBglUUlRZUEVLRVkNVGl0
+        bGUuQ2FwdGlvbgYO0ujvIPLw4O3n4Or26OgFV2lkdGgC/wdWaXNpYmxlCAABCEV4cGFuZGVkCAlG
+        aWVsZE5hbWUGDlRSQU5TQUNUSU9OS0VZDVRpdGxlLkNhcHRpb24GCtLw4O3n4Or26P8FV2lkdGgC
+        /wdWaXNpYmxlCAABCEV4cGFuZGVkCAlGaWVsZE5hbWUGBk5VTUJFUg1UaXRsZS5DYXB0aW9uBgXN
+        7uzl8AVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYHU1VNQ1VSUg1UaXRs
+        ZS5DYXB0aW9uBg7R8+zs4CDiIOLg6/7y5QVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZp
+        ZWxkTmFtZQYHREVMQVlFRA1UaXRsZS5DYXB0aW9uBgrO8uvu5uXt7fvpBVdpZHRoAv8HVmlzaWJs
+        ZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBgdDVVJSS0VZDVRpdGxlLkNhcHRpb24GBsLg6/7y4AVX
+        aWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYKQ09NUEFOWUtFWQ1UaXRsZS5D
+        YXB0aW9uBgjK7uzv4O3o/wVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYK
+        Q1JFQVRPUktFWQ1UaXRsZS5DYXB0aW9uBgrK8u4g8e7n5ODrBVdpZHRoAv8HVmlzaWJsZQgAAQhF
+        eHBhbmRlZAgJRmllbGROYW1lBgxDUkVBVElPTkRBVEUNVGl0bGUuQ2FwdGlvbgYNxODy4CDx7ufk
+        4O3o/wVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYJRURJVE9SS0VZDVRp
+        dGxlLkNhcHRpb24GDMry7iDo8e/w4OLo6wVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZp
+        ZWxkTmFtZQYLRURJVElPTkRBVEUNVGl0bGUuQ2FwdGlvbgYOxODy4CDo5+zl7eXt6P8FV2lkdGgC
+        /wdWaXNpYmxlCAABCEV4cGFuZGVkCAlGaWVsZE5hbWUGCVBSSU5UREFURQ1UaXRsZS5DYXB0aW9u
+        BgvE4PLgIO/l9+Dy6AVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYIRElT
+        QUJMRUQNVGl0bGUuQ2FwdGlvbgYJzvLq6/735e3uBVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBhbmRl
+        ZAgJRmllbGROYW1lBghSRVNFUlZFRA1UaXRsZS5DYXB0aW9uBg/H4PDl5+Xw4ujw7uLg7e4FV2lk
+        dGgC/wdWaXNpYmxlCAABCEV4cGFuZGVkCAlGaWVsZE5hbWUGC0RPQ1VNRU5US0VZCFJlYWRPbmx5
+        CQ1UaXRsZS5DYXB0aW9uBg7K6/73IOTu6vPs5e3y4AVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5k
+        ZWQICUZpZWxkTmFtZQYJTUFTVEVSS0VZCFJlYWRPbmx5CQ1UaXRsZS5DYXB0aW9uBifQ7uTo8uXr
+        /CAozeD36PHr5e3o5SDu8u/z8eru4ijv7ufo9uj/KSkFV2lkdGgC/wdWaXNpYmxlCAABCEV4cGFu
+        ZGVkCAlGaWVsZE5hbWUGCVJFU0VSVkVEMQhSZWFkT25seQkNVGl0bGUuQ2FwdGlvbgYux+Dw5efl
+        8OLo8O7i4O3uICjN4Pfo8evl7ejlIO7y7/Px6u7iKO/u5+j26P8pKQVXaWR0aAL/B1Zpc2libGUI
+        AAEIRXhwYW5kZWQICUZpZWxkTmFtZQYFU1VNRVENVGl0bGUuQ2FwdGlvbgYT0fPs7OAg4iD96uLo
+        4uDr5e3y5QVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYKVVNSJEVRUkFU
+        RQ1UaXRsZS5DYXB0aW9uBgnK8/DxIP3q4i4FV2lkdGgC/wdWaXNpYmxlCAABCUFsaWdubWVudAcO
+        dGFSaWdodEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYFQUZVTEwNVGl0bGUuQ2FwdGlvbgYN
+        z+7r7fvpIOTu8fLz7wVXaWR0aAL/B1Zpc2libGUIAAEJQWxpZ25tZW50Bw50YVJpZ2h0SnVzdGlm
+        eQhFeHBhbmRlZAgJRmllbGROYW1lBgVBQ0hBRw1UaXRsZS5DYXB0aW9uBhnP8O7x7O7y8CDoIPDl
+        5ODq8ujw7uLg7ejlBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDnRhUmlnaHRKdXN0aWZ5
+        CEV4cGFuZGVkCAlGaWVsZE5hbWUGBUFWSUVXDVRpdGxlLkNhcHRpb24GD9Lu6/zq7iDv8O7x7O7y
+        8AVXaWR0aAL/B1Zpc2libGUIAAAICP0cCQg=
+      EDITIONDATE: 2014-02-26T15:58:19+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 154648246_77029543
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "pnlMaster(TPanel)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2013-08-12T19:08:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 154648247_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+      HeadObject: 154648246_77029543
+    Fields: 
+      PARENT: "154648246_77029543 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)\\pnlMaster(TPanel)"
+      NAME: "Height"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 298
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-02-03T16:11:00+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147063989_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+    Fields: 
+      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
+      NAME: "usrg_grAvgSalaryStr(TgsIBGrid)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:32:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 147123780_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+      HeadObject: 147063989_1439110857
+    Fields: 
+      PARENT: "147063989_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)\\usrg_grAvgSalaryStr(TgsIBGrid)"
+      NAME: "data"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: !!binary > 
+        VFBGMAYNR1JJRF9TVFJFQU1fNAEGBlRhaG9tYQYMY2xXaW5kb3dUZXh0AvUAAggAA8wAAAYIY2xX
+        aW5kb3cBBgZUYWhvbWEGD2NsSGlnaGxpZ2h0VGV4dAL1AAIIAAPMAAAGC2NsSGlnaGxpZ2h0AQYG
+        VGFob21hBgxjbFdpbmRvd1RleHQC9QACCAADzAAABgljbEJ0bkZhY2UJBgkkMDBFN0YzRjcGCSQw
+        MEQ2RTdFNw4BDERpc3BsYXlGaWVsZAYHVVNSJERPVwlGaWVsZE5hbWUGB1VTUiRIT1cJTGluZUNv
+        dW50AgEHT3B0aW9ucwsLY2VvQWRkRmllbGQAAAEMRGlzcGxheUZpZWxkBhBVU1IkU0NIRURVTEVS
+        RE9XCUZpZWxkTmFtZQYQVVNSJFNDSEVEVUxFUkhPVwlMaW5lQ291bnQCAQdPcHRpb25zCwtjZW9B
+        ZGRGaWVsZAAAAQxEaXNwbGF5RmllbGQGDVVTUiRORVdTQUxBUlkJRmllbGROYW1lBg1VU1IkT0xE
+        U0FMQVJZCUxpbmVDb3VudAIBB09wdGlvbnMLC2Nlb0FkZEZpZWxkAAABDERpc3BsYXlGaWVsZAYK
+        VVNSJFNBTEFSWQlGaWVsZE5hbWUGEFVTUiRNT0RFUk5TQUxBUlkJTGluZUNvdW50AgEHT3B0aW9u
+        cwsLY2VvQWRkRmllbGQAAAAICA4ACA4BCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRl
+        ZAgJRmllbGROYW1lBgpVU1IkSVNGVUxMDVRpdGxlLkNhcHRpb24GDM/u6+376SDs5fH/9gVXaWR0
+        aAIwB1Zpc2libGUJAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5h
+        bWUGC1VTUiRJU0NIRUNLDVRpdGxlLkNhcHRpb24GBMLq6y4FV2lkdGgCMAdWaXNpYmxlCQlUb3Rh
+        bFR5cGUHBXR0U3VtAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5h
+        bWUGCFVTUiREQVRFDVRpdGxlLkNhcHRpb24GBMTg8uAFV2lkdGgCSAdWaXNpYmxlCQABCUFsaWdu
+        bWVudAcOdGFSaWdodEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYKVVNSJFNBTEFSWQ1UaXRs
+        ZS5DYXB0aW9uBgjH4PDv6+Dy4AVXaWR0aAJIB1Zpc2libGUJDURpc3BsYXlGb3JtYXQGBCMuIyMA
+        AQlBbGlnbm1lbnQHDnRhUmlnaHRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUGCVVTUiRDT0VG
+        Rg1UaXRsZS5DYXB0aW9uBgbK7v30LfIFV2lkdGgCNAdWaXNpYmxlCQABCUFsaWdubWVudAcOdGFS
+        aWdodEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYQVVNSJE1PREVSTlNBTEFSWQ1UaXRsZS5D
+        YXB0aW9uBhTR7uLw5ezl7e3g/yDn4PDv6+Dy4AVXaWR0aAJUB1Zpc2libGUJDURpc3BsYXlGb3Jt
+        YXQGBCMuIyMJVG90YWxUeXBlBwV0dFN1bQABCUFsaWdubWVudAcOdGFSaWdodEp1c3RpZnkIRXhw
+        YW5kZWQICUZpZWxkTmFtZQYHVVNSJERPVw1UaXRsZS5DYXB0aW9uBgPE7egFV2lkdGgCJAdWaXNp
+        YmxlCQlUb3RhbFR5cGUHBXR0U3VtAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVk
+        CAlGaWVsZE5hbWUGEFVTUiRTQ0hFRFVMRVJET1cNVGl0bGUuQ2FwdGlvbgYLxO3l6SDv7iDj8C4F
+        V2lkdGgCSAdWaXNpYmxlCQABCUFsaWdubWVudAcOdGFSaWdodEp1c3RpZnkIRXhwYW5kZWQICUZp
+        ZWxkTmFtZQYHVVNSJEhPVw1UaXRsZS5DYXB0aW9uBgTX4PH7BVdpZHRoAisHVmlzaWJsZQkJVG90
+        YWxUeXBlBwV0dFN1bQABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRlZAgJRmllbGRO
+        YW1lBhBVU1IkU0NIRURVTEVSSE9XDVRpdGxlLkNhcHRpb24GDNfg8e7iIO/uIOPwLgVXaWR0aAJM
+        B1Zpc2libGUJAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUG
+        D1VTUiRERVNDUklQVElPTg1UaXRsZS5DYXB0aW9uBgjO7+jx4O3o5QVXaWR0aAPeAAdWaXNpYmxl
+        CQABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRlZAgJRmllbGROYW1lBg1VU1IkT0xE
+        U0FMQVJZDVRpdGxlLkNhcHRpb24GBc7q6+DkBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQH
+        DXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYNVVNSJE5FV1NBTEFSWQ1UaXRsZS5D
+        YXB0aW9uBg3S5erz+ejpIO7q6+DkBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVm
+        dEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYCSUQIUmVhZE9ubHkJDVRpdGxlLkNhcHRpb24G
+        Dcjk5e3y6PTo6uDy7vAFV2lkdGgC/wdWaXNpYmxlCAABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlm
+        eQhFeHBhbmRlZAgJRmllbGROYW1lBg9VU1IkRE9DVU1FTlRLRVkNVGl0bGUuQ2FwdGlvbgYIxO7q
+        8+zl7fIFV2lkdGgC/wdWaXNpYmxlCAABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRl
+        ZAgJRmllbGROYW1lBhhaX1VTUiRET0NVTUVOVEtFWV9OVU1CRVINVGl0bGUuQ2FwdGlvbgYFze7s
+        5fAFV2lkdGgC/wdWaXNpYmxlCAABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRlZAgJ
+        RmllbGROYW1lBh5aX1VTUiRET0NVTUVOVEtFWV9ET0NVTUVOVERBVEUNVGl0bGUuQ2FwdGlvbgYE
+        xODy4AVXaWR0aAL/B1Zpc2libGUIAAAICP0MCQg=
+      EDITIONDATE: 2014-02-26T15:58:19+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151189469_18175251
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "lib"
+      COMMENT: ~
+      SCRIPT: | 
+        % lib
+        
+        % подготовка SQL-строки
+        prepare_sql(InSQL, [], InSQL) :-
+            !.
+        prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
+            replace_all(InSQL, Key, Value, InSQL1),
+            !,
+            prepare_sql(InSQL1, Pairs, OutSQL).
+        
+        % to_currency(+NumIn, -NumOut)
+        to_currency(NumIn, NumOut) :-
+            to_currency(NumIn, NumOut, 4),
+            !.
+        % to_currency(+NumIn, -NumOut, +Round)
+        to_currency(NumIn, NumOut, Round) :-
+            number(NumIn), integer(Round),
+            NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
+            !.
+        
+        % make_list(+Num, -List)
+        make_list(Num, List) :-
+            integer(Num),
+            make_list(Num, List, 0),
+            !.
+        
+        make_list(Num, [], Num) :-
+            !.
+        make_list(Num, [_|Tail], Zero) :-
+            Num1 is Num - 1,
+            !,
+            make_list(Num1, Tail, Zero).
+        
+        % replace_all(+In, +Search, +Replace, -Out)
+        replace_all(In, Search, Replace, Out) :-
+            replace(In, Search, Replace, In1),
+            \+ In = In1,
+            !,
+            replace_all(In1, Search, Replace, Out).
+        replace_all(In, _, _, In).
+        
+        % replace(+In, +Search, +Replace, -Out)
+        replace(In, Search, Replace, Out) :-
+            text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
+            replace_list(InCodes, SearchCodes, ReplaceCodes, OutCodes),
+            text_in_out(In, OutCodes, Out),
+            !.
+        replace(In, _, _, In).
+        
+        %
+        text_list([], []) :-
+            !.
+        text_list([Head|Teil], [Head1|Rest]) :-
+            text_in_out(Head, Head1, Head),
+            !,
+            text_list(Teil, Rest).
+        
+        %
+        text_in_out(In, OutCodes, Out) :-
+            ( atom(In), atom_codes(Out, OutCodes)
+            ; string(In), string_codes(Out, OutCodes)
+            ; number(In), number_codes(Out, OutCodes)
+            ; integer_list(In), Out = In ),
+            !,
+            \+ In = [].
+        
+        %
+        integer_list([]).
+        integer_list([Head|Tail]) :-
+            integer(Head),
+            integer_list(Tail).
+        
+        %
+        replace_list([InHead1,InHead2,InHead3|InChars], [InHead1,InHead2,InHead3|SearchChars], ReplaceChars, OutChars) :-
+            append([InHead1,InHead2,InHead3|SearchChars], RestChars, [InHead1,InHead2,InHead3|InChars]),
+            append(ReplaceChars, RestChars, OutChars),
+            !.
+        replace_list([InHead|InChars], [InHead|SearchChars], ReplaceChars, OutChars) :-
+            append([InHead|SearchChars], RestChars, [InHead|InChars]),
+            append(ReplaceChars, RestChars, OutChars),
+            !.
+        replace_list([InHead|InTail], SearchChars, ReplaceChars, [InHead|OutChars]) :-
+            !,
+            replace_list(InTail, SearchChars, ReplaceChars, OutChars).
+        
+        %
+        remove_list(_, [], []) :-
+            !.
+        remove_list([Elem|Elems], List, Rest) :-
+            remove_list(Elem, List, List1),
+            remove_list(Elems, List1, Rest),
+            !.
+        remove_list(Elem, [Elem|[]], []).
+        remove_list(Elem, [Elem|Tail], Rest) :-
+            remove_list(Elem, Tail, Rest),
+            !.
+        remove_list(Elem, [Head|Tail], [Head|Rest]) :-
+            remove_list(Elem, Tail, Rest).
+        
+        %
+        member_list([], _) :-
+            !.
+        member_list([Head|Tail], List) :-
+            member(Head, List),
+            !,
+            member_list(Tail, List).
+        
+        %
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-03-03T10:42:26+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151189468_18175251
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
     Fields: 
       OBJECTNAME: "APPLICATION"
       MODULE: "PROLOG"
@@ -152,140 +1677,9 @@ Objects:
   - 
     Properties: 
       Class: "TgdcFunction"
-      RUID: 151189469_18175251
-      AlwaysOverwrite: True
-      DontRemove: True
-      IncludeSiblings: False
-      HeadObject: 151189370_18175251
-    Fields: 
-      OBJECTNAME: "APPLICATION"
-      MODULE: "PROLOG"
-      LANGUAGE: "VBScript"
-      NAME: "lib"
-      COMMENT: ~
-      SCRIPT: | 
-        % lib
-        
-        % to_currency(+NumIn, -NumOut)
-        to_currency(NumIn, NumOut) :-
-            to_currency(NumIn, NumOut, 4),
-            !.
-        % to_currency(+NumIn, -NumOut, +Round)
-        to_currency(NumIn, NumOut, Round) :-
-            number(NumIn), integer(Round),
-            NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
-            !.
-        
-        % make_list(+Num, -List)
-        make_list(Num, List) :-
-            integer(Num),
-            make_list(Num, List, 0),
-            !.
-        
-        make_list(Num, [], Num) :-
-            !.
-        make_list(Num, [_|Tail], Zero) :-
-            Num1 is Num - 1,
-            !,
-            make_list(Num1, Tail, Zero).
-        
-        % replace_all(+In, +Search, +Replace, -Out)
-        replace_all(In, Search, Replace, Out) :-
-            replace(In, Search, Replace, In1),
-            \+ In = In1,
-            !,
-            replace_all(In1, Search, Replace, Out).
-        replace_all(In, _, _, In).
-        
-        % replace(+In, +Search, +Replace, -Out)
-        replace(In, Search, Replace, Out) :-
-            text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
-            replace_list(InCodes, SearchCodes, ReplaceCodes, OutCodes),
-            text_in_out(In, OutCodes, Out),
-            !.
-        replace(In, _, _, In).
-        
-        %
-        text_list([], []) :-
-            !.
-        text_list([Head|Teil], [Head1|Rest]) :-
-            text_in_out(Head, Head1, Head),
-            !,
-            text_list(Teil, Rest).
-        
-        %
-        text_in_out(In, OutCodes, Out) :-
-            ( atom(In), atom_codes(Out, OutCodes)
-            ; string(In), string_codes(Out, OutCodes)
-            ; number(In), number_codes(Out, OutCodes)
-            ; integer_list(In), Out = In ),
-            !,
-            \+ In = [].
-        
-        %
-        integer_list([]).
-        integer_list([Head|Tail]) :-
-            integer(Head),
-            integer_list(Tail).
-        
-        %
-        replace_list([InHead1,InHead2,InHead3|InChars], [InHead1,InHead2,InHead3|SearchChars], ReplaceChars, OutChars) :-
-            append([InHead1,InHead2,InHead3|SearchChars], RestChars, [InHead1,InHead2,InHead3|InChars]),
-            append(ReplaceChars, RestChars, OutChars),
-            !.
-        replace_list([InHead|InChars], [InHead|SearchChars], ReplaceChars, OutChars) :-
-            append([InHead|SearchChars], RestChars, [InHead|InChars]),
-            append(ReplaceChars, RestChars, OutChars),
-            !.
-        replace_list([InHead|InTail], SearchChars, ReplaceChars, [InHead|OutChars]) :-
-            !,
-            replace_list(InTail, SearchChars, ReplaceChars, OutChars).
-        
-        %
-        remove_list(_, [], []) :-
-            !.
-        remove_list([Elem|Elems], List, Rest) :-
-            remove_list(Elem, List, List1),
-            remove_list(Elems, List1, Rest),
-            !.
-        remove_list(Elem, [Elem|[]], []).
-        remove_list(Elem, [Elem|Tail], Rest) :-
-            remove_list(Elem, Tail, Rest),
-            !.
-        remove_list(Elem, [Head|Tail], [Head|Rest]) :-
-            remove_list(Elem, Tail, Rest).
-        
-        %
-        member_list([], _) :-
-            !.
-        member_list([Head|Tail], List) :-
-            member(Head, List),
-            !,
-            member_list(Tail, List).
-        
-        %
-        
-        
-      DISPLAYSCRIPT: ~
-      MODIFYDATE: ~
-      OWNERNAME: ~
-      FUNCTIONTYPE: ~
-      EVENT: ~
-      LOCALNAME: ~
-      PUBLICFUNCTION: 1
-      SHORTCUT: ~
-      GROUPNAME: ~
-      MODULECODE: "1010001_17 APPLICATION"
-      ENTEREDPARAMS: ~
-      INHERITEDRULE: 0
-      USEDEBUGINFO: 0
-      EDITIONDATE: 2014-01-14T15:13:14+03:00
-  - 
-    Properties: 
-      Class: "TgdcFunction"
       RUID: 151189470_18175251
-      AlwaysOverwrite: True
-      DontRemove: True
+      AlwaysOverwrite: False
+      DontRemove: False
       IncludeSiblings: False
       HeadObject: 151189370_18175251
     Fields: 
@@ -735,13 +2129,13 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-02-13T17:42:03+03:00
+      EDITIONDATE: 2014-02-14T15:22:48+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
       RUID: 151189471_18175251
-      AlwaysOverwrite: True
-      DontRemove: True
+      AlwaysOverwrite: False
+      DontRemove: False
       IncludeSiblings: False
       HeadObject: 151189370_18175251
     Fields: 
@@ -787,8 +2181,8 @@ Objects:
     Properties: 
       Class: "TgdcFunction"
       RUID: 151189370_18175251
-      AlwaysOverwrite: True
-      DontRemove: True
+      AlwaysOverwrite: False
+      DontRemove: False
       IncludeSiblings: False
     Fields: 
       OBJECTNAME: "APPLICATION"
@@ -1804,14 +3198,6 @@ Objects:
                     )
                   ),
             !.
-        % подготовка SQL-строки
-        prepare_sql(InSQL, [], InSQL) :-
-            !.
-        prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
-            replace_all(InSQL, Key, Value, InSQL1),
-            !,
-            prepare_sql(InSQL1, Pairs, OutSQL).
-         %
         %%
         
         %% расширение для клиента
@@ -1966,7 +3352,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-02-13T17:41:26+03:00
+      EDITIONDATE: 2014-03-03T12:40:44+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -1981,147 +3367,227 @@ Objects:
             ADDFUNCTIONKEY: "151189471_18175251 twg_avg_wage_in_params"
   - 
     Properties: 
-      Class: "TgdcStoredProc"
-      RUID: 151162335_5956463
-      AlwaysOverwrite: True
-      DontRemove: True
+      Class: "TgdcFunction"
+      RUID: 156300302_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 156300135_119200397
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "twg_struct_sql"
+      COMMENT: ~
+      SCRIPT: | 
+        % twg_struct_sql
+        
+        :-
+            GetSQL = [gd_pl_ds/5, get_sql/4],
+            dynamic(GetSQL),
+            multifile(GetSQL),
+            discontiguous(GetSQL).
+        
+        %
+        wg_valid_sql([wg_holiday/1]).
+        
+        %
+        is_valid_sql(Functor/Arity) :-
+            wg_valid_sql(ValidSQL),
+            member(Functor/Arity, ValidSQL),
+            !.
+        
+        gd_pl_ds(wg_struct_vacation, in, wg_holiday, 1, [fHolidayDate-date]).
+        % wg_holiday(HolidayDate)
+        get_sql(gsdb, wg_holiday/1,
+        "SELECT \c
+          h.holidaydate \c
+        FROM \c
+          wg_holiday h \c
+        WHERE \c
+          h.holidaydate BETWEEN \'pDateBegin\' AND \'pDateEnd\' \c
+          AND COALESCE(h.disabled, 0) = 0 \c
+        ",
+        [pDateBegin-_, pDateEnd-_]
+            ).
+        
+        %
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-03-03T11:17:21+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 156300135_119200397
+      AlwaysOverwrite: False
+      DontRemove: False
       IncludeSiblings: False
     Fields: 
-      RDB$DESCRIPTION: | 
-        USR$WG_TBLCALDAY_P
-      PROCEDURENAME: "USR$WG_TBLCALDAY_P"
-      PROCEDURESOURCE: | 
-        CREATE OR ALTER PROCEDURE USR$WG_TBLCALDAY_P (
-            IN_EMPLKEY INTEGER,
-            IN_FIRSTMOVE INTEGER,
-            IN_DATEFROM DATE,
-            IN_DATETO DATE)
-        RETURNS ( 
-            EMPLKEY INTEGER,
-            FIRSTMOVEKEY INTEGER,
-            THEDAY DATE,
-            WYEAR INTEGER,
-            WMONTH INTEGER,
-            WDAY INTEGER,
-            WDURATION INTEGER,
-            WORKDAY INTEGER,
-            SCHEDULEKEY INTEGER)
-         AS
-         BEGIN
-        FOR
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "twg_struct"
+      COMMENT: ~
+      SCRIPT: | 
+        % twg_struct
         
-        SELECT * FROM
-        (
-        SELECT
-          ml.USR$EMPLKEY,
-          ml.USR$FIRSTMOVE AS FirstMoveKey,
-          tcd.THEDAY,
-          EXTRACT(YEAR FROM tcd.THEDAY) AS WYEAR,
-          EXTRACT(MONTH FROM tcd.THEDAY) AS WMONTH,
-          EXTRACT(DAY FROM tcd.THEDAY) AS WDAY,
-          tcd.WDURATION,
-          tcd.WORKDAY,
-          ml.USR$SCHEDULEKEY
-        FROM
-          (
-          SELECT FIRST 1 * FROM USR$WG_MOVEMENTLINE
-          WHERE
-            USR$EMPLKEY = :IN_EMPLKEY
-            AND
-            USR$FIRSTMOVE = :IN_FIRSTMOVE
-          ORDER BY USR$DATEBEGIN
-          ) ml
-        JOIN
-          WG_TBLCAL tc
-            ON tc.ID = ml.USR$SCHEDULEKEY
-        JOIN
-          WG_TBLCALDAY tcd
-            ON tcd.TBLCALKEY = tc.ID
-        WHERE
-          ml.USR$EMPLKEY = :IN_EMPLKEY
-          AND
-          ml.USR$FIRSTMOVE = :IN_FIRSTMOVE
-          AND
-          COALESCE(tcd.WDURATION, 0) > 0
-          AND
-          tcd.THEDAY >= :IN_DATEFROM
-          AND
-          tcd.THEDAY < :IN_DATETO
-          AND
-          tcd.THEDAY < ml.USR$DATEBEGIN
-        UNION ALL
-        SELECT
-          ml.USR$EMPLKEY,
-          ml.USR$FIRSTMOVE AS FirstMoveKey,
-          tcd.THEDAY,
-          EXTRACT(YEAR FROM tcd.THEDAY) AS WYEAR,
-          EXTRACT(MONTH FROM tcd.THEDAY) AS WMONTH,
-          EXTRACT(DAY FROM tcd.THEDAY) AS WDAY,
-          tcd.WDURATION,
-          tcd.WORKDAY,
-          ml.USR$SCHEDULEKEY
-        FROM
-          USR$WG_MOVEMENTLINE ml
-        RIGHT JOIN
-          WG_TBLCAL tc
-            ON tc.ID = ml.USR$SCHEDULEKEY
-        JOIN
-          WG_TBLCALDAY tcd
-            ON tcd.TBLCALKEY = tc.ID
-        WHERE
-          ml.USR$EMPLKEY = :IN_EMPLKEY
-          AND
-          ml.USR$FIRSTMOVE = :IN_FIRSTMOVE
-          AND
-          ml.USR$DATEBEGIN < :IN_DATETO
-          AND
-          COALESCE(tcd.WDURATION, 0) > 0
-          AND
-          tcd.THEDAY >= :IN_DATEFROM
-          AND
-          tcd.THEDAY < :IN_DATETO
-          AND
-          tcd.THEDAY >= ml.USR$DATEBEGIN
-          AND
-          tcd.THEDAY <
-            COALESCE(
-              (
-              SELECT
-                FIRST 1
-                ml_next.USR$DATEBEGIN
-              FROM
-                USR$WG_MOVEMENTLINE ml_next
-              WHERE
-                ml_next.USR$EMPLKEY = :IN_EMPLKEY
-                AND
-                ml_next.USR$FIRSTMOVE = :IN_FIRSTMOVE
-                AND
-                ml_next.USR$DATEBEGIN > ml.USR$DATEBEGIN
-              ORDER BY
-                ml_next.USR$DATEBEGIN
-              ),
-            :IN_DATETO
-            )
-        ) ml_union
-        ORDER BY
-          THEDAY
+        % расчет структуры
+        % - для отпусков
+        %
         
-        INTO
-            :EMPLKEY,
-            :FirstMoveKey,
-            :THEDAY,
-            :WYEAR,
-            :WMONTH,
-            :WDAY,
-            :WDURATION,
-            :WORKDAY,
-            :SCHEDULEKEY
-        DO
-          SUSPEND;
+        :- retractall(debug_mode).
         
-        END
+        % ! при использовании в ТП Гедымин
+        % ! для begin & end debug mode section
+        % ! убрать символ процента из первой позиции
+        /* %%% begin debug mode section
         
-      EDITIONDATE: 2013-11-18T12:13:11+03:00
+        %% saved state
+        :- ['../gd_pl_state/load_atom', '../gd_pl_state/date', '../gd_pl_state/dataset'].
+        %%
+        
+        %% include
+        %#INCLUDE lib
+        :- [lib].
+        %#INCLUDE params
+        :- [params].
+        %%
+        %#INCLUDE twg_struct_sql
+        :- [twg_struct_sql].
+        
+        %% facts
+        :-  init_data,
+            [wg_holiday].
+        %%
+        %% dynamic state
+        %:- [param_list].
+        %%
+        
+        %% flag
+        :- assertz(debug_mode).
+        %%
+        
+        % ! при использовании в ТП Гедымин
+        % ! для begin & end debug mode section
+        % ! убрать символ процента из первой позиции
+        */ %%% end debug mode section
+        
+        :- ps32k_lgt(64, 128, 64).
+        
+        /* реализация */
+        
+        struct_vacation_sql(DateBegin, DateEnd, Connection, PredicateName, Arity, SQL) :-
+            Connection = gsdb,
+            Pairs = [pDateBegin-DateBegin, pDateEnd-DateEnd],
+            get_sql(Connection, Query, SQL0, Params),
+            is_valid_sql(Query),
+            Query = PredicateName/Arity,
+            member_list(Params, Pairs),
+            prepare_sql(SQL0, Params, SQL).
+        
+        struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage) :-
+            atom_date(DateCalc, date(Year, Month, _)),
+            month_days(Year, Month, Days),
+            atom_date(AccDate, date(Year, Month, Days)),
+            struct_vacation_calc(AccDate, DateBegin, DateEnd, AvgWage),
+            !.
+        
+        struct_vacation_calc(_, '', '', _) :-
+            !.
+        struct_vacation_calc(AccDate, DateBegin, DateEnd, AvgWage) :-
+            make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2),
+            atom_date(DateBegin1, date(Y, M, _)),
+            atom_date(IncludeDate, date(Y, M, 1)),
+            vacation_days(DateBegin1, DateEnd1, 1, Duration),
+            Summa is Duration * AvgWage,
+            OutPairs = [
+                        pAccDate-AccDate, pIncludeDate-IncludeDate,
+                        pDuration-Duration, pSumma-Summa,
+                        pDateBegin-DateBegin1, pDateEnd-DateEnd1
+                        ],
+            new_param_list(struct_vacation, out, OutPairs),
+            !,
+            struct_vacation_calc(AccDate, DateBegin2, DateEnd2, AvgWage).
+        
+        make_period(DateBegin, DateEnd, DateBegin, DateEnd1, DateBegin2, DateEnd2) :-
+            head_period(DateBegin, DateEnd, DateEnd1),
+            teil_period(DateEnd, DateEnd1, DateBegin2, DateEnd2),
+            !.
+        
+        head_period(DateBegin, DateEnd, DateBegin) :-
+           date_add(DateBegin, 1, day, DateBegin1),
+           atom_date(DateBegin, date(Y, M, _)),
+           ( \+ atom_date(DateBegin1, date(Y, M, _))
+           ; DateBegin1 @> DateEnd ),
+           !.
+        head_period(DateBegin, DateEnd, DateEnd1) :-
+           date_add(DateBegin, 1, day, DateBegin1),
+           !,
+           head_period(DateBegin1, DateEnd, DateEnd1).
+        
+        teil_period(DateEnd, DateEnd, '', '') :-
+            !.
+        teil_period(DateEnd, DateEnd1, DateBegin2, DateEnd) :-
+            date_add(DateEnd1, 1, day, DateBegin2),
+            !.
+        
+        vacation_days(DateBegin, DateBegin, Duration, Duration) :-
+            !.
+        vacation_days(DateBegin, DateEnd, Duration0, Duration) :-
+            date_add(DateBegin, 1, day, DateBegin1),
+            ( catch( wg_holiday(DateBegin), _, fail), Duration1 is Duration0
+            ; Duration1 is Duration0 + 1 ),
+            !,
+            vacation_days(DateBegin1, DateEnd, Duration1, Duration).
+        
+        struct_vacation_out(AccDate, IncludeDate, Duration, Summa, DateBegin, DateEnd) :-
+            OutPairs = [
+                        pAccDate-AccDate, pIncludeDate-IncludeDate,
+                        pDuration-Duration, pSumma-Summa,
+                        pDateBegin-DateBegin, pDateEnd-DateEnd
+                        ],
+            get_param_list(struct_vacation, out, OutPairs).
+        
+        /**/
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-03-03T11:52:40+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "151189469_18175251 lib"
+          - 
+            ADDFUNCTIONKEY: "151189468_18175251 params"
+          - 
+            ADDFUNCTIONKEY: "156300302_119200397 twg_struct_sql"
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2164,649 +3630,3 @@ Objects:
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
       EDITIONDATE: 2013-10-11T12:23:43+03:00
-  - 
-    Properties: 
-      Class: "TgdcFunction"
-      RUID: 151158419_5956463
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      OBJECTNAME: "APPLICATION"
-      MODULE: "UNKNOWN"
-      LANGUAGE: "VBScript"
-      NAME: "pl_GetScriptIDByName"
-      COMMENT: ~
-      SCRIPT: | 
-        Option Explicit
-        
-        'uses pl_Const
-        Function pl_GetScriptIDByName(Name)
-          Dim Creator, ibsql
-        
-          pl_GetScriptIDByName = 0
-        
-          Set Creator = New TCreator
-          Set ibsql = Creator.GetObject(nil, "TIBSQL", "")
-        
-          ibsql.Transaction = gdcBaseManager.ReadTransaction
-          ibsql.SQL.TEXT = _
-              "SELECT * FROM gd_function" & _
-              " WHERE UPPER(name) = UPPER(:name) AND module = :module"
-          ibsql.ParamByName("name").AsString = Name
-          ibsql.ParamByName("module").AsString = scrPrologModuleName
-          ibsql.ExecQuery
-        
-          If Not ibsql.EOF Then
-             pl_GetScriptIDByName = ibsql.FieldByName("id").AsInteger
-          End If
-        End Function
-        
-      DISPLAYSCRIPT: | 
-        PL_GETSCRIPTIDBYNAME
-        
-      MODIFYDATE: ~
-      OWNERNAME: ~
-      FUNCTIONTYPE: ~
-      EVENT: ~
-      LOCALNAME: ~
-      PUBLICFUNCTION: 1
-      SHORTCUT: ~
-      GROUPNAME: ~
-      MODULECODE: "1010001_17 APPLICATION"
-      ENTEREDPARAMS: !!binary > 
-        U0xQUlBSU1QEAAAATkFNRQQAAABOQU1FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
-      INHERITEDRULE: 0
-      USEDEBUGINFO: 0
-      EDITIONDATE: 2013-10-11T16:45:28+03:00
-  - 
-    Properties: 
-      Class: "TgdcFunction"
-      RUID: 151163587_5956463
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      OBJECTNAME: "APPLICATION"
-      MODULE: "UNKNOWN"
-      LANGUAGE: "VBScript"
-      NAME: "wg_AvgSalaryStrGenerate_pl"
-      COMMENT: ~
-      SCRIPT: | 
-        Option Explicit
-        '#include wg_WageSettings
-        '#include wg_EnableFieldChange
-        '#include pl_GetScriptIDByName
-        
-        Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
-        '
-          Dim T, T1, T2
-          
-          Dim Creator, gdcObject, gdcSalary
-          '
-          Dim PL, Ret, Pred, Tv, Append
-          'avg_wage
-          Dim P_main, Tv_main, Q_main
-          'avg_wage_in
-          Dim P_in, Tv_in, Q_in
-          Dim EmplKey, FirstMoveKey, DateCalc
-          Dim InflType, InflFCType
-          Dim MonthOffset, CoefOption
-          'avg_wage_run, avg_wage_sql
-          Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
-          Dim DateCalcFrom, DateCalcTo
-          Dim Connection, PredicateName, Arity, SQL
-          'avg_wage_out, avg_wage_det
-          Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
-          Dim AvgWage, AvgWageRule
-          Dim Period, PeriodRule, Wage, ModernWage, ModernCoef
-          Dim TabDays, TabHoures, NormDays, NormHoures
-          Dim IsFull, IsCheck
-        
-          T1 = Timer
-          wg_AvgSalaryStrGenerate_pl = False
-          Set Creator = New TCreator
-          
-          Sender.GetComponent("actApply").Execute
-        
-          Set gdcObject = Sender.gdcObject
-          '
-          EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
-          FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
-          '
-          if CalcType = 0 then
-            dim IBSQL
-            set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
-            IBSQL.Transaction = gdcBaseManager.ReadTransaction
-            IBSQL.SQL.Text = _
-              "select " & _
-              "  t.USR$DATEBEGIN " & _
-              "from " & _
-              "  usr$wg_total t " & _
-              "where " & _
-              "  t.DOCUMENTKEY = :TDK "
-            IBSQL.ParamByName("TDK").asInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
-            IBSQL.ExecQuery
-            DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
-          else
-            DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
-          end if
-          '
-          MonthOffset = 0
-          '
-          InflType = wg_WageSettings.Inflation.InflType
-          InflFCType = wg_WageSettings.Inflation.InflFCType
-          'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
-          CoefOption = "fc_fcratesum"
-          Select Case InflType
-            Case 1
-              Select Case InflFCType
-                Case 2
-                  CoefOption = "ml_rate"
-              End Select
-            Case 0
-              CoefOption = "ml_msalary"
-          End Select
-          '
-          CoefOption = "ml_rate" 'только для ММК, иначе эту строку закомментировать
-        
-          'init
-          Set PL = Creator.GetObject(nil, "TgsPLClient", "")
-          Ret = PL.Initialise("")
-          If Not Ret Then
-            Exit Function
-          End If
-          'debug
-          PL.Debug = True
-          'load
-          Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
-          If Not Ret Then
-            Exit Function
-          End If
-        
-          Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
-          '
-          Call wg_DisableFieldChange(gdcSalary, "AVGSALARYCALC")
-          '
-          gdcSalary.First
-          While Not gdcSalary.EOF
-            gdcSalary.Delete
-          Wend
-          '
-          gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = 0
-          '
-          Sender.Repaint
-        
-          'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption)
-          P_in = "avg_wage_in"
-          Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
-          Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
-          Tv_in.PutInteger 0, EmplKey
-          Tv_in.PutInteger 1, FirstMoveKey
-          Tv_in.PutDate 2, DateCalc
-          Tv_in.PutInteger 3, MonthOffset
-          Tv_in.PutAtom 4, CoefOption
-          '
-          Q_in.PredicateName = P_in
-          Q_in.Termv = Tv_in
-          '
-          Q_in.OpenQuery
-          If Q_in.EOF Then
-            Exit Function
-          End If
-          Q_in.Close
-        
-          'avg_wage(_) - prepare data
-          P_main = "avg_wage"
-          Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
-          Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
-          Q_main.PredicateName = P_main
-          Q_main.Termv = Tv_main
-          '
-          Q_main.OpenQuery
-          If Q_main.EOF Then
-            Exit Function
-          End If
-          Q_main.Close
-        
-          'avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)
-          P_run = "avg_wage_run"
-          Set Tv_run = Creator.GetObject(4, "TgsPLTermv", "")
-          Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
-          Q_run.PredicateName = P_run
-          Q_run.Termv = Tv_run
-          'avg_wage_sql(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL)
-          P_sql = "avg_wage_sql"
-          P_kb = "avg_wage_kb"
-          Set Tv_sql = Creator.GetObject(6, "TgsPLTermv", "")
-          Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
-          Q_sql.PredicateName = P_sql
-          Q_sql.Termv = Tv_sql
-          '
-          Q_run.OpenQuery
-          If Q_run.EOF Then
-            Exit Function
-          End If
-          '
-          Append = False
-          '
-          Do Until Q_run.EOF
-            EmplKey = Tv_run.ReadInteger(0)
-            FirstMoveKey = Tv_run.ReadInteger(1)
-            DateCalcFrom = Tv_run.ReadDate(2)
-            DateCalcTo = Tv_run.ReadDate(3)
-            '
-            Tv_sql.Reset
-            Tv_sql.PutInteger 0, EmplKey
-            Tv_sql.PutInteger 1, FirstMoveKey
-            Q_sql.OpenQuery
-            '
-            Do Until Q_sql.EOF
-              Connection = Tv_sql.ReadAtom(2)
-              PredicateName = Tv_sql.ReadAtom(3)
-              Arity = Tv_sql.ReadInteger(4)
-              SQL = Tv_sql.ReadString(5)
-              '
-              Ret =  PL.MakePredicatesOfSQLSelect _
-                        (SQL, _
-                        gdcBaseManager.ReadTransaction, _
-                        PredicateName, PredicateName, Append)
-              If Ret >= 0 Then
-                 Ret = PL.Call(P_kb, Tv_sql)
-              End If
-              '
-              Q_sql.NextSolution
-            Loop
-            Q_sql.Close
-            '
-            Append = True
-            '
-            Q_run.NextSolution
-          Loop
-          Q_run.Close
-        
-          'save param_list
-          If PL.Debug Then
-            Pred = "param_list"
-            Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
-            PL.SavePredicatesToFile Pred, Tv, Pred
-          End If
-        
-          'avg_wage(Variant) - calc result
-          Q_main.OpenQuery
-          If Q_main.EOF Then
-            Exit Function
-          End If
-          Q_main.Close
-        
-          'avg_wage_out(EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
-          P_out = "avg_wage_out"
-          Set Tv_out = Creator.GetObject(4, "TgsPLTermv", "")
-          Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
-          Q_out.PredicateName = P_out
-          Q_out.Termv = Tv_out
-          'avg_wage_det(EmplKey, FirstMoveKey,
-          '   Period, PeriodRule, Wage, ModernCoef, ModernWage,
-          '   TabDays, NormDays, TabHoures, NormHoures)
-          P_det = "avg_wage_det"
-          Set Tv_det = Creator.GetObject(11, "TgsPLTermv", "")
-          Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
-          Q_det.PredicateName = P_det
-          Q_det.Termv = Tv_det
-          '
-          Q_out.OpenQuery
-          If Q_out.EOF Then
-            Exit Function
-          End If
-          '
-          Do Until Q_out.EOF
-            EmplKey = Tv_out.ReadInteger(0)
-            FirstMoveKey = Tv_out.ReadInteger(1)
-            AvgWage = Tv_out.ReadFloat(2)
-            AvgWageRule = Tv_out.ReadAtom(3)
-            '
-            Tv_det.Reset
-            Tv_det.PutInteger 0, EmplKey
-            Tv_det.PutInteger 1, FirstMoveKey
-            Q_det.OpenQuery
-            '
-            Do Until Q_det.EOF
-              Period = Tv_det.ReadDate(2)
-              PeriodRule = Tv_det.ReadAtom(3)
-              IsFull = _
-                Abs( PeriodRule = "by_days_houres" _
-                    Or PeriodRule = "by_houres" _
-                    Or PeriodRule = "by_days" )
-              IsCheck = Abs( Not (PeriodRule = "none") )
-              Select Case PeriodRule
-                Case "by_days_houres"
-                  PeriodRule = "табель равен графику по дням и часам"
-                Case "by_days"
-                  PeriodRule = "табель покрывает график по дням"
-                Case "by_houres"
-                  PeriodRule = "табель покрывает график по часам"
-                Case "by_month_wage_all"
-                  PeriodRule = "по размеру заработка (не меньше всех полных)"
-                Case "by_month_wage_any"
-                  PeriodRule = "по размеру заработка (не меньше любого полного)"
-                Case "by_month_no_bad_type"
-                  PeriodRule = "виды начислений и типы часов в норме"
-                Case Else
-                  PeriodRule = ""
-              End Select
-              Wage = Tv_det.ReadFloat(4)
-              ModernCoef = Tv_det.ReadFloat(5)
-              ModernWage = Tv_det.ReadFloat(6)
-              TabDays = Tv_det.ReadFloat(7)
-              NormDays = Tv_det.ReadFloat(8)
-              TabHoures = Tv_det.ReadFloat(9)
-              NormHoures = Tv_det.ReadFloat(10)
-              '
-              gdcSalary.Append
-              gdcSalary.FieldByName("USR$DATE").AsVariant = Period
-              gdcSalary.FieldByName("USR$SALARY").AsVariant = Wage
-              gdcSalary.FieldByName("USR$COEFF").AsVariant = ModernCoef
-              gdcSalary.FieldByName("USR$MODERNSALARY").AsVariant = ModernWage
-              gdcSalary.FieldByName("USR$DOW").AsVariant = TabDays
-              gdcSalary.FieldByName("USR$HOW").AsVariant = TabHoures
-              gdcSalary.FieldByName("USR$SCHEDULERDOW").AsVariant = NormDays
-              gdcSalary.FieldByName("USR$SCHEDULERHOW").AsVariant = NormHoures
-              gdcSalary.FieldByName("USR$ISCHECK").AsVariant = IsCheck
-              gdcSalary.FieldByName("USR$ISFULL").AsVariant = IsFull
-              gdcSalary.FieldByName("USR$DESCRIPTION").AsVariant = PeriodRule
-              gdcSalary.Post
-              '
-              Q_det.NextSolution
-            Loop
-            Q_det.Close
-            '
-            Q_out.NextSolution
-          Loop
-          Q_out.Close
-          '
-        
-          gdcSalary.First
-          '
-          Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
-          '
-          gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
-          gdcObject.Post
-          '
-        
-          wg_AvgSalaryStrGenerate_pl = True
-          
-          T2 = Timer
-          T = T2 - T1
-        '
-        End function
-        
-      DISPLAYSCRIPT: | 
-        WG_AVGSALARYSTRGENERATE_PL
-        
-      MODIFYDATE: ~
-      OWNERNAME: ~
-      FUNCTIONTYPE: ~
-      EVENT: ~
-      LOCALNAME: ~
-      PUBLICFUNCTION: 1
-      SHORTCUT: ~
-      GROUPNAME: ~
-      MODULECODE: "1010001_17 APPLICATION"
-      ENTEREDPARAMS: !!binary > 
-        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
-        UFJTVAgAAABDQUxDVFlQRQgAAABDQUxDVFlQRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
-        RkxQUg==
-      INHERITEDRULE: 0
-      USEDEBUGINFO: 0
-      EDITIONDATE: 2014-02-13T17:20:45+03:00
-    Set: 
-      - 
-        Table: "RP_ADDITIONALFUNCTION"
-        Items: 
-          - 
-            ADDFUNCTIONKEY: "147019760_119619099 wg_WageSettings"
-          - 
-            ADDFUNCTIONKEY: "147016040_119619099 wg_EnableFieldChange"
-          - 
-            ADDFUNCTIONKEY: "151158419_5956463 pl_GetScriptIDByName"
-  - 
-    Properties: 
-      Class: "TgdcFunction"
-      RUID: 151164077_5956463
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      OBJECTNAME: "gdc_dlgUserComplexDocument147020774_119619099"
-      MODULE: "MACROS"
-      LANGUAGE: "VBScript"
-      NAME: "Macros151164077_5956463"
-      COMMENT: ~
-      SCRIPT: | 
-        Option Explicit
-        '#include wg_AvgSalaryStrGenerate
-        
-        Sub Macros151164077_5956463(OwnerForm)
-          'Dim Ret
-          
-          call wg_AvgSalaryStrGenerate(OwnerForm, 0)
-        End Sub
-        
-      DISPLAYSCRIPT: | 
-        MACROS151164077_5956463
-        
-      MODIFYDATE: ~
-      OWNERNAME: ~
-      FUNCTIONTYPE: ~
-      EVENT: ~
-      LOCALNAME: ~
-      PUBLICFUNCTION: 1
-      SHORTCUT: ~
-      GROUPNAME: ~
-      MODULECODE: "147021903_119619099 gdc_dlgUserComplexDocument147020774_119619099"
-      ENTEREDPARAMS: !!binary > 
-        U0xQUlBSU1QJAAAAT1dORVJGT1JNCQAAAE9XTkVSRk9STQAAAAAAAAAAAAAAAAsAAAAAAAAAAAAA
-        AABGTlNURkxQUg==
-      INHERITEDRULE: 0
-      USEDEBUGINFO: 0
-      EDITIONDATE: 2014-01-10T16:42:52+03:00
-    Set: 
-      - 
-        Table: "RP_ADDITIONALFUNCTION"
-        Items: 
-          - 
-            ADDFUNCTIONKEY: "147489128_336327731 wg_AvgSalaryStrGenerate"
-  - 
-    Properties: 
-      Class: "TgdcMacros"
-      RUID: 151164075_5956463
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      OBJECTNAME: "gdc_dlgUserComplexDocument147020774_119619099"
-      MACROSGROUPKEY: "147021904_119619099 Локальные макросы"
-      FUNCTIONKEY: "151164077_5956463 Macros151164077_5956463"
-      NAME: "Рассчитать ср. заработок"
-      SERVERKEY: ~
-      ISLOCALEXECUTE: 0
-      ISREBUILD: 0
-      EXECUTEDATE: ~
-      SHORTCUT: 0
-      EDITIONDATE: 2014-01-10T16:42:52+03:00
-      DISPLAYINMENU: 1
-      RUNONLOGIN: 0
-  - 
-    Properties: 
-      Class: "TgdcFunction"
-      RUID: 147488905_336327731
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      OBJECTNAME: "gdc_dlgUserComplexDocument147020774_119619099"
-      MODULE: "EVENTS"
-      LANGUAGE: "VBScript"
-      NAME: "usrg_actAvgGenerateOnExecute"
-      COMMENT: ~
-      SCRIPT: | 
-        '#include wg_AvgSalaryStrGenerate_pl
-        option explicit
-        sub usrg_actAvgGenerateOnExecute(ByVal Sender)
-          'Сбрасываем кэш для Переменных
-          set wg_Variable_ = Nothing
-        
-          Dim Ret
-          Ret = wg_AvgSalaryStrGenerate_pl(Sender.OwnerForm, 0)
-        
-        end sub
-        
-      DISPLAYSCRIPT: | 
-        USRG_ACTAVGGENERATEONEXECUTE
-        
-      MODIFYDATE: ~
-      OWNERNAME: ~
-      FUNCTIONTYPE: ~
-      EVENT: "ONEXECUTE"
-      LOCALNAME: ~
-      PUBLICFUNCTION: 1
-      SHORTCUT: ~
-      GROUPNAME: ~
-      MODULECODE: "147021903_119619099 gdc_dlgUserComplexDocument147020774_119619099"
-      ENTEREDPARAMS: !!binary > 
-        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
-        RkxQUg==
-      INHERITEDRULE: 0
-      USEDEBUGINFO: ~
-      EDITIONDATE: 2014-01-10T16:18:57+03:00
-    Set: 
-      - 
-        Table: "RP_ADDITIONALFUNCTION"
-        Items: 
-          - 
-            ADDFUNCTIONKEY: "151163587_5956463 wg_AvgSalaryStrGenerate_pl"
-  - 
-    Properties: 
-      Class: "TgdcTableField"
-      RUID: 155817502_77029543
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      REFRELATIONNAME: ~
-      REFLISTFIELD: ~
-      REFCROSSRELATION: ~
-      SETLISTFIELD: ~
-      SETLISTFIELDKEY: ~
-      RELATIONTYPE: "T"
-      STRINGLENGTH: ~
-      DEFSOURCE: | 
-        DEFAULT '0'
-      COMPUTED_VALUE: ~
-      SOURCENULLFLAG: ~
-      NULLFLAG: ~
-      RDB$FIELD_POSITION: 33
-      FIELDNAME: "USR$AVGDAYHOW"
-      RELATIONNAME: "USR$WG_FEETYPE"
-      FIELDSOURCE: "DBOOLEAN"
-      CROSSTABLE: ~
-      CROSSFIELD: ~
-      RELATIONKEY: "147567082_119619099 Виды начислений, USR$WG_FEETYPE"
-      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
-      CROSSTABLEKEY: ~
-      CROSSFIELDKEY: ~
-      LNAME: "Дни/часы для среднего"
-      LSHORTNAME: "Дни/часы для среднег"
-      DESCRIPTION: ~
-      VISIBLE: 1
-      FORMAT: ~
-      ALIGNMENT: "L"
-      COLWIDTH: 20
-      READONLY: 0
-      GDCLASSNAME: ~
-      GDSUBTYPE: ~
-      OBJECTS: ~
-      DELETERULE: ~
-      EDITIONDATE: 2013-12-26T15:52:05+03:00
-  - 
-    Properties: 
-      Class: "TgdcAttrUserDefinedLBRBTree"
-      SubType: "USR$WG_FEEGROUP"
-      RUID: 147757383_84733194
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      PARENT: "147071456_274788016 Все начисления\\Ср. заработок\\Ср. заработок для отпусков"
-      DISABLED: 0
-      EDITIONDATE: 2014-01-08T18:30:20+03:00
-      USR$NAME: "Ср. заработок для отпусков - не осовременивать"
-      USR$DESCRIPTION: ~
-  - 
-    Properties: 
-      Class: "TgdcStorageFolder"
-      RUID: 147063986_1439110857
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      PARENT: "990010_17 USER - Administrator"
-      NAME: "gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
-      DATA_TYPE: "F"
-      STR_DATA: ~
-      INT_DATA: ~
-      DATETIME_DATA: ~
-      CURR_DATA: ~
-      BLOB_DATA: ~
-      EDITIONDATE: 2010-04-20T13:32:16+03:00
-  - 
-    Properties: 
-      Class: "TgdcStorageFolder"
-      RUID: 147063987_1439110857
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
-      NAME: "ibgrDetail(TgsIBGrid)"
-      DATA_TYPE: "F"
-      STR_DATA: ~
-      INT_DATA: ~
-      DATETIME_DATA: ~
-      CURR_DATA: ~
-      BLOB_DATA: ~
-      EDITIONDATE: 2010-04-20T13:32:16+03:00
-  - 
-    Properties: 
-      Class: "TgdcStorageFolder"
-      RUID: 154648246_77029543
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
-      NAME: "pnlMaster(TPanel)"
-      DATA_TYPE: "F"
-      STR_DATA: ~
-      INT_DATA: ~
-      DATETIME_DATA: ~
-      CURR_DATA: ~
-      BLOB_DATA: ~
-      EDITIONDATE: 2013-08-12T19:08:11+03:00
-  - 
-    Properties: 
-      Class: "TgdcStorageFolder"
-      RUID: 147063989_1439110857
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      PARENT: "147063986_1439110857 USER - Administrator\\gdc_dlgUserComplexDocument147020774_119619099(Tgdc_dlgUserComplexDocument)"
-      NAME: "usrg_grAvgSalaryStr(TgsIBGrid)"
-      DATA_TYPE: "F"
-      STR_DATA: ~
-      INT_DATA: ~
-      DATETIME_DATA: ~
-      CURR_DATA: ~
-      BLOB_DATA: ~
-      EDITIONDATE: 2010-04-20T13:32:16+03:00

@@ -19,15 +19,15 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
     TabOrder = 5
   end
   object btnOK: TButton
-    Left = 268
+    Left = 1188
     Top = 682
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     TabOrder = 1
   end
   object btnCancel: TButton
-    Left = 360
+    Left = 1280
     Top = 682
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     TabOrder = 2
   end
   object pnlMain: TPanel
@@ -39,7 +39,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
     end
     object usrg_Splitter1: TSplitter
       Tag = 0
-      Left = 583
+      Left = 575
       Top = 302
       Width = 6
       Height = 377
@@ -60,44 +60,50 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
     object pnlDetail: TPanel
       Left = 0
       Top = 302
-      Width = 583
+      Width = 575
       Height = 377
       Align = alLeft
       Alignment = taLeftJustify
       Anchors = [akLeft, akTop, akBottom]
+      AutoSize = False
       TabOrder = 2
       object ibgrDetail: TgsIBGrid
         Left = 0
-        Width = 583
+        Width = 575
         Height = 351
         Align = alClient
         Anchors = [akLeft, akTop, akRight, akBottom]
+        ReadOnly = True
         Expands = <>
         Conditions = <>
-        MinColWidth = 6
+        ScaleColumns = False
+        MinColWidth = 12
         ColumnEditors = <>
         Aliases = <>
         Columns = <
           item
             Expanded = False
             FieldName = 'USR$ACCDATE'
+            ReadOnly = False
             Title.Caption = 'Дата начисления'
-            Width = 100
+            Width = 108
             Visible = True
           end
           item
             Expanded = False
             FieldName = 'USR$INCLUDEDATE'
+            ReadOnly = False
             Title.Caption = 'Дата зачисления'
-            Width = 100
+            Width = 108
             Visible = True
           end
           item
             Alignment = taRightJustify
             Expanded = False
             FieldName = 'USR$DURATION'
+            ReadOnly = False
             Title.Caption = 'Дни'
-            Width = 45
+            Width = 36
             Visible = True
             TotalType = ttSum
           end
@@ -105,8 +111,9 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             Alignment = taRightJustify
             Expanded = False
             FieldName = 'USR$SUMMA'
+            ReadOnly = False
             Title.Caption = 'Сумма'
-            Width = 89
+            Width = 72
             Visible = True
             DisplayFormat = '#.##'
             TotalType = ttSum
@@ -114,21 +121,24 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'USR$DATEBEGIN'
+            ReadOnly = False
             Title.Caption = 'Дата начала'
-            Width = 100
+            Width = 108
             Visible = True
           end
           item
             Expanded = False
             FieldName = 'USR$DATEEND'
+            ReadOnly = False
             Title.Caption = 'Дата окончания'
-            Width = 131
+            Width = 108
             Visible = True
           end
           item
             Alignment = taRightJustify
             Expanded = False
             FieldName = 'SUMNCU'
+            ReadOnly = False
             Title.Caption = 'sumncu'
             Width = -1
             Visible = False
@@ -136,6 +146,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'DOCUMENTDATE'
+            ReadOnly = False
             Title.Caption = 'Дата'
             Width = -1
             Visible = False
@@ -143,6 +154,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'DESCRIPTION'
+            ReadOnly = False
             Title.Caption = 'Описание'
             Width = -1
             Visible = False
@@ -158,6 +170,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'ID'
+            ReadOnly = False
             Title.Caption = 'Ключ'
             Width = -1
             Visible = False
@@ -165,6 +178,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'PARENT'
+            ReadOnly = False
             Title.Caption = 'Родитель'
             Width = -1
             Visible = False
@@ -172,6 +186,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'DOCUMENTTYPEKEY'
+            ReadOnly = False
             Title.Caption = 'Тип документа'
             Width = -1
             Visible = False
@@ -179,6 +194,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'TRTYPEKEY'
+            ReadOnly = False
             Title.Caption = 'Тип транзакции'
             Width = -1
             Visible = False
@@ -186,6 +202,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'TRANSACTIONKEY'
+            ReadOnly = False
             Title.Caption = 'Транзакция'
             Width = -1
             Visible = False
@@ -193,6 +210,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'NUMBER'
+            ReadOnly = False
             Title.Caption = 'Номер'
             Width = -1
             Visible = False
@@ -200,6 +218,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'SUMCURR'
+            ReadOnly = False
             Title.Caption = 'Сумма в валюте'
             Width = -1
             Visible = False
@@ -207,6 +226,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'DELAYED'
+            ReadOnly = False
             Title.Caption = 'Отложенный'
             Width = -1
             Visible = False
@@ -214,6 +234,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'CURRKEY'
+            ReadOnly = False
             Title.Caption = 'Валюта'
             Width = -1
             Visible = False
@@ -221,6 +242,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'COMPANYKEY'
+            ReadOnly = False
             Title.Caption = 'Компания'
             Width = -1
             Visible = False
@@ -228,6 +250,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'CREATORKEY'
+            ReadOnly = False
             Title.Caption = 'Кто создал'
             Width = -1
             Visible = False
@@ -235,6 +258,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'CREATIONDATE'
+            ReadOnly = False
             Title.Caption = 'Дата создания'
             Width = -1
             Visible = False
@@ -242,6 +266,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'EDITORKEY'
+            ReadOnly = False
             Title.Caption = 'Кто исправил'
             Width = -1
             Visible = False
@@ -249,6 +274,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'EDITIONDATE'
+            ReadOnly = False
             Title.Caption = 'Дата изменения'
             Width = -1
             Visible = False
@@ -256,6 +282,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'PRINTDATE'
+            ReadOnly = False
             Title.Caption = 'Дата печати'
             Width = -1
             Visible = False
@@ -263,6 +290,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'DISABLED'
+            ReadOnly = False
             Title.Caption = 'Отключено'
             Width = -1
             Visible = False
@@ -270,6 +298,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'RESERVED'
+            ReadOnly = False
             Title.Caption = 'Зарезервировано'
             Width = -1
             Visible = False
@@ -277,7 +306,6 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'DOCUMENTKEY'
-            ReadOnly = True
             Title.Caption = 'Ключ документа'
             Width = -1
             Visible = False
@@ -285,7 +313,6 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'MASTERKEY'
-            ReadOnly = True
             Title.Caption = 'Родитель (Начисление отпусков(позиция))'
             Width = -1
             Visible = False
@@ -293,7 +320,6 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'RESERVED1'
-            ReadOnly = True
             Title.Caption = 'Зарезервировано (Начисление отпусков(позиция))'
             Width = -1
             Visible = False
@@ -301,6 +327,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'SUMEQ'
+            ReadOnly = False
             Title.Caption = 'Сумма в эквиваленте'
             Width = -1
             Visible = False
@@ -308,6 +335,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
           item
             Expanded = False
             FieldName = 'USR$EQRATE'
+            ReadOnly = False
             Title.Caption = 'Курс экв.'
             Width = -1
             Visible = False
@@ -316,6 +344,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             Alignment = taRightJustify
             Expanded = False
             FieldName = 'AFULL'
+            ReadOnly = False
             Title.Caption = 'Полный доступ'
             Width = -1
             Visible = False
@@ -324,6 +353,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             Alignment = taRightJustify
             Expanded = False
             FieldName = 'ACHAG'
+            ReadOnly = False
             Title.Caption = 'Просмотр и редактирование'
             Width = -1
             Visible = False
@@ -332,13 +362,46 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             Alignment = taRightJustify
             Expanded = False
             FieldName = 'AVIEW'
+            ReadOnly = False
             Title.Caption = 'Только просмотр'
+            Width = -1
+            Visible = False
+          end
+          item
+            Expanded = False
+            FieldName = 'USR$AKTUAL'
+            ReadOnly = False
+            Title.Caption = 'Актуальность прайса'
+            Width = -1
+            Visible = False
+          end
+          item
+            Expanded = False
+            FieldName = 'USR$SUMMDOCUM'
+            ReadOnly = False
+            Title.Caption = 'Сумма договора'
+            Width = -1
+            Visible = False
+          end
+          item
+            Expanded = False
+            FieldName = 'USR$LOCATDOCS'
+            ReadOnly = False
+            Title.Caption = 'Место нахождения дог'
+            Width = -1
+            Visible = False
+          end
+          item
+            Expanded = False
+            FieldName = 'USR$NUMBERIN'
+            ReadOnly = False
+            Title.Caption = 'Входящий номер догов'
             Width = -1
             Visible = False
           end>
       end
       object tbdTop: TTBDock
-        Width = 583
+        Width = 575
         object tbDetail: TTBToolbar
           Align = alClient
           Anchors = [akLeft, akTop, akRight, akBottom]
@@ -424,13 +487,13 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
         Height = 351
       end
       object tbdRight: TTBDock
-        Left = 583
+        Left = 575
         Width = 0
         Height = 351
       end
       object tbdBottom: TTBDock
         Top = 377
-        Width = 583
+        Width = 575
         Height = 0
       end
     end
@@ -552,7 +615,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             end
             object usrg_chboxCoefInflation: TCheckBox
               Tag = 0
-              Left = 677
+              Left = 669
               Top = 51
               Width = 225
               Height = 17
@@ -586,10 +649,10 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             end
             object usrg_GroupBox2: TGroupBox
               Tag = 0
-              Left = 349
+              Left = 341
               Top = 10
-              Width = 289
-              Height = 77
+              Width = 225
+              Height = 101
               Cursor = crDefault
               Hint = ''
               HelpContext = 0
@@ -604,7 +667,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               DragCursor = crDrag
               DragKind = dkDrag
               DragMode = dmManual
-              Enabled = True
+              Enabled = False
               ParentBiDiMode = True
               ParentColor = True
               ParentCtl3D = True
@@ -678,11 +741,86 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
                 TabStop = True
                 Visible = True
               end
-              object usrg_rbPersCoeffInf: TRadioButton
+            end
+            object usrg_rbPersCoeffInf: TRadioButton
+              Tag = 0
+              Left = 796
+              Top = 23
+              Width = 241
+              Height = 17
+              Cursor = crDefault
+              Hint = ''
+              HelpContext = 0
+              Action = nil
+              Alignment = taRightJustify
+              Anchors = [akLeft, akTop]
+              Caption = 'От персонального коэффициента'
+              Checked = True
+              Constraints.MaxHeight = 0
+              Constraints.MaxWidth = 0
+              Constraints.MinHeight = 0
+              Constraints.MinWidth = 0
+              DragCursor = crDrag
+              DragKind = dkDrag
+              DragMode = dmManual
+              Enabled = True
+              ParentBiDiMode = True
+              ParentColor = True
+              ParentCtl3D = True
+              ParentFont = True
+              ParentShowHint = True
+              PopupMenu = nil
+              TabOrder = 7
+              TabStop = True
+              Visible = False
+            end
+            object usrg_Panel2: TPanel
+              Tag = 0
+              Left = 377
+              Top = 59
+              Width = 177
+              Height = 49
+              Cursor = crDefault
+              Hint = ''
+              HelpContext = 0
+              Align = alNone
+              Alignment = taCenter
+              Anchors = [akLeft, akTop]
+              AutoSize = False
+              BevelInner = bvNone
+              BevelOuter = bvNone
+              BevelWidth = 1
+              BorderWidth = 0
+              BorderStyle = bsNone
+              Caption = ''
+              Color = clBtnFace
+              Constraints.MaxHeight = 0
+              Constraints.MaxWidth = 0
+              Constraints.MinHeight = 0
+              Constraints.MinWidth = 0
+              Ctl3D = False
+              UseDockManager = True
+              DockSite = False
+              DragCursor = crDrag
+              DragKind = dkDrag
+              DragMode = dmManual
+              Enabled = False
+              FullRepaint = True
+              Locked = False
+              ParentBiDiMode = True
+              ParentColor = False
+              ParentCtl3D = False
+              ParentFont = True
+              ParentShowHint = True
+              PopupMenu = nil
+              TabOrder = 8
+              TabStop = False
+              Visible = True
+              object usrg_rbFCRate: TRadioButton
                 Tag = 0
-                Left = 12
-                Top = 55
-                Width = 241
+                Left = 6
+                Top = 9
+                Width = 113
                 Height = 17
                 Cursor = crDefault
                 Hint = ''
@@ -690,7 +828,39 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
                 Action = nil
                 Alignment = taRightJustify
                 Anchors = [akLeft, akTop]
-                Caption = 'От персонального коэффициента'
+                Caption = 'справочника'
+                Checked = True
+                Constraints.MaxHeight = 0
+                Constraints.MaxWidth = 0
+                Constraints.MinHeight = 0
+                Constraints.MinWidth = 0
+                DragCursor = crDrag
+                DragKind = dkDrag
+                DragMode = dmManual
+                Enabled = True
+                ParentBiDiMode = True
+                ParentColor = True
+                ParentCtl3D = True
+                ParentFont = True
+                ParentShowHint = True
+                PopupMenu = nil
+                TabOrder = 0
+                TabStop = True
+                Visible = True
+              end
+              object usrg_rbMovementRate: TRadioButton
+                Tag = 0
+                Left = 6
+                Top = 27
+                Width = 161
+                Height = 17
+                Cursor = crDefault
+                Hint = ''
+                HelpContext = 0
+                Action = nil
+                Alignment = taRightJustify
+                Anchors = [akLeft, akTop]
+                Caption = 'кадрового движения'
                 Checked = False
                 Constraints.MaxHeight = 0
                 Constraints.MaxWidth = 0
@@ -706,7 +876,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
                 ParentFont = True
                 ParentShowHint = True
                 PopupMenu = nil
-                TabOrder = 2
+                TabOrder = 1
                 TabStop = False
                 Visible = True
               end
@@ -740,6 +910,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               Left = 179
               Top = 65
               Cursor = crIBeam
+              ReadOnly = True
               TabOrder = 3
             end
             object usrat_DBEdit_USR_MATSUMM: TxDBCalculatorEdit
@@ -941,51 +1112,72 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             Top = 0
             Width = 1358
             Height = 270
-            VertScrollBar.Position = 162
+            VertScrollBar.Position = 185
             TabOrder = 0
             object usrat_DBEdit_NUMBER_Label: TLabel
               Left = 5
-              Top = -131
+              Top = -154
               Visible = False
             end
             object usrat_xDateDBEdit_DOCUMENTDATE_Label: TLabel
-              Top = -154
+              Top = -177
               Visible = False
             end
             object usrat_DBEdit_USR_SORTNUMBER_Label: TLabel
               Left = 5
-              Top = -109
+              Top = -132
               Visible = False
             end
             object usrat_DBEdit_USR_EQRATE_Label: TLabel
-              Top = 253
+              Top = 230
+            end
+            object usrat_DBEdit_USR_SUMMDOCUM_Label: TLabel
+              Top = 434
+            end
+            object usrat_DBEdit_USR_LOCATDOCS_Label: TLabel
+              Top = 457
+            end
+            object usrat_DBEdit_USR_NUMBERIN_Label: TLabel
+              Top = 480
             end
             object usrat_DBEdit_NUMBER: TDBEdit
               Left = 131
-              Top = -134
+              Top = -157
               Width = 100
               TabOrder = 2
               Visible = False
             end
             object usrat_xDateDBEdit_DOCUMENTDATE: TxDateDBEdit
               Left = 131
-              Top = -157
+              Top = -180
               Width = 100
               TabOrder = 1
               Visible = False
             end
             object usrat_DBEdit_USR_SORTNUMBER: TxDBCalculatorEdit
               Left = 131
-              Top = -111
+              Top = -134
               Width = 100
               Cursor = crIBeam
               TabOrder = 0
               Visible = False
             end
             object usrat_DBEdit_USR_EQRATE: TxDBCalculatorEdit
-              Top = 249
+              Top = 226
               Cursor = crIBeam
               TabOrder = 3
+            end
+            object usrat_DBCheckBox_USR_AKTUAL: TDBCheckBox
+              Top = 411
+            end
+            object usrat_DBEdit_USR_SUMMDOCUM: TxDBCalculatorEdit
+              Top = 430
+            end
+            object usrat_DBEdit_USR_LOCATDOCS: TDBEdit
+              Top = 453
+            end
+            object usrat_DBEdit_USR_NUMBERIN: TDBEdit
+              Top = 476
             end
           end
         end
@@ -993,9 +1185,9 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
     end
     object usrg_pAvgSalary: TPanel
       Tag = 0
-      Left = 589
+      Left = 581
       Top = 302
-      Width = 777
+      Width = 785
       Height = 377
       Cursor = crDefault
       Hint = ''
@@ -1036,7 +1228,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
         Tag = 0
         Left = 0
         Top = 0
-        Width = 777
+        Width = 785
         Height = 377
         Cursor = crDefault
         Hint = ''
@@ -1093,7 +1285,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             Tag = 0
             Left = 0
             Top = 26
-            Width = 769
+            Width = 777
             Height = 323
             Cursor = crDefault
             Hint = ''
@@ -1121,7 +1313,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             ParentFont = True
             ParentShowHint = True
             PopupMenu = nil
-            ReadOnly = False
+            ReadOnly = True
             TabOrder = 0
             Visible = True
             TableColor = clWindow
@@ -1184,6 +1376,16 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
                   'Нет=0'
                   'Да=1')
                 DropDownCount = 3
+              end
+              item
+                Lookup.Distinct = False
+                EditorStyle = cesValueList
+                FieldName = 'USR$ISFULL'
+                DisplayField = 'USR$ISFULL'
+                ValueList.Strings = (
+                  'Да=1'
+                  'Нет=0')
+                DropDownCount = 3
               end>
             Aliases = <>
             ShowFooter = False
@@ -1192,6 +1394,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'USR$ISFULL'
+                ReadOnly = False
                 Title.Caption = 'Полный месяц'
                 Width = 48
                 Visible = True
@@ -1199,6 +1402,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'USR$ISCHECK'
+                ReadOnly = False
                 Title.Caption = 'Вкл.'
                 Width = 48
                 Visible = True
@@ -1207,15 +1411,18 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'USR$DATE'
+                ReadOnly = False
                 Title.Caption = 'Дата'
-                Width = 63
+                Width = 72
                 Visible = True
               end
               item
+                Alignment = taRightJustify
                 Expanded = False
                 FieldName = 'USR$SALARY'
+                ReadOnly = False
                 Title.Caption = 'Зарплата'
-                Width = 68
+                Width = 72
                 Visible = True
                 DisplayFormat = '#.##'
               end
@@ -1223,6 +1430,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
                 Alignment = taRightJustify
                 Expanded = False
                 FieldName = 'USR$COEFF'
+                ReadOnly = False
                 Title.Caption = 'Коэф-т'
                 Width = 52
                 Visible = True
@@ -1231,8 +1439,9 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
                 Alignment = taRightJustify
                 Expanded = False
                 FieldName = 'USR$MODERNSALARY'
+                ReadOnly = False
                 Title.Caption = 'Современная зарплата'
-                Width = 83
+                Width = 84
                 Visible = True
                 DisplayFormat = '#.##'
                 TotalType = ttSum
@@ -1241,6 +1450,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
                 Alignment = taRightJustify
                 Expanded = False
                 FieldName = 'USR$DOW'
+                ReadOnly = False
                 Title.Caption = 'Дни'
                 Width = 36
                 Visible = True
@@ -1249,13 +1459,16 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'USR$SCHEDULERDOW'
+                ReadOnly = False
                 Title.Caption = 'Дней по гр.'
                 Width = 72
                 Visible = True
               end
               item
+                Alignment = taRightJustify
                 Expanded = False
                 FieldName = 'USR$HOW'
+                ReadOnly = False
                 Title.Caption = 'Часы'
                 Width = 43
                 Visible = True
@@ -1264,6 +1477,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'USR$SCHEDULERHOW'
+                ReadOnly = False
                 Title.Caption = 'Часов по гр.'
                 Width = 76
                 Visible = True
@@ -1271,13 +1485,15 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'USR$DESCRIPTION'
+                ReadOnly = False
                 Title.Caption = 'Описание'
-                Width = 168
+                Width = 222
                 Visible = True
               end
               item
                 Expanded = False
                 FieldName = 'USR$OLDSALARY'
+                ReadOnly = False
                 Title.Caption = 'Оклад'
                 Width = -1
                 Visible = False
@@ -1285,6 +1501,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'USR$NEWSALARY'
+                ReadOnly = False
                 Title.Caption = 'Текущий оклад'
                 Width = -1
                 Visible = False
@@ -1292,7 +1509,6 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'ID'
-                ReadOnly = True
                 Title.Caption = 'Идентификатор'
                 Width = -1
                 Visible = False
@@ -1300,6 +1516,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'USR$DOCUMENTKEY'
+                ReadOnly = False
                 Title.Caption = 'Документ'
                 Width = -1
                 Visible = False
@@ -1307,6 +1524,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'Z_USR$DOCUMENTKEY_NUMBER'
+                ReadOnly = False
                 Title.Caption = 'Номер'
                 Width = -1
                 Visible = False
@@ -1314,6 +1532,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'Z_USR$DOCUMENTKEY_DOCUMENTDATE'
+                ReadOnly = False
                 Title.Caption = 'Дата'
                 Width = -1
                 Visible = False
@@ -1321,6 +1540,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
               item
                 Expanded = False
                 FieldName = 'Z_USR$DOCUMENTKEY_DOC2715260478'
+                ReadOnly = False
                 Title.Caption = 'Тип документа'
                 Width = -1
                 Visible = False
@@ -1330,7 +1550,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
             Tag = 0
             Left = 0
             Top = 0
-            Width = 769
+            Width = 777
             Height = 26
             Cursor = crDefault
             Hint = ''
@@ -1609,8 +1829,8 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
     Top = 7
   end
   object pm_dlgG: TPopupMenu
-    Left = 152
-    Top = 216
+    Left = 144
+    Top = 232
     object actSecurity1: TMenuItem
     end
     object actHistory1: TMenuItem
@@ -1645,16 +1865,16 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
       'read_committed'
       'rec_version'
       'nowait')
-    Left = 488
-    Top = 168
+    Left = 752
+    Top = 256
   end
   object dsDetail: TDataSource
-    Left = 421
-    Top = 38
+    Left = 461
+    Top = 14
   end
   object gdMacrosMenu: TgdMacrosMenu
-    Left = 905
-    Top = 55
+    Left = 729
+    Top = 119
   end
   object usrg_gdcAvgSalaryStr: TgdcAttrUserDefined
     Tag = 0
@@ -1672,7 +1892,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
     CachedUpdates = False
     ReadTransaction = gdcUserDocument.ibtrInternal
     Filtered = False
-    Left = 652
+    Left = 684
     Top = 256
   end
   object usrg_dsAvgSalaryStr: TDataSource
@@ -1680,7 +1900,7 @@ object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocumen
     AutoEdit = True
     DataSet = usrg_gdcAvgSalaryStr
     Enabled = True
-    Left = 685
-    Top = 260
+    Left = 717
+    Top = 252
   end
 end
