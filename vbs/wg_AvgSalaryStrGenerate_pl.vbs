@@ -2,6 +2,7 @@ Option Explicit
 '#include wg_WageSettings
 '#include wg_EnableFieldChange
 '#include pl_GetScriptIDByName
+'#include wg_AvgSalary_CoefOption
 
 Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
 '
@@ -10,6 +11,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Dim Creator, gdcObject, gdcSalary
   '
   Dim PL, Ret, Pred, Tv, Append
+  Dim PredFile
   'avg_wage
   Dim P_main, Tv_main, Q_main
   'avg_wage_in
@@ -20,7 +22,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   'avg_wage_run, avg_wage_sql
   Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
   Dim DateCalcFrom, DateCalcTo
-  Dim Connection, PredicateName, Arity, SQL
+  Dim PredicateName, Arity, SQL
   'avg_wage_out, avg_wage_det
   Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
   Dim AvgWage, AvgWageRule
@@ -62,18 +64,27 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   InflType = wg_WageSettings.Inflation.InflType
   InflFCType = wg_WageSettings.Inflation.InflFCType
   'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
-  CoefOption = "fc_fcratesum"
   Select Case InflType
+    'usrg_rbSalaryInf - От оклада
+    Case 0
+      CoefOption = "ml_msalary"
+    'usrg_rbRateInf - От ставки 1-го разряда
     Case 1
       Select Case InflFCType
+        'usrg_rbFCRate - справочника
+        Case 0
+          CoefOption = "fc_fcratesum"
+        'usrg_rbMovementRate - кадрового движения
         Case 2
           CoefOption = "ml_rate"
       End Select
-    Case 0
-      CoefOption = "ml_msalary"
   End Select
   '
-  CoefOption = "ml_rate" 'только для ММК, иначе эту строку закомментировать
+
+  'проблема wg_WageSettings
+  'CoefOption = "ml_rate" 'только для ММК, иначе эту строку закомментировать
+
+  wg_AvgSalary_CoefOption(Sender)
 
   'init
   Set PL = Creator.GetObject(nil, "TgsPLClient", "")
@@ -98,7 +109,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     gdcSalary.Delete
   Wend
   '
-  gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = 0
+  gdcObject.FieldByName("USR$AVGSUMMA").Clear
   '
   Sender.Repaint
 
@@ -140,10 +151,10 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_run.PredicateName = P_run
   Q_run.Termv = Tv_run
-  'avg_wage_sql(EmplKey, FirstMoveKey, Connection, PredicateName, Arity, SQL)
+  'avg_wage_sql(EmplKey, FirstMoveKey, PredicateName, Arity, SQL)
   P_sql = "avg_wage_sql"
   P_kb = "avg_wage_kb"
-  Set Tv_sql = Creator.GetObject(6, "TgsPLTermv", "")
+  Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_sql.PredicateName = P_sql
   Q_sql.Termv = Tv_sql
@@ -167,10 +178,9 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     Q_sql.OpenQuery
     '
     Do Until Q_sql.EOF
-      Connection = Tv_sql.ReadAtom(2)
-      PredicateName = Tv_sql.ReadAtom(3)
-      Arity = Tv_sql.ReadInteger(4)
-      SQL = Tv_sql.ReadString(5)
+      PredicateName = Tv_sql.ReadAtom(2)
+      Arity = Tv_sql.ReadInteger(3)
+      SQL = Tv_sql.ReadString(4)
       '
       Ret =  PL.MakePredicatesOfSQLSelect _
                 (SQL, _
@@ -193,8 +203,9 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   'save param_list
   If PL.Debug Then
     Pred = "param_list"
+    PredFile = "param_list"
     Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
-    PL.SavePredicatesToFile Pred, Tv, Pred
+    PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
 
   'avg_wage(Variant) - calc result
@@ -243,22 +254,28 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
             Or PeriodRule = "by_houres" _
             Or PeriodRule = "by_days" )
       IsCheck = Abs( Not (PeriodRule = "none") )
-      Select Case PeriodRule
-        Case "by_days_houres"
-          PeriodRule = "табель равен графику по дням и часам"
-        Case "by_days"
-          PeriodRule = "табель покрывает график по дням"
-        Case "by_houres"
-          PeriodRule = "табель покрывает график по часам"
-        Case "by_month_wage_all"
-          PeriodRule = "по размеру заработка (не меньше всех полных)"
-        Case "by_month_wage_any"
-          PeriodRule = "по размеру заработка (не меньше любого полного)"
-        Case "by_month_no_bad_type"
-          PeriodRule = "виды начислений и типы часов в норме"
-        Case Else
-          PeriodRule = ""
-      End Select
+      '
+      If AvgWageRule = "by_calc_month" Then
+        Select Case PeriodRule
+          Case "by_days_houres"
+            PeriodRule = "табель равен графику по дням и часам"
+          Case "by_days"
+            PeriodRule = "табель покрывает график по дням"
+          Case "by_houres"
+            PeriodRule = "табель покрывает график по часам"
+          Case "by_month_wage_all"
+            PeriodRule = "по размеру заработка (не меньше всех полных)"
+          Case "by_month_wage_any"
+            PeriodRule = "по размеру заработка (не меньше любого полного)"
+          Case "by_month_no_bad_type"
+            PeriodRule = "виды начислений и типы часов в норме"
+          Case Else
+            PeriodRule = ""
+        End Select
+      ElseIf AvgWageRule = "by_avg_houre" Then
+        PeriodRule = "по среднечасовому"
+      End If
+      '
       Wage = Tv_det.ReadFloat(4)
       ModernCoef = Tv_det.ReadFloat(5)
       ModernWage = Tv_det.ReadFloat(6)
@@ -294,8 +311,10 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   '
   Call wg_EnableFieldChange(gdcSalary, "AVGSALARYCALC")
   '
-  gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
-  'gdcObject.Post
+  If AvgWage > 0 Then
+    gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
+    gdcObject.Post
+  End If
   '
 
   wg_AvgSalaryStrGenerate_pl = True

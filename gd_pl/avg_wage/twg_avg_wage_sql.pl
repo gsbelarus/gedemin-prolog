@@ -1,26 +1,33 @@
 ﻿% twg_avg_wage_sql
 
 :-
-    GetSQL = [gd_pl_ds/5, get_sql/4],
-    dynamic(GetSQL),
+    GetSQL = [gd_pl_ds/5, get_sql/5],
+    %dynamic(GetSQL),
     multifile(GetSQL),
     discontiguous(GetSQL).
 
 %
 wg_valid_sql([
-            usr_wg_DbfSums/6,
-            usr_wg_MovementLine/11,
+            %  05. Начисление отпусков
+            usr_wg_DbfSums/6, % 05, 06
+            usr_wg_MovementLine/15, % 05, 06
             usr_wg_FCRate/4,
             usr_wg_TblDayNorm/8,
             usr_wg_TblYearNorm/5,
-            usr_wg_TblCalLine/7,
-            usr_wg_TblCal_FlexLine/68,
-            -usr_wg_HourType/11,
-            usr_wg_TblCharge/9,
-            usr_wg_FeeType/5,
+            usr_wg_TblCalLine/7, % 05, 06
+            usr_wg_TblCal_FlexLine/68, % 05, 06
+            usr_wg_HourType/12, % 05, 06
+            usr_wg_TblCharge/9, % 05, 06
+            usr_wg_FeeType/5, % 05, 06
             usr_wg_FeeTypeNoCoef/4,
             usr_wg_BadHourType/3,
-            usr_wg_BadFeeType/3
+            usr_wg_BadFeeType/3,
+            usr_wg_SpecDep/3,
+            %  06. Начисление больничных
+            usr_wg_FeeTypeProp/4,
+            wg_holiday/1,
+            usr_wg_ExclDays/5,
+            gd_const_AvgSalaryRB/2
             ]).
 
 %
@@ -29,13 +36,14 @@ is_valid_sql(Functor/Arity) :-
     member(Functor/Arity, ValidSQL),
     !.
 
+%  05. Начисление отпусков
 gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_DbfSums, 6,
     [
     fEmplKey-integer, fInSum-float, fInHoures-float,
     fInYear-integer, fInMonth-integer, fDateBegin-date
     ]).
 % usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin)
-get_sql(gsdb, usr_wg_DbfSums/6,
+get_sql(wg_avg_wage_vacation, in, usr_wg_DbfSums/6,
 "SELECT \c
   Z.USR$EMPLKEY, \c
   COALESCE(Z.USR$SUM, 0) AS INSUM, \c
@@ -61,17 +69,20 @@ ORDER BY \c
 [pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_MovementLine, 11,
+gd_pl_ds(Scope, in, usr_wg_MovementLine, 15,
     [
     fEmplKey-integer, fDocumentKey-integer, fFirstMoveKey-integer,
     fMoveYear-integer, fMoveMonth-integer, fDateBegin-date,
     fScheduleKey-integer, fMovementType-integer,
-    fRate-float, fListNumber-string, fMSalary-float
-    ]).
+    fRate-float, fListNumber-string, fMSalary-float,
+    fPayFormKey-integer, fSalaryKey-integer, fTSalary-float, fAvgWageRate-float
+    ]) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
 %   MoveYear, MoveMonth, DateBegin,
-%   ScheduleKey, MovementType, Rate, ListNumber, MSalary)
-get_sql(gsdb, usr_wg_MovementLine/11,
+%   ScheduleKey, MovementType, Rate, ListNumber, MSalary,
+%   PayFormKey, SalaryKey, TSalary, AvgWageRate)
+get_sql(Scope, in, usr_wg_MovementLine/15,
 "SELECT \c
   ml.USR$EMPLKEY, \c
   ml.DOCUMENTKEY, \c
@@ -83,7 +94,11 @@ get_sql(gsdb, usr_wg_MovementLine/11,
   ml.USR$MOVEMENTTYPE, \c
   COALESCE(ml.USR$RATE, 0) AS Rate, \c
   ml.USR$LISTNUMBER, \c
-  COALESCE(ml.USR$MSALARY, 0) AS MSalary \c
+  COALESCE(ml.USR$MSALARY, 0) AS MSalary, \c
+  COALESCE(ml.USR$PAYFORMKEY, 0) AS PayFormKey, \c
+  (SELECT id FROM gd_ruid WHERE xid = pPayFormSalary_xid AND dbid = pPayFormSalary_dbid) AS SalaryKey, \c
+  COALESCE(ml.USR$TSALARY, 0) AS TSalary, \c
+  8 * COALESCE(USR$THOURRATE, 0) AS AvgWageRate \c
 FROM \c
   USR$WG_MOVEMENTLINE ml \c
 WHERE \c
@@ -95,8 +110,9 @@ ORDER BY \c
   ml.USR$FIRSTMOVE, \c
   ml.USR$DATEBEGIN \c
 ",
-[pEmplKey-_, pFirstMoveKey-_]
-    ).
+[pEmplKey-_, pFirstMoveKey-_, pPayFormSalary_xid-_, pPayFormSalary_dbid-_]
+    ) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 
 gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FCRate, 4,
     [
@@ -104,7 +120,7 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FCRate, 4,
     fDate-date, fFCRateSum-float
     ]).
 % usr_wg_FCRate(EmplKey, FirstMoveKey, Date, FCRateSum)
-get_sql(gsdb, usr_wg_FCRate/4,
+get_sql(wg_avg_wage_vacation, in, usr_wg_FCRate/4,
 "SELECT \c
   pEmplKey AS EmplKey, \c
   pFirstMoveKey AS FirstMoveKey, \c
@@ -118,20 +134,22 @@ ORDER BY \c
 [pEmplKey-_, pFirstMoveKey-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblDayNorm, 8,
+gd_pl_ds(Scope, in, usr_wg_TblDayNorm, 8,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
     fWYear-integer, fWMonth-integer, fTheDay-date, fWDay-integer,
     fWDuration-float, fWorkDay-integer
-    ]).
+    ]) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 % usr_wg_TblDayNorm(EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay)
-get_sql(gsdb, usr_wg_TblDayNorm/8,
+get_sql(Scope, in, usr_wg_TblDayNorm/8,
 "\c
 SELECT EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay \c
 FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\') \c
 ",
 [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
-    ).
+    ) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 
 gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblYearNorm, 5,
     [
@@ -140,7 +158,7 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblYearNorm, 5,
     fWHoures-float, fWDays-integer
     ]).
 % usr_wg_TblYearNorm(EmplKey, FirstMoveKey, WYear, WHoures, WDays)
-get_sql(gsdb, usr_wg_TblYearNorm/5,
+get_sql(wg_avg_wage_vacation, in, usr_wg_TblYearNorm/5,
 "\c
 SELECT EmplKey, FirstMoveKey, WYear, SUM(WDuration) AS WHoures, SUM(WorkDay) AS WDays \c
 FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateNormFrom\', \'pDateNormTo\') \c
@@ -149,14 +167,15 @@ GROUP BY EmplKey, FirstMoveKey, WYear \c
 [pEmplKey-_, pFirstMoveKey-_, pDateNormFrom-_, pDateNormTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCalLine, 7,
+gd_pl_ds(Scope, in, usr_wg_TblCalLine, 7,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
     fCalYear-integer, fCalMonth-integer, fDate-date,
     fDuration-float, fHoureType-integer
-    ]).
+    ]) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 % usr_wg_TblCalLine(EmplKey, FirstMoveKey, CalYear, CalMonth, Date, Duration, HoureType)
-get_sql(gsdb, usr_wg_TblCalLine/7,
+get_sql(Scope, in, usr_wg_TblCalLine/7,
 "SELECT \c
   tc.USR$EMPLKEY, \c
   tc.USR$FIRSTMOVEKEY, \c
@@ -184,9 +203,10 @@ ORDER BY \c
   tcl.USR$DATE \c
 ",
 [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
-    ).
+    ) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCal_FlexLine, 68,
+gd_pl_ds(Scope, in, usr_wg_TblCal_FlexLine, 68,
     [fFlexType-string,
     fEmplKey-integer, fFirstMoveKey-integer,
     fCalYear-integer, fCalMonth-integer, fDateBegin-date,
@@ -206,13 +226,22 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCal_FlexLine, 68,
     fS27-variant, fH27-variant, fS28-variant, fH28-variant,
     fS29-variant, fH29-variant, fS30-variant, fH30-variant,
     fS31-variant, fH31-variant
-    ]).
+    ]) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 % usr_wg_TblCal_FlexLine(FlexType, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
-get_sql(gsdb, usr_wg_TblCal_FlexLine/68,
+get_sql(Scope, in, usr_wg_TblCal_FlexLine/68,
 "SELECT \c
   CASE gd.DOCUMENTTYPEKEY \c
-    WHEN pTblCal_DocType_Plan THEN \'plan\' \c
-    WHEN pTblCal_DocType_Fact THEN \'fact\' \c
+    WHEN \c
+      (SELECT id FROM gd_ruid \c
+      WHERE xid = pTblCal_DocType_Plan_xid AND dbid = pTblCal_DocType_Plan_dbid) \c
+        THEN \'plan\' \c
+    WHEN \c
+      (SELECT id FROM gd_ruid \c
+      WHERE xid = pTblCal_DocType_Fact_xid AND dbid = pTblCal_DocType_Fact_dbid) \c
+        THEN \'fact\' \c
+    ELSE \c
+        \'unknown\' \c
   END \c
     AS FlexType, \c
   tcfl.USR$EMPLKEY, \c
@@ -248,8 +277,6 @@ JOIN \c
   USR$WG_TOTAL t \c
     ON t.DOCUMENTKEY = tcf.USR$TOTALDOCKEY \c
 WHERE \c
-  gd.DOCUMENTTYPEKEY IN(pTblCal_DocType_Plan,pTblCal_DocType_Fact) \c
-  AND \c
   tcfl.USR$EMPLKEY = pEmplKey \c
   AND \c
   tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey \c
@@ -262,21 +289,26 @@ WHERE \c
    tcfl.USR$FIRSTMOVEKEY, \c
    t.USR$DATEBEGIN \c
 ",
-[pTblCal_DocType_Plan-_, pTblCal_DocType_Fact-_,
-pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
-    ).
+[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_,
+pTblCal_DocType_Plan_xid-_, pTblCal_DocType_Plan_dbid-_,
+pTblCal_DocType_Fact_xid-_, pTblCal_DocType_Fact_dbid-_
+]
+    ) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_HourType, 11,
+gd_pl_ds(Scope, in, usr_wg_HourType, 12,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
     fID-integer, fCode-string, fDigitCode-string,
     fDiscription-string, fIsWorked-integer, fShortName-string,
-    fForCalFlex-integer, fForOverTime-integer, fForFlex-integer
-    ]).
+    fForCalFlex-integer, fForOverTime-integer, fForFlex-integer,
+    fExcludeForSickList-integer
+    ]) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 % usr_wg_HourType(EmplKey, FirstMoveKey,
 %   ID, Code, DigitCode, Description, IsWorked, ShortName,
-%   ForCalFlex, ForOverTime, ForFlex)
-get_sql(gsdb, usr_wg_HourType/11,
+%   ForCalFlex, ForOverTime, ForFlex, ExcludeForSickList)
+get_sql(Scope, in, usr_wg_HourType/12,
 "SELECT \c
   pEmplKey AS EmplKey, \c
   pFirstMoveKey AS FirstMoveKey, \c
@@ -288,22 +320,25 @@ get_sql(gsdb, usr_wg_HourType/11,
   ht.USR$SHORTNAME, \c
   ht.USR$FORCALFLEX, \c
   ht.USR$FOROVERTIME, \c
-  ht.USR$FORFLEX \c
+  ht.USR$FORFLEX, \c
+  ht.USR$WG_EXCLUDEFORSICKLIST \c
 FROM \c
   USR$WG_HOURTYPE ht \c
 ",
 [pEmplKey-_, pFirstMoveKey-_]
-    ).
+    ) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_TblCharge, 9,
+gd_pl_ds(Scope, in, usr_wg_TblCharge, 9,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
     fCalYear-integer, fCalMonth-integer, fDateBegin-date,
     fDebit-float, fFeeTypeKey-integer, fDOW-float, fHOW-float
-    ]).
+    ]) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 % usr_wg_TblCharge(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin,
 %   Debit, FeeTypeKey, DOW, HOW)
-get_sql(gsdb, usr_wg_TblCharge/9,
+get_sql(Scope, in, usr_wg_TblCharge/9,
 "SELECT \c
   tch.USR$EMPLKEY, \c
   tch.USR$FIRSTMOVEKEY, \c
@@ -329,15 +364,17 @@ ORDER BY \c
   tch.USR$DATEBEGIN \c
 ",
 [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
-    ).
+    ) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 
-gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FeeType, 5,
+gd_pl_ds(Scope, in, usr_wg_FeeType, 5,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
     fFeeGroupKey-integer, fFeeTypeKey-integer, fAvgDayHOW-integer
-    ]).
+    ]) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 % usr_wg_FeeType(EmplKey, FirstMoveKey, FeeGroupKey, FeeTypeKey, AvgDayHOW)
-get_sql(gsdb, usr_wg_FeeType/5,
+get_sql(Scope, in, usr_wg_FeeType/5,
 "SELECT \c
   pEmplKey AS EmplKey,  \c
   pFirstMoveKey AS FirstMoveKey, \c
@@ -357,7 +394,8 @@ AND dbid = pFeeGroupKey_dbid \c
 ) \c
 ",
 [pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_xid-_, pFeeGroupKey_dbid-_]
-    ).
+    ) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 
 gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FeeTypeNoCoef, 4,
     [
@@ -365,7 +403,7 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FeeTypeNoCoef, 4,
     fFeeGroupKeyNoCoef-integer, fFeeTypeKeyNoCoef-integer
     ]).
 % usr_wg_FeeTypeNoCoef(EmplKey, FirstMoveKey, FeeGroupKeyNoCoef, FeeTypeKeyNoCoef)
-get_sql(gsdb, usr_wg_FeeTypeNoCoef/4,
+get_sql(wg_avg_wage_vacation, in, usr_wg_FeeTypeNoCoef/4,
 "SELECT \c
   pEmplKey AS EmplKey,  \c
   pFirstMoveKey AS FirstMoveKey, \c
@@ -391,7 +429,7 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_BadHourType, 3,
     fEmplKey-integer, fFirstMoveKey-integer, fID-integer
     ]).
 % usr_wg_BadHourType(EmplKey, FirstMoveKey, ID)
-get_sql(gsdb, usr_wg_BadHourType/3,
+get_sql(wg_avg_wage_vacation, in, usr_wg_BadHourType/3,
 "SELECT \c
   pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c
 FROM USR$WG_HOURTYPE \c
@@ -409,7 +447,7 @@ gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_BadFeeType, 3,
     fEmplKey-integer, fFirstMoveKey-integer, fID-integer
     ]).
 % usr_wg_BadFeeType(EmplKey, FirstMoveKey, ID)
-get_sql(gsdb, usr_wg_BadFeeType/3,
+get_sql(wg_avg_wage_vacation, in, usr_wg_BadFeeType/3,
 "SELECT \c
   pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c
 FROM USR$WG_FEETYPE \c
@@ -420,6 +458,182 @@ AND dbid = pBadFeeType_dbid \c
 ) \c
 ",
 [pEmplKey-_, pFirstMoveKey-_, pBadFeeType_xid_IN-_, pBadFeeType_dbid-_]
+    ).
+
+gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_SpecDep, 3,
+    [
+    fEmplKey-integer, fFirstMoveKey-integer, fID-integer
+    ]).
+% usr_wg_SpecDep(EmplKey, FirstMoveKey, ID)
+get_sql(wg_avg_wage_vacation, in, usr_wg_SpecDep/3,
+"SELECT \c
+  pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id \c
+FROM \c
+  gd_ruid \c
+WHERE \c
+  xid = pSpecDep_xid AND dbid = pSpecDep_dbid \c
+",
+[pEmplKey-_, pFirstMoveKey-_, pSpecDep_xid-_, pSpecDep_dbid-_]
+    ).
+
+%  06. Начисление больничных
+gd_pl_ds(wg_avg_wage_sick, in, usr_wg_DbfSums, 6,
+    [
+    fEmplKey-integer, fInSum-float, fInHoures-float,
+    fInYear-integer, fInMonth-integer, fDateBegin-date
+    ]).
+% usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin)
+get_sql(wg_avg_wage_sick, in, usr_wg_DbfSums/6,
+"SELECT \c
+  Z.USR$EMPLKEY, \c
+  COALESCE(Z.USR$SUMSICK, 0) AS INSUM, \c
+  COALESCE(Z.USR$MID_HOW, 0) AS INHOURES, \c
+  EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear, \c
+  EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth, \c
+  IDK.USR$DATEBEGIN \c
+FROM \c
+  USR$GMK_SUMS Z \c
+JOIN \c
+  USR$WG_TOTAL IDK \c
+    ON IDK.DOCUMENTKEY  =  Z.USR$INDOCKEY \c
+WHERE \c
+  Z.USR$EMPLKEY = pEmplKey \c
+  AND \c
+  IDK.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
+  AND \c
+  IDK.USR$DATEBEGIN < \'pDateCalcTo\' \c
+ORDER BY \c
+  Z.USR$EMPLKEY, \c
+  IDK.USR$DATEBEGIN \c
+",
+[pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+    ).
+
+gd_pl_ds(wg_avg_wage_sick, in, usr_wg_FeeTypeProp, 4,
+    [
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fFeeGroupKeyProp-integer, fFeeTypeKeyProp-integer
+    ]).
+% usr_wg_FeeTypeProp(EmplKey, FirstMoveKey, FeeGroupKeyProp, FeeTypeKeyProp)
+get_sql(wg_avg_wage_sick, in, usr_wg_FeeTypeProp/4,
+"SELECT \c
+  pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
+  ft.USR$WG_FEEGROUPKEY, \c
+  ft.USR$WG_FEETYPEKEY \c
+FROM \c
+  USR$CROSS179_256548741 ft \c
+JOIN \c
+  USR$WG_FEETYPE ft_avg \c
+    ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \c
+WHERE \c
+  ft.USR$WG_FEEGROUPKEY IN \c
+(SELECT id FROM gd_ruid \c
+WHERE xid = pFeeGroupKeyProp_xid \c
+AND dbid = pFeeGroupKeyProp_dbid \c
+) \c
+",
+[pEmplKey-_, pFirstMoveKey-_, pFeeGroupKeyProp_xid-_, pFeeGroupKeyProp_dbid-_]
+    ).
+
+gd_pl_ds(wg_avg_wage_sick, in, wg_holiday, 1, [fHolidayDate-date]).
+% wg_holiday(HolidayDate)
+get_sql(wg_avg_wage_sick, in, wg_holiday/1,
+"SELECT \c
+  h.holidaydate \c
+FROM \c
+  wg_holiday h \c
+WHERE \c
+  h.holidaydate BETWEEN \'pDateCalcFrom\' AND \'pDateCalcTo\' \c
+  AND COALESCE(h.disabled, 0) = 0 \c
+",
+[pDateCalcFrom-_, pDateCalcTo-_]
+    ).
+
+gd_pl_ds(wg_avg_wage_sick, in, usr_wg_ExclDays, 5,
+    [
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fExclType-string,
+    fFromDate-date, fToDate-date
+    ]).
+% usr_wg_FeeTypeProp(EmplKey, FirstMoveKey, ExclType, FromDate, ToDate)
+get_sql(wg_avg_wage_sick, in, usr_wg_ExclDays/5,
+"SELECT \c
+  EmplKey, FirstMoveKey, ExclType, FromDate, ToDate \c
+FROM ( \c
+SELECT \c
+  pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
+  \'LIGHTWORKLINE\' AS ExclType, \c
+  CAST( IIF(lw.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', lw.USR$DATEBEGIN) AS DATE) AS FromDate, \c
+  CAST( IIF(lw.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(lw.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', lw.USR$DATEEND)) AS DATE) AS ToDate \c
+FROM USR$WG_LIGHTWORKLINE lw \c
+WHERE lw.USR$FIRSTMOVEKEY = pFirstMoveKey \c
+  AND lw.USR$EMPLKEY = pEmplKey \c
+  AND lw.USR$DATEBEGIN <= \'pDateCalcTo\' \c
+  AND COALESCE(lw.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\' \c
+UNION ALL \c
+SELECT \c
+  pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
+  \'WG_LEAVEDOCLINE\' AS ExclType, \c
+  CAST( IIF(ld.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ld.USR$DATEBEGIN) AS DATE) AS FromDate, \c
+  CAST( IIF(ld.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ld.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ld.USR$DATEEND)) AS DATE) AS ToDate \c
+FROM USR$WG_LEAVEDOCLINE ld \c
+LEFT JOIN USR$WG_VACATIONTYPE t ON t.ID = ld.USR$VACATIONTYPEKEY \c
+WHERE ld.USR$FIRSTMOVEKEY = pFirstMoveKey \c
+  AND ld.USR$EMPLKEY = pEmplKey \c
+  AND ld.USR$DATEBEGIN <= \'pDateCalcTo\' \c
+  AND COALESCE(ld.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\' \c
+  AND COALESCE(t.USR$EXCLUDEFORSICKLIST, 0) = 1 \c
+UNION ALL \c
+SELECT \c
+  pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
+  \'SICKLISTJOURNAL\' AS ExclType, \c
+  CAST( IIF(s.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', s.USR$DATEBEGIN) AS DATE) AS FromDate, \c
+  CAST( IIF(s.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(s.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', s.USR$DATEEND)) AS DATE) AS ToDate \c
+FROM USR$WG_SICKLISTJOURNAL s \c
+WHERE s.USR$EMPLKEY = pEmplKey \c
+  AND s.USR$DATEBEGIN <= \'pDateCalcTo\' \c
+  AND COALESCE(s.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\' \c
+UNION ALL \c
+SELECT \c
+  pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
+  \'LEAVEEXTDOC\' AS ExclType, \c
+  CAST( IIF(ext.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ext.USR$DATEBEGIN) AS DATE) AS FromDate, \c
+  CAST( IIF(ext.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ext.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ext.USR$DATEEND)) AS DATE) AS ToDate \c
+FROM USR$WG_LEAVEEXTDOC ext \c
+WHERE ext.USR$EMPLKEY = pEmplKey \c
+  AND ext.USR$DATEBEGIN <= \'pDateCalcTo\' \c
+  AND COALESCE(ext.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\' \c
+) \c
+ORDER BY \c
+  FromDate \c
+",
+[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+    ).
+
+
+gd_pl_ds(wg_avg_wage_sick, in, gd_const_AvgSalaryRB, 2, [fConstDate-date, fAvgSalaryRB-float]).
+% gd_const_AvgSalaryRB(ConstDate, AvgSalaryRB)
+get_sql(wg_avg_wage_sick, in, gd_const_AvgSalaryRB/2,
+"SELECT \c
+  cv.CONSTDATE, \c
+  CAST(cv.CONSTVALUE AS DECIMAL(15,4)) AS AvgSalaryRB \c
+FROM \c
+  GD_CONSTVALUE cv \c
+JOIN \c
+  GD_CONST c \c
+    ON c.ID  =  cv.CONSTKEY \c
+WHERE \c
+  cv.CONSTKEY = \c
+  (SELECT id FROM gd_ruid WHERE xid = AvgSalaryRB_xid AND dbid = AvgSalaryRB_dbid) \c
+ORDER BY \c
+  cv.CONSTDATE \c
+",
+[pAvgSalaryRB_xid-_, pAvgSalaryRB_dbid-_]
     ).
 
 %
