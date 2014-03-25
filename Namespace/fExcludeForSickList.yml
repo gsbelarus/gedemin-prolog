@@ -1,0 +1,183 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 192082507_125159749
+  Name: "fExcludeForSickList"
+  Caption: "fExcludeForSickList"
+  Version: "1.0.0.1"
+  Optional: False
+  Internal: True
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcExplorer"
+      RUID: 147048865_974374174
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 180860717_2137801780
+    Fields: 
+      PARENT: "710000_17 Исследователь"
+      NAME: "Зарплата и Отдел кадров"
+      CMD: "147048865_974374174"
+      CMDTYPE: 0
+      HOTKEY: ~
+      IMGINDEX: 0
+      ORDR: ~
+      CLASSNAME: ~
+      SUBTYPE: ~
+      DISABLED: 0
+      EDITIONDATE: 2000-01-01T00:00:00+03:00
+  - 
+    Properties: 
+      Class: "TgdcExplorer"
+      RUID: 147009172_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 180860717_2137801780
+    Fields: 
+      PARENT: "147048865_974374174 Исследователь\\Зарплата и Отдел кадров"
+      NAME: "Справочники по Зарплате и ОК"
+      CMD: "147009172_119619099"
+      CMDTYPE: 0
+      HOTKEY: ~
+      IMGINDEX: 35
+      ORDR: ~
+      CLASSNAME: ~
+      SUBTYPE: ~
+      DISABLED: 0
+      EDITIONDATE: 2000-01-01T00:00:00+03:00
+  - 
+    Properties: 
+      Class: "TgdcExplorer"
+      RUID: 147015025_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 180860717_2137801780
+    Fields: 
+      PARENT: "147009172_119619099 Исследователь\\Зарплата и Отдел кадров\\Справочники по Зарплате и ОК"
+      NAME: "Тип отработанных часов"
+      CMD: "147015022_119619099"
+      CMDTYPE: 0
+      HOTKEY: ~
+      IMGINDEX: 0
+      ORDR: ~
+      CLASSNAME: "TgdcAttrUserDefined"
+      SUBTYPE: "USR$WG_HOURTYPE"
+      DISABLED: 0
+      EDITIONDATE: 2000-01-01T00:00:00+03:00
+  - 
+    Properties: 
+      Class: "TgdcPrimeTable"
+      RUID: 147015022_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 180860717_2137801780
+    Fields: 
+      RELATIONNAME: "USR$WG_HOURTYPE"
+      RELATIONTYPE: "T"
+      LNAME: "Тип отработанных часов"
+      LSHORTNAME: "Тип отр. часов"
+      DESCRIPTION: "Тип отработанных часов"
+      REFERENCEKEY: ~
+      BRANCHKEY: "147015025_119619099 Исследователь\\Зарплата и Отдел кадров\\Справочники по Зарплате и ОК\\Тип отработанных часов"
+      LISTFIELD: "USR$WG_NAME"
+      EXTENDEDFIELDS: ~
+      EDITIONDATE: 2004-04-14T10:05:09+03:00
+  - 
+    Properties: 
+      Class: "TgdcField"
+      RUID: 147000135_486813904
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 180860717_2137801780
+    Fields: 
+      REFLNAME: ~
+      REFLISTLNAME: ~
+      SETLISTLNAME: ~
+      FLAG: ~
+      FFIELDTYPE: 7
+      FSUBTYPE: 0
+      FPRECISION: 0
+      FSCALE: 0
+      FLENGTH: 2
+      FCHARLENGTH: ~
+      SEGLENGTH: ~
+      CHECKSOURCE: | 
+        CHECK ((VALUE IS NULL) OR (VALUE IN (0, 1)))
+      DEFSOURCE: | 
+        DEFAULT 0
+      COMPUTED_VALUE: ~
+      CHARSET: ~
+      COLLATION: ~
+      FIELDNAME: "DBOOLEAN"
+      LNAME: "Логическое"
+      DESCRIPTION: "Логическое"
+      REFTABLE: ~
+      REFLISTFIELD: ~
+      REFCONDITION: ~
+      REFTABLEKEY: ~
+      REFLISTFIELDKEY: ~
+      SETTABLE: ~
+      SETLISTFIELD: ~
+      SETCONDITION: ~
+      SETTABLEKEY: ~
+      SETLISTFIELDKEY: ~
+      ALIGNMENT: "L"
+      FORMAT: ~
+      VISIBLE: 1
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      NUMERATION: ~
+      DISABLED: 0
+      EDITIONDATE: 2003-01-31T19:44:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 180860717_2137801780
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 12
+      FIELDNAME: "USR$WG_EXCLUDEFORSICKLIST"
+      RELATIONNAME: "USR$WG_HOURTYPE"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147015022_119619099 Тип отработанных часов, USR$WG_HOURTYPE"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Исключить из расчета больничных"
+      LSHORTNAME: "Искл.из расч.больнич"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2013-07-31T16:10:57+03:00
