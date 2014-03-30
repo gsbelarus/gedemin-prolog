@@ -397,7 +397,7 @@ calc_avg_wage_sick(Scope, PK, AvgWage, Rule) :-
                % за каждый период проверки
              ( member(Y2-M2, Periods),
                % взять данные по расчетным дням
-               get_month_days_sick(Scope, PK, Y2, M2, CalcDays, _) ),
+               get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _) ),
     % в список расчетных дней
     CalcDaysList ),
     % всего расчетных дней
@@ -510,7 +510,7 @@ version_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
                % за каждый период проверки
              ( member(Y2-M2, Periods),
                % взять данные по расчетным дням
-               get_month_days_sick(Scope, PK, Y2, M2, CalcDays, _) ),
+               get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _) ),
     % в список расчетных дней
     CalcDaysList ),
     % всего расчетных дней
@@ -535,7 +535,7 @@ rule_month_days_sick(Scope, PK, Periods) :-
     is_valid_rule(Scope, PK, _, Rule),
     % есть хотя бы один полный месяц
     member(Y-M, Periods),
-    get_month_days_sick(Scope, PK, Y, M, _, 1),
+    get_month_days_sick(Scope, PK, Y, M, _, _, 1),
     !.
 
 % все месяцы полные
@@ -545,7 +545,7 @@ is_full_all_month_sick(_, _, []):-
     !.
 is_full_all_month_sick(Scope, PK, [Y-M|Periods]) :-
     % есть данные по расчетным дням для полного месяца
-    get_month_days_sick(Scope, PK, Y, M, _, 1),
+    get_month_days_sick(Scope, PK, Y, M, _, _, 1),
     !,
     % проверить остальные месяцы
     is_full_all_month_sick(Scope, PK, Periods).
@@ -566,10 +566,10 @@ prep_avg_wage_sick(Scope, PK, Periods) :-
     get_periods(Scope, PK, Periods),
     % добавление временных данных по расчету дней и часов
     add_month_norm_tab(Scope, PK, Periods),
-    % добавление временных данных по расчету заработков
-    add_month_wage_sick(Scope, PK, Periods),
     % добавление временных данных по расчетным дням
     add_month_days_sick(Scope, PK, Periods),
+    % добавление временных данных по расчету заработков
+    add_month_wage_sick(Scope, PK, Periods),
     !.
 
 % периоды для проверки
@@ -823,7 +823,7 @@ cacl_month_wage_sick(Scope, PK, Y, M, Wage) :-
           % где дата совпадает с проверяемым месяцем
           ( usr_wg_TblCharge_mix(Scope, in, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fCalYear-Y, fCalMonth-M,
+                fCalYear-Y, fCalMonth-M, fDateBegin-_,
                 fDebit-Debit, fFeeTypeKey-FeeTypeKey ],
                                     ChargeOption),
           % и соответствующего типа
@@ -891,7 +891,7 @@ get_avg_salary(Scope, PK, Y, M, MonthAvgSalary) :-
     % взять среднюю зп
     findall( AvgSalary0,
                   % взять данные по средней зп
-                ( get_data(Scope, in, gd_const_AvgSalaryRB, 2, [
+                ( get_data(Scope, in, gd_const_AvgSalaryRB, [
                             fConstDate-ConstDate, fAvgSalaryRB-AvgSalary0]),
                   % где дата константы меньше первой даты месяца
                   ConstDate @< FirstMonthDate
@@ -905,9 +905,7 @@ get_avg_salary(Scope, PK, Y, M, MonthAvgSalary) :-
     % взять расчетный коэфициент
     get_param(Scope, in, pAvgSalaryRB_Coef-AvgSalaryRB_Coef),
     % взять данные по расчетным дням
-    append(PK, [pYM-Y-M, pMonthDays-MonthDays, pCalcDays-CalcDays],
-            Pairs),
-    get_param_list(Scope, temp, Pairs),
+    get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, _),
     % расчитать среднюю зп пропорционально
     MonthAvgSalary is round(CalcDays / MonthDays * MonthAvgSalary0 * AvgSalaryRB_Coef),
     !.
@@ -945,7 +943,7 @@ add_month_days_sick(_, _, []):-
     !.
 add_month_days_sick(Scope, PK, [Y-M|Periods]) :-
     % проверить данные по расчетным дням
-    get_month_days_sick(Scope, PK, Y, M, _, _),
+    get_month_days_sick(Scope, PK, Y, M, _, _, _),
     !,
     % проверить остальные месяцы
     add_month_days_sick(Scope, PK, Periods).
@@ -956,23 +954,25 @@ add_month_days_sick(Scope, PK, [_|Periods]) :-
 
 % взять данные по расчетным дням
 % - для больничных
-get_month_days_sick(Scope, PK, Y, M, CalcDays, IsFullMonth) :-
+get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth) :-
     % взять из временных параметров данные по расчетным дням
-    append(PK, [pYM-Y-M, %pRule-Variant,
-                %pMonthDays-MonthDays, pExclDays-ExclDays,
+    append(PK, [pYM-Y-M, pRule-_,
+                pMonthDays-MonthDays, pExclDays-_,
                 pCalcDays-CalcDays, pIsFullMonth-IsFullMonth],
             Pairs),
     get_param_list(Scope, temp, Pairs),
     !.
-get_month_days_sick(Scope, PK, Y, M, CalcDays, IsFullMonth) :-
+get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth) :-
     % календарных дней в месяце
     month_days(Y, M, MonthDays),
     % исключаемые из месяца дни по правилам
-    excl_month_days_sick(Scope, PK, Y, M, ExclDays, Variant),
+    excl_month_days_sick(Scope, PK, Y, M, ExclDays0, Variant),
     % исключаемые из первого месяца работы дни
     excl_first_month_days_sick(Scope, PK, Y, M, ExclDays1),
+    % исключаемые дни
+    ExclDays is ExclDays0 + ExclDays1,
     % расчетные дни
-    CalcDays is MonthDays - ExclDays - ExclDays1,
+    CalcDays is MonthDays - ExclDays,
     % полнота месяца
     ( CalcDays = MonthDays, IsFullMonth = 1 ; IsFullMonth = 0 ),
     % записать во временные параметры данные по расчетным дням
@@ -1151,7 +1151,8 @@ is_month_paid(Scope, PK, Y-M) :-
     % если есть хотя бы одно начисление
     usr_wg_TblCharge_mix(Scope, in, [
         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-        fCalYear-Y, fCalMonth-M, fDebit-Debit, fFeeTypeKey-FeeTypeKey ],
+        fCalYear-Y, fCalMonth-M, fDateBegin-_,
+        fDebit-Debit, fFeeTypeKey-FeeTypeKey ],
                             _),
     % с контролем суммы
     Debit > 0,
@@ -1466,7 +1467,8 @@ month_bad_type(Scope, PK, Y-M) :-
     % где дата совпадает с проверяемым месяцем
     usr_wg_TblCharge_mix(Scope, in, [
         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-        fCalYear-Y, fCalMonth-M, fFeeTypeKey-FeeTypeKey ],
+        fCalYear-Y, fCalMonth-M, fDateBegin-_,
+        fDebit-_, fFeeTypeKey-FeeTypeKey ],
                             _),
     % с плохим типом начисления
     nonvar(FeeTypeKey),
@@ -1475,22 +1477,31 @@ month_bad_type(Scope, PK, Y-M) :-
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-FeeTypeKey]) ),
     !.
 
+/* реализация - смешанные данные */
+
 %% взять данные по начислению
 % начисление из TblCharge
 usr_wg_TblCharge_mix(Scope, Type, ArgPairs, ChargeOption) :-
     ChargeOption = tbl_charge,
     get_data(Scope, Type, usr_wg_TblCharge, ArgPairs).
 % или начисление из dbf
+% с согласованием спецификации по TblCharge
 usr_wg_TblCharge_mix(Scope, Type, ArgPairs, ChargeOption) :-
     ChargeOption = dbf_sums,
+    % спецификация usr_wg_TblCharge
     ValuePairs = [
                 fEmplKey-EmplKey, fFirstMoveKey-_,
                 fCalYear-CalYear, fCalMonth-CalMonth, fDateBegin-DateBegin,
                 fDebit-Debit, fFeeTypeKey-_
                 ],
     member_list(ArgPairs, ValuePairs),
-    gd_pl_ds(Scope, Type, usr_wg_DbfSums, 6, _),
-    catch( usr_wg_DbfSums(EmplKey, Debit, _, CalYear, CalMonth, DateBegin), _, fail).
+    % спецификация usr_wg_DbfSums
+    DataPairs =  [
+                fEmplKey-EmplKey,
+                fInYear-CalYear, fInMonth-CalMonth, fDateBegin-DateBegin,
+                fInSum-Debit
+                ],
+    get_data(Scope, Type, usr_wg_DbfSums, DataPairs).
 
 %% взять данные по графику
 % день месяца по календарному графику
@@ -1562,6 +1573,9 @@ get_Flex_by_type(Scope, Type, PK, Y-M, Date, Days, Duration, HoureType, FlexType
             ; atom_number(HoureType0, HoureType)
             ; HoureType = 0 ) ),
     once( (Duration > 0, Days = 1 ; Days = 0) ).
+
+
+/* реализация - механизм подготовки данных */
     
 %% engine_loop(+Scope, +Type, +PK)
 %
@@ -1730,8 +1744,6 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
 %  05. Начисление отпусков
 
 % загрузка входных данных по сотруднику
-
-
 % CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
 avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption) :-
     Scope = wg_avg_wage_vacation, Type = in,

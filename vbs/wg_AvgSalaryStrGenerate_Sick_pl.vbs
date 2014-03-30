@@ -2,6 +2,7 @@ Option Explicit
 '#include pl_GetScriptIDByName
 '#include wg_GetConstByIDAndDate
 '#include wg_Const
+'#include wg_Prolog
 
 Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef Sender)
 '
@@ -34,6 +35,7 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef Sender)
   Sender.GetComponent("actApply").Execute
 
   Set gdcObject = Sender.gdcObject
+  Call wg_Prolog.SyncField(gdcObject, True)
   '
   EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
   FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
@@ -276,7 +278,8 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef Sender)
   '
   gdcObject.Post
   '
-
+  Call wg_Prolog.SyncField(gdcObject, False)
+  
   wg_AvgSalaryStrGenerate_Sick_pl = True
   
   T2 = Timer

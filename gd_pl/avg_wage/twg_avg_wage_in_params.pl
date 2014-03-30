@@ -36,8 +36,8 @@
     pTblCal_DocType_Plan_dbid-1514418708,
     pTblCal_DocType_Fact_xid-187613422,
     pTblCal_DocType_Fact_dbid-1596169984,
-    pAvgSalaryRB_xid-147105585,
-    pAvgSalaryRB_dbid-1224850260,
+    pAvgSalaryRB_xid-147445419,
+    pAvgSalaryRB_dbid-274788016,
     pAvgSalaryRB_Coef-3
     ]).
 

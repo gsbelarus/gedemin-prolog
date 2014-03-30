@@ -260,7 +260,7 @@ get_avg_wage_budget(Scope, Type, Y, M, AvgWageBudget) :-
     % взять БПМ
     findall( Budget0,
                   % взять данные по БПМ
-                ( get_data(Scope, Type, gd_const_budget, 2, [
+                ( get_data(Scope, Type, gd_const_budget, [
                             fConstDate-ConstDate, fBudget-Budget0]),
                   % где дата константы меньше первой даты месяца
                   ConstDate @< FirstMonthDate

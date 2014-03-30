@@ -11,3 +11,9 @@ Public Const PL_FLOAT = 4
 Public Const PL_STRING = 5
 Public Const PL_TERM = 6
 '
+
+'for Function wg_Prolog
+Public wg_Prolog_
+Set wg_Prolog_ = Nothing
+'
+

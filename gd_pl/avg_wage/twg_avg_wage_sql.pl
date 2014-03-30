@@ -629,7 +629,7 @@ JOIN \c
     ON c.ID  =  cv.CONSTKEY \c
 WHERE \c
   cv.CONSTKEY = \c
-  (SELECT id FROM gd_ruid WHERE xid = AvgSalaryRB_xid AND dbid = AvgSalaryRB_dbid) \c
+  (SELECT id FROM gd_ruid WHERE xid = pAvgSalaryRB_xid AND dbid = pAvgSalaryRB_dbid) \c
 ORDER BY \c
   cv.CONSTDATE \c
 ",

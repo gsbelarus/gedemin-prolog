@@ -1,8 +1,8 @@
 object gdc_dlgUserComplexDocument147022845_119619099: Tgdc_dlgUserComplexDocument
-  Left = -5
-  Top = 99
+  Left = -8
+  Top = -8
   ActiveControl = nil
-  WindowState = wsNormal
+  WindowState = wsMaximized
   PixelsPerInch = 96
   TextHeight = 13
   object btnAccess: TButton
@@ -561,6 +561,7 @@ object gdc_dlgUserComplexDocument147022845_119619099: Tgdc_dlgUserComplexDocumen
               Top = 16
               Width = 93
               Cursor = crIBeam
+              ReadOnly = True
               TabOrder = 4
             end
             object usrat_DBCheckBox_USR_BYSTAFFSALARY: TDBCheckBox
@@ -584,7 +585,7 @@ object gdc_dlgUserComplexDocument147022845_119619099: Tgdc_dlgUserComplexDocumen
               Top = 86
               Hint = '50% ÓÚ ¡Ãœ'
               Caption = '50% ÓÚ ¡œÃ'
-              ReadOnly = False
+              ReadOnly = True
             end
             object usrat_DBCheckBox_USR_THIRDMETHOD: TDBCheckBox
               Left = 8
