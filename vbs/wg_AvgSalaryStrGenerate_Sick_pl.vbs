@@ -1,14 +1,12 @@
 Option Explicit
 '#include pl_GetScriptIDByName
 '#include wg_GetConstByIDAndDate
-'#include wg_Const
-'#include wg_Prolog
 
-Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef Sender)
+Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
 '
   Dim T, T1, T2
-  
-  Dim Creator, gdcObject, gdcSalary
+  '
+  Dim Creator
   '
   Dim PL, Ret, Pred, Tv, Append
   Dim PredFile
@@ -30,21 +28,9 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef Sender)
 
   T1 = Timer
   wg_AvgSalaryStrGenerate_Sick_pl = False
-  Set Creator = New TCreator
-
-  Sender.GetComponent("actApply").Execute
-
-  Set gdcObject = Sender.gdcObject
-  Call wg_Prolog.SyncField(gdcObject, True)
-  '
-  EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
-  FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
-  DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
-  IsAvgWageDoc = gdcObject.FieldByName("USR$REFERENCE").AsInteger
-  IsPregnancy = abs(gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
-         gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
 
   'init
+  Set Creator = New TCreator
   Set PL = Creator.GetObject(nil, "TgsPLClient", "")
   Ret = PL.Initialise("")
   If Not Ret Then
@@ -58,18 +44,21 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef Sender)
     Exit Function
   End If
 
-  Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
-  '
+  'params
+  EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
+  FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
+  DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
+  IsAvgWageDoc = gdcObject.FieldByName("USR$REFERENCE").AsInteger
+  IsPregnancy = abs(gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
+         gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
+
+  'clean
   gdcSalary.First
   While Not gdcSalary.EOF
     gdcSalary.Delete
   Wend
   '
-  gdcObject.FieldByName("USR$AVGSUMMA").Clear
-  gdcObject.FieldByName("USR$THIRDMETHOD").AsInteger = 0
-  gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger = 0
-  '
-  Sender.Repaint
+  gdcSalary.OwnerForm.Repaint
 
   'avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy)
   P_in = "avg_wage_sick_in"
@@ -264,7 +253,7 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef Sender)
   '
 
   gdcSalary.First
-  '
+
   If AvgWage > 0 then
     gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency = AvgWage
   End If
@@ -277,9 +266,7 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef Sender)
   End select
   '
   gdcObject.Post
-  '
-  Call wg_Prolog.SyncField(gdcObject, False)
-  
+
   wg_AvgSalaryStrGenerate_Sick_pl = True
   
   T2 = Timer

@@ -1,0 +1,968 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 528622871_99701464
+  Name: "Зарплата.Пересчет больничных"
+  Caption: "Зарплата.Пересчет больничных"
+  Version: "1.0.0.1"
+  Optional: False
+  Internal: True
+Uses: 
+  - "520227618_2108071301 mmk_2014_01_30  расшифровка больничного "
+  - "528622143_99701464 GS.Зарплата.Пролог.Начисление отпусков и больничных"
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147019312_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 493758409_2108071301
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_FCRates"
+      COMMENT: ~
+      SCRIPT: | 
+        option explicit
+        function wg_FCRates
+          if not Assigned(wg_FCRates_) then
+            set wg_FCRates_ = New Twg_FCRates_cache
+          end if
+          set wg_FCRates = wg_FCRates_
+        end function
+        
+      DISPLAYSCRIPT: | 
+        WG_FCRATES
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2008-11-25T20:46:29+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147584840_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 493758409_2108071301
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_FeeType"
+      COMMENT: ~
+      SCRIPT: | 
+        option explicit
+        function wg_FeeType
+          if not Assigned(wg_FeeType_) then
+            set wg_FeeType_ = New Twg_FeeType_cache
+          end if
+        
+          set wg_FeeType = wg_FeeType_
+        end function
+        
+      DISPLAYSCRIPT: | 
+        WG_FEETYPE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2007-06-03T17:45:08+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147019334_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 493758409_2108071301
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_MonthHour"
+      COMMENT: ~
+      SCRIPT: | 
+        option explicit
+        function wg_MonthHour
+          if not Assigned(wg_MonthHour_) then
+            set wg_MonthHour_ = New Twg_MonthHour '_cache
+          end if
+        
+          set wg_MonthHour = wg_MonthHour_
+        end function
+        
+      DISPLAYSCRIPT: | 
+        WG_MONTHHOUR
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2008-11-25T20:46:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147804276_375143752
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 493758409_2108071301
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_RoundSum"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include wg_WageSettings
+        '#include wg_FeeType
+        option explicit
+        function wg_RoundSum(ByVal FeeTypeKey, ByVal Sum)
+          dim Delta, RoundType, RoundValue
+        
+          Delta = 0.00001
+          
+          RoundType = wg_FeeType.Items(FeeTypeKey).RoundType
+          ' Если выбрано "Округлять по правилу 10"
+          if RoundType = 1 then
+            RoundValue = 10
+          else
+            RoundValue = wg_FeeType.Items(FeeTypeKey).RoundValue
+          end if
+        
+          select case RoundType
+            case 0
+              wg_RoundSum = Sum
+            case 1, 2
+              wg_RoundSum = Round((Sum + Delta) / RoundValue) * RoundValue
+            case 3
+              wg_RoundSum = Fix((Sum + Delta) / RoundValue) * RoundValue
+          end select
+        end function
+        
+      DISPLAYSCRIPT: | 
+        WG_ROUNDSUM
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QKAAAARkVFVFlQRUtFWQoAAABGRUVUWVBFS0VZAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        AAAAAEZOU1RQUlNUAwAAAFNVTQMAAABTVU0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVEZM
+        UFI=
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2011-12-13T18:46:16+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147019760_119619099 wg_WageSettings"
+          - 
+            ADDFUNCTIONKEY: "147584840_119619099 wg_FeeType"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 155074107_1698257362
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 493758409_2108071301
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_CalcSiclListCoeff"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include WG_FCRATES
+        Option Explicit
+        ' для больничного: рассчитать коэффициенты повышения
+        ' DB - дата начала больничного
+        ' LDB - дата начала позиции больничного
+        Function wg_CalcSiclListCoeff(DB, LDB)
+          ' проверяем, только если был переход на новый месяц, или больничный с 1-го числа месяца
+          if Day(DB) = 1 or (Month(LDB) <> Month(DB)) then
+            dim OCR, NCR
+            ' тарифная ставка первого разряда на дату больничного
+            if Day(DB) <> 1 then
+              OCR = wg_FCRates.FCRates(DB).FCRate
+            else
+              OCR = wg_FCRates.FCRates(DB - 1).FCRate
+            end if
+            ' тарифная ставка первого разряда на дату позиции больничного
+            NCR = wg_FCRates.FCRates(LDB).FCRate
+            if (OCR = 0 or NCR = 0) then
+              wg_CalcSiclListCoeff = 1
+              exit function
+            end if
+            wg_CalcSiclListCoeff = NCR / OCR
+          else
+            wg_CalcSiclListCoeff = 1
+          end if
+        End function
+        
+      DISPLAYSCRIPT: | 
+        WG_CALCSICLLISTCOEFF
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QCAAAAREICAAAAREIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QDAAAA
+        TERCAwAAAExEQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2013-07-01T16:43:47+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147019312_119619099 wg_FCRates"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 493758411_2108071301
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 493758409_2108071301
+    Fields: 
+      OBJECTNAME: "gdc_frmUserComplexDocument147022845_119619099"
+      MODULE: "MACROS"
+      LANGUAGE: "VBScript"
+      NAME: "Macros493758411_2108071301"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include WG_GETCONSTBYIDANDDATE
+        '#include WG_ROUNDSUM
+        '#include WG_MONTHHOUR
+        '#include WG_CALCSICLLISTCOEFF
+        Option Explicit
+        Sub Macros493758411_2108071301(OwnerForm)
+        
+          dim gdcObject, gdcDetail, gdcAvgStr, Creator, ID, doc
+          set gdcObject = OwnerForm.gdcObject
+          set gdcDetail = OwnerForm.gdcDetailObject
+          set Creator = new TCreator
+        
+          gdcObject.First
+          id = ""
+          while not gdcObject.eof
+            if id = "" then
+              id = gdcObject.ID
+            else
+              id = id & ", " & gdcObject.ID
+            end if
+           gdcObject.Next
+          wend
+          id = "(" & id & ")"
+          
+        '  doc = OwnerForm.SelectedKey
+        '   if IsArray(doc(0)) then
+        '    id = "(" + Join(doc(0), ",") + ")"
+        '  else
+        '    id = "(" + CStr(doc(0)) + ")"
+        '  end if
+        
+          gdcObject.ExtraConditions.Add(" z.id in " & id )
+        
+          set gdcAvgStr = Creator.GetObject(OwnerForm, "TgdcAttrUserDefined", "")
+          gdcAvgStr.SubType = "USR$WG_AVGSALARYSTR"
+          gdcAvgStr.Transaction = gdcObject.Transaction
+          gdcAvgStr.ReadTransaction = gdcObject.ReadTransaction
+          gdcAvgStr.SubSet = "ByParent"
+          gdcAvgStr.MasterSource = OwnerForm.GetComponent("dsMain")
+          gdcAvgStr.MasterField = "ID"
+          gdcAvgStr.DetailField = "PARENT"
+          gdcAvgStr.Open
+        
+          gdcObject.First
+          while not gdcObject.EOF
+            call AvgGenerate(gdcObject, gdcAvgStr)
+            if gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger = 0 then
+              dim MonthNum
+              gdcAvgStr.First
+              while not gdcAvgStr.EoF
+                gdcAvgStr.Next
+              wend
+              MonthNum = gdcAvgStr.RecNo
+              if MonthNum < gdcObject.FieldByName("USR$AVGPERIOD").AsInteger then
+                  if not (gdcObject.State = dsEdit or gdcObject.State = dsInsert) then
+                    gdcObject.Edit
+                  end if
+                  if not gdcObject.FieldByName("USR$REFERENCE").AsInteger = 1 then
+                    gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger = 1
+                    ' 04.11.2013 перенесено из SyncField (для 50% от прож.минимума)
+                    call CalcAvgSumBudget(gdcObject)
+                  end if
+                  gdcObject.Post
+              end if
+            else
+              if not (gdcObject.State = dsEdit or gdcObject.State = dsInsert) then
+                gdcObject.Edit
+              end if
+              if not gdcObject.FieldByName("USR$REFERENCE").AsInteger = 1 then
+                ' 04.11.2013 перенесено из SyncField (для 50% от прож.минимума)
+                call CalcAvgSumBudget(gdcObject)
+              end if
+              gdcObject.Post
+            end if
+            call SickLine(gdcObject, gdcdetail, gdcAvgStr)
+        
+            dim FeeTypeKey, Pregnancy, LimitPercent, ByHour, ByBudget, LineSum, K, LastDay
+            FeeTypeKey = gdcBaseManager.GetIDByRUIDString(wg_FeeType_SickList_RUID)
+            'Декретный или нет
+            Pregnancy = (gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID) = gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger)
+            gdcDetail.Cancel
+            gdcDetail.First
+            if not gdcObject.FieldByName("usr$percent").IsNull then
+              LimitPercent = gdcObject.FieldByName("usr$percent").AsCurrency
+            else
+              LimitPercent = 100
+            end if
+            ByHour = (gdcObject.FieldByName("usr$calcbyhour").AsInteger = 1)
+            ByBudget = (gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger = 1)
+        
+            while (not gdcDetail.EOF)
+              gdcDetail.Edit
+              if not ByBudget then
+                if not ByHour then
+                  LineSum = _
+                    gdcDetail.FieldByName("USR$DOI").AsCurrency * gdcDetail.FieldByName("USR$PERCENT").AsCurrency * _
+                    gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency / 100
+                else
+                  LineSum = _
+                    gdcDetail.FieldByName("USR$HOI").AsCurrency * gdcDetail.FieldByName("USR$PERCENT").AsCurrency * _
+                    gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency / 100
+                end if
+        
+                K = wg_CalcSiclListCoeff(gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime, _
+                  gdcDetail.FieldByName("USR$DATEBEGIN").AsDateTime)
+        
+                LineSum = LineSum * LimitPercent / 100 * K
+              else
+                LastDay = Day(DateAdd("m", 1, DateSerial( _
+                  Year(gdcDetail.FieldByName("USR$DATEBEGIN").AsDateTime), _
+                  Month(gdcDetail.FieldByName("USR$DATEBEGIN").AsDateTime), 1)) - 1)
+                if LastDay > 0 then
+                  LineSum = _
+                    gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency * _
+                    gdcDetail.FieldByName("USR$DOI").AsInteger / LastDay
+                else
+                  LineSum = 0
+                end if
+              end if
+              'if not Pregnancy then
+              dim wg_EmployeeMovement, DateFrom, MoveCard, WorkDays, WorkHours, DB, DE
+                set wg_EmployeeMovement = wg_EmplMoveList.MoveCardList(gdcObject.FieldByName("USR$EMPLKEY").AsInteger, Null)
+                if Assigned(wg_EmployeeMovement) then
+                  'Зредняя зрп за месяц предыдущий месяцу болезни
+                  DateFrom = gdcDetail.FieldByName("USR$INCLUDEDATE").AsDateTime
+                  set MoveCard = wg_EmployeeMovement.ExistMoveCardByDate(DateFrom)
+                  if Assigned(MoveCard) then
+                    WorkDays = 0
+                    WorkHours = 0
+                    ' определяем период начала и конца итогового начисления
+                    DB = wg_Total.DateBegin(wg_Total.TotalDocByDate(DateFrom))
+                    DE = wg_Total.DateEnd(wg_Total.TotalDocByDate(DateFrom))
+                    call wg_CalcSchedulerWorkTime(gdcObject.FieldByName("usr$emplkey").AsInteger, _
+                      MoveCard.FirstMoveKey, DB, DE, gdcObject.ReadTransaction, True, WorkDays, WorkHours)
+        
+                    dim AvgSalaryByRB
+                    if not ByHour then
+                      if WorkDays > 0 then
+                        AvgSalaryByRB = 3 * wg_MonthHour.AvgSalaryByRB(_
+                          DateSerial(Year(DateFrom), Month(DateFrom), 1) -1) / WorkDays * gdcDetail.FieldByName("USR$DOI").AsCurrency
+                      else
+                        AvgSalaryByRB = 0
+                      end if
+                    else
+                      if WorkHours > 0 then
+                        AvgSalaryByRB = 3 * wg_MonthHour.AvgSalaryByRB(_
+                          DateSerial(Year(DateFrom), Month(DateFrom), 1) -1) / WorkHours * gdcDetail.FieldByName("USR$HOI").AsCurrency
+                      else
+                        AvgSalaryByRB = 0
+                      end if
+                    end if
+        
+                    if AvgSalaryByRB <> 0 and LineSum > AvgSalaryByRB then
+                      LineSum = AvgSalaryByRB
+                    end if
+                  end if
+               ' end if
+              end if
+              gdcDetail.FieldByName("usr$summa").AsCurrency = wg_RoundSum(FeeTypeKey, LineSum)
+              gdcDetail.Post
+              gdcDetail.Next
+            wend
+            gdcDetail.First
+            gdcObject.next
+          WEnd
+          
+          gdcObject.ExtraConditions.Clear
+        
+        End Sub
+        
+        sub AvgGenerate(ByRef Obj, ByRef AvgStr)
+        'Есть 3 варианта расчета, которые зависят от того в какой момент произошло изменение оклада (ставки):
+        ' 1. Расчет стандартный:
+        '    - последнее повышение было до периода расчета среднего заработка
+        ' 2. Период расчета: с момента повышения зрп до начала нетрудоспособности
+        '    - повышение попало с первого числа месяца расчета ср. заработка и до начала нетрудоспособности
+        ' 3. Расчет стандартный, но сумма увеличивается на коэффициент повышения оклада (ставки)
+        '    - повышение попало на период нетрудоспособности
+        
+          'Сбрасываем кэш для Переменных
+          set wg_Variable_ = Nothing
+        
+          dim gdcObject, gdcAvgStr
+          
+          set gdcObject = Obj
+          set gdcAvgStr = AvgStr
+        
+          'Выключаем автоперерасчет среднего заработка
+          gdcAvgStr.Tag = 1
+          'Удалим старые значения
+          gdcAvgStr.First
+          while not gdcAvgStr.Eof
+            gdcAvgStr.Delete
+        '    gdcAvgStr.Next
+          wend
+          
+          dim DateFrom, FirstDateBeginIll, DateEnd, AddDuration
+          'Дата начала нетрудоспособности
+          DateFrom = gdcObject.FieldByName("usr$from").AsDateTime
+          'Первое число месяца больничного
+          FirstDateBeginIll = DateSerial(Year(DateFrom), Month(DateFrom), 1)
+          DateEnd = gdcObject.FieldByName("usr$dateend").AsDateTime
+          AddDuration = DateDiff("m", DateFrom, DateEnd) + 1
+        
+          dim ByHourFlg
+          'Расчет по часам
+          ByHourFlg = (gdcObject.FieldByName("usr$calcbyhour").AsInteger = 1)
+        
+          dim BySalaryFlg, EmplMoveList, MoveCard
+          'Определим по карточке сотрудника (на дату окончания) прослеживать изменения оклада или ставки
+          BySalaryFlg = False
+          set EmplMoveList = wg_EmplMoveList.MoveCardList(gdcObject.FieldByName("usr$emplkey").AsInteger, Null)
+          if Assigned(EmplMoveList) then
+            set MoveCard = EmplMoveList.ExistMoveCardByDate(DateEnd)
+            if Assigned(MoveCard) then
+              BySalaryFlg = MoveCard.PayFormKey = gdcBaseManager.GetIDByRUIDString(wg_PayForm_Salary_RUID)
+              if IsNull(BySalaryFlg) then BySalaryFlg = 0
+            end if
+          end if
+          
+          dim AvgPeriodsObj, Duration
+          set AvgPeriodsObj = New Twg_AvgPeriods
+          AvgPeriodsObj.EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
+          AvgPeriodsObj.FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
+          Duration = gdcObject.FieldByName("usr$avgperiod").AsInteger
+          AvgPeriodsObj.DateBegin = DateAdd("m", - Duration, FirstDateBeginIll)
+          AvgPeriodsObj.Duration = Duration '+ AddDuration
+          AvgPeriodsObj.FeeGroupKey = gdcObject.FieldByName("usr$feegroupkey").Value
+          AvgPeriodsObj.BySalary = BySalaryFlg
+          AvgPeriodsObj.ByStaffSalary = (gdcObject.FieldByName("usr$bystaffsalary").AsInteger = 1)
+          AvgPeriodsObj.DateFrom = DateFrom
+          AvgPeriodsObj.IsPregnancy = _
+              (gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
+                 gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
+        
+          dim AvgPeriodItems, AvgPeriodItemsArr, LastDateChange, NoMovingFlg, _
+            ChangeOnIllPeriodFlg
+          
+          set AvgPeriodItems = AvgPeriodsObj.Items
+          AvgPeriodItemsArr = AvgPeriodItems.Items
+          'Дата последнего изменения
+          LastDateChange = AvgPeriodsObj.LastDateChange
+        
+          NoMovingFlg = False
+          ChangeOnIllPeriodFlg = False
+          if IsNull(LastDateChange) then
+            'Движений за период расчета и больничного не было
+            LastDateChange = AvgPeriodsObj.DateBegin
+            NoMovingFlg = True
+          else
+            ChangeOnIllPeriodFlg = (LastDateChange >= DateFrom and LastDateChange <= DateEnd)
+            if ChangeOnIllPeriodFlg then _
+              NoMovingFlg = True
+          end if
+        
+          dim Coeff, NewSalary, AllSum, AllWorkDay, AllWorkHour, i
+          Coeff = 1
+          NewSalary = 0
+          AllSum = 0
+          AllWorkDay = 0
+          AllWorkHour = 0
+          for i = AvgPeriodItems.Count - 1 to 0 step -1
+            'Интересуют все месяцы, кроме тех, которые идут после начала больничного без движений
+            if AvgPeriodItemsArr(i).DateChange <= FirstDateBeginIll or _
+                (AvgPeriodItemsArr(i).DateChange > FirstDateBeginIll and AvgPeriodItemsArr(i).DateChange <= DateEnd and AvgPeriodItemsArr(i).IsChange) then
+        
+              'Подсчет коэффициента изменения оклада (ставки)
+              if NewSalary > 0 and AvgPeriodItemsArr(i).DateChange < FirstDateBeginIll and Coeff = 1 then
+                if AvgPeriodsObj.BySalary then
+                  Coeff = NewSalary / AvgPeriodItemsArr(i).Salary
+                else
+                  Coeff = NewSalary / AvgPeriodItemsArr(i).FCRate
+                end if
+              end if
+        
+              gdcAvgStr.Insert
+        '      gdcAvgStr.FieldByName("usr$ischeck").AsInteger = 0
+              gdcAvgStr.FieldByName("usr$date").AsDateTime = AvgPeriodItemsArr(i).DateBegin
+              gdcAvgStr.FieldByName("usr$salary").AsCurrency = AvgPeriodItemsArr(i).SumByGroup
+              gdcAvgStr.FieldByName("usr$oldsalary").AsCurrency = AvgPeriodItemsArr(i).Salary
+              gdcAvgStr.FieldByName("usr$newsalary").AsCurrency = AvgPeriodItemsArr(i).FCRate
+              gdcAvgStr.FieldByName("usr$dow").AsCurrency = AvgPeriodItemsArr(i).WorkDays
+              gdcAvgStr.FieldByName("usr$how").AsCurrency = AvgPeriodItemsArr(i).WorkHours
+              gdcAvgStr.FieldByName("usr$schedulerdow").AsCurrency = AvgPeriodItemsArr(i).SchedulerDays
+              gdcAvgStr.FieldByName("usr$schedulerhow").AsCurrency = AvgPeriodItemsArr(i).SchedulerHours
+              gdcAvgStr.FieldByName("usr$coeff").AsCurrency = Coeff
+              gdcAvgStr.FieldByName("usr$description").AsString = AvgPeriodItemsArr(i).Description
+        
+              ' added 19.07.13
+              ' если декретный или дата > 11.07.13, то признак во всех периодах =1
+              if DateFrom >= CDate("11.07.2013") or AvgPeriodsObj.IsPregnancy then
+                gdcAvgStr.FieldByName("usr$ischeck").AsInteger = 1
+              else
+                gdcAvgStr.FieldByName("usr$ischeck").AsInteger = 0
+              end if
+              ' end added
+        
+        
+              if (NoMovingFlg and AvgPeriodItemsArr(i).DateChange < FirstDateBeginIll) or _
+                  (AvgPeriodItemsArr(i).DateChange >= LastDateChange) then
+                gdcAvgStr.FieldByName("usr$ischeck").AsInteger = 1
+              end if
+        
+              if AvgPeriodItemsArr(i).DateChange < FirstDateBeginIll then
+              'Периоды, до начала месяца болезни
+                if AvgPeriodItemsArr(i).DateChange >= LastDateChange or LastDateChange >= DateFrom then
+                  gdcAvgStr.FieldByName("usr$ischeck").AsInteger = 1
+                end if
+              else
+                if AvgPeriodItemsArr(i).DateChange < DateFrom and AvgPeriodItemsArr(i).DateChange >= LastDateChange and (not NoMovingFlg) then
+                  gdcAvgStr.FieldByName("usr$ischeck").AsInteger = 1
+                end if
+              end if
+        
+        '      IsCheck = AvgPeriodItemsArr(i).DateChange < FirstDateBeginIll
+        
+              if ChangeOnIllPeriodFlg and AvgPeriodItemsArr(i).DateChange = LastDateChange then
+               'Изменение попадает в период болезни, т.е. сумма будет проиндексирована
+                if AvgPeriodsObj.BySalary then
+                  NewSalary = AvgPeriodItemsArr(i).Salary
+                else
+                  NewSalary = AvgPeriodItemsArr(i).FCRate
+                end if
+              end if
+              if gdcAvgStr.FieldByName("usr$ischeck").AsInteger = 1 then
+                AllSum = AllSum + gdcAvgStr.FieldByName("usr$salary").AsCurrency
+                AllWorkDay = AllWorkDay + gdcAvgStr.FieldByName("usr$dow").AsCurrency
+                AllWorkHour = AllWorkHour + gdcAvgStr.FieldByName("usr$how").AsCurrency
+              end if
+              gdcAvgStr.Post
+            end if
+          next
+          dim AvgSum, AllWorkPoint
+          AvgSum = 0
+          if ByHourFlg then
+            AllWorkPoint = AllWorkHour
+          else
+            AllWorkPoint = AllWorkDay
+          end if
+          if AllWorkPoint > 0 then
+            AvgSum = AllSum / AllWorkPoint
+          end if
+          gdcAvgStr.Tag = 0
+          
+          dim thirdmethod
+          thirdmethod = 0
+          if (gdcObject.FieldByName("usr$reference").AsInteger = 1) or gdcAvgStr.RecordCount = 6 then
+            dim q, Creator
+            set Creator = new TCreator
+            set q = Creator.GetObject(null, "TIBSQL", "")
+            q.Transaction = gdcObject.ReadTransaction
+            q.SQL.Text = _
+                "EXECUTE BLOCK( " & _
+                "  PARENT INTEGER = :PARENT) " & _
+                "RETURNS " & _
+                "( " & _
+                "  OK INTEGER " & _
+                ") " & _
+                " AS " & _
+                "DECLARE VARIABLE EMPLKEY INTEGER; " & _
+                "DECLARE VARIABLE FDATE DATE; " & _
+                "DECLARE VARIABLE DOW INTEGER; " & _
+                "DECLARE VARIABLE LEAVEDAY INTEGER; " & _
+                "DECLARE VARIABLE MONTHDAY INTEGER; " & _
+                "DECLARE VARIABLE TempM INTEGER; " & _
+                "DECLARE VARIABLE TempY INTEGER; " & _
+                "DECLARE VARIABLE TempNextDate DATE; " & _
+                "BEGIN " & _
+                "  OK = 0; " & _
+                "  FOR " & _
+                "    SELECT LIST.USR$EMPLKEY, STR.USR$DATE, STR.USR$DOW " & _
+                "    FROM USR$WG_AVGSALARYSTR STR " & _
+                "    JOIN USR$WG_SICKLIST LIST ON LIST.DOCUMENTKEY = STR.USR$DOCUMENTKEY " & _
+                "    WHERE " & _
+                "      USR$DOCUMENTKEY = :parent " & _
+                "    INTO :EMPLKEY, :FDATE, :DOW " & _
+                "  DO " & _
+                "  BEGIN " & _
+                "   " & _
+                "    TempM = EXTRACT(MONTH FROM CAST(:FDATE AS DATE)); " & _
+                "    TempY = EXTRACT(YEAR FROM CAST(:FDATE AS DATE)); " & _
+                "    TempM = TempM + 1; " & _
+                "    IF (TempM = 13) THEN " & _
+                "    BEGIN " & _
+                "      TempY = TempY + 1; " & _
+                "      TempM = 1; " & _
+                "    END " & _
+                "    TempNextDate = CAST('01.' ||  RIGHT('0' || TempM, 2) || '.' || TempY  AS DATE); " & _
+                "    MONTHDAY = EXTRACT(DAY FROM( DATEADD(DAY, -1, TempNextDate))); " & _
+                "    SELECT " & _
+                "      SUM(CASE " & _
+                "      WHEN EXTRACT(MONTH FROM U.USR$DATEBEGIN) = EXTRACT(MONTH FROM U.USR$DATEEND) THEN U.USR$DATEEND - U.USR$DATEBEGIN + 1 " & _
+                "      WHEN EXTRACT(MONTH FROM U.USR$DATEBEGIN) < EXTRACT(MONTH FROM U.USR$DATEEND) AND EXTRACT(MONTH FROM U.USR$DATEBEGIN) = EXTRACT(MONTH FROM CAST(:FDATE AS DATE)) THEN DATEADD(DAY, -1, :TempNextDate) - U.USR$DATEBEGIN + 1 " & _
+                "      WHEN EXTRACT(MONTH FROM U.USR$DATEBEGIN) < EXTRACT(MONTH FROM U.USR$DATEEND) AND EXTRACT(MONTH FROM U.USR$DATEEND) = EXTRACT(MONTH FROM CAST(:FDATE AS DATE)) THEN U.USR$DATEEND - :FDATE + 1 " & _
+                "      END) AS LEAVEDAY " & _
+                "    FROM GD_DOCUMENT Z " & _
+                "    JOIN USR$WG_LEAVEDOCLINE U ON Z.ID = U.DOCUMENTKEY " & _
+                "    WHERE " & _
+                "      Z.DOCUMENTTYPEKEY = 328606656 " & _
+                "     AND " & _
+                "      U.USR$EMPLKEY = :EMPLKEY " & _
+                "     AND " & _
+                "      EXTRACT(MONTH FROM CAST(:FDATE AS DATE)) BETWEEN EXTRACT(MONTH FROM U.USR$DATEBEGIN) AND EXTRACT(MONTH FROM U.USR$DATEEND) " & _
+                "    INTO :LEAVEDAY; " & _
+                "    IF (LEAVEDAY IS NULL) THEN " & _
+                "        LEAVEDAY = 0; " & _
+                " " & _
+                " " & _
+                "    IF (DOW + LEAVEDAY = MONTHDAY) THEN " & _
+                "        OK = OK + 1; " & _
+                "  END " & _
+                "  SUSPEND; " & _
+                "END "
+            q.ParamByName("parent").AsInteger = gdcObject.ID
+            q.ExecQuery
+        
+            if (gdcObject.FieldByName("usr$reference").AsInteger = 1) or q.FieldByName("OK").AsInteger = 0 then
+              q.Close
+              q.SQL.Text = _
+              "SELECT FIRST 1 COALESCE(ML.USR$THOURRATE, 0) AS RATE " & _
+              "FROM USR$WG_TOTAL T " & _
+              "JOIN USR$WG_MOVEMENTLINE ML ON ML.USR$DATEBEGIN <= T.USR$DATEBEGIN " & _
+              "WHERE " & _
+              "  T.DOCUMENTKEY = :totalkey " & _
+              "  AND ML.USR$EMPLKEY = :emplkey " & _
+              "ORDER BY ML.USR$DATEBEGIN DESC "
+              q.ParamByName("totalkey").AsInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
+              q.ParamByName("emplkey").AsInteger = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
+              q.ExecQuery
+        
+              thirdmethod = 1
+        
+              if not q.EOF then
+                AvgSum = 8*q.FieldByName("RATE").AsCurrency
+              else
+                AvgSum = 0
+              end if
+            end if
+          end if
+          
+          
+          gdcObject.Edit
+          gdcObject.FieldByName("usr$avgsumma").AsCurrency = Round(AvgSum)
+          gdcObject.FieldByName("usr$thirdmethod").AsInteger = thirdmethod
+          gdcObject.Post
+        end sub
+        
+        sub SickLine(ByRef Obj, ByRef Det, ByRef AvgStr)
+          dim gdcObject, gdcDetail, gdcAvgStr, FgdcObject
+        
+          set gdcObject = Obj
+          set gdcDetail = Det
+          set gdcAvgStr = AvgStr
+          set FgdcObject = gdcObject
+        
+          dim AccDate, aEmployeeKey, CalcType, aFMK, FDateBegin, FDateEnd
+        
+            FDateBegin = gdcObject.FieldByName("usr$datebegin").AsVariant
+            FDateEnd = gdcObject.FieldByName("usr$dateend").AsVariant
+            aEmployeeKey = gdcObject.FieldByName("usr$emplKey").AsInteger
+            aFMK = gdcObject.FieldByName("usr$firstmovekey").AsInteger
+            AccDate = DateSerial(Year(gdcObject.FieldByName("usr$from").AsVariant), Month(gdcObject.FieldByName("usr$from").AsVariant), 1)
+            CalcType = gdcObject.FieldByName("usr$calctype").AsInteger
+            dim  FPeriods
+            set FPeriods = CreateObject("Scripting.Dictionary")
+            call FSStruct(AccDate, FDateBegin, FDateEnd, aEmployeeKey, CalcType, aFMK, FgdcObject, FPeriods)
+            call CreateSickDocFromStructure(gdcDetail, FPeriods)
+        
+            'Нужно, тобы пересчитались суммы на SynField
+            if gdcObject.State = dsBrowse then
+              gdcObject.Edit
+            end if
+            gdcObject.FieldByName("usr$avgsumma").Value = gdcObject.FieldByName("usr$avgsumma").Value
+        
+        end sub
+        
+        sub FSStruct(ByVal aAccDate, ByVal aDateBegin, ByVal aDateEnd, ByVal aEmployeeKey, ByVal CalcType, ByVal aFMK, ByRef FgdcObject, ByRef FPeriods)
+            dim  EndDate, TheDateBEgin ,I, TheDate, DayInMonth, DoI, HoI, Percent, TheDay
+            dim Scheduler, ShedulerKey, EmployeeMovement, MoveCard
+            dim K, wg_SickType_Ill_ID
+            dim Period
+            dim Creator, dsSickStr
+            dim dayCount80 'added 18.07.13
+        
+            dim IsPregnancy
+            IsPregnancy = _
+              (FgdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
+                gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
+        
+            set Scheduler = wg_SchedulerCalList
+            set EmployeeMovement = wg_EmplMoveList.MoveCardList(aEmployeeKey, Null)
+            if Assigned(EmployeeMovement) then
+        
+              wg_SickType_Ill_ID = gdcBaseManager.GetIDByRUIDString(wg_SickType_Ill_RUID)
+              TheDate = aDateBegin
+              TheDateBegin = aDateBEgin
+              EndDate = aDateEnd
+        
+        
+              FPeriods.RemoveAll
+        
+              'Проверим является ли продолжением больничного
+              'При любом типе больничного от начала нетрудоспособности
+              'if FgdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
+              '  gdcBaseManager.GetIDByRUIDString("147404904_834680257") then
+                I = CalcExtraSickDuration(FgdcObject) + 1
+                if I <= 0 then
+                  I = 1
+                end if
+              'else
+              '  I = 1
+              'end if
+        
+              K = 0
+              DoI = 0
+              HoI = 0
+              while TheDate <= EndDate
+        
+                set MoveCard = EmployeeMovement.MoveCardByDate(TheDate)
+                if Assigned(MoveCard) then
+                ' TODO: а если карточки нет?
+                'Если нет карточки, то строим пустую структуру
+                  if not isNull(MoveCard.SchedulerKey) then
+                    set TheDay = Scheduler.SchedulerCals(MoveCard.SchedulerKey).DayInfo(TheDate)
+                    if Assigned(TheDay) then
+                      if TheDay.WorkDay or (IsPregnancy) or FgdcObject.FieldByName("USR$FROM").AsDateTime >= CDate("11.07.2013") then  'replaced 18.07.13
+                        DoI = DoI + 1
+                        HoI = HoI + TheDay.Duration
+                      end if
+                    end if
+                  end if
+                end if
+        
+                ' больничный - 80%
+                ' added 18.07.13
+                dayCount80 = 6
+                if CalcType = wg_SickType80_100 then
+                  if FgdcObject.FieldByName("USR$FROM").AsDateTime >= CDate("11.07.2013") then
+                    dayCount80 = 12
+                  end if
+                end if
+                ' added end
+        
+                if (I <= dayCount80) and CalcType = wg_SickType80_100 then 'if (I <= 6) and CalcType = wg_SickType80_100 then   replaced 18.07.13
+                  Percent = 80
+                else
+                  Percent = 100
+                end if
+        
+                'Запись для структуры сформирована
+                ' 18.07.13  replaced     I = 6
+                if wg_LastDayInMonth(TheDate) or (TheDate = EndDate) or ( I = dayCount80 and CalcType = wg_SickType80_100) then
+                ' Добавляем запись в структуру
+                  set Period = New Twg_StrPeriod
+                  call Period.FillSickData(aAccDate, TheDateBegin, TheDate, Percent, DOI, HoI)
+                  FPeriods.Add K, Period
+                  K = K + 1
+                  DoI = 0
+                  HoI = 0
+                  TheDateBegin = TheDate + 1
+                end if
+                TheDate = CDate(TheDate + 1)
+                I = I + 1
+              wend
+            end if
+          end sub
+          
+        sub CreateSickDocFromStructure(ByRef gdcObject, ByRef FPeriods)
+            dim a, i, Period
+        
+            gdcObject.First
+            while not gdcObject.EOF
+              gdcObject.Delete
+            wend
+        
+            a = FPeriods.Items
+            for i = 0 to FPeriods.Count-1
+              set Period = a(i)
+        
+              gdcObject.Append
+              gdcObject.FieldByName("usr$AccDate").AsVariant = Date
+              gdcObject.FieldByName("usr$IncludeDate").AsVariant = Period.IncludeDate
+              gdcObject.FieldByName("usr$DateBegin").AsVariant = Period.DateBegin
+              gdcObject.FieldByName("usr$DateEnd").AsVariant = Period.DateEnd
+              gdcObject.FieldByName("usr$percent").AsInteger = Period.percent
+              gdcObject.FieldByName("usr$DOI").AsCurrency = Period.Duration
+              gdcObject.FieldByName("usr$HOI").AsCurrency = Period.Hours
+              gdcObject.Post
+            next
+        end sub
+        
+        function CalcExtraSickDuration(ByRef FgdcObject)
+          CalcExtraSickDuration = 0
+        
+          dim Res()
+          call gdcBaseManager.ExecSingleQueryResult(" SELECT S.USR$FROM, S.USR$DATEBEGIN " & _
+              " FROM USR$WG_SICKLIST S " & _
+              " WHERE " & _
+              "   S.documentkey = :doc ", _
+              Array(FgdcObject.FieldByName("DOCUMENTKEY").AsInteger), Res, gdcBaseManager.ReadTransaction)
+          'call gdcBaseManager.ExecSingleQueryResult(" SELECT S.USR$DATEBEGIN, S.USR$DATEEND " & _
+        '    " FROM USR$WG_SICKLIST S " & _
+        '    " WHERE S.USR$FROM = :dt " & _
+        '    "   AND S.USR$EMPLKEY = :emplkey " & _
+        '    "   AND S.documentkey <> :doc ", _
+        '    Array(FgdcObject.FieldByName("USR$FROM").AsDateTime, FgdcObject.FieldByName("USR$EMPLKEY").AsInteger, _
+        '    FgdcObject.FieldByName("DOCUMENTKEY").AsInteger), Res, gdcBaseManager.ReadTransaction)
+          if not IsEmpty(Res) then
+            if (not IsNull(Res(0, 0))) and (not IsNull(Res(1, 0))) then
+        '        CalcExtraSickDuration = Res(0, 0) - (FgdcObject.FieldByName("USR$DATEBEGIN").AsDateTime - CDate(Res(1, 0)))
+              CalcExtraSickDuration = CDate(Res(1, 0)) - CDate(Res(0, 0))
+            end if
+          end if
+          end function
+        
+        
+        
+        ' 50% от бюджета прожиточного минимума
+        sub CalcAvgSumBudget(gdcO)
+          dim AvgSum, OnDate
+          if gdcO.FieldByName("USR$FROM").IsNull then
+            OnDate = Date
+          else
+            OnDate = gdcO.FieldByName("USR$FROM").AsDateTime
+          end if
+          ' бюджет прожиточного минимума
+          AvgSum = wg_GetConstByIDAndDate(gdcBaseManager.GetIDByRUIDString(wg_cnst_LivingWage_RUID), OnDate)
+          gdcO.FieldByName("usr$avgsumma").AsCurrency = Round(AvgSum  / 2)
+        end sub
+        
+      DISPLAYSCRIPT: | 
+        MACROS493758411_2108071301
+        AVGGENERATE
+        SICKLINE
+        FSSTRUCT
+        CREATESICKDOCFROMSTRUCTURE
+        CALCEXTRASICKDURATION
+        CALCAVGSUMBUDGET
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147014155_274788016 gdc_frmUserComplexDocument147022845_119619099"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QJAAAAT1dORVJGT1JNCQAAAE9XTkVSRk9STQAAAAAAAAAAAAAAAAsAAAAAAAAAAAAA
+        AABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-01-29T18:21:36+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147043669_974374174 wg_GetConstByIDAndDate"
+          - 
+            ADDFUNCTIONKEY: "147804276_375143752 wg_RoundSum"
+          - 
+            ADDFUNCTIONKEY: "147019334_119619099 wg_MonthHour"
+          - 
+            ADDFUNCTIONKEY: "155074107_1698257362 wg_CalcSiclListCoeff"
+  - 
+    Properties: 
+      Class: "TgdcMacros"
+      RUID: 493758409_2108071301
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_frmUserComplexDocument147022845_119619099"
+      MACROSGROUPKEY: "147071380_375139087 Локальные макросы"
+      FUNCTIONKEY: "493758411_2108071301 Macros493758411_2108071301"
+      NAME: "Пересчет больничных"
+      SERVERKEY: ~
+      ISLOCALEXECUTE: 0
+      ISREBUILD: 0
+      EXECUTEDATE: ~
+      SHORTCUT: 0
+      EDITIONDATE: 2014-01-29T18:21:36+03:00
+      DISPLAYINMENU: 1
+      RUNONLOGIN: 0

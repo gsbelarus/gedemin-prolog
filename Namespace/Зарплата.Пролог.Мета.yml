@@ -1,0 +1,269 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 151514594_101633588
+  Name: "Зарплата.Пролог.Мета"
+  Caption: "Метаданные"
+  Version: "1.0.0.1"
+  Optional: False
+  Internal: True
+Objects:
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 155817502_77029543
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 33
+      FIELDNAME: "USR$AVGDAYHOW"
+      RELATIONNAME: "USR$WG_FEETYPE"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147567082_119619099 Виды начислений, USR$WG_FEETYPE"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Дни/часы для среднего"
+      LSHORTNAME: "Дни/часы для среднег"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2013-12-26T15:52:05+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 156810157_126906444
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: 1
+      RDB$FIELD_POSITION: 15
+      FIELDNAME: "USR$CALCDAYS"
+      RELATIONNAME: "USR$WG_AVGSALARYSTR"
+      FIELDSOURCE: "DCURRENCY"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147021881_119619099 Структура среднего заработка, USR$WG_AVGSALARYSTR"
+      FIELDSOURCEKEY: "147000131_486813904 Сумма, DCURRENCY"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Дни расчетные"
+      LSHORTNAME: "Дни расчет."
+      DESCRIPTION: "Число дней для раcчета"
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-03-10T10:18:12+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 151269722_1763407244
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 9
+      FIELDNAME: "USR$FOROVERTIME"
+      RELATIONNAME: "USR$WG_HOURTYPE"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147015022_119619099 Тип отработанных часов, USR$WG_HOURTYPE"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Для сверхурочных"
+      LSHORTNAME: "Для сверхурочных"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2011-10-26T16:18:04+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 180860717_2137801780
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 12
+      FIELDNAME: "USR$WG_EXCLUDEFORSICKLIST"
+      RELATIONNAME: "USR$WG_HOURTYPE"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147015022_119619099 Тип отработанных часов, USR$WG_HOURTYPE"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Исключить из расчета больничных"
+      LSHORTNAME: "Искл.из расч.больнич"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2013-07-31T16:10:57+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 522226219_99701464
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 25
+      FIELDNAME: "USR$REFERENCE"
+      RELATIONNAME: "USR$WG_SICKLIST"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147022846_119619099 Начисление больничных, USR$WG_SICKLIST"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Справка"
+      LSHORTNAME: "Справка"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-03-10T19:08:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 509041440_63617372
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 24
+      FIELDNAME: "USR$THIRDMETHOD"
+      RELATIONNAME: "USR$WG_SICKLIST"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "147022846_119619099 Начисление больничных, USR$WG_SICKLIST"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Расчёт(неполн. мес.)"
+      LSHORTNAME: "Расчёт(неполн. мес.)"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2013-11-22T18:24:20+03:00

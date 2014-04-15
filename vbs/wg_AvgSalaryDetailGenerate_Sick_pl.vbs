@@ -1,9 +1,9 @@
 Option Explicit
 '#include pl_GetScriptIDByName
 
-Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef Sender)
+Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
 '
-  Dim Creator, gdcObject, gdcDetail
+  Dim Creator
   '
   Dim PL, Ret, Pred, Tv, Append
   Dim PredFile
@@ -18,36 +18,9 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef Sender)
   Dim AccDate, IncludeDate, Percent, DOI, HOI, Summa
 
   wg_AvgSalaryDetailGenerate_Sick_pl = False
-  Set Creator = New TCreator
-
-  Sender.GetComponent("actApply").Execute
-
-  Set gdcObject = Sender.gdcObject
-  '
-  EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
-  FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
-  DateBegin = gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime
-  DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
-  AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
-  CalcType = Sender.GetComponent("usrg_cbCalcType").ItemIndex
-  BudgetOption = gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger
-  '
-  Dim IBSQL
-  Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
-  IBSQL.Transaction = gdcBaseManager.ReadTransaction
-  IBSQL.SQL.Text = _
-      "select " & _
-      "  t.USR$DATEBEGIN " & _
-      "from " & _
-      "  usr$wg_total t " & _
-      "where " & _
-      "  t.DOCUMENTKEY = :TDK "
-  IBSQL.ParamByName("TDK").asInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
-  IBSQL.ExecQuery
-  DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
-  '
 
   'init
+  Set Creator = New TCreator
   Set PL = Creator.GetObject(nil, "TgsPLClient", "")
   Ret = PL.Initialise("")
   If Not Ret Then
@@ -61,14 +34,46 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef Sender)
     Exit Function
   End If
 
-  Set gdcDetail = Sender.gdcDetailObject
+  'params
+  EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
+  FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
+  DateBegin = gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime
+  DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
+  AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
+  BudgetOption = gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger
+
+  Dim IBSQL
   '
+  Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
+  IBSQL.Transaction = gdcBaseManager.ReadTransaction
+  IBSQL.SQL.Text = _
+      "SELECT " & _
+      "  t.USR$DATEBEGIN " & _
+      "FROM " & _
+      "  USR$WG_TOTAL t " & _
+      "WHERE " & _
+      "  t.DOCUMENTKEY = :TDK "
+  IBSQL.ParamByName("TDK").asInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
+  IBSQL.ExecQuery
+  '
+  DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
+
+  IBSQL.SQL.Text = _
+      "SELECT " & _
+      "  it.USR$CALCTYPE " & _
+      "FROM " & _
+      "  USR$WG_ILLTYPE it " & _
+      "WHERE " & _
+      "  it.ID = :ID "
+  IBSQL.ParamByName("ID").asInteger = gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger
+  IBSQL.ExecQuery
+  CalcType = IBSQL.FieldByName("USR$CALCTYPE").AsInteger
+
+  'clean
   gdcDetail.First
   While Not gdcDetail.EOF
     gdcDetail.Delete
   Wend
-  '
-  Sender.Repaint
 
   'struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL)
   P_sql = "struct_sick_sql"

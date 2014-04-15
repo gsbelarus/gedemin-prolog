@@ -23,7 +23,7 @@
 
 :- new_param_list(wg_avg_wage_sick, in,
     [
-    pMonthQty-6, pBudgetPart-0.5,
+    pMonthQty-6,
     pFeeGroupKey_xid-147071457,
     pFeeGroupKey_dbid-274788016,
     pFeeGroupKeyProp_xid-147119175,

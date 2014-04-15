@@ -6,6 +6,7 @@
 
 :- new_param_list(wg_struct_sick, in,
     [
+    pBudgetPart-0.5,
     pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
     pBudget_xid-147073065,
     pBudget_dbid-1224850260

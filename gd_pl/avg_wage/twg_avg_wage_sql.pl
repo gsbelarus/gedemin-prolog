@@ -9,11 +9,12 @@
 %
 wg_valid_sql([
             %  05. Начисление отпусков
-            usr_wg_DbfSums/6, % 05, 06
+            -usr_wg_DbfSums/6, % 05, 06
             usr_wg_MovementLine/15, % 05, 06
             usr_wg_FCRate/4,
-            usr_wg_TblDayNorm/8,
-            usr_wg_TblYearNorm/5,
+            usr_wg_TblCalDay/9, % 05, 06
+            -usr_wg_TblDayNorm/8, % 05, 06
+            -usr_wg_TblYearNorm/5,
             usr_wg_TblCalLine/7, % 05, 06
             usr_wg_TblCal_FlexLine/68, % 05, 06
             usr_wg_HourType/12, % 05, 06
@@ -26,7 +27,7 @@ wg_valid_sql([
             %  06. Начисление больничных
             usr_wg_FeeTypeProp/4,
             wg_holiday/1,
-            usr_wg_ExclDays/5,
+            usr_wg_ExclDays/6,
             gd_const_AvgSalaryRB/2
             ]).
 
@@ -133,6 +134,61 @@ ORDER BY \c
 ",
 [pEmplKey-_, pFirstMoveKey-_]
     ).
+
+gd_pl_ds(Scope, in, usr_wg_TblCalDay, 9,
+    [
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fTheDay-date, fWYear-integer, fWMonth-integer, fWDay-integer,
+    fWDuration-float, fWorkDay-integer, fScheduleKey-integer
+    ]) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
+% usr_wg_TblCalDay(EmplKey, FirstMoveKey, TheDay, WYear, WMonth, WDay,
+%    WDuration, WorkDay, ScheduleKey)
+get_sql(Scope, in, usr_wg_TblCalDay/9,
+"SELECT \c
+  ml.USR$EMPLKEY, \c
+  ml.USR$FIRSTMOVE AS FirstMoveKey, \c
+  tcd.THEDAY, \c
+  EXTRACT(YEAR FROM tcd.THEDAY) AS WYEAR, \c
+  EXTRACT(MONTH FROM tcd.THEDAY) AS WMONTH, \c
+  EXTRACT(DAY FROM tcd.THEDAY) AS WDAY, \c
+  tcd.WDURATION, \c
+  tcd.WORKDAY, \c
+  ml.USR$SCHEDULEKEY \c
+FROM \c
+( \c
+SELECT DISTINCT \c
+  USR$EMPLKEY, \c
+  USR$FIRSTMOVE, \c
+  USR$SCHEDULEKEY \c
+FROM \c
+  USR$WG_MOVEMENTLINE \c
+WHERE \c
+  USR$EMPLKEY = pEmplKey \c
+  AND \c
+  USR$FIRSTMOVE = pFirstMoveKey \c
+) ml \c
+JOIN \c
+  WG_TBLCAL tc \c
+    ON tc.ID = ml.USR$SCHEDULEKEY \c
+JOIN \c
+  WG_TBLCALDAY tcd \c
+    ON tcd.TBLCALKEY = tc.ID \c
+WHERE \c
+  COALESCE(tcd.WDURATION, 0) > 0 \c
+  AND \c
+  (tcd.THEDAY >= \'pDateCalcFrom\' OR tcd.THEDAY >= \'pDateNormFrom\') \c
+  AND \c
+  (tcd.THEDAY < \'pDateCalcTo\' OR tcd.THEDAY < \'pDateNormTo\') \c
+ORDER BY \c
+  tcd.THEDAY \c
+",
+[pEmplKey-_, pFirstMoveKey-_,
+ pDateCalcFrom-_, pDateCalcTo-_,
+ pDateNormFrom-_, pDateNormTo-_
+]
+    ) :-
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
 
 gd_pl_ds(Scope, in, usr_wg_TblDayNorm, 8,
     [
@@ -550,21 +606,22 @@ WHERE \c
 [pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_sick, in, usr_wg_ExclDays, 5,
+gd_pl_ds(wg_avg_wage_sick, in, usr_wg_ExclDays, 6,
     [
     fEmplKey-integer, fFirstMoveKey-integer,
-    fExclType-string,
+    fExclType-string, fExclWeekDay-integer,
     fFromDate-date, fToDate-date
     ]).
-% usr_wg_FeeTypeProp(EmplKey, FirstMoveKey, ExclType, FromDate, ToDate)
-get_sql(wg_avg_wage_sick, in, usr_wg_ExclDays/5,
+% usr_wg_ExclDays(EmplKey, FirstMoveKey, ExclType, ExclWeekDay, FromDate, ToDate)
+get_sql(wg_avg_wage_sick, in, usr_wg_ExclDays/6,
 "SELECT \c
-  EmplKey, FirstMoveKey, ExclType, FromDate, ToDate \c
+  EmplKey, FirstMoveKey, ExclType, ExclWeekDay, FromDate, ToDate \c
 FROM ( \c
 SELECT \c
   pEmplKey AS EmplKey, \c
   pFirstMoveKey AS FirstMoveKey, \c
   \'LIGHTWORKLINE\' AS ExclType, \c
+  0 AS ExclWeekDay, \c
   CAST( IIF(lw.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', lw.USR$DATEBEGIN) AS DATE) AS FromDate, \c
   CAST( IIF(lw.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(lw.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', lw.USR$DATEEND)) AS DATE) AS ToDate \c
 FROM USR$WG_LIGHTWORKLINE lw \c
@@ -576,7 +633,8 @@ UNION ALL \c
 SELECT \c
   pEmplKey AS EmplKey, \c
   pFirstMoveKey AS FirstMoveKey, \c
-  \'WG_LEAVEDOCLINE\' AS ExclType, \c
+  \'LEAVEDOCLINE\' AS ExclType, \c
+  0 AS ExclWeekDay, \c
   CAST( IIF(ld.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ld.USR$DATEBEGIN) AS DATE) AS FromDate, \c
   CAST( IIF(ld.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ld.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ld.USR$DATEEND)) AS DATE) AS ToDate \c
 FROM USR$WG_LEAVEDOCLINE ld \c
@@ -591,6 +649,7 @@ SELECT \c
   pEmplKey AS EmplKey, \c
   pFirstMoveKey AS FirstMoveKey, \c
   \'SICKLISTJOURNAL\' AS ExclType, \c
+  0 AS ExclWeekDay, \c
   CAST( IIF(s.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', s.USR$DATEBEGIN) AS DATE) AS FromDate, \c
   CAST( IIF(s.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(s.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', s.USR$DATEEND)) AS DATE) AS ToDate \c
 FROM USR$WG_SICKLISTJOURNAL s \c
@@ -602,19 +661,32 @@ SELECT \c
   pEmplKey AS EmplKey, \c
   pFirstMoveKey AS FirstMoveKey, \c
   \'LEAVEEXTDOC\' AS ExclType, \c
+  0 AS ExclWeekDay, \c
   CAST( IIF(ext.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ext.USR$DATEBEGIN) AS DATE) AS FromDate, \c
   CAST( IIF(ext.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ext.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ext.USR$DATEEND)) AS DATE) AS ToDate \c
 FROM USR$WG_LEAVEEXTDOC ext \c
 WHERE ext.USR$EMPLKEY = pEmplKey \c
   AND ext.USR$DATEBEGIN <= \'pDateCalcTo\' \c
   AND COALESCE(ext.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\' \c
+UNION ALL \c
+SELECT \c
+  pEmplKey AS EmplKey, \c
+  pFirstMoveKey AS FirstMoveKey, \c
+  \'KINDDAYLINE\' AS ExclType, \c
+  kdl.USR$DAY AS ExclWeekDay, \c
+  CAST( IIF(kdl.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', kdl.USR$DATEBEGIN) AS DATE) AS FromDate, \c
+  CAST( IIF(kdl.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(kdl.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', kdl.USR$DATEEND)) AS DATE) AS ToDate \c
+FROM USR$WG_KINDDAYLINE kdl \c
+WHERE kdl.USR$EMPLKEY = pEmplKey \c
+  AND kdl.USR$DATEBEGIN <= \'pDateCalcTo\' \c
+  AND COALESCE(kdl.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\' \c
 ) \c
 ORDER BY \c
+  ExclWeekDay, \c
   FromDate \c
 ",
 [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
-
 
 gd_pl_ds(wg_avg_wage_sick, in, gd_const_AvgSalaryRB, 2, [fConstDate-date, fAvgSalaryRB-float]).
 % gd_const_AvgSalaryRB(ConstDate, AvgSalaryRB)

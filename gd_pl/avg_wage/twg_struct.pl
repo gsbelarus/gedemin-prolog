@@ -55,34 +55,34 @@
 /* реализация */
 
 struct_vacation_sql(DocKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
+    Scope = wg_struct_vacation, Type = in, NextType = run,
     Pairs = [pDocKey-DocKey, pDateBegin-DateBegin, pDateEnd-DateEnd],
-    get_sql(wg_struct_vacation, in, Query, SQL0, Params),
+    get_sql(Scope, Type, Query, SQL0, Params),
     is_valid_sql(Query),
     Query = PredicateName/Arity,
     member_list(Params, Pairs),
     prepare_sql(SQL0, Params, SQL),
-    Pairs1 = [pDocKey-DocKey,
-              pQuery-Query, pSQL-SQL],
-    new_param_list(wg_struct_vacation, run, Pairs1).
+    Pairs1 = [pDocKey-DocKey, pQuery-Query, pSQL-SQL],
+    new_param_list(Scope, NextType, Pairs1).
 
 struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
+    Scope = wg_struct_sick, Type = in, NextType = run,
     DateCalcFrom = DateBegin,
     date_add(DateEnd, 1, day, DateCalcTo),
-    Pairs0 = [pBudget_xid-147073065, pBudget_dbid-1224850260],
-    get_param_list(wg_struct_sick, in, Pairs0),
+    get_param(Scope, Type, pBudgetPart-_, Pairs0),
     append(Pairs0,
                 [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                  pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo],
             Pairs),
-    new_param_list(wg_struct_sick, run, Pairs),
-    get_sql(wg_struct_sick, in, Query, SQL0, Params),
+    new_param_list(Scope, NextType, Pairs),
+    get_sql(Scope, Type, Query, SQL0, Params),
     is_valid_sql(Query),
     Query = PredicateName/Arity,
     member_list(Params, Pairs),
     prepare_sql(SQL0, Params, SQL),
     Pairs1 = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
               pQuery-Query, pSQL-SQL],
-    new_param_list(wg_struct_sick, run, Pairs1).
+    new_param_list(Scope, NextType, Pairs1).
 
 struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
     atom_date(DateCalc, date(Year, Month, _)),
@@ -98,12 +98,14 @@ struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
     !.
 
 struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption) :-
+    Scope = wg_struct_sick, Type = in,
     atom_date(DateCalc, date(Year, Month, _)),
     month_days(Year, Month, Days),
     atom_date(AccDate, date(Year, Month, Days)),
-    Pairs = [pFirstCalcType-FirstCalcType,
+    get_param(Scope, Type, pBudgetPart-_, Pairs),
+    Params = [pFirstCalcType-FirstCalcType,
              pFirstDuration-FirstDuration, pFirstPart-FirstPart],
-    get_param_list(wg_struct_sick, in, Pairs),
+    member_list(Params, Pairs),
     date_diff(DateBegin, Duration0, DateEnd),
     Duration is Duration0 + 1,
     ( CalcType = FirstCalcType,
@@ -149,10 +151,11 @@ struct_sick_calc(_, _, _, '', '', _, _) :-
 struct_sick_calc([], _-Slice, _, _, _, _, _) :-
     Slice =:= 0,
     !.
-struct_sick_calc(SliceList, SickPart-Slice, AccDate, DateBegin, DateEnd, AvgWage0, BudgetOption) :-
+struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWage0, BudgetOption) :-
     make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
     atom_date(DateBegin1, date(Y, M, _)),
     atom_date(IncludeDate, date(Y, M, 1)),
+    ( BudgetOption = 1, SickPart = 1.0 ; SickPart = SickPart0 ),
     Percent is SickPart * 100,
     sum_sick_days(DateBegin1, DateEnd1, 1, DOI, 0, HOI),
     ( BudgetOption = 1,
@@ -160,7 +163,7 @@ struct_sick_calc(SliceList, SickPart-Slice, AccDate, DateBegin, DateEnd, AvgWage
     ;
       AvgWage = AvgWage0
     ),
-    Summa is DOI * AvgWage,
+    Summa is round(DOI * AvgWage * SickPart),
     OutPairs = [
                 pAccDate-AccDate, pIncludeDate-IncludeDate,
                 pPercent-Percent, pDOI-DOI, pHOI-HOI, pSumma-Summa,
@@ -263,7 +266,7 @@ get_avg_wage_budget(Scope, Type, Y, M, AvgWageBudget) :-
                 ( get_data(Scope, Type, gd_const_budget, [
                             fConstDate-ConstDate, fBudget-Budget0]),
                   % где дата константы меньше первой даты месяца
-                  ConstDate @< FirstMonthDate
+                  ConstDate @=< FirstMonthDate
                 ),
     % в список БПМ
     BudgetList),
@@ -273,8 +276,10 @@ get_avg_wage_budget(Scope, Type, Y, M, AvgWageBudget) :-
     last(BudgetList, MonthBudget),
     % календарных дней в месяце
     month_days(Y, M, MonthDays),
+    % коэфициент для расчета по БПМ
+    get_param(Scope, Type, pBudgetPart-BudgetPart),
     % среднедневной БПМ
-    AvgWageBudget is round(MonthBudget / MonthDays),
+    AvgWageBudget is MonthBudget * BudgetPart / MonthDays,
     !.
 get_avg_wage_budget(_, _, _, _, 0) :-
     !.
