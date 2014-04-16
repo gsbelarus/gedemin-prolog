@@ -5,7 +5,7 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков и больничных"
-  Version: "1.0.0.16"
+  Version: "1.0.0.17"
   Optional: False
   Internal: True
 Objects: 
@@ -218,7 +218,7 @@ Objects:
         % params
         
         %:- ensure_loaded(lib).
-        /* remove_list, member_list */
+        /* member_list */
         
         :-
             dynamic(param_list/3),
@@ -234,9 +234,10 @@ Objects:
         
         % new_param_list(+Scope, +Type, +Pairs)
         new_param_list(Scope, Type, Pairs) :-
-            ground([Scope, Type, Pairs]),
-            ( \+ param_list(Scope, Type, Pairs),
-              assertz( param_list(Scope, Type, Pairs) ) ; true ),
+            \+ param_list(Scope, Type, Pairs),
+            assertz( param_list(Scope, Type, Pairs) ),
+            !.
+        new_param_list(_, _, _) :-
             !.
         
         % dispose_param_list(?Scope, ?Type, ?Pairs)
@@ -247,78 +248,49 @@ Objects:
         % get_param(?Scope, ?Type, ?Param)
         get_param(Scope, Type, Param) :-
             param_list(Scope, Type, Pairs),
-            once( member(Param, Pairs) ).
+            memberchk(Param, Pairs).
         % get_param(?Scope, ?Type, ?Param, ?Pairs)
         get_param(Scope, Type, Param, Pairs) :-
             param_list(Scope, Type, Pairs),
-            once( member(Param, Pairs) ).
+            memberchk(Param, Pairs).
         
         % get_param_list(?Scope, ?Type, ?Params)
         get_param_list(Scope, Type, Params) :-
             param_list(Scope, Type, Pairs),
-            once( member_list(Params, Pairs) ).
+            member_list(Params, Pairs).
         % get_param_list(?Scope, ?Type, ?Params, ?Pairs)
         get_param_list(Scope, Type, Params, Pairs) :-
             param_list(Scope, Type, Pairs),
-            once( member_list(Params, Pairs) ).
-        
-        % find_param(+Scope, +Type, +Key1-Value1, ?Key2-Value2)
-        find_param(Scope, Type, Key1-Value1, Key2-Value2) :-
-            find_param_list(Scope, Type, Key1-Value1, Pairs),
-            once( member(Key2-Value2, Pairs) ).
-        % find_param(+Scope, +Type, +Pairs0, ?Key-Value)
-        find_param(Scope, Type, Pairs0, Key-Value) :-
-            find_param_list(Scope, Type, Pairs0, Pairs),
-            once( member(Key-Value, Pairs) ).
-        
-        % find_param_list(+Scope, +Type, +Key-Value, ?Pairs)
-        find_param_list(Scope, Type, Key-Value, Pairs) :-
-            ground([Scope, Type, Key-Value]),
-            param_list(Scope, Type, Pairs0),
-            once( member(Key-Value, Pairs0) ),
-            remove_list(Key-Value, Pairs0, Pairs).
-        % find_param_list(+Scope, +Type, +Pairs0, ?Pairs)
-        find_param_list(Scope, Type, Pairs0, Pairs) :-
-            ground([Scope, Type, Pairs0]),
-            Pairs0 = [Key-Value|Tail],
-            find_param_list(Scope, Type, Key-Value, Pairs1),
-            once( member_list(Tail, Pairs1) ),
-            remove_list(Tail, Pairs1, Pairs).
+            member_list(Params, Pairs).
         
         %
         get_scope(Scope) :-
-            findall(Scope0, param_list(Scope0, _, _), ScopeList0),
-            sort(ScopeList0, ScopeList),
+            setof(Scope, Type^Pairs^param_list(Scope, Type, Pairs), ScopeList),
             member(Scope, ScopeList).
         
         %
         get_scope_list(ScopeList) :-
-            findall(Scope0, param_list(Scope0, _, _), ScopeList0),
-            sort(ScopeList0, ScopeList),
+            setof(Scope, Type^Pairs^param_list(Scope, Type, Pairs), ScopeList),
             !.
         
         %
         get_type(Type) :-
-            findall(Type0, param_list(_, Type0, _), TypeList0),
-            sort(TypeList0, TypeList),
+            setof(Type, Scope^Pairs^param_list(Scope, Type, Pairs), TypeList),
             member(Type, TypeList).
         
         %
         get_type_list(TypeList) :-
-            findall(Type0, param_list(_, Type0, _), TypeList0),
-            sort(TypeList0, TypeList),
+            setof(Type, Scope^Pairs^param_list(Scope, Type, Pairs), TypeList),
             !.
         
         %
         get_scope_type(Scope-Type) :-
-            findall(Scope0-Type0, param_list(Scope0, Type0, _), ScopeTypeList0),
-            sort(ScopeTypeList0, ScopeTypeList),
+            setof(Scope-Type, Pairs^param_list(Scope, Type, Pairs), ScopeTypeList),
             member(Scope-Type, ScopeTypeList).
         
         %
         get_scope_type_list(ScopeTypeList) :-
-            findall(Scope0-Type0, param_list(Scope0, Type0, _), ScopeTypeList0),
-            sort(ScopeTypeList0, ScopeTypeList),
+            setof(Scope-Type, Pairs^param_list(Scope, Type, Pairs), ScopeTypeList),
             !.
         
         %
@@ -337,7 +309,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-03-25T12:15:50+03:00
+      EDITIONDATE: 2014-04-16T10:06:35+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -418,7 +390,9 @@ Objects:
         % replace(+In, +Search, +Replace, -Out)
         replace(In, Search, Replace, Out) :-
             text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
-            replace_list(InCodes, SearchCodes, ReplaceCodes, OutCodes),
+            append(Part1, MiddleCodes, InCodes),
+            append(SearchCodes, Part2, MiddleCodes),
+            append([Part1, ReplaceCodes, Part2], OutCodes),
             text_in_out(In, OutCodes, Out),
             !.
         replace(In, _, _, In).
@@ -437,47 +411,21 @@ Objects:
             ; string(In), string_codes(Out, OutCodes)
             ; number(In), number_codes(Out, OutCodes)
             ; integer_list(In), Out = In ),
-            !,
-            \+ In = [].
+            !.
         
         %
-        integer_list([]).
+        integer_list([]) :-
+            !.
         integer_list([Head|Tail]) :-
             integer(Head),
-            integer_list(Tail).
-        
-        %
-        replace_list([InHead1,InHead2,InHead3|InChars], [InHead1,InHead2,InHead3|SearchChars], ReplaceChars, OutChars) :-
-            append([InHead1,InHead2,InHead3|SearchChars], RestChars, [InHead1,InHead2,InHead3|InChars]),
-            append(ReplaceChars, RestChars, OutChars),
-            !.
-        replace_list([InHead|InChars], [InHead|SearchChars], ReplaceChars, OutChars) :-
-            append([InHead|SearchChars], RestChars, [InHead|InChars]),
-            append(ReplaceChars, RestChars, OutChars),
-            !.
-        replace_list([InHead|InTail], SearchChars, ReplaceChars, [InHead|OutChars]) :-
             !,
-            replace_list(InTail, SearchChars, ReplaceChars, OutChars).
-        
-        %
-        remove_list(_, [], []) :-
-            !.
-        remove_list([Elem|Elems], List, Rest) :-
-            remove_list(Elem, List, List1),
-            remove_list(Elems, List1, Rest),
-            !.
-        remove_list(Elem, [Elem|[]], []).
-        remove_list(Elem, [Elem|Tail], Rest) :-
-            remove_list(Elem, Tail, Rest),
-            !.
-        remove_list(Elem, [Head|Tail], [Head|Rest]) :-
-            remove_list(Elem, Tail, Rest).
+            integer_list(Tail).
         
         %
         member_list([], _) :-
             !.
         member_list([Head|Tail], List) :-
-            member(Head, List),
+            memberchk(Head, List),
             !,
             member_list(Tail, List).
         
@@ -497,7 +445,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-04-07T13:48:26+03:00
+      EDITIONDATE: 2014-04-16T10:06:21+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1239,7 +1187,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-04-10T09:37:22+03:00
+      EDITIONDATE: 2014-04-16T10:42:05+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1417,7 +1365,7 @@ Objects:
         % (для одинаковых коэфициентов осовременивания)
         wg_valid_rules([by_month_wage_any]).
         % [отсутствие в месяце плохих типов начислений и часов]
-        wg_valid_rules([by_month_no_bad_type]).
+        wg_valid_rules([-by_month_no_bad_type]).
         
         %% варианты правил расчета
         %  - для больничных
@@ -3149,11 +3097,10 @@ Objects:
                       get_sql(Scope, in, Query, SQL, Params),
                       member_list(Params, Pairs),
                       prepare_sql(SQL, Params, PrepSQL),
-                      \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-PrepSQL])
+                      append(PK, [pQuery-Query, pSQL-PrepSQL], PairsNextStep),
+                      \+ get_param_list(Scope, TypeNextStep, PairsNextStep)
                     ),
-                    ( append(PK, [pQuery-Query, pSQL-PrepSQL], PairsNextStep),
-                      new_param_list(Scope, TypeNextStep, PairsNextStep)
-                    )
+                    new_param_list(Scope, TypeNextStep, PairsNextStep)
                   ),
             !.
         
@@ -3210,18 +3157,19 @@ Objects:
             Scope = wg_avg_wage_vacation, Type = query, TypeNextStep = data,
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             Query = PredicateName/Arity,
-            find_param_list(Scope, Type, PK, [pQuery-Query, pSQL-SQL]),
-            \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-SQL]).
+            append(PK, [pQuery-Query, pSQL-SQL], Pairs),
+            get_param_list(Scope, Type, Pairs),
+            \+ get_param_list(Scope, TypeNextStep, Pairs).
         
         % подтвеждение формирования фактов по сотруднику
         avg_wage_kb(EmplKey, FirstMoveKey, PredicateName, Arity, SQL) :-
             Scope = wg_avg_wage_vacation, Type = query, TypeNextStep = data,
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             Query = PredicateName/Arity,
-            find_param_list(Scope, Type, PK, [pQuery-Query, pSQL-SQL]),
-            \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-SQL]),
-            append(PK, [pQuery-Query, pSQL-SQL], PairsNextStep),
-            new_param_list(Scope, TypeNextStep, PairsNextStep),
+            append(PK, [pQuery-Query, pSQL-SQL], Pairs),
+            get_param_list(Scope, Type, Pairs),
+            \+ get_param_list(Scope, TypeNextStep, Pairs),
+            new_param_list(Scope, TypeNextStep, Pairs),
             !.
         
         % выгрузка выходных данных по сотруднику
@@ -3281,8 +3229,6 @@ Objects:
         % удаление данных по сотруднику
         avg_wage_clean(EmplKey, FirstMoveKey) :-
             Scope = wg_avg_wage_vacation,
-            get_type_list(TypeList),
-            member(Type, TypeList),
             gd_pl_ds(Scope, Type, Name, _, _),
             del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
             fail.
@@ -3318,18 +3264,19 @@ Objects:
             Scope = wg_avg_wage_sick, Type = query, TypeNextStep = data,
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             Query = PredicateName/Arity,
-            find_param_list(Scope, Type, PK, [pQuery-Query, pSQL-SQL]),
-            \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-SQL]).
+            append(PK, [pQuery-Query, pSQL-SQL], Pairs),
+            get_param_list(Scope, Type, Pairs),
+            \+ get_param_list(Scope, TypeNextStep, Pairs).
         
         % подтвеждение формирования фактов по сотруднику
         avg_wage_sick_kb(EmplKey, FirstMoveKey, PredicateName, Arity, SQL) :-
             Scope = wg_avg_wage_sick, Type = query, TypeNextStep = data,
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             Query = PredicateName/Arity,
-            find_param_list(Scope, Type, PK, [pQuery-Query, pSQL-SQL]),
-            \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-SQL]),
-            append(PK, [pQuery-Query, pSQL-SQL], PairsNextStep),
-            new_param_list(Scope, TypeNextStep, PairsNextStep),
+            append(PK, [pQuery-Query, pSQL-SQL], Pairs),
+            get_param_list(Scope, Type, Pairs),
+            \+ get_param_list(Scope, TypeNextStep, Pairs),
+            new_param_list(Scope, TypeNextStep, Pairs),
             !.
         
         % выгрузка выходных данных по сотруднику
@@ -3387,8 +3334,6 @@ Objects:
         % удаление данных по сотруднику
         avg_wage_sick_clean(EmplKey, FirstMoveKey) :-
             Scope = wg_avg_wage_sick,
-            get_type_list(TypeList),
-            member(Type, TypeList),
             gd_pl_ds(Scope, Type, Name, _, _),
             del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
             fail.
@@ -3417,7 +3362,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-04-10T09:55:04+03:00
+      EDITIONDATE: 2014-04-16T11:42:10+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

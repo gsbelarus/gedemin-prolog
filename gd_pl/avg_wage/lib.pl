@@ -63,7 +63,9 @@ replace_all(In, _, _, In).
 % replace(+In, +Search, +Replace, -Out)
 replace(In, Search, Replace, Out) :-
     text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
-    replace_list(InCodes, SearchCodes, ReplaceCodes, OutCodes),
+    append(Part1, MiddleCodes, InCodes),
+    append(SearchCodes, Part2, MiddleCodes),
+    append([Part1, ReplaceCodes, Part2], OutCodes),
     text_in_out(In, OutCodes, Out),
     !.
 replace(In, _, _, In).
@@ -82,47 +84,21 @@ text_in_out(In, OutCodes, Out) :-
     ; string(In), string_codes(Out, OutCodes)
     ; number(In), number_codes(Out, OutCodes)
     ; integer_list(In), Out = In ),
-    !,
-    \+ In = [].
+    !.
 
 %
-integer_list([]).
+integer_list([]) :-
+    !.
 integer_list([Head|Tail]) :-
     integer(Head),
-    integer_list(Tail).
-
-%
-replace_list([InHead1,InHead2,InHead3|InChars], [InHead1,InHead2,InHead3|SearchChars], ReplaceChars, OutChars) :-
-    append([InHead1,InHead2,InHead3|SearchChars], RestChars, [InHead1,InHead2,InHead3|InChars]),
-    append(ReplaceChars, RestChars, OutChars),
-    !.
-replace_list([InHead|InChars], [InHead|SearchChars], ReplaceChars, OutChars) :-
-    append([InHead|SearchChars], RestChars, [InHead|InChars]),
-    append(ReplaceChars, RestChars, OutChars),
-    !.
-replace_list([InHead|InTail], SearchChars, ReplaceChars, [InHead|OutChars]) :-
     !,
-    replace_list(InTail, SearchChars, ReplaceChars, OutChars).
-
-%
-remove_list(_, [], []) :-
-    !.
-remove_list([Elem|Elems], List, Rest) :-
-    remove_list(Elem, List, List1),
-    remove_list(Elems, List1, Rest),
-    !.
-remove_list(Elem, [Elem|[]], []).
-remove_list(Elem, [Elem|Tail], Rest) :-
-    remove_list(Elem, Tail, Rest),
-    !.
-remove_list(Elem, [Head|Tail], [Head|Rest]) :-
-    remove_list(Elem, Tail, Rest).
+    integer_list(Tail).
 
 %
 member_list([], _) :-
     !.
 member_list([Head|Tail], List) :-
-    member(Head, List),
+    memberchk(Head, List),
     !,
     member_list(Tail, List).
 

@@ -34,8 +34,9 @@
     usr_wg_DbfSums, % 05, 06
     usr_wg_MovementLine, % 05, 06
     usr_wg_FCRate,
-    usr_wg_TblDayNorm,
-    usr_wg_TblYearNorm,
+    usr_wg_TblCalDay, % 05, 06
+    %usr_wg_TblDayNorm, % 05, 06
+    %usr_wg_TblYearNorm,
     usr_wg_TblCalLine, % 05, 06
     usr_wg_TblCal_FlexLine, % 05, 06
     usr_wg_HourType, % 05, 06
@@ -85,7 +86,7 @@ wg_valid_rules([-by_month_wage_all]).
 % (для одинаковых коэфициентов осовременивания)
 wg_valid_rules([by_month_wage_any]).
 % [отсутствие в месяце плохих типов начислений и часов]
-wg_valid_rules([by_month_no_bad_type]).
+wg_valid_rules([-by_month_no_bad_type]).
 
 %% варианты правил расчета
 %  - для больничных
@@ -345,12 +346,10 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     sum_list(Durations, TotalTab),
     % среднечасовой заработок
     catch( AvgHoureWage is Amount / TotalTab, _, fail ),
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    % всего часов по графику за расчетный год
-    get_data(Scope, in, usr_wg_TblYearNorm, [
-                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fWHoures-TotalNorm]),
+    % расчитать график за год
+    calc_year_norm(Scope, PK, NormDays),
+    % сумма дней и часов по графику
+    sum_days_houres(NormDays, _, TotalNorm),
     % среднемесячное количество расчетных рабочих часов
     AvgMonthNorm is TotalNorm / 12,
     % среднемесячное количество календарных дней
@@ -553,6 +552,8 @@ is_full_all_month_sick(Scope, PK, [Y-M|Periods]) :-
 % подготовка временных данных для расчета
 % - для отпусков
 prep_avg_wage(Scope, PK, Periods) :-
+    % формирование временных данных по графику работы
+    make_schedule(Scope, PK),
     % периоды для проверки
     get_periods(Scope, PK, Periods),
     % добавление временных данных по расчету дней и часов
@@ -562,6 +563,8 @@ prep_avg_wage(Scope, PK, Periods) :-
     !.
 % - для больничных
 prep_avg_wage_sick(Scope, PK, Periods) :-
+    % формирование временных данных по графику работы
+    make_schedule(Scope, PK),
     % периоды для проверки
     get_periods(Scope, PK, Periods),
     % добавление временных данных по расчету дней и часов
@@ -572,14 +575,50 @@ prep_avg_wage_sick(Scope, PK, Periods) :-
     add_month_wage_sick(Scope, PK, Periods),
     !.
 
+% формирование временных данных по графику работы
+make_schedule(Scope, PK) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % взять данные по движению
+    findall( Date-ScheduleKey,
+             get_data(Scope, in, usr_wg_MovementLine, [
+                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                         fDateBegin-Date, fScheduleKey-ScheduleKey]),
+    MoveList ),
+    % взять дату ограничения расчета
+    get_param_list(Scope, run, [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+     pDateCalcTo-DateCalcTo]),
+    % добавить временные данные по графику работы
+    add_schedule(Scope, PK, MoveList, DateCalcTo),
+    !.
+
+% добавить временные данные по графику работы
+add_schedule(_, _, [], _) :-
+    !.
+add_schedule(Scope, PK, [DateFrom-ScheduleKey], DateCalcTo) :-
+    append(PK,
+            [pDateFrom-DateFrom, pDateTo-DateCalcTo, pScheduleKey-ScheduleKey],
+                Pairs),
+    new_param_list(Scope, temp, Pairs),
+    !.
+add_schedule(Scope, PK, [DateFrom-ScheduleKey, DateTo-ScheduleKey1 | MoveList], DateCalcTo) :-
+    append(PK,
+            [pDateFrom-DateFrom, pDateTo-DateTo, pScheduleKey-ScheduleKey],
+                Pairs),
+    new_param_list(Scope, temp, Pairs),
+    !,
+    add_schedule(Scope, PK, [DateTo-ScheduleKey1 | MoveList], DateCalcTo).
+
 % периоды для проверки
 get_periods(Scope, PK, Periods) :-
+    % взять даты ограничения расчета
     append(PK, [pDateCalcFrom-DateFrom, pDateCalcTo-DateTo], Pairs),
     get_param_list(Scope, run, Pairs),
+    % сформировать список периодов
     make_periods(Scope, PK, DateFrom, DateTo, Periods),
     !.
 
-% создать список периодов
+% сформировать список периодов
 make_periods(_, _, DateFrom, DateTo, []) :-
     DateFrom @>= DateTo,
     !.
@@ -857,7 +896,9 @@ sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage) :-
       % взять среднюю зп для месяца
       get_avg_salary(Scope, PK, Y, M, MonthAvgSalary),
       % определить заработок в сравнении со средней зп
-      ( Wage0 =< MonthAvgSalary, Wage = Wage0 ; Wage = MonthAvgSalary )
+      ( MonthAvgSalary =:= 0, Wage = Wage0
+      ; Wage0 =< MonthAvgSalary, Wage = Wage0
+      ; Wage = MonthAvgSalary )
     ),
     !.
 %
@@ -1052,44 +1093,74 @@ excl_month_days_sick(Scope, PK, Y, M, ExclDays, Rule) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % взять данные
-    findall( FromDate-ToDate-ExclType,
+    findall( FromDate-ToDate-ExclType-ExclWeekDay,
+             % из приказов по дням исключения
              get_data(Scope, in, usr_wg_ExclDays, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                        fExclType-ExclType,
+                        fExclType-ExclType, fExclWeekDay-ExclWeekDay,
                         fFromDate-FromDate, fToDate-ToDate] ),
     % в список периодов для исключения
     ExclPeriods),
-    sum_excl_periods(ExclPeriods, Y, M, 0, ExclDays, []),
+    % сбор исключаемых дней по списку периодов
+    collect_excl_days(ExclPeriods, Y, M, [], LogDays),
+    % всего дней для исключения
+    length(LogDays, ExclDays),
     \+ ExclDays =:= 0,
     !.
 excl_month_days_sick(_, _, _, _, 0, none) :-
     !.
 
-%
-sum_excl_periods([], _, _, ExclDays, ExclDays, _) :-
+% сбор исключаемых дней по списку периодов
+collect_excl_days([], _, _, LogDays, LogDays) :-
     !.
-sum_excl_periods([ExclPeriod|ExclPeriods], Y, M, ExclDays0, ExclDays, LogDays0) :-
-    calc_excl_period(ExclPeriod, Y, M, ExclDays0, ExclDays1, LogDays0, LogDays1),
+collect_excl_days([ExclPeriod|ExclPeriods], Y, M, LogDays0, LogDays2) :-
+    % сбор исключаемых дней за период
+    collect_excl_days(ExclPeriod, Y, M, LogDays0, LogDays1),
     !,
-    sum_excl_periods(ExclPeriods, Y, M, ExclDays1, ExclDays, LogDays1).
+    collect_excl_days(ExclPeriods, Y, M, LogDays1, LogDays2).
 
-%
-calc_excl_period(FromDate-ToDate-_, _, _, ExclDays, ExclDays, LogDays, LogDays) :-
+% сбор исключаемых дней за период
+collect_excl_days(FromDate-ToDate-_-_, _, _, LogDays, LogDays) :-
     FromDate @> ToDate,
     !.
-calc_excl_period(FromDate0-ToDate-ExclType, Y, M, ExclDays0, ExclDays2, LogDays0, LogDays2) :-
+collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2) :-
     \+ atom_date(FromDate0, date(Y, M, _)),
     date_add(FromDate0, 1, day, FromDate1),
     !,
-    calc_excl_period(FromDate1-ToDate-ExclType, Y, M, ExclDays0, ExclDays2, LogDays0, LogDays2).
-calc_excl_period(FromDate0-ToDate-ExclType, Y, M, ExclDays0, ExclDays2, LogDays0, LogDays2) :-
-    ( ExclType = "WG_LEAVEDOCLINE", wg_holiday(FromDate0), ExclDays1 = ExclDays0
-    ; member(FromDate0, LogDays0), ExclDays1 = ExclDays0
-    ; ExclDays1 is ExclDays0 + 1
-    ),
+    collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2).
+collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2) :-
+    % добавление дня для исключения в журнал
+    add_excl_day(FromDate0-ExclType-ExclWeekDay, LogDays0, LogDays1),
     date_add(FromDate0, 1, day, FromDate1),
     !,
-    calc_excl_period(FromDate1-ToDate-ExclType, Y, M, ExclDays1, ExclDays2, [FromDate0|LogDays0], LogDays2).
+    collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays1, LogDays2).
+
+% добавление дня для исключения в журнал
+add_excl_day(TheDate-_-_, LogDays, LogDays) :-
+    % при наличии даты в журнале
+    member(TheDate, LogDays),
+    % журнал не изменять
+    !.
+add_excl_day(TheDate-ExclType-_, LogDays, LogDays) :-
+    % праздник из отпуска
+    ExclType = "LEAVEDOCLINE",
+    wg_holiday(TheDate),
+    % в журнал не заносить
+    !.
+add_excl_day(TheDate-ExclType-ExclWeekDay, LogDays, [TheDate|LogDays]) :-
+    % детский день согласно дню недели
+    ExclType = "KINDDAYLINE",
+    weekday(TheDate, ExclWeekDay),
+    % занести в журнал
+    !.
+add_excl_day(_-ExclType-_, LogDays, LogDays) :-
+    % прочие даты из приказа о детском дне
+    ExclType = "KINDDAYLINE",
+    % пропускать
+    !.
+add_excl_day(TheDate-_-_, LogDays, [TheDate|LogDays]) :-
+    % дату для прочих случаев занести в журнал
+    !.
 
 % исключаемые из первого месяца работы дни
 % - для больничных
@@ -1293,7 +1364,30 @@ calc_month_norm(Scope, PK, Y-M, NormDays) :-
     !.
 calc_month_norm(_, _, _, []) :-
     !.
-    
+
+% расчитать график за год по одному из параметров
+calc_year_norm(Scope, PK, NormDays) :-
+    get_norm_periods(Scope, PK, Periods),
+    calc_year_norm(Periods, Scope, PK, [], NormDays),
+    !.
+%
+calc_year_norm([], _, _, NormDays, NormDays) :-
+    !.
+calc_year_norm([Y-M|Periods], Scope, PK, NormDays0, NormDays) :-
+    calc_month_norm(Scope, PK, Y-M, NormDays1),
+    append(NormDays0, NormDays1, NormDays2),
+    !,
+    calc_year_norm(Periods, Scope, PK, NormDays2, NormDays).
+
+% нормативные периоды
+get_norm_periods(Scope, PK, Periods) :-
+    % взять нормативные даты ограничения расчета
+    append(PK, [pDateNormFrom-DateFrom, pDateNormTo-DateTo], Pairs),
+    get_param_list(Scope, run, Pairs),
+    % сформировать список периодов
+    make_periods(Scope, PK, DateFrom, DateTo, Periods),
+    !.
+
 % расчитать табель за месяц по одному из параметров
 calc_month_tab(Scope, PK, Y-M, TabDays) :-
     % параметры выбора табеля
@@ -1512,10 +1606,24 @@ usr_wg_TblDayNorm_mix(Scope, Type, PK, Y-M, Date, Duration, WorkDay, NormOption)
 usr_wg_TblDayNorm_mix(Scope, Type, PK, Y-M, TheDay, WDuration, WorkDay, NormOption) :-
     NormOption = tbl_day_norm,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    get_data(Scope, Type, usr_wg_TblDayNorm, [
+    get_data(Scope, Type, usr_wg_TblCalDay, [
+                fScheduleKey-ScheduleKey,
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                 fWYear-Y, fWMonth-M, fTheDay-TheDay,
-                fWDuration-WDuration, fWorkDay-WorkDay ]).
+                fWDuration-WDuration, fWorkDay-WorkDay ]),
+    check_schedule(Scope, PK, TheDay, ScheduleKey).
+
+%
+check_schedule(Scope, PK, TheDay, ScheduleKey) :-
+    append(PK,
+            [pDateFrom-DateFrom, pDateTo-DateTo, pScheduleKey-ScheduleKey],
+                Pairs),
+    get_param_list(Scope, temp, Pairs),
+    TheDay @>= DateFrom, TheDay @< DateTo,
+    !.
+check_schedule(Scope, PK, _, ScheduleKey) :-
+    get_last_schedule(Scope, PK, ScheduleKey),
+    !.
 
 %% взять данные по табелю
 % день месяца по табелю мастера
@@ -1543,13 +1651,12 @@ usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                     fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
 % или день месяца из dbf
-usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, Days, InHoures, 0, TabelOption) :-
+usr_wg_TblCalLine_mix(Scope, Type, PK, Y-M, Date, 0, InHoures, 0, TabelOption) :-
     TabelOption = dbf_sums,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
     get_data(Scope, Type, usr_wg_DbfSums, [
                 fEmplKey-EmplKey, fInHoures-InHoures,
-                fInYear-Y, fInMonth-M, fDateBegin-Date]),
-    once( (InHoures > 0, Days = 1 ; Days = 0) ).
+                fInYear-Y, fInMonth-M, fDateBegin-Date]).
 
 % день месяца по календарному графику или табелю мастера
 % FlexType: "plan" ; "fact"
@@ -1711,11 +1818,10 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
               get_sql(Scope, in, Query, SQL, Params),
               member_list(Params, Pairs),
               prepare_sql(SQL, Params, PrepSQL),
-              \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-PrepSQL])
+              append(PK, [pQuery-Query, pSQL-PrepSQL], PairsNextStep),
+              \+ get_param_list(Scope, TypeNextStep, PairsNextStep)
             ),
-            ( append(PK, [pQuery-Query, pSQL-PrepSQL], PairsNextStep),
-              new_param_list(Scope, TypeNextStep, PairsNextStep)
-            )
+            new_param_list(Scope, TypeNextStep, PairsNextStep)
           ),
     !.
     
@@ -1732,9 +1838,16 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
     atom_date(DateCalcTo, date(Y, M, 1)),
     MonthAdd is (- MonthQty),
     date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),
+    date_add(DateCalcTo, -1, day, DateCalcTo1),
+    atom_date(DateCalcTo1, date(Y0, _, _)),
+    atom_date(DateNormFrom, date(Y0, 1, 1)),
+    Y1 is Y0 + 1,
+    atom_date(DateNormTo, date(Y1, 1, 1)),
     %
     append(Pairs,
-            [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo | Pairs0],
+            [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
+             pDateNormFrom-DateNormFrom, pDateNormTo-DateNormTo
+             |Pairs0],
         PairsNextStep),
     new_param_list(Scope, TypeNextStep, PairsNextStep),
     !.
@@ -1765,18 +1878,19 @@ avg_wage_sql(EmplKey, FirstMoveKey, PredicateName, Arity, SQL) :-
     Scope = wg_avg_wage_vacation, Type = query, TypeNextStep = data,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     Query = PredicateName/Arity,
-    find_param_list(Scope, Type, PK, [pQuery-Query, pSQL-SQL]),
-    \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-SQL]).
+    append(PK, [pQuery-Query, pSQL-SQL], Pairs),
+    get_param_list(Scope, Type, Pairs),
+    \+ get_param_list(Scope, TypeNextStep, Pairs).
 
 % подтвеждение формирования фактов по сотруднику
 avg_wage_kb(EmplKey, FirstMoveKey, PredicateName, Arity, SQL) :-
     Scope = wg_avg_wage_vacation, Type = query, TypeNextStep = data,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     Query = PredicateName/Arity,
-    find_param_list(Scope, Type, PK, [pQuery-Query, pSQL-SQL]),
-    \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-SQL]),
-    append(PK, [pQuery-Query, pSQL-SQL], PairsNextStep),
-    new_param_list(Scope, TypeNextStep, PairsNextStep),
+    append(PK, [pQuery-Query, pSQL-SQL], Pairs),
+    get_param_list(Scope, Type, Pairs),
+    \+ get_param_list(Scope, TypeNextStep, Pairs),
+    new_param_list(Scope, TypeNextStep, Pairs),
     !.
 
 % выгрузка выходных данных по сотруднику
@@ -1836,8 +1950,6 @@ avg_wage_det(EmplKey, FirstMoveKey,
 % удаление данных по сотруднику
 avg_wage_clean(EmplKey, FirstMoveKey) :-
     Scope = wg_avg_wage_vacation,
-    get_type_list(TypeList),
-    member(Type, TypeList),
     gd_pl_ds(Scope, Type, Name, _, _),
     del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
     fail.
@@ -1873,18 +1985,19 @@ avg_wage_sick_sql(EmplKey, FirstMoveKey, PredicateName, Arity, SQL) :-
     Scope = wg_avg_wage_sick, Type = query, TypeNextStep = data,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     Query = PredicateName/Arity,
-    find_param_list(Scope, Type, PK, [pQuery-Query, pSQL-SQL]),
-    \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-SQL]).
+    append(PK, [pQuery-Query, pSQL-SQL], Pairs),
+    get_param_list(Scope, Type, Pairs),
+    \+ get_param_list(Scope, TypeNextStep, Pairs).
 
 % подтвеждение формирования фактов по сотруднику
 avg_wage_sick_kb(EmplKey, FirstMoveKey, PredicateName, Arity, SQL) :-
     Scope = wg_avg_wage_sick, Type = query, TypeNextStep = data,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     Query = PredicateName/Arity,
-    find_param_list(Scope, Type, PK, [pQuery-Query, pSQL-SQL]),
-    \+ find_param_list(Scope, TypeNextStep, PK, [pQuery-Query, pSQL-SQL]),
-    append(PK, [pQuery-Query, pSQL-SQL], PairsNextStep),
-    new_param_list(Scope, TypeNextStep, PairsNextStep),
+    append(PK, [pQuery-Query, pSQL-SQL], Pairs),
+    get_param_list(Scope, Type, Pairs),
+    \+ get_param_list(Scope, TypeNextStep, Pairs),
+    new_param_list(Scope, TypeNextStep, Pairs),
     !.
 
 % выгрузка выходных данных по сотруднику
@@ -1942,8 +2055,6 @@ avg_wage_sick_det(EmplKey, FirstMoveKey,
 % удаление данных по сотруднику
 avg_wage_sick_clean(EmplKey, FirstMoveKey) :-
     Scope = wg_avg_wage_sick,
-    get_type_list(TypeList),
-    member(Type, TypeList),
     gd_pl_ds(Scope, Type, Name, _, _),
     del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
     fail.

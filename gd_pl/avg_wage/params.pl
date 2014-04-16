@@ -1,7 +1,7 @@
 ﻿% params
 
 %:- ensure_loaded(lib).
-/* remove_list, member_list */
+/* member_list */
 
 :-
     dynamic(param_list/3),
@@ -17,9 +17,10 @@
 
 % new_param_list(+Scope, +Type, +Pairs)
 new_param_list(Scope, Type, Pairs) :-
-    ground([Scope, Type, Pairs]),
-    ( \+ param_list(Scope, Type, Pairs),
-      assertz( param_list(Scope, Type, Pairs) ) ; true ),
+    \+ param_list(Scope, Type, Pairs),
+    assertz( param_list(Scope, Type, Pairs) ),
+    !.
+new_param_list(_, _, _) :-
     !.
 
 % dispose_param_list(?Scope, ?Type, ?Pairs)
@@ -30,78 +31,49 @@ dispose_param_list(Scope, Type, Pairs) :-
 % get_param(?Scope, ?Type, ?Param)
 get_param(Scope, Type, Param) :-
     param_list(Scope, Type, Pairs),
-    once( member(Param, Pairs) ).
+    memberchk(Param, Pairs).
 % get_param(?Scope, ?Type, ?Param, ?Pairs)
 get_param(Scope, Type, Param, Pairs) :-
     param_list(Scope, Type, Pairs),
-    once( member(Param, Pairs) ).
+    memberchk(Param, Pairs).
     
 % get_param_list(?Scope, ?Type, ?Params)
 get_param_list(Scope, Type, Params) :-
     param_list(Scope, Type, Pairs),
-    once( member_list(Params, Pairs) ).
+    member_list(Params, Pairs).
 % get_param_list(?Scope, ?Type, ?Params, ?Pairs)
 get_param_list(Scope, Type, Params, Pairs) :-
     param_list(Scope, Type, Pairs),
-    once( member_list(Params, Pairs) ).
-    
-% find_param(+Scope, +Type, +Key1-Value1, ?Key2-Value2)
-find_param(Scope, Type, Key1-Value1, Key2-Value2) :-
-    find_param_list(Scope, Type, Key1-Value1, Pairs),
-    once( member(Key2-Value2, Pairs) ).
-% find_param(+Scope, +Type, +Pairs0, ?Key-Value)
-find_param(Scope, Type, Pairs0, Key-Value) :-
-    find_param_list(Scope, Type, Pairs0, Pairs),
-    once( member(Key-Value, Pairs) ).
+    member_list(Params, Pairs).
 
-% find_param_list(+Scope, +Type, +Key-Value, ?Pairs)
-find_param_list(Scope, Type, Key-Value, Pairs) :-
-    ground([Scope, Type, Key-Value]),
-    param_list(Scope, Type, Pairs0),
-    once( member(Key-Value, Pairs0) ),
-    remove_list(Key-Value, Pairs0, Pairs).
-% find_param_list(+Scope, +Type, +Pairs0, ?Pairs)
-find_param_list(Scope, Type, Pairs0, Pairs) :-
-    ground([Scope, Type, Pairs0]),
-    Pairs0 = [Key-Value|Tail],
-    find_param_list(Scope, Type, Key-Value, Pairs1),
-    once( member_list(Tail, Pairs1) ),
-    remove_list(Tail, Pairs1, Pairs).
-    
 %
 get_scope(Scope) :-
-    findall(Scope0, param_list(Scope0, _, _), ScopeList0),
-    sort(ScopeList0, ScopeList),
+    setof(Scope, Type^Pairs^param_list(Scope, Type, Pairs), ScopeList),
     member(Scope, ScopeList).
 
 %
 get_scope_list(ScopeList) :-
-    findall(Scope0, param_list(Scope0, _, _), ScopeList0),
-    sort(ScopeList0, ScopeList),
+    setof(Scope, Type^Pairs^param_list(Scope, Type, Pairs), ScopeList),
     !.
 
 %
 get_type(Type) :-
-    findall(Type0, param_list(_, Type0, _), TypeList0),
-    sort(TypeList0, TypeList),
+    setof(Type, Scope^Pairs^param_list(Scope, Type, Pairs), TypeList),
     member(Type, TypeList).
 
 %
 get_type_list(TypeList) :-
-    findall(Type0, param_list(_, Type0, _), TypeList0),
-    sort(TypeList0, TypeList),
+    setof(Type, Scope^Pairs^param_list(Scope, Type, Pairs), TypeList),
     !.
 
 %
 get_scope_type(Scope-Type) :-
-    findall(Scope0-Type0, param_list(Scope0, Type0, _), ScopeTypeList0),
-    sort(ScopeTypeList0, ScopeTypeList),
+    setof(Scope-Type, Pairs^param_list(Scope, Type, Pairs), ScopeTypeList),
     member(Scope-Type, ScopeTypeList).
 
 %
 get_scope_type_list(ScopeTypeList) :-
-    findall(Scope0-Type0, param_list(Scope0, Type0, _), ScopeTypeList0),
-    sort(ScopeTypeList0, ScopeTypeList),
+    setof(Scope-Type, Pairs^param_list(Scope, Type, Pairs), ScopeTypeList),
     !.
 
 %
