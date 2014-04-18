@@ -1,6 +1,6 @@
 ﻿% params
 
-%:- ensure_loaded(lib).
+%:- [lib].
 /* member_list */
 
 :-

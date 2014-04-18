@@ -28,7 +28,14 @@ wg_valid_sql([
             usr_wg_FeeTypeProp/4,
             wg_holiday/1,
             usr_wg_ExclDays/6,
-            gd_const_AvgSalaryRB/2
+            gd_const_AvgSalaryRB/2,
+            % twg_struct
+            %wg_holiday/1,
+            wg_vacation_slice/2,
+            gd_const_budget/2,
+            -usr_wg_TblDayNorm/8,
+            wg_job_ill_type/1,
+            -
             ]).
 
 %
@@ -78,7 +85,7 @@ gd_pl_ds(Scope, in, usr_wg_MovementLine, 15,
     fRate-float, fListNumber-string, fMSalary-float,
     fPayFormKey-integer, fSalaryKey-integer, fTSalary-float, fAvgWageRate-float
     ]) :-
-    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick, wg_struct_sick]) ).
 % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
 %   MoveYear, MoveMonth, DateBegin,
 %   ScheduleKey, MovementType, Rate, ListNumber, MSalary,
@@ -113,7 +120,7 @@ ORDER BY \c
 ",
 [pEmplKey-_, pFirstMoveKey-_, pPayFormSalary_xid-_, pPayFormSalary_dbid-_]
     ) :-
-    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick, wg_struct_sick]) ).
 
 gd_pl_ds(wg_avg_wage_vacation, in, usr_wg_FCRate, 4,
     [
@@ -141,7 +148,7 @@ gd_pl_ds(Scope, in, usr_wg_TblCalDay, 9,
     fTheDay-date, fWYear-integer, fWMonth-integer, fWDay-integer,
     fWDuration-float, fWorkDay-integer, fScheduleKey-integer
     ]) :-
-    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick, wg_struct_sick]) ).
 % usr_wg_TblCalDay(EmplKey, FirstMoveKey, TheDay, WYear, WMonth, WDay,
 %    WDuration, WorkDay, ScheduleKey)
 get_sql(Scope, in, usr_wg_TblCalDay/9,
@@ -188,7 +195,7 @@ ORDER BY \c
  pDateNormFrom-_, pDateNormTo-_
 ]
     ) :-
-    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick, wg_struct_sick]) ).
 
 gd_pl_ds(Scope, in, usr_wg_TblDayNorm, 8,
     [
@@ -283,7 +290,7 @@ gd_pl_ds(Scope, in, usr_wg_TblCal_FlexLine, 68,
     fS29-variant, fH29-variant, fS30-variant, fH30-variant,
     fS31-variant, fH31-variant
     ]) :-
-    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick, wg_struct_sick]) ).
 % usr_wg_TblCal_FlexLine(FlexType, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
 get_sql(Scope, in, usr_wg_TblCal_FlexLine/68,
 "SELECT \c
@@ -350,7 +357,7 @@ pTblCal_DocType_Plan_xid-_, pTblCal_DocType_Plan_dbid-_,
 pTblCal_DocType_Fact_xid-_, pTblCal_DocType_Fact_dbid-_
 ]
     ) :-
-    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]) ).
+    once( member(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick, wg_struct_sick]) ).
 
 gd_pl_ds(Scope, in, usr_wg_HourType, 12,
     [
@@ -706,6 +713,110 @@ ORDER BY \c
   cv.CONSTDATE \c
 ",
 [pAvgSalaryRB_xid-_, pAvgSalaryRB_dbid-_]
+    ).
+
+% twg_struct
+
+gd_pl_ds(wg_struct_vacation, in, wg_holiday, 1, [fHolidayDate-date]).
+% wg_holiday(HolidayDate)
+get_sql(wg_struct_vacation, in, wg_holiday/1,
+"SELECT \c
+  h.holidaydate \c
+FROM \c
+  wg_holiday h \c
+WHERE \c
+  h.holidaydate BETWEEN \'pDateBegin\' AND \'pDateEnd\' \c
+  AND COALESCE(h.disabled, 0) = 0 \c
+",
+[pDateBegin-_, pDateEnd-_]
+    ).
+
+gd_pl_ds(wg_struct_vacation, in, wg_vacation_slice, 2,
+    [
+    fVcType-integer, fSlice-float
+    ]).
+% wg_vacation_slice(VcType, Slice)
+get_sql(wg_struct_vacation, in, wg_vacation_slice/2,
+"SELECT \c
+  0 AS VcType, COALESCE(USR$DURATION,0) AS Slice \c
+FROM \c
+  USR$WG_VACATION \c
+WHERE \c
+  DOCUMENTKEY = pDocKey \c
+UNION ALL \c
+SELECT \c
+  1 AS VcType, COALESCE(USR$EXTRADURATION,0) AS Slice \c
+FROM \c
+  USR$WG_VACATION \c
+WHERE \c
+  DOCUMENTKEY = pDocKey \c
+--UNION ALL \c
+SELECT \c
+  2 AS VcType, COALESCE(USR$UNHEALTHY,0) AS Slice \c
+FROM \c
+  USR$WG_VACATION \c
+WHERE \c
+  DOCUMENTKEY = pDocKey \c
+UNION ALL \c
+SELECT \c
+  3 AS VcType, COALESCE(USR$UNFIXED,0) AS Slice \c
+FROM \c
+  USR$WG_VACATION \c
+WHERE \c
+  DOCUMENTKEY = pDocKey \c
+UNION ALL \c
+SELECT \c
+  4 AS VcType, COALESCE(USR$COMPENSATIONDAY,0) AS Slice \c
+FROM \c
+  USR$WG_VACATION \c
+WHERE \c
+  DOCUMENTKEY = pDocKey \c
+",
+[pDocKey-_]
+    ).
+
+gd_pl_ds(wg_struct_sick, in, gd_const_budget, 2, [fConstDate-date, fBudget-float]).
+% gd_const_budget(ConstDate, Budget)
+get_sql(wg_struct_sick, in, gd_const_budget/2,
+"SELECT \c
+  cv.CONSTDATE, \c
+  CAST(cv.CONSTVALUE AS DECIMAL(15,4)) AS Budget \c
+FROM \c
+  GD_CONSTVALUE cv \c
+JOIN \c
+  GD_CONST c \c
+    ON c.ID  =  cv.CONSTKEY \c
+WHERE \c
+  cv.CONSTKEY = \c
+  (SELECT id FROM gd_ruid WHERE xid = pBudget_xid AND dbid = pBudget_dbid) \c
+ORDER BY \c
+  cv.CONSTDATE \c
+",
+[pBudget_xid-_, pBudget_dbid-_]
+    ).
+
+gd_pl_ds(wg_struct_sick, in, usr_wg_TblDayNorm, 8,
+    [
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fWYear-integer, fWMonth-integer, fTheDay-date, fWDay-integer,
+    fWDuration-float, fWorkDay-integer
+    ]).
+% usr_wg_TblDayNorm(EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay)
+get_sql(wg_struct_sick, in, usr_wg_TblDayNorm/8,
+"\c
+SELECT EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay \c
+FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\') \c
+",
+[pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
+    ).
+
+gd_pl_ds(wg_struct_sick, in, wg_job_ill_type, 1, [fJobIllType-integer]).
+% wg_job_ill_type(ID)
+get_sql(wg_struct_sick, in, wg_job_ill_type/1,
+"\c
+SELECT id FROM GD_P_GETID(pJobIllType_ruid) \c
+",
+[pJobIllType_ruid-_]
     ).
 
 %

@@ -50,7 +50,12 @@
     usr_wg_FeeTypeProp,
     wg_holiday,
     usr_wg_ExclDays,
-    gd_const_AvgSalaryRB
+    gd_const_AvgSalaryRB,
+    % twg_struct
+    %wg_holiday,
+    wg_vacation_slice,
+    gd_const_budget,
+    usr_wg_TblDayNorm
     ].
 %%
 
@@ -1144,7 +1149,7 @@ add_excl_day(TheDate-_-_, LogDays, LogDays) :-
 add_excl_day(TheDate-ExclType-_, LogDays, LogDays) :-
     % праздник из отпуска
     ExclType = "LEAVEDOCLINE",
-    wg_holiday(TheDate),
+    catch( wg_holiday(TheDate), _, fail ),
     % в журнал не заносить
     !.
 add_excl_day(TheDate-ExclType-ExclWeekDay, LogDays, [TheDate|LogDays]) :-
@@ -1783,7 +1788,11 @@ engine_error_step(error).
 % wg_avg_wage_vacation-in-run
 prepare_data(Scope, Type, PK, TypeNextStep) :-
     Scope = wg_avg_wage_vacation, Type = in, TypeNextStep = run,
-    get_param_list(Scope, Type, [pMonthQty-MonthQty], Pairs0),
+    %
+    ( get_param_list(Scope, Type, [pCommon-1], Pairs01) ; Pairs01 = [] ),
+    get_param_list(Scope, Type, [pMonthQty-MonthQty], Pairs02),
+    append(Pairs01, Pairs02, Pairs0),
+    %
     get_param_list(Scope, Type, PK, Pairs),
     member_list([pDateCalc-DateCalc, pMonthOffset-MonthOffset], Pairs),
     %
@@ -1830,7 +1839,11 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
 % wg_avg_wage_sick-in-run
 prepare_data(Scope, Type, PK, TypeNextStep) :-
     Scope = wg_avg_wage_sick, Type = in, TypeNextStep = run,
-    get_param_list(Scope, Type, [pMonthQty-MonthQty], Pairs0),
+    %
+    ( get_param_list(Scope, Type, [pCommon-1], Pairs01) ; Pairs01 = [] ),
+    get_param_list(Scope, Type, [pMonthQty-MonthQty], Pairs02),
+    append(Pairs01, Pairs02, Pairs0),
+    %
     get_param_list(Scope, Type, PK, Pairs),
     member_list([pDateCalc-DateCalc], Pairs),
     %
@@ -2065,6 +2078,275 @@ avg_wage_sick_clean(EmplKey, FirstMoveKey) :-
     dispose_param_list(Scope, Type, Pairs),
     fail.
 avg_wage_sick_clean(_, _) :-
+    !.
+
+/**/
+
+% twg_struct
+
+% расчет структуры
+% - для отпусков
+% - для больничных
+
+/* реализация */
+
+%
+struct_vacation_sql(DocKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
+    Scope = wg_struct_vacation, Type = in, NextType = run,
+    Pairs = [pDocKey-DocKey, pDateBegin-DateBegin, pDateEnd-DateEnd],
+    get_sql(Scope, Type, Query, SQL0, Params),
+    is_valid_sql(Query),
+    Query = PredicateName/Arity,
+    member_list(Params, Pairs),
+    prepare_sql(SQL0, Params, SQL),
+    Pairs1 = [pDocKey-DocKey, pQuery-Query, pSQL-SQL],
+    new_param_list(Scope, NextType, Pairs1).
+
+%
+struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
+    Scope = wg_struct_sick, Type = in, NextType = run,
+    % формирование параметров выполнения
+    DateCalcFrom = DateBegin,
+    date_add(DateEnd, 1, day, DateCalcTo),
+    once( ( get_param_list(Scope, Type, [pCommon-1], Pairs01) ; Pairs01 = [] ) ),
+    get_param_list(Scope, Type, [pBudgetPart-_], Pairs02),
+    append(Pairs01, Pairs02, Pairs0),
+    append(Pairs0,
+                [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+                 pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
+                 pDateNormFrom-DateCalcFrom, pDateNormTo-DateCalcTo],
+            Pairs),
+    new_param_list(Scope, NextType, Pairs),
+    % формирование SQL-запроса
+    get_sql(Scope, Type, Query, SQL0, Params),
+    is_valid_sql(Query),
+    Query = PredicateName/Arity,
+    member_list(Params, Pairs),
+    prepare_sql(SQL0, Params, SQL),
+    % добавление SQL-запроса к параметрам выполнения
+    Pairs1 = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+              pQuery-Query, pSQL-SQL],
+    new_param_list(Scope, NextType, Pairs1).
+
+%
+struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
+    atom_date(DateCalc, date(Year, Month, _)),
+    month_days(Year, Month, Days),
+    atom_date(AccDate, date(Year, Month, Days)),
+    once( (SliceOption = 0, FilterVcType = 0 ; true) ),
+    findall( VcType-Slice,
+                ( wg_vacation_slice(VcType, Slice), VcType = FilterVcType ),
+             SliceList0 ),
+    keysort(SliceList0, [Slice0|SliceList1]),
+    append(SliceList1, [Slice0], SliceList),
+    struct_vacation_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage),
+    !.
+
+%
+struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IllType) :-
+    Scope = wg_struct_sick, Type = in, NextType = run,
+    % шаблон первичного ключа
+    PK = [pEmplKey-_, pFirstMoveKey-_],
+    % формирование временных данных по графику работы
+    get_param_list(Scope, NextType, PK),
+    make_schedule(Scope, PK),
+    %
+    atom_date(DateCalc, date(Year, Month, _)),
+    month_days(Year, Month, Days),
+    atom_date(AccDate, date(Year, Month, Days)),
+    Params = [pFirstCalcType-FirstCalcType,
+             pFirstDuration-FirstDuration, pFirstPart-FirstPart],
+    get_param_list(Scope, Type, Params),
+    date_diff(DateBegin, Duration0, DateEnd),
+    Duration is Duration0 + 1,
+    ( CalcType = FirstCalcType,
+      SliceList0 = [FirstPart-FirstDuration]
+    ;
+      SliceList0 = []
+    ),
+    append(SliceList0, [1.0-Duration], SliceList),
+    %
+    struct_sick_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage, BudgetOption, IllType),
+    !.
+
+%
+struct_vacation_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage) :-
+    Slice0 =:= 0,
+    !,
+    struct_vacation_calc(SliceList, Slice, AccDate, DateBegin, DateEnd, AvgWage).
+struct_vacation_calc(_, _, _, '', '', _) :-
+    !.
+struct_vacation_calc([], _-Slice, _, _, _, _) :-
+    Slice =:= 0,
+    !.
+struct_vacation_calc(SliceList, VcType-Slice, AccDate, DateBegin, DateEnd, AvgWage) :-
+    make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
+    atom_date(DateBegin1, date(Y, M, _)),
+    atom_date(IncludeDate, date(Y, M, 1)),
+    sum_vacation_days(DateBegin1, DateEnd1, 1, Duration),
+    Summa is Duration * AvgWage,
+    OutPairs = [
+                pAccDate-AccDate, pIncludeDate-IncludeDate,
+                pDuration-Duration, pSumma-Summa,
+                pDateBegin-DateBegin1, pDateEnd-DateEnd1,
+                pVcType-VcType
+                ],
+    new_param_list(struct_vacation, out, OutPairs),
+    !,
+    struct_vacation_calc(SliceList, VcType-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage).
+
+%
+struct_sick_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage, BudgetOption, IllType) :-
+    Slice0 =:= 0,
+    !,
+    struct_sick_calc(SliceList, Slice, AccDate, DateBegin, DateEnd, AvgWage, BudgetOption, IllType).
+struct_sick_calc(_, _, _, '', '', _, _, _) :-
+    !.
+struct_sick_calc([], _-Slice, _, _, _, _, _, _) :-
+    Slice =:= 0,
+    !.
+struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWage0, BudgetOption, IllType) :-
+    make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
+    atom_date(DateBegin1, date(Y, M, _)),
+    atom_date(IncludeDate, date(Y, M, 1)),
+    ( BudgetOption = 1, SickPart = 1.0 ; SickPart = SickPart0 ),
+    Percent is SickPart * 100,
+    date_add(DateEnd1, 1, day, DateEnd11),
+    sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType),
+    ( BudgetOption = 1,
+      get_avg_wage_budget(wg_struct_sick, in, Y, M, AvgWage)
+    ;
+      AvgWage = AvgWage0
+    ),
+    Summa is round(DOI * AvgWage * SickPart),
+    OutPairs = [
+                pAccDate-AccDate, pIncludeDate-IncludeDate,
+                pPercent-Percent, pDOI-DOI, pHOI-HOI, pSumma-Summa,
+                pDateBegin-DateBegin1, pDateEnd-DateEnd1
+                ],
+    new_param_list(struct_sick, out, OutPairs),
+    !,
+    struct_sick_calc(SliceList, SickPart-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage0, BudgetOption, IllType).
+
+%
+make_period(DateBegin, DateEnd, DateBegin, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2) :-
+    head_period(DateBegin, DateEnd, DateEnd1, Slice, Slice2),
+    teil_period(DateEnd, DateEnd1, DateBegin2, DateEnd2),
+    !.
+
+%
+head_period(DateBegin, DateEnd, DateBegin, Slice, Slice2) :-
+   date_add(DateBegin, 1, day, DateBegin1),
+   atom_date(DateBegin, date(Y, M, _)),
+   ( \+ atom_date(DateBegin1, date(Y, M, _)), next_slice(DateBegin, Slice, Slice2)
+   ; DateBegin1 @> DateEnd, Slice2 = 0
+   ; Slice =:= 1, next_slice(DateBegin, Slice, Slice2)
+   ),
+   !.
+head_period(DateBegin, DateEnd, DateEnd1, Slice0, Slice2) :-
+   date_add(DateBegin, 1, day, DateBegin1),
+   next_slice(DateBegin, Slice0, Slice1),
+   !,
+   head_period(DateBegin1, DateEnd, DateEnd1, Slice1, Slice2).
+
+%
+next_slice(DateBegin, Slice, Slice) :-
+   catch( wg_holiday(DateBegin), _, fail ),
+   !.
+next_slice(_, Slice, Slice2) :-
+   Slice2 is Slice - 1,
+   !.
+
+%
+teil_period(DateEnd, DateEnd, '', '') :-
+    !.
+teil_period(DateEnd, DateEnd1, DateBegin2, DateEnd) :-
+    date_add(DateEnd1, 1, day, DateBegin2),
+    !.
+
+%
+sum_vacation_days(DateBegin, DateBegin, Duration0, Duration1) :-
+    ( catch( wg_holiday(DateBegin), _, fail ), Duration1 is Duration0 - 1
+    ; Duration1 = Duration0 ),
+    !.
+sum_vacation_days(DateBegin, DateEnd, Duration0, Duration) :-
+    date_add(DateBegin, 1, day, DateBegin1),
+    ( catch( wg_holiday(DateBegin), _, fail ), Duration1 = Duration0
+    ; Duration1 is Duration0 + 1 ),
+    !,
+    sum_vacation_days(DateBegin1, DateEnd, Duration1, Duration).
+
+%
+sum_sick_days(DateBegin, DateBegin, DOI, DOI, HOI, HOI, _) :-
+    !.
+sum_sick_days(DateBegin, DateEnd, DOI0, DOI, HOI0, HOI, IllType) :-
+    add_sick_norm(DateBegin, DOI0, HOI0, DOI1, HOI1, IllType),
+    date_add(DateBegin, 1, day, DateBegin1),
+    !,
+    sum_sick_days(DateBegin1, DateEnd, DOI1, DOI, HOI1, HOI, IllType).
+
+%
+add_sick_norm(TheDay, DOI0, HOI0, DOI1, HOI1, IllType) :-
+    Scope = wg_struct_sick,
+    PK =  [pEmplKey-_, pFirstMoveKey-_],
+    get_param_list(Scope, run, PK),
+    ( member(NormOption, [tbl_cal_flex, tbl_day_norm]),
+      usr_wg_TblDayNorm_mix(Scope, in, PK, _, TheDay, WDuration, 1, NormOption),
+      WDuration > 0,
+      DOI1 is DOI0 + 1, HOI1 is HOI0 + WDuration
+    ;
+      ( catch( wg_job_ill_type(IllType), _, fail),
+        DOI1 = DOI0
+      ; DOI1 is DOI0 + 1
+      ), HOI1 = HOI0
+    ),
+    !.
+
+%
+struct_vacation_out(AccDate, IncludeDate, Duration, Summa, DateBegin, DateEnd, VcType) :-
+    OutPairs = [
+                pAccDate-AccDate, pIncludeDate-IncludeDate,
+                pDuration-Duration, pSumma-Summa,
+                pDateBegin-DateBegin, pDateEnd-DateEnd,
+                pVcType-VcType
+                ],
+    get_param_list(struct_vacation, out, OutPairs).
+
+%
+struct_sick_out(AccDate, IncludeDate, Percent, DOI, HOI, Summa, DateBegin, DateEnd) :-
+    OutPairs = [
+                pAccDate-AccDate, pIncludeDate-IncludeDate,
+                pPercent-Percent, pDOI-DOI, pHOI-HOI, pSumma-Summa,
+                pDateBegin-DateBegin, pDateEnd-DateEnd
+                ],
+    get_param_list(struct_sick, out, OutPairs).
+
+% взять среднедневной БПМ на текущий месяц
+get_avg_wage_budget(Scope, Type, Y, M, AvgWageBudget) :-
+    % первая дата месяца
+    atom_date(FirstMonthDate, date(Y, M, 1)),
+    % взять БПМ
+    findall( Budget0,
+                  % взять данные по БПМ
+                ( get_data(Scope, Type, gd_const_budget, [
+                            fConstDate-ConstDate, fBudget-Budget0]),
+                  % где дата константы меньше первой даты месяца
+                  ConstDate @=< FirstMonthDate
+                ),
+    % в список БПМ
+    BudgetList),
+    % проверить список БПМ
+    \+ BudgetList = [],
+    % последние данные по БПМ за месяц
+    last(BudgetList, MonthBudget),
+    % календарных дней в месяце
+    month_days(Y, M, MonthDays),
+    % коэфициент для расчета по БПМ
+    get_param(Scope, Type, pBudgetPart-BudgetPart),
+    % среднедневной БПМ
+    AvgWageBudget is MonthBudget * BudgetPart / MonthDays,
+    !.
+get_avg_wage_budget(_, _, _, _, 0) :-
     !.
 
 /**/

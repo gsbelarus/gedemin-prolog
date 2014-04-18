@@ -1,7 +1,10 @@
-gd_const_AvgSalaryRB('2013-07-01',5472537.0).
-gd_const_AvgSalaryRB('2013-08-01',5562789.0).
-gd_const_AvgSalaryRB('2013-09-01',5399321.0).
-gd_const_AvgSalaryRB('2013-10-01',5505914.0).
-gd_const_AvgSalaryRB('2013-11-01',5382276.0).
-gd_const_AvgSalaryRB('2013-12-01',5901232.0).
-gd_const_AvgSalaryRB('2014-01-01',5361232.0).
+gd_const_AvgSalaryRB('2012-01-01',1000000.0).
+gd_const_AvgSalaryRB('2013-01-31',4398929.0).
+gd_const_AvgSalaryRB('2013-02-28',4539345.0).
+gd_const_AvgSalaryRB('2013-03-31',4729444.0).
+gd_const_AvgSalaryRB('2013-04-30',4921329.0).
+gd_const_AvgSalaryRB('2013-05-31',5008838.0).
+gd_const_AvgSalaryRB('2013-06-30',5185354.0).
+gd_const_AvgSalaryRB('2013-07-31',5472537.0).
+gd_const_AvgSalaryRB('2013-12-31',5854664.0).
+gd_const_AvgSalaryRB('2014-01-01',5322441.0).
