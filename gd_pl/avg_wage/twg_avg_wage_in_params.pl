@@ -43,10 +43,7 @@ twg_avg_wage_in_params:-
     pFeeGroupKey_xid-147071457,
     pFeeGroupKey_dbid-274788016,
     pFeeGroupKeyProp_xid-147119175,
-    pFeeGroupKeyProp_dbid-1354510846,
-    pAvgSalaryRB_xid-147445419,
-    pAvgSalaryRB_dbid-274788016,
-    pAvgSalaryRB_Coef-3
+    pFeeGroupKeyProp_dbid-1354510846
     ]),
     fail.
 twg_avg_wage_in_params:-
@@ -59,10 +56,16 @@ twg_avg_wage_in_params:-
     [
     pBudgetPart-0.5,
     pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
-    pJobIllType_ruid-'154855944,2105943061',
-    pBudget_xid-147073065,
-    pBudget_dbid-1224850260
+    pJobIllType_ruid-'147036273,151520244',
+    pBudget_ruid-'147073065,1224850260',
+    pAvgSalaryRB_ruid-'147445419,274788016',
+    pAvgSalaryRB_Coef-3
     ]),
+    fail.
+twg_avg_wage_in_params :-
+    member([CutCalcType, CutDuration, CutPart], [[2, 6, 0.5], [3, 0, 0.5]]),
+    new_param_list(wg_struct_sick, in,
+        [pCutCalcType-CutCalcType, pCutDuration-CutDuration, pCutPart-CutPart]),
     fail.
 twg_avg_wage_in_params.
 

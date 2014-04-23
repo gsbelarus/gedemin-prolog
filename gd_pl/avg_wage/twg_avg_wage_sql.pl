@@ -28,11 +28,11 @@ wg_valid_sql([
             usr_wg_FeeTypeProp/4,
             wg_holiday/1,
             usr_wg_ExclDays/6,
-            gd_const_AvgSalaryRB/2,
             % twg_struct
             %wg_holiday/1,
             wg_vacation_slice/2,
             gd_const_budget/2,
+            gd_const_AvgSalaryRB/2,
             -usr_wg_TblDayNorm/8,
             wg_job_ill_type/1,
             -
@@ -695,26 +695,6 @@ ORDER BY \c
 [pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_]
     ).
 
-gd_pl_ds(wg_avg_wage_sick, in, gd_const_AvgSalaryRB, 2, [fConstDate-date, fAvgSalaryRB-float]).
-% gd_const_AvgSalaryRB(ConstDate, AvgSalaryRB)
-get_sql(wg_avg_wage_sick, in, gd_const_AvgSalaryRB/2,
-"SELECT \c
-  cv.CONSTDATE, \c
-  CAST(cv.CONSTVALUE AS DECIMAL(15,4)) AS AvgSalaryRB \c
-FROM \c
-  GD_CONSTVALUE cv \c
-JOIN \c
-  GD_CONST c \c
-    ON c.ID  =  cv.CONSTKEY \c
-WHERE \c
-  cv.CONSTKEY = \c
-  (SELECT id FROM gd_ruid WHERE xid = pAvgSalaryRB_xid AND dbid = pAvgSalaryRB_dbid) \c
-ORDER BY \c
-  cv.CONSTDATE \c
-",
-[pAvgSalaryRB_xid-_, pAvgSalaryRB_dbid-_]
-    ).
-
 % twg_struct
 
 gd_pl_ds(wg_struct_vacation, in, wg_holiday, 1, [fHolidayDate-date]).
@@ -787,12 +767,30 @@ JOIN \c
   GD_CONST c \c
     ON c.ID  =  cv.CONSTKEY \c
 WHERE \c
-  cv.CONSTKEY = \c
-  (SELECT id FROM gd_ruid WHERE xid = pBudget_xid AND dbid = pBudget_dbid) \c
+  cv.CONSTKEY = (SELECT id FROM GD_P_GETID(pBudget_ruid)) \c
 ORDER BY \c
   cv.CONSTDATE \c
 ",
-[pBudget_xid-_, pBudget_dbid-_]
+[pBudget_ruid-_]
+    ).
+
+gd_pl_ds(wg_struct_sick, in, gd_const_AvgSalaryRB, 2, [fConstDate-date, fAvgSalaryRB-float]).
+% gd_const_AvgSalaryRB(ConstDate, AvgSalaryRB)
+get_sql(wg_struct_sick, in, gd_const_AvgSalaryRB/2,
+"SELECT \c
+  cv.CONSTDATE, \c
+  CAST(cv.CONSTVALUE AS DECIMAL(15,4)) AS AvgSalaryRB \c
+FROM \c
+  GD_CONSTVALUE cv \c
+JOIN \c
+  GD_CONST c \c
+    ON c.ID  =  cv.CONSTKEY \c
+WHERE \c
+  cv.CONSTKEY = (SELECT id FROM GD_P_GETID(pAvgSalaryRB_ruid)) \c
+ORDER BY \c
+  cv.CONSTDATE \c
+",
+[pAvgSalaryRB_xid-_, pAvgSalaryRB_dbid-_]
     ).
 
 gd_pl_ds(wg_struct_sick, in, usr_wg_TblDayNorm, 8,

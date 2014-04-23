@@ -18,9 +18,9 @@
 
 %% include
 %#INCLUDE lib
-:- [lib].
+:- ['../common/lib'].
 %#INCLUDE params
-:- [params].
+:- ['../common/params'].
 %#INCLUDE twg_avg_wage_sql
 :- [twg_avg_wage_sql].
 %#INCLUDE twg_avg_wage_in_params
@@ -50,12 +50,13 @@
     usr_wg_FeeTypeProp,
     wg_holiday,
     usr_wg_ExclDays,
-    gd_const_AvgSalaryRB,
     % twg_struct
     %wg_holiday,
     wg_vacation_slice,
     gd_const_budget,
-    usr_wg_TblDayNorm
+    gd_const_AvgSalaryRB,
+    %usr_wg_TblDayNorm,
+    wg_job_ill_type
     ].
 %%
 
@@ -682,23 +683,24 @@ get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
     !.
 get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
     % расчитать заработок за месяц
-    cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage),
+    cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew),
     % записать во временные параметры данные по заработку
     append(PK, [pYM-Y-M,
-                pWage-Wage, pModernCoef-MonthModernCoef, pModernWage-ModernWage],
+                pWage-Wage, pModernCoef-MonthModernCoef, pModernWage-ModernWage,
+                pSalaryOld-SalaryOld, pSalaryNew-SalaryNew],
             Pairs),
     new_param_list(Scope, temp, Pairs),
     !.
 
 % расчитать заработок за месяц
 % - для отпусков
-cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage) :-
+cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % параметры выбора начислений
     member(ChargeOption, [tbl_charge, dbf_sums]),
     % взять начисления
-    findall( Debit-ModernCoef,
+    findall( Debit-ModernCoef-SalaryOld0-SalaryNew0,
           % для начисления по одному из параметров
           % где дата совпадает с проверяемым месяцем
           ( usr_wg_TblCharge_mix(Scope, in, [
@@ -714,7 +716,7 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage) :-
                 )
               ),
           % с коэффициентом осовременивания
-          get_modern_coef(Scope, PK, TheDay, FeeTypeKey, ModernCoef)
+          get_modern_coef(Scope, PK, TheDay, FeeTypeKey, ModernCoef, SalaryOld0, SalaryNew0)
           ),
     % в список начислений
     Debits ),
@@ -727,6 +729,13 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage) :-
     to_currency(MonthModernCoef0, MonthModernCoef, 2),
     % осовремененный заработок
     ModernWage is round(Wage * MonthModernCoef),
+    % старый и новый оклады
+    ( setof( SalaryOld0-SalaryNew0,
+            Debit ^ ModernCoef ^ member(Debit-ModernCoef-SalaryOld0-SalaryNew0, Debits),
+            [SalaryOld-SalaryNew]
+           )
+    ; [SalaryOld-SalaryNew] = [0-0]
+    ),
     !.
 
 % итого зарплата и осовремененная зарплата за месяц
@@ -737,14 +746,14 @@ sum_month_debit(Debits, Wage, ModernWage) :-
 %
 sum_month_debit([], Wage, ModernWage, Wage, ModernWage) :-
     !.
-sum_month_debit([Debit-ModernCoef | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
+sum_month_debit([Debit-ModernCoef-_-_ | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
     Wage1 is Wage0 + Debit,
     ModernWage1 is ModernWage0 + Debit*ModernCoef,
     !,
     sum_month_debit(Debits, Wage, ModernWage, Wage1, ModernWage1).
 
 % коэффициент осовременивания
-get_modern_coef(Scope, PK, _, FeeTypeKey, 1.0) :-
+get_modern_coef(Scope, PK, _, FeeTypeKey, 1.0, 0, 0) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % проверить тип начисления на исключение для осовременивания
@@ -752,7 +761,7 @@ get_modern_coef(Scope, PK, _, FeeTypeKey, 1.0) :-
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                 fFeeTypeKeyNoCoef-FeeTypeKey ]),
     !.
-get_modern_coef(Scope, PK, TheDay, _, ModernCoef) :-
+get_modern_coef(Scope, PK, TheDay, _, ModernCoef, SalaryOld, SalaryNew) :-
     % взять параметр коэфициента и дату ограничения расчета
     append(PK, [pDateCalcTo-DateTo, pCoefOption-CoefOption], Pairs),
     get_param_list(Scope, run, Pairs),
@@ -761,7 +770,7 @@ get_modern_coef(Scope, PK, TheDay, _, ModernCoef) :-
              get_modern_coef_data(PK, Scope, Date, Amount, CoefOption, DateTo),
     Movements ),
     % вычислить коэффициент
-    calc_modern_coef(TheDay, Movements, ModernCoef),
+    calc_modern_coef(TheDay, Movements, ModernCoef, SalaryOld, SalaryNew),
     !.
 
 % взять данные для расчета коэфициента осовременивания
@@ -803,10 +812,10 @@ get_modern_coef_data(PK, Scope, DateBegin, MSalary, CoefOption, DateTo) :-
     DateBegin @< DateTo.
 
 % вычислить коэффициент
-calc_modern_coef(_, [ _ | [] ], 1.0) :-
+calc_modern_coef(_, [ _-Rate | [] ], 1.0, Rate, Rate) :-
     % если последнее движение, то коэффициент 1
     !.
-calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef) :-
+calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef, Rate1, RateLast) :-
     % если проверяемая дата больше или равна даты текущего движения
     TheDay @>= Date1,
     % и меньше даты следующего движения
@@ -817,10 +826,10 @@ calc_modern_coef(TheDay, [ Date1-Rate1, Date2-Rate2 | Movements ], ModernCoef) :
     catch( ModernCoef0 is RateLast / Rate1, _, fail),
     ( ModernCoef0 < 1.0, ModernCoef = 1.0 ; ModernCoef = ModernCoef0 ),
     !.
-calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef) :-
+calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef, Rate, RateLast) :-
     % проверить для остальных движений
     !,
-    calc_modern_coef(TheDay, Movements, ModernCoef).
+    calc_modern_coef(TheDay, Movements, ModernCoef, Rate, RateLast).
 
 % добавление временных данных по расчету заработков
 % - для больничных
@@ -892,19 +901,7 @@ cacl_month_wage_sick(_, _, _, _, 0.0) :-
 % - для больничных
 sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage) :-
     % расчитать сумму начислений
-    sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage0, 0.0),
-      % есть признак Декретный
-    ( append(PK, [pIsPregnancy-1], Pairs),
-      get_param_list(Scope, run, Pairs),
-      Wage = Wage0
-    ;
-      % взять среднюю зп для месяца
-      get_avg_salary(Scope, PK, Y, M, MonthAvgSalary),
-      % определить заработок в сравнении со средней зп
-      ( MonthAvgSalary =:= 0, Wage = Wage0
-      ; Wage0 =< MonthAvgSalary, Wage = Wage0
-      ; Wage = MonthAvgSalary )
-    ),
+    sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage, 0.0),
     !.
 %
 sum_month_debit_sick(_, _, _, _, [], Wage, Wage) :-
@@ -929,34 +926,6 @@ sum_month_debit_sick(Scope, PK, Y, M, [Debit-_ | Debits], Wage, Wage0) :-
     Wage1 is Wage0 + Debit,
     !,
     sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage, Wage1).
-
-% взять среднюю зп для месяца
-get_avg_salary(Scope, PK, Y, M, MonthAvgSalary) :-
-    % первая дата месяца
-    atom_date(FirstMonthDate, date(Y, M, 1)),
-    % взять среднюю зп
-    findall( AvgSalary0,
-                  % взять данные по средней зп
-                ( get_data(Scope, in, gd_const_AvgSalaryRB, [
-                            fConstDate-ConstDate, fAvgSalaryRB-AvgSalary0]),
-                  % где дата константы меньше первой даты месяца
-                  ConstDate @< FirstMonthDate
-                ),
-    % в список средних зп
-    AvgSalaryList),
-    % проверить список средних зп
-    \+ AvgSalaryList = [],
-    % последние данные средней зп за месяц
-    last(AvgSalaryList, MonthAvgSalary0),
-    % взять расчетный коэфициент
-    get_param(Scope, in, pAvgSalaryRB_Coef-AvgSalaryRB_Coef),
-    % взять данные по расчетным дням
-    get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, _),
-    % расчитать среднюю зп пропорционально
-    MonthAvgSalary is round(CalcDays / MonthDays * MonthAvgSalary0 * AvgSalaryRB_Coef),
-    !.
-get_avg_salary(_, _, _, _, 0) :-
-    !.
 
 % взять коэфициент для пропорционального начисления
 get_prop_coef(Scope, PK, Y, M, PropCoef) :-
@@ -1919,7 +1888,8 @@ avg_wage_out(EmplKey, FirstMoveKey, AvgWage, Variant) :-
 % выгрузка детальных выходных данных по сотруднику
 avg_wage_det(EmplKey, FirstMoveKey,
                 Period, Rule, Wage, ModernCoef, ModernWage,
-                TabDays, NormDays, TabHoures, NormHoures) :-
+                TabDays, NormDays, TabHoures, NormHoures,
+                SalaryOld, SalaryNew) :-
     % параметры контекста
     Scope = wg_avg_wage_vacation, Type = temp,
     % шаблон первичного ключа
@@ -1951,11 +1921,11 @@ avg_wage_det(EmplKey, FirstMoveKey,
     once( ( member(Y-M-Rule, MonthIncl) ; Rule = none ) ),
     % взять данные по заработку
     once( ( ( append(PK, [pYM-Y-M,
-                            pWage-Wage, pModernCoef-ModernCoef,
-                            pModernWage-ModernWage],
+                            pWage-Wage, pModernCoef-ModernCoef, pModernWage-ModernWage,
+                            pSalaryOld-SalaryOld, pSalaryNew-SalaryNew],
                         Pairs2),
               get_param_list(Scope, Type, Pairs2) )
-              ; [Wage, ModernCoef, ModernWage] = [0, 1, 0] ) ),
+              ; [Wage, ModernCoef, ModernWage, SalaryOld, SalaryNew] = [0, 1, 0, 0, 0] ) ),
     %
     % есть отработанные часы или заработок
     once( ( TabHoures > 0 ; ModernWage > 0 ) ).
@@ -1978,12 +1948,11 @@ avg_wage_clean(_, _) :-
 %  06. Начисление больничных
 
 % загрузка входных данных по сотруднику
-avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy) :-
+avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc) :-
     Scope = wg_avg_wage_sick, Type = in,
     new_param_list(Scope, Type,
         [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
-         pDateCalc-DateCalc, pIsAvgWageDoc-IsAvgWageDoc,
-         pIsPregnancy-IsPregnancy]),
+         pDateCalc-DateCalc, pIsAvgWageDoc-IsAvgWageDoc]),
     !.
 
 % выгрузка данных выполнения по сотруднику
@@ -2143,30 +2112,53 @@ struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
     !.
 
 %
-struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IllType) :-
+struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType) :-
     Scope = wg_struct_sick, Type = in, NextType = run,
     % шаблон первичного ключа
     PK = [pEmplKey-_, pFirstMoveKey-_],
     % формирование временных данных по графику работы
     get_param_list(Scope, NextType, PK),
     make_schedule(Scope, PK),
+    % формирование временных данных параметров расчета
+    Pairs0 = [pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType],
+    append(PK, Pairs0, Pairs),
+    new_param_list(Scope, temp, Pairs),
     %
     atom_date(DateCalc, date(Year, Month, _)),
     month_days(Year, Month, Days),
     atom_date(AccDate, date(Year, Month, Days)),
-    Params = [pFirstCalcType-FirstCalcType,
-             pFirstDuration-FirstDuration, pFirstPart-FirstPart],
-    get_param_list(Scope, Type, Params),
     date_diff(DateBegin, Duration0, DateEnd),
     Duration is Duration0 + 1,
-    ( CalcType = FirstCalcType,
-      SliceList0 = [FirstPart-FirstDuration]
-    ;
-      SliceList0 = []
-    ),
-    append(SliceList0, [1.0-Duration], SliceList),
     %
-    struct_sick_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage, BudgetOption, IllType),
+    sick_slice_list(Scope, Type, CalcType, Duration, SliceList),
+    struct_sick_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK),
+    !.
+
+%
+sick_slice_list(Scope, Type, CalcType, Duration, SliceList) :-
+    Params = [
+              pFirstCalcType-FirstCalcType,
+              pFirstDuration-FirstDuration,
+              pFirstPart-FirstPart
+             ],
+    get_param_list(Scope, Type, Params),
+    sick_slice_list(Scope, Type, [1.0-Duration], CalcType, FirstCalcType, FirstPart-FirstDuration, SliceList),
+    !.
+%
+sick_slice_list(_, _, SliceList0, CalcType, CalcType, FirstSlice, [FirstSlice|SliceList0]) :-
+    !.
+sick_slice_list(Scope, Type, [_-Duration], CalcType, _, FirstPart-FirstDuration, SliceList) :-
+    Params = [
+              pCutCalcType-CalcType,
+              pCutDuration-CutDuration,
+              pCutPart-CutPart
+             ],
+    get_param_list(Scope, Type, Params),
+    Part2 is FirstPart * CutPart,
+    Duration2 is FirstDuration - CutDuration,
+    append([[0.0-CutDuration], [Part2-Duration2], [CutPart-Duration]], SliceList),
+    !.
+sick_slice_list(_, _, SliceList, _, _, _, SliceList) :-
     !.
 
 %
@@ -2196,27 +2188,37 @@ struct_vacation_calc(SliceList, VcType-Slice, AccDate, DateBegin, DateEnd, AvgWa
     struct_vacation_calc(SliceList, VcType-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage).
 
 %
-struct_sick_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage, BudgetOption, IllType) :-
+struct_sick_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK) :-
     Slice0 =:= 0,
     !,
-    struct_sick_calc(SliceList, Slice, AccDate, DateBegin, DateEnd, AvgWage, BudgetOption, IllType).
+    struct_sick_calc(SliceList, Slice, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK).
 struct_sick_calc(_, _, _, '', '', _, _, _) :-
     !.
 struct_sick_calc([], _-Slice, _, _, _, _, _, _) :-
     Slice =:= 0,
     !.
-struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWage0, BudgetOption, IllType) :-
+struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWage0, Scope, PK) :-
     make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
     atom_date(DateBegin1, date(Y, M, _)),
     atom_date(IncludeDate, date(Y, M, 1)),
-    ( BudgetOption = 1, SickPart = 1.0 ; SickPart = SickPart0 ),
-    Percent is SickPart * 100,
-    date_add(DateEnd1, 1, day, DateEnd11),
-    sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType),
+    Scope = wg_struct_sick,
+    % взять временные данные параметров расчета
+    Pairs0 = [pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType],
+    append(PK, Pairs0, Pairs),
+    get_param_list(Scope, temp, Pairs),
+    %
     ( BudgetOption = 1,
-      get_avg_wage_budget(wg_struct_sick, in, Y, M, AvgWage)
-    ;
-      AvgWage = AvgWage0
+      ( SickPart0 =:= 0, SickPart = 0.0
+      ; SickPart = 1.0
+      )
+    ; SickPart = SickPart0
+    ),
+    Percent is SickPart0 * 100,
+    date_add(DateEnd1, 1, day, DateEnd11),
+    sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType, Scope, PK),
+    ( BudgetOption = 1,
+      get_avg_wage_budget(Scope, in, Y-M, AvgWage)
+    ; check_avg_wage(Scope, IsPregnancy, Y-M, AvgWage0, AvgWage)
     ),
     Summa is round(DOI * AvgWage * SickPart),
     OutPairs = [
@@ -2224,10 +2226,23 @@ struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWag
                 pPercent-Percent, pDOI-DOI, pHOI-HOI, pSumma-Summa,
                 pDateBegin-DateBegin1, pDateEnd-DateEnd1
                 ],
-    new_param_list(struct_sick, out, OutPairs),
+    new_param_list(Scope, out, OutPairs),
     !,
-    struct_sick_calc(SliceList, SickPart-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage0, BudgetOption, IllType).
+    struct_sick_calc(SliceList, SickPart-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage0, Scope, PK).
 
+%
+check_avg_wage(_, 1, _, AvgWage, AvgWage) :-
+    % есть признак Декретный
+    !.
+check_avg_wage(Scope, _, Y-M, AvgWage0, AvgWage) :-
+    % среднедневная зп для месяца по среднемесячной зп
+    avg_wage_by_avg_salary(Scope, Y-M, AvgWage1),
+    % определить среднедневную зп
+    ( AvgWage0 =< AvgWage1, AvgWage = AvgWage0
+    ; AvgWage = AvgWage1 ),
+    !.
+check_avg_wage(_, _, _, AvgWage, AvgWage) :-
+    !.
 %
 make_period(DateBegin, DateEnd, DateBegin, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2) :-
     head_period(DateBegin, DateEnd, DateEnd1, Slice, Slice2),
@@ -2277,19 +2292,16 @@ sum_vacation_days(DateBegin, DateEnd, Duration0, Duration) :-
     sum_vacation_days(DateBegin1, DateEnd, Duration1, Duration).
 
 %
-sum_sick_days(DateBegin, DateBegin, DOI, DOI, HOI, HOI, _) :-
+sum_sick_days(DateBegin, DateBegin, DOI, DOI, HOI, HOI, _, _, _) :-
     !.
-sum_sick_days(DateBegin, DateEnd, DOI0, DOI, HOI0, HOI, IllType) :-
-    add_sick_norm(DateBegin, DOI0, HOI0, DOI1, HOI1, IllType),
+sum_sick_days(DateBegin, DateEnd, DOI0, DOI, HOI0, HOI, IllType, Scope, PK) :-
+    add_sick_norm(DateBegin, DOI0, HOI0, DOI1, HOI1, IllType, Scope, PK),
     date_add(DateBegin, 1, day, DateBegin1),
     !,
-    sum_sick_days(DateBegin1, DateEnd, DOI1, DOI, HOI1, HOI, IllType).
+    sum_sick_days(DateBegin1, DateEnd, DOI1, DOI, HOI1, HOI, IllType, Scope, PK).
 
 %
-add_sick_norm(TheDay, DOI0, HOI0, DOI1, HOI1, IllType) :-
-    Scope = wg_struct_sick,
-    PK =  [pEmplKey-_, pFirstMoveKey-_],
-    get_param_list(Scope, run, PK),
+add_sick_norm(TheDay, DOI0, HOI0, DOI1, HOI1, IllType, Scope, PK) :-
     ( member(NormOption, [tbl_cal_flex, tbl_day_norm]),
       usr_wg_TblDayNorm_mix(Scope, in, PK, _, TheDay, WDuration, 1, NormOption),
       WDuration > 0,
@@ -2314,15 +2326,16 @@ struct_vacation_out(AccDate, IncludeDate, Duration, Summa, DateBegin, DateEnd, V
 
 %
 struct_sick_out(AccDate, IncludeDate, Percent, DOI, HOI, Summa, DateBegin, DateEnd) :-
+    Scope = wg_struct_sick,
     OutPairs = [
                 pAccDate-AccDate, pIncludeDate-IncludeDate,
                 pPercent-Percent, pDOI-DOI, pHOI-HOI, pSumma-Summa,
                 pDateBegin-DateBegin, pDateEnd-DateEnd
                 ],
-    get_param_list(struct_sick, out, OutPairs).
+    get_param_list(Scope, out, OutPairs).
 
 % взять среднедневной БПМ на текущий месяц
-get_avg_wage_budget(Scope, Type, Y, M, AvgWageBudget) :-
+get_avg_wage_budget(Scope, Type, Y-M, AvgWageBudget) :-
     % первая дата месяца
     atom_date(FirstMonthDate, date(Y, M, 1)),
     % взять БПМ
@@ -2346,7 +2359,33 @@ get_avg_wage_budget(Scope, Type, Y, M, AvgWageBudget) :-
     % среднедневной БПМ
     AvgWageBudget is MonthBudget * BudgetPart / MonthDays,
     !.
-get_avg_wage_budget(_, _, _, _, 0) :-
+get_avg_wage_budget(_, _, _, 0) :-
+    !.
+
+% среднедневная зп для месяца по среднемесячной зп
+avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
+    % первая дата месяца
+    atom_date(FirstMonthDate, date(Y, M, 1)),
+    % взять среднюю зп
+    findall( AvgSalary0,
+                  % взять данные по средней зп
+                ( get_data(Scope, in, gd_const_AvgSalaryRB, [
+                            fConstDate-ConstDate, fAvgSalaryRB-AvgSalary0]),
+                  % где дата константы меньше первой даты месяца
+                  ConstDate @< FirstMonthDate
+                ),
+    % в список средних зп
+    AvgSalaryList),
+    % проверить список средних зп
+    \+ AvgSalaryList = [],
+    % последние данные средней зп за месяц
+    last(AvgSalaryList, MonthAvgSalary),
+    % взять расчетный коэфициент
+    get_param(Scope, in, pAvgSalaryRB_Coef-AvgSalaryRB_Coef),
+    % календарных дней в месяце
+    month_days(Y, M, MonthDays),
+    % расчитать среднедневную зп для месяца
+    MonthAvgWage is round(MonthAvgSalary * AvgSalaryRB_Coef / MonthDays),
     !.
 
 /**/
