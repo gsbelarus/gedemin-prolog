@@ -374,18 +374,18 @@ calc_avg_wage_sick(Scope, PK, AvgWage, Rule) :-
     prep_avg_wage_sick(Scope, PK, Periods),
     % вариант по расчетным дням
     ( Rule = by_calc_days,
-      % есть требуемое количество месяцев
+      % если есть требуемое количество месяцев
       get_param(Scope, run, pMonthQty-MonthQty),
-      length(Periods, MonthQty)
+      length(Periods, MonthQty),
+      % и выполняется одно из правил по полноте месяца
+      rule_month_days_sick(Scope, PK, Periods, _)
     ;
     % вариант по расчетным дням со справкой
       Rule = by_calc_days_doc,
-      % есть признак Справка
+      % если есть признак Справка
       append(PK, [pIsAvgWageDoc-1], Pairs),
       get_param_list(Scope, run, Pairs)
     ),
-    % если выполняется одно из правил
-    rule_month_days_sick(Scope, PK, Periods),
     % то выполнить расчет
     % взять заработок
     findall( Wage,
@@ -527,14 +527,14 @@ version_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
 
 % правила для учета расчетных дней
 % - для больничных
-rule_month_days_sick(Scope, PK, Periods) :-
+rule_month_days_sick(Scope, PK, Periods, Rule) :-
     Rule = by_calc_days_all,
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
     % все месяцы полные
     is_full_all_month_sick(Scope, PK, Periods),
     !.
-rule_month_days_sick(Scope, PK, Periods) :-
+rule_month_days_sick(Scope, PK, Periods, Rule) :-
     Rule = by_calc_days_any,
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
