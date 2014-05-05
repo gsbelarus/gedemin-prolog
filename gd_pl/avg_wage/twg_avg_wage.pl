@@ -1,8 +1,15 @@
-﻿% twg_avg_wage
+﻿% Зарплата и Отдел кадров -> Зарплата -> 03. Начисление зарплаты
+%   05. Начисление отпусков
+%   06. Начисление больничных
+%   12. Начисление по-среднему
+%
+
+% twg_avg_wage
 
 % среднедневной заработок
 % - для отпусков
 % - для больничных
+% - для начисления по-среднему
 %
 
 :- retractall(debug_mode).
@@ -47,6 +54,7 @@
     usr_wg_BadFeeType,
     usr_wg_SpecDep,
     %  06. Начисление больничных
+    usr_wg_AvgWage,
     usr_wg_FeeTypeProp,
     wg_holiday,
     usr_wg_ExclDays,
@@ -85,12 +93,12 @@ wg_valid_rules([by_calc_month, by_avg_houre]).
 % табель за месяц покрывает график [по дням и часам, по часам, по дням]
 wg_valid_rules([by_days_houres, by_houres, by_days]).
 %% дополнительные правила для включения месяца в расчет
-% [заработок за месяц не меньше каждого из полных месяцев]
-% (для одинаковых коэфициентов осовременивания)
-wg_valid_rules([-by_month_wage_all]).
 % [заработок за месяц не меньше любого из полных месяцев]
 % (для одинаковых коэфициентов осовременивания)
 wg_valid_rules([by_month_wage_any]).
+% [заработок за месяц не меньше каждого из полных месяцев]
+% (для одинаковых коэфициентов осовременивания)
+wg_valid_rules([-by_month_wage_all]).
 % [отсутствие в месяце плохих типов начислений и часов]
 wg_valid_rules([-by_month_no_bad_type]).
 
@@ -98,14 +106,16 @@ wg_valid_rules([-by_month_no_bad_type]).
 %  - для больничных
 % [по расчетным дням, по расчетным дням со справкой]
 wg_valid_rules([by_calc_days, by_calc_days_doc]).
-% [от БПМ, от ставки, по не полным месяцам]
-wg_valid_rules([by_budget, by_rate, by_not_full]).
+% [от БПМ, по среднему заработку]
+wg_valid_rules([by_budget, by_avg_wage]).
+% [от ставки, по не полным месяцам]
+wg_valid_rules([by_rate, -by_not_full]).
 %% варианты правил для исключения дней
 % [по табелю мастера, по табелю, по приказам]
 wg_valid_rules([by_cal_flex, by_cal, by_orders]).
 %% дополнительные правила для учета расчетных дней
-% [все месяцы полные, хотя бы один месяц полный]
-wg_valid_rules([by_calc_days_all, by_calc_days_any]).
+% [хотя бы один месяц полный, все месяцы полные]
+wg_valid_rules([by_calc_days_any, -by_calc_days_all]).
 
 %% варианты правил полных месяцев
 %  - для отпусков
@@ -372,6 +382,8 @@ calc_avg_wage_sick(Scope, PK, AvgWage, Rule) :-
     is_valid_rule(Scope, PK, _, Rule),
     % подготовка временных данных для расчета
     prep_avg_wage_sick(Scope, PK, Periods),
+    % есть рабочие периоды
+    \+ Periods = [],
     % вариант по расчетным дням
     ( Rule = by_calc_days,
       % если есть требуемое количество месяцев
@@ -425,6 +437,20 @@ calc_avg_wage_sick(Scope, PK, AvgWage, Rule) :-
     % расчет от БПМ при формировании структуры
     AvgWage is 0,
     !.
+% среднедневной заработок по сотруднику (по среднему заработку)
+% - для больничных
+calc_avg_wage_sick(Scope, PK, AvgWage, Rule) :-
+    Rule = by_avg_wage,
+    % правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    % подготовка временных данных для расчета
+    prep_avg_wage_sick(Scope, PK, Periods),
+    % есть требуемое количество месяцев
+    get_param(Scope, run, pMonthQty-MonthQty),
+    length(Periods, MonthQty),
+    % расчет по среднему заработку
+    version_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule),
+    !.
 % среднедневной заработок по сотруднику (от ставки / по не полным месяцам)
 % - для больничных
 calc_avg_wage_sick(Scope, PK, AvgWage, Rule) :-
@@ -449,6 +475,25 @@ calc_avg_wage_sick(Scope, PK, AvgWage, Rule) :-
     !.
 
 % выбор варианта расчета
+version_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
+    Rule = by_avg_wage,
+    % правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % взять данные по среднедневному заработку
+    findall( AvgSumma,
+             ( member(Y-M, Periods),
+               get_data(Scope, in, usr_wg_AvgWage, [
+                           fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                           fCalYear-Y, fCalMonth-M, fAvgSumma-AvgSumma])
+             ),
+    % в список среднедневных заработков
+    AvgSummaList),
+    % максимальный среднедневной заработок
+    max_list(AvgSummaList, MaxAvgSumma),
+    AvgWage is round(MaxAvgSumma),
+    !.
 version_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     Rule = by_rate,
     % правило действительно
@@ -528,19 +573,19 @@ version_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
 % правила для учета расчетных дней
 % - для больничных
 rule_month_days_sick(Scope, PK, Periods, Rule) :-
-    Rule = by_calc_days_all,
-    % правило действительно
-    is_valid_rule(Scope, PK, _, Rule),
-    % все месяцы полные
-    is_full_all_month_sick(Scope, PK, Periods),
-    !.
-rule_month_days_sick(Scope, PK, Periods, Rule) :-
     Rule = by_calc_days_any,
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
     % есть хотя бы один полный месяц
     member(Y-M, Periods),
     get_month_days_sick(Scope, PK, Y, M, _, _, 1),
+    !.
+rule_month_days_sick(Scope, PK, Periods, Rule) :-
+    Rule = by_calc_days_all,
+    % правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    % все месяцы полные
+    is_full_all_month_sick(Scope, PK, Periods),
     !.
 
 % все месяцы полные
@@ -583,6 +628,10 @@ prep_avg_wage_sick(Scope, PK, Periods) :-
 
 % формирование временных данных по графику работы
 make_schedule(Scope, PK) :-
+    % временные данные по графику работы уже есть
+    get_param_list(Scope, temp, [pScheduleKey-_|PK]),
+    !.
+make_schedule(Scope, PK) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % взять данные по движению
@@ -592,8 +641,7 @@ make_schedule(Scope, PK) :-
                          fDateBegin-Date, fScheduleKey-ScheduleKey]),
     MoveList ),
     % взять дату ограничения расчета
-    get_param_list(Scope, run, [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
-     pDateCalcTo-DateCalcTo]),
+    get_param_list(Scope, run, [pDateCalcTo-DateCalcTo|PK]),
     % добавить временные данные по графику работы
     add_schedule(Scope, PK, MoveList, DateCalcTo),
     !.
@@ -617,11 +665,18 @@ add_schedule(Scope, PK, [DateFrom-ScheduleKey, DateTo-ScheduleKey1 | MoveList], 
 
 % периоды для проверки
 get_periods(Scope, PK, Periods) :-
+    % взять временные данные по списку периодов
+    get_param_list(Scope, temp, [pPeriods-Periods|PK]),
+    !.
+get_periods(Scope, PK, Periods) :-
     % взять даты ограничения расчета
-    append(PK, [pDateCalcFrom-DateFrom, pDateCalcTo-DateTo], Pairs),
-    get_param_list(Scope, run, Pairs),
+    append(PK, [pDateCalcFrom-DateFrom, pDateCalcTo-DateTo], Pairs1),
+    get_param_list(Scope, run, Pairs1),
     % сформировать список периодов
     make_periods(Scope, PK, DateFrom, DateTo, Periods),
+    % добавить временные данные по списку периодов
+    append(PK, [pPeriods-Periods], Pairs2),
+    new_param_list(Scope, temp, Pairs2),
     !.
 
 % сформировать список периодов
@@ -1413,31 +1468,6 @@ check_month_wage(Scope, PK, [_|Periods]) :-
     % проверить следующий месяц
     check_month_wage(Scope, PK, Periods).
 
-% заработок за месяц выше или на уровне каждого из полных месяцев
-rule_month_wage(Scope, PK, Y-M, Rule) :-
-    Rule = by_month_wage_all,
-    % правило действительно
-    is_valid_rule(Scope, PK, _, Rule),
-    % варианты правил полных месяцев
-    wg_full_month_rules(FullMonthRules),
-    % взять заработок и коэффициент осовременивания за проверяемый месяц
-    get_month_wage(Scope, PK, Y, M, ModernCoef, Wage),
-    % взять заработок
-    findall( Wage1,
-              % для расчетного месяца
-            ( get_month_incl(Scope, PK, Y1, M1, Variant1),
-              % который принят для исчисления по варианту полного месяца
-              once( member(Variant1, FullMonthRules) ),
-              % с заработком и коэффициентом осовременивания за месяц
-              get_month_wage(Scope, PK, Y1, M1, ModernCoef1, Wage1),
-              % где коэффициенты для проверяемого и расчетного равны
-              ModernCoef =:= ModernCoef1 ),
-    % в список заработков
-    Wages1 ),
-    % если заработок проверяемого месяца покрывает все из расчетных
-    wage_over_list(Wage, Wages1),
-    % то месяц включается в расчет
-    !.
 % заработок за месяц больше или равен любого из полных месяцев
 rule_month_wage(Scope, PK, Y-M, Rule) :-
     Rule = by_month_wage_any,
@@ -1463,6 +1493,39 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     wage_over_any(Wage, Wages1),
     % то месяц включается в расчет
     !.
+% заработок за месяц выше или на уровне каждого из полных месяцев
+rule_month_wage(Scope, PK, Y-M, Rule) :-
+    Rule = by_month_wage_all,
+    % правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    % варианты правил полных месяцев
+    wg_full_month_rules(FullMonthRules),
+    % взять заработок и коэффициент осовременивания за проверяемый месяц
+    get_month_wage(Scope, PK, Y, M, ModernCoef, Wage),
+    % взять заработок
+    findall( Wage1,
+              % для расчетного месяца
+            ( get_month_incl(Scope, PK, Y1, M1, Variant1),
+              % который принят для исчисления по варианту полного месяца
+              once( member(Variant1, FullMonthRules) ),
+              % с заработком и коэффициентом осовременивания за месяц
+              get_month_wage(Scope, PK, Y1, M1, ModernCoef1, Wage1),
+              % где коэффициенты для проверяемого и расчетного равны
+              ModernCoef =:= ModernCoef1 ),
+    % в список заработков
+    Wages1 ),
+    % если заработок проверяемого месяца покрывает все из расчетных
+    wage_over_list(Wage, Wages1),
+    % то месяц включается в расчет
+    !.
+
+% заработок покрывает любое значение из списка
+wage_over_any(Over, [Head|_]) :-
+    Over >= Head,
+    !.
+wage_over_any(Over, [_|Tail]) :-
+    !,
+    wage_over_any(Over, Tail).
 
 % заработок покрывает все значения из списка
 wage_over_list(Over, [Head|[]]) :-
@@ -1472,14 +1535,6 @@ wage_over_list(Over, [Head|Tail]) :-
     Over >= Head,
     !,
     wage_over_list(Over, Tail).
-
-% заработок покрывает любое значение из списка
-wage_over_any(Over, [Head|_]) :-
-    Over >= Head,
-    !.
-wage_over_any(Over, [_|Tail]) :-
-    !,
-    wage_over_any(Over, Tail).
 
 % проверка месяца по типу начислений и типу часов
 % - для отпусков
@@ -2056,6 +2111,7 @@ avg_wage_sick_clean(_, _) :-
 % расчет структуры
 % - для отпусков
 % - для больничных
+%
 
 /* реализация */
 
