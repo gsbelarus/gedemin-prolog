@@ -12,7 +12,7 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   Dim EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL
   'struct_sick_in
   Dim P_in, Tv_in, Q_in
-  Dim DateCalc, AvgWage, CalcType, BudgetOption
+  Dim DateCalc, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType
   'struct_sick_out
   Dim P_out, Tv_out, Q_out
   Dim AccDate, IncludeDate, Percent, DOI, HOI, Summa
@@ -29,7 +29,7 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   'debug
   PL.Debug = True
   'load
-  Ret = PL.LoadScript(pl_GetScriptIDByName("twg_struct"))
+  Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
   If Not Ret Then
     Exit Function
   End If
@@ -41,7 +41,10 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
   AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
   BudgetOption = gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger
-
+  IsPregnancy = abs(gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
+         gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
+  IllType = gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger
+  
   Dim IBSQL
   '
   Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
@@ -53,10 +56,12 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
       "  USR$WG_TOTAL t " & _
       "WHERE " & _
       "  t.DOCUMENTKEY = :TDK "
-  IBSQL.ParamByName("TDK").asInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
+  IBSQL.ParamByName("TDK").AsInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
   IBSQL.ExecQuery
   '
   DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
+  '
+  IBSQL.Close
 
   IBSQL.SQL.Text = _
       "SELECT " & _
@@ -64,16 +69,21 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
       "FROM " & _
       "  USR$WG_ILLTYPE it " & _
       "WHERE " & _
-      "  it.ID = :ID "
-  IBSQL.ParamByName("ID").asInteger = gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger
+      "  it.ID = :ILLTYPEKEY "
+  IBSQL.ParamByName("ILLTYPEKEY").AsInteger = IllType
   IBSQL.ExecQuery
+  '
   CalcType = IBSQL.FieldByName("USR$CALCTYPE").AsInteger
+  '
+  IBSQL.Close
 
   'clean
   gdcDetail.First
   While Not gdcDetail.EOF
     gdcDetail.Delete
   Wend
+  '
+  gdcDetail.OwnerForm.Repaint
 
   'struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL)
   P_sql = "struct_sick_sql"
@@ -90,6 +100,11 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   Tv_sql.PutDate 3, DateEnd
   '
   Q_sql.OpenQuery
+  Q_sql.OpenQuery
+  If Q_sql.EOF Then
+    Exit Function
+  End If
+  '
   Do Until Q_sql.EOF
     PredicateName = Tv_sql.ReadAtom(4)
     Arity = Tv_sql.ReadInteger(5)
@@ -112,9 +127,9 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
 
-  'struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption)
+  'struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType)
   P_in = "struct_sick_in"
-  Set Tv_in = Creator.GetObject(6, "TgsPLTermv", "")
+  Set Tv_in = Creator.GetObject(8, "TgsPLTermv", "")
   Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
   Tv_in.PutDate 0, DateCalc
   Tv_in.PutDate 1, DateBegin
@@ -122,6 +137,8 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   Tv_in.PutFloat 3, AvgWage
   Tv_in.PutInteger 4, CalcType
   Tv_in.PutInteger 5, BudgetOption
+  Tv_in.PutInteger 6, IsPregnancy
+  Tv_in.PutInteger 7, IllType
   '
   Q_in.PredicateName = P_in
   Q_in.Termv = Tv_in

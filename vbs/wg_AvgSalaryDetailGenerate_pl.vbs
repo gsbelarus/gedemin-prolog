@@ -6,7 +6,6 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
   Dim Creator, gdcObject, gdcDetail
   '
   Dim PL, Ret, Pred, Tv, Append
-  Dim PredFile
   'struct_vacation_sql
   Dim P_sql, Tv_sql, Q_sql
   Dim DocKey, DateBegin, DateEnd, PredicateName, Arity, SQL
@@ -54,7 +53,7 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
   'debug
   PL.Debug = True
   'load
-  Ret = PL.LoadScript(pl_GetScriptIDByName("twg_struct"))
+  Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
   If Not Ret Then
     Exit Function
   End If
@@ -82,6 +81,10 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
   Tv_sql.PutDate 2, DateEnd
   '
   Q_sql.OpenQuery
+  If Q_sql.EOF Then
+    Exit Function
+  End If
+  '
   Do Until Q_sql.EOF
     PredicateName = Tv_sql.ReadAtom(3)
     Arity = Tv_sql.ReadInteger(4)
@@ -95,14 +98,7 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
     Q_sql.NextSolution
   Loop
   Q_sql.Close
-
-  'save param_list
-  If PL.Debug Then
-    Pred = "param_list"
-    PredFile = "param_list"
-    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
-    PL.SavePredicatesToFile Pred, Tv, PredFile
-  End If
+  '
 
   'struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption)
   P_in = "struct_vacation_in"
