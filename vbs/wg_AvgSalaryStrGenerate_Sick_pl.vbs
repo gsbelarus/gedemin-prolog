@@ -9,8 +9,8 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   Dim Creator
   '
   Dim PL, Ret, Pred, Tv, Append
-  Dim PredFile
-  'avg_wage_sick
+  Dim PredFile, Scope
+  'avg_wage
   Dim P_main, Tv_main, Q_main
   'avg_wage_sick_in
   Dim P_in, Tv_in, Q_in
@@ -19,8 +19,7 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
   Dim DateCalcFrom, DateCalcTo
   Dim PredicateName, Arity, SQL
-  '
-  'avg_wage_out, avg_wage_det
+  'avg_wage_out, avg_wage_sick_det
   Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
   Dim AvgWage, AvgWageRule
   Dim Period, PeriodRule, MonthDays, ExclDays, CalcDays, IsFullMonth, Wage
@@ -43,7 +42,8 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   If Not Ret Then
     Exit Function
   End If
-
+  Scope = "wg_avg_wage_sick"
+  
   'params
   EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
   FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
@@ -76,12 +76,14 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   End If
   Q_in.Close
 
-  'avg_wage_sick(_) - prepare data
-  P_main = "avg_wage_sick"
+  'avg_wage(Scope) - prepare data
+  P_main = "avg_wage"
   Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
   Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_main.PredicateName = P_main
   Q_main.Termv = Tv_main
+  '
+  Tv_main.PutAtom 0, Scope
   '
   Q_main.OpenQuery
   If Q_main.EOF Then
@@ -97,19 +99,21 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
 
-  'avg_wage_sick_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)
-  P_run = "avg_wage_sick_run"
-  Set Tv_run = Creator.GetObject(4, "TgsPLTermv", "")
+  'avg_wage_run(Scope, EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)
+  P_run = "avg_wage_run"
+  Set Tv_run = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_run.PredicateName = P_run
   Q_run.Termv = Tv_run
-  'avg_wage_sick_sql(EmplKey, FirstMoveKey, PredicateName, Arity, SQL)
-  P_sql = "avg_wage_sick_sql"
-  P_kb = "avg_wage_sick_kb"
-  Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")
+  'avg_wage_sql(Scope, EmplKey, FirstMoveKey, PredicateName, Arity, SQL)
+  P_sql = "avg_wage_sql"
+  P_kb = "avg_wage_kb"
+  Set Tv_sql = Creator.GetObject(6, "TgsPLTermv", "")
   Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_sql.PredicateName = P_sql
   Q_sql.Termv = Tv_sql
+  '
+  Tv_run.PutAtom 0, Scope
   '
   Q_run.OpenQuery
   If Q_run.EOF Then
@@ -119,20 +123,21 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   Append = False
   '
   Do Until Q_run.EOF
-    EmplKey = Tv_run.ReadInteger(0)
-    FirstMoveKey = Tv_run.ReadInteger(1)
-    DateCalcFrom = Tv_run.ReadDate(2)
-    DateCalcTo = Tv_run.ReadDate(3)
+    EmplKey = Tv_run.ReadInteger(1)
+    FirstMoveKey = Tv_run.ReadInteger(2)
+    DateCalcFrom = Tv_run.ReadDate(3)
+    DateCalcTo = Tv_run.ReadDate(4)
     '
     Tv_sql.Reset
-    Tv_sql.PutInteger 0, EmplKey
-    Tv_sql.PutInteger 1, FirstMoveKey
+    Tv_sql.PutAtom 0, Scope
+    Tv_sql.PutInteger 1, EmplKey
+    Tv_sql.PutInteger 2, FirstMoveKey
     Q_sql.OpenQuery
     '
     Do Until Q_sql.EOF
-      PredicateName = Tv_sql.ReadAtom(2)
-      Arity = Tv_sql.ReadInteger(3)
-      SQL = Tv_sql.ReadString(4)
+      PredicateName = Tv_sql.ReadAtom(3)
+      Arity = Tv_sql.ReadInteger(4)
+      SQL = Tv_sql.ReadString(5)
       '
       Ret =  PL.MakePredicatesOfSQLSelect _
                 (SQL, _
@@ -160,16 +165,16 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
 
-  'avg_wage_sick(Variant) - calc result
+  'avg_wage(Scope) - calc result
   Q_main.OpenQuery
   If Q_main.EOF Then
     Exit Function
   End If
   Q_main.Close
 
-  'avg_wage_sick_out(EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
-  P_out = "avg_wage_sick_out"
-  Set Tv_out = Creator.GetObject(4, "TgsPLTermv", "")
+  'avg_wage_out(Scope, EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
+  P_out = "avg_wage_out"
+  Set Tv_out = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_out.PredicateName = P_out
   Q_out.Termv = Tv_out
@@ -184,16 +189,18 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   Q_det.PredicateName = P_det
   Q_det.Termv = Tv_det
   '
+  Tv_out.PutAtom 0, Scope
+  '
   Q_out.OpenQuery
   If Q_out.EOF Then
     Exit Function
   End If
   '
   Do Until Q_out.EOF
-    EmplKey = Tv_out.ReadInteger(0)
-    FirstMoveKey = Tv_out.ReadInteger(1)
-    AvgWage = Tv_out.ReadFloat(2)
-    AvgWageRule = Tv_out.ReadAtom(3)
+    EmplKey = Tv_out.ReadInteger(1)
+    FirstMoveKey = Tv_out.ReadInteger(2)
+    AvgWage = Tv_out.ReadFloat(3)
+    AvgWageRule = Tv_out.ReadAtom(4)
     '
     Tv_det.Reset
     Tv_det.PutInteger 0, EmplKey

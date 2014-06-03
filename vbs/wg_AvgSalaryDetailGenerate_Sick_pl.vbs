@@ -100,7 +100,6 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   Tv_sql.PutDate 3, DateEnd
   '
   Q_sql.OpenQuery
-  Q_sql.OpenQuery
   If Q_sql.EOF Then
     Exit Function
   End If

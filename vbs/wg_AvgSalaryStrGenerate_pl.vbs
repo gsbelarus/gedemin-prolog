@@ -11,7 +11,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Dim Creator, gdcObject, gdcSalary
   '
   Dim PL, Ret, Pred, Tv, Append
-  Dim PredFile
+  Dim PredFile, Scope
   'avg_wage
   Dim P_main, Tv_main, Q_main
   'avg_wage_in
@@ -28,6 +28,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Dim AvgWage, AvgWageRule
   Dim Period, PeriodRule, Wage, ModernWage, ModernCoef
   Dim TabDays, TabHoures, NormDays, NormHoures
+  Dim SalaryOld, SalaryNew
   Dim IsFull, IsCheck
 
   T1 = Timer
@@ -99,6 +100,7 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   If Not Ret Then
     Exit Function
   End If
+  Scope = "wg_avg_wage_vacation"
 
   Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
   '
@@ -132,12 +134,14 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   End If
   Q_in.Close
 
-  'avg_wage(_) - prepare data
+  'avg_wage(Scope) - prepare data
   P_main = "avg_wage"
   Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
   Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_main.PredicateName = P_main
   Q_main.Termv = Tv_main
+  '
+  Tv_main.PutAtom 0, Scope
   '
   Q_main.OpenQuery
   If Q_main.EOF Then
@@ -145,19 +149,21 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   End If
   Q_main.Close
 
-  'avg_wage_run(EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)
+  'avg_wage_run(Scope, EmplKey, FirstMoveKey, DateCalcFrom, DateCalcTo)
   P_run = "avg_wage_run"
-  Set Tv_run = Creator.GetObject(4, "TgsPLTermv", "")
+  Set Tv_run = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_run.PredicateName = P_run
   Q_run.Termv = Tv_run
-  'avg_wage_sql(EmplKey, FirstMoveKey, PredicateName, Arity, SQL)
+  'avg_wage_sql(Scope, EmplKey, FirstMoveKey, PredicateName, Arity, SQL)
   P_sql = "avg_wage_sql"
   P_kb = "avg_wage_kb"
-  Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")
+  Set Tv_sql = Creator.GetObject(6, "TgsPLTermv", "")
   Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_sql.PredicateName = P_sql
   Q_sql.Termv = Tv_sql
+  '
+  Tv_run.PutAtom 0, Scope
   '
   Q_run.OpenQuery
   If Q_run.EOF Then
@@ -167,20 +173,21 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   Append = False
   '
   Do Until Q_run.EOF
-    EmplKey = Tv_run.ReadInteger(0)
-    FirstMoveKey = Tv_run.ReadInteger(1)
-    DateCalcFrom = Tv_run.ReadDate(2)
-    DateCalcTo = Tv_run.ReadDate(3)
+    EmplKey = Tv_run.ReadInteger(1)
+    FirstMoveKey = Tv_run.ReadInteger(2)
+    DateCalcFrom = Tv_run.ReadDate(3)
+    DateCalcTo = Tv_run.ReadDate(4)
     '
     Tv_sql.Reset
-    Tv_sql.PutInteger 0, EmplKey
-    Tv_sql.PutInteger 1, FirstMoveKey
+    Tv_sql.PutAtom 0, Scope
+    Tv_sql.PutInteger 1, EmplKey
+    Tv_sql.PutInteger 2, FirstMoveKey
     Q_sql.OpenQuery
     '
     Do Until Q_sql.EOF
-      PredicateName = Tv_sql.ReadAtom(2)
-      Arity = Tv_sql.ReadInteger(3)
-      SQL = Tv_sql.ReadString(4)
+      PredicateName = Tv_sql.ReadAtom(3)
+      Arity = Tv_sql.ReadInteger(4)
+      SQL = Tv_sql.ReadString(5)
       '
       Ret =  PL.MakePredicatesOfSQLSelect _
                 (SQL, _
@@ -208,27 +215,30 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
 
-  'avg_wage(Variant) - calc result
+  'avg_wage(Scope) - calc result
   Q_main.OpenQuery
   If Q_main.EOF Then
     Exit Function
   End If
   Q_main.Close
 
-  'avg_wage_out(EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
+  'avg_wage_out(Scope, EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
   P_out = "avg_wage_out"
-  Set Tv_out = Creator.GetObject(4, "TgsPLTermv", "")
+  Set Tv_out = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_out.PredicateName = P_out
   Q_out.Termv = Tv_out
   'avg_wage_det(EmplKey, FirstMoveKey,
   '   Period, PeriodRule, Wage, ModernCoef, ModernWage,
-  '   TabDays, NormDays, TabHoures, NormHoures)
+  '   TabDays, NormDays, TabHoures, NormHoures,
+  '   SalaryOld, SalaryNew)
   P_det = "avg_wage_det"
-  Set Tv_det = Creator.GetObject(11, "TgsPLTermv", "")
+  Set Tv_det = Creator.GetObject(13, "TgsPLTermv", "")
   Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_det.PredicateName = P_det
   Q_det.Termv = Tv_det
+  '
+  Tv_out.PutAtom 0, Scope
   '
   Q_out.OpenQuery
   If Q_out.EOF Then
@@ -236,10 +246,10 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   End If
   '
   Do Until Q_out.EOF
-    EmplKey = Tv_out.ReadInteger(0)
-    FirstMoveKey = Tv_out.ReadInteger(1)
-    AvgWage = Tv_out.ReadFloat(2)
-    AvgWageRule = Tv_out.ReadAtom(3)
+    EmplKey = Tv_out.ReadInteger(1)
+    FirstMoveKey = Tv_out.ReadInteger(2)
+    AvgWage = Tv_out.ReadFloat(3)
+    AvgWageRule = Tv_out.ReadAtom(4)
     '
     Tv_det.Reset
     Tv_det.PutInteger 0, EmplKey
@@ -283,6 +293,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
       NormDays = Tv_det.ReadFloat(8)
       TabHoures = Tv_det.ReadFloat(9)
       NormHoures = Tv_det.ReadFloat(10)
+      SalaryOld = Tv_det.ReadFloat(11)
+      SalaryNew = Tv_det.ReadFloat(12)
       '
       gdcSalary.Append
       gdcSalary.FieldByName("USR$DATE").AsVariant = Period
@@ -296,6 +308,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
       gdcSalary.FieldByName("USR$ISCHECK").AsVariant = IsCheck
       gdcSalary.FieldByName("USR$ISFULL").AsVariant = IsFull
       gdcSalary.FieldByName("USR$DESCRIPTION").AsVariant = PeriodRule
+      gdcSalary.FieldByName("USR$OLDSALARY").AsVariant = SalaryOld
+      gdcSalary.FieldByName("USR$NEWSALARY").AsVariant = SalaryNew
       gdcSalary.Post
       '
       Q_det.NextSolution
