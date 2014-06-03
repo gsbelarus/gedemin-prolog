@@ -92,7 +92,7 @@ gd_pl_ds(Scope, kb, usr_wg_MovementLine, 15, [
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
-        wg_struct_avg
+        wg_struct_sick
         ]).
 % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
 %   MoveYear, MoveMonth, DateBegin,
@@ -131,7 +131,7 @@ ORDER BY \c
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
-        wg_struct_avg
+        wg_struct_sick
         ]).
 
 gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_FCRate, 4, [
@@ -161,7 +161,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblCalDay, 9, [
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
-        wg_struct_avg, wg_struct_sick
+        wg_struct_sick
         ]).
 % usr_wg_TblCalDay(EmplKey, FirstMoveKey, TheDay, WYear, WMonth, WDay,
 %    WDuration, WorkDay, ScheduleKey)
@@ -211,7 +211,7 @@ ORDER BY \c
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
-        wg_struct_avg, wg_struct_sick
+        wg_struct_sick
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblDayNorm, 8, [

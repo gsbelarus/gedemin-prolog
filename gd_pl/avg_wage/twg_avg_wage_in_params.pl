@@ -39,7 +39,7 @@ twg_avg_wage_in_params:-
     fail.
 twg_avg_wage_in_params:-
     new_param_list(wg_avg_wage_avg, in, [
-        pMonthQty-2, pMonthBonusQty-12,
+        pMonthQty-2, pMonthBonusQty-12, pMonthLimitQty-2,
         pFeeGroupKey_ruid-'147113780,1354510846'
         ]),
     fail.

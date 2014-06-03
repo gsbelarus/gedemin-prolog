@@ -5,7 +5,7 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков и больничных"
-  Version: "1.0.0.38"
+  Version: "1.0.0.39"
   Optional: False
   Internal: True
 Objects: 
@@ -555,7 +555,7 @@ Objects:
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
-                wg_struct_avg
+                wg_struct_sick
                 ]).
         % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
         %   MoveYear, MoveMonth, DateBegin,
@@ -594,7 +594,7 @@ Objects:
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
-                wg_struct_avg
+                wg_struct_sick
                 ]).
         
         gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_FCRate, 4, [
@@ -624,7 +624,7 @@ Objects:
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
-                wg_struct_avg, wg_struct_sick
+                wg_struct_sick
                 ]).
         % usr_wg_TblCalDay(EmplKey, FirstMoveKey, TheDay, WYear, WMonth, WDay,
         %    WDuration, WorkDay, ScheduleKey)
@@ -674,7 +674,7 @@ Objects:
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
-                wg_struct_avg, wg_struct_sick
+                wg_struct_sick
                 ]).
         
         gd_pl_ds(Scope, kb, usr_wg_TblDayNorm, 8, [
@@ -1480,7 +1480,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-01T16:28:23+03:00
+      EDITIONDATE: 2014-06-03T13:51:49+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1537,7 +1537,7 @@ Objects:
             fail.
         twg_avg_wage_in_params:-
             new_param_list(wg_avg_wage_avg, in, [
-                pMonthQty-2, pMonthBonusQty-12,
+                pMonthQty-2, pMonthBonusQty-12, pMonthLimitQty-2,
                 pFeeGroupKey_ruid-'147113780,1354510846'
                 ]),
             fail.
@@ -1581,7 +1581,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-01T16:28:58+03:00
+      EDITIONDATE: 2014-06-03T13:51:37+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1707,6 +1707,8 @@ Objects:
         %  - для больничных
         % [по расчетным дням, по расчетным дням со справкой]
         wg_valid_rules([by_calc_days, by_calc_days_doc]).
+        % [от ставки без периодов со справкой]
+        wg_valid_rules([by_rate_doc]).
         % [от БПМ, по среднему заработку]
         wg_valid_rules([by_budget, by_avg_wage]).
         % [от ставки, по не полным месяцам]
@@ -1973,6 +1975,21 @@ Objects:
             AvgWage is round(AvgWage0),
             !.
         calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+            % - для больничных (от ставки без периодов со справкой)
+            Scope = wg_avg_wage_sick, Rule = by_rate_doc,
+            % правило действительно
+            is_valid_rule(Scope, PK, _, Rule),
+            % подготовка временных данных для расчета
+            prep_avg_wage(Scope, PK, Periods),
+            % нет рабочих периодов
+            Periods = [],
+            % есть признак Справка
+            append(PK, [pIsAvgWageDoc-1], Pairs),
+            get_param_list(Scope, run, Pairs),
+            % расчет от ставки
+            calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule),
+            !.
+        calc_avg_wage(Scope, PK, AvgWage, Rule) :-
             % - для больничных (от БПМ)
             Scope = wg_avg_wage_sick, Rule = by_budget,
             % правило действительно
@@ -2075,6 +2092,9 @@ Objects:
             get_last_hire(Scope, PK, DateBegin),
             % если дата последнего приема на работу меньше первой даты расчета
             DateBegin @< FirstDate,
+            % и не превышен лимит
+            get_param_list(Scope, run, [pMonthLimitQty-MonthLimitQty, pMonthBefore-MonthBefore]),
+            \+ MonthBefore > MonthLimitQty,
             % то для расчета нужно больше месяцев
             AvgWage = 0, Variant = need_more,
             !.
@@ -4105,7 +4125,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-01T16:27:16+03:00
+      EDITIONDATE: 2014-06-03T13:51:23+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -5067,7 +5087,7 @@ Objects:
       DontRemove: False
       IncludeSiblings: False
     Fields: 
-      PARENT: "149301024_1428576895 GLOBAL\\DFM\\Tgdc_dlgUserComplexDocument"
+      PARENT: "147240236_1234867257 GLOBAL\\DFM\\Tgdc_dlgUserComplexDocument"
       NAME: "147020774_119619099"
       DATA_TYPE: "B"
       STR_DATA: ~
@@ -7900,7 +7920,7 @@ Objects:
       DontRemove: False
       IncludeSiblings: False
     Fields: 
-      PARENT: "149301024_1428576895 GLOBAL\\DFM\\Tgdc_dlgUserComplexDocument"
+      PARENT: "147240236_1234867257 GLOBAL\\DFM\\Tgdc_dlgUserComplexDocument"
       NAME: "147022845_119619099"
       DATA_TYPE: "B"
       STR_DATA: ~
@@ -7937,9 +7957,9 @@ Objects:
             object usrg_Splitter1: TSplitter
               Tag = 0
               Left = 541
-              Top = 294
+              Top = 305
               Width = 6
-              Height = 385
+              Height = 374
               Cursor = crHSplit
               Hint = ''
               Align = alLeft
@@ -7962,7 +7982,7 @@ Objects:
               object ibgrDetail: TgsIBGrid
                 Left = 0
                 Width = 541
-                Height = 359
+                Height = 348
                 ReadOnly = True
                 Expands = <>
                 Conditions = <>
@@ -8239,14 +8259,6 @@ Objects:
                     Visible = False
                   end
                   item
-                    Expanded = False
-                    FieldName = 'USR$EQRATE'
-                    ReadOnly = False
-                    Title.Caption = 'Курс экв.'
-                    Width = -1
-                    Visible = False
-                  end
-                  item
                     Alignment = taRightJustify
                     Expanded = False
                     FieldName = 'AFULL'
@@ -8355,15 +8367,15 @@ Objects:
               end
               object tbdLeft: TTBDock
                 Width = 0
-                Height = 359
+                Height = 348
               end
               object tbdRight: TTBDock
                 Left = 541
                 Width = 0
-                Height = 359
+                Height = 348
               end
               object tbdBottom: TTBDock
-                Top = 385
+                Top = 374
                 Width = 541
                 Height = 0
               end
@@ -8372,7 +8384,7 @@ Objects:
               Constraints.MinHeight = 215
               TabOrder = 0
               object pnlHolding: TPanel
-                Width = 1364
+                Width = 1366
                 TabOrder = 1
                 object lblCompany: TLabel
                 end
@@ -8383,8 +8395,8 @@ Objects:
                 Tag = 0
                 Left = 0
                 Top = 0
-                Width = 1364
-                Height = 290
+                Width = 1366
+                Height = 301
                 Cursor = crDefault
                 Hint = ''
                 HelpContext = 0
@@ -8440,8 +8452,8 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 128
-                    Width = 1356
-                    Height = 134
+                    Width = 1358
+                    Height = 145
                     Cursor = crDefault
                     Hint = ''
                     HelpContext = 0
@@ -8502,7 +8514,7 @@ Objects:
                       Top = 16
                       Width = 93
                       Cursor = crIBeam
-                      ReadOnly = False
+                      ReadOnly = True
                       TabOrder = 4
                     end
                     object usrat_DBCheckBox_USR_BYSTAFFSALARY: TDBCheckBox
@@ -8540,12 +8552,20 @@ Objects:
                       Top = 77
                       TabOrder = 7
                     end
+                    object usrat_DBCheckBox_USR_AVERAGE: TDBCheckBox
+                      Left = 8
+                      Top = 103
+                      Width = 149
+                      Caption = 'От среднего заработка'
+                      ReadOnly = True
+                      TabOrder = 8
+                    end
                   end
                   object usrg_Panel1: TPanel
                     Tag = 0
                     Left = 0
                     Top = 0
-                    Width = 1356
+                    Width = 1358
                     Height = 128
                     Cursor = crDefault
                     Hint = ''
@@ -8685,13 +8705,11 @@ Objects:
                       PopupMenu = nil
                       Sorted = False
                       TabOrder = 3
-                      Text = '12 дн. 80%, ост. 100%'
+                      Text = 'Все дни 100%'
                       Visible = True
                       Items.Strings = (
                         '12 дн. 80%, ост. 100%'
-                        'Все дни 100%'
-                        '12 дн. 40% (6 дн. не оплач), ост. 50%'
-                        '12 дн. 40%, ост. 50%')
+                        'Все дни 100%')
                     end
                     object usrat_gsIBLookupComboBox_USR_EMPLKEY: TgsIBLookupComboBox
                       Left = 133
@@ -8787,46 +8805,43 @@ Objects:
                   TabVisible = True
                   object atContainer: TatContainer
                     Top = 0
-                    Width = 1356
-                    Height = 237
-                    VertScrollBar.Position = 103
+                    Width = 1358
+                    Height = 248
+                    VertScrollBar.Position = 0
                     TabOrder = 0
                     Visible = False
                     object usrat_DBEdit_USR_DURATION_Label: TLabel
-                      Top = 113
+                      Top = 216
                       Visible = False
                     end
                     object usrat_DBEdit_USR_CALCTYPE_Label: TLabel
                       Left = 29
-                      Top = 2
+                      Top = 105
                       Visible = False
                     end
                     object usrat_DBEdit_NUMBER_Label: TLabel
                       Left = 5
-                      Top = -71
+                      Top = 32
                       Visible = False
                     end
                     object usrat_xDateDBEdit_DOCUMENTDATE_Label: TLabel
-                      Top = -95
+                      Top = 8
                       Visible = False
                     end
                     object usrat_DBEdit_USR_SORTNUMBER_Label: TLabel
                       Left = 5
-                      Top = -42
+                      Top = 61
                       Visible = False
                     end
-                    object usrat_DBEdit_USR_EQRATE_Label: TLabel
-                      Top = 312
-                    end
                     object usrat_DBEdit_USR_DURATION: TxDBCalculatorEdit
-                      Top = 109
+                      Top = 212
                       Cursor = crIBeam
                       TabOrder = 4
                       Visible = False
                     end
                     object usrat_DBEdit_USR_CALCTYPE: TxDBCalculatorEdit
                       Left = 157
-                      Top = -2
+                      Top = 101
                       Width = 156
                       Cursor = crIBeam
                       TabOrder = 3
@@ -8834,29 +8849,24 @@ Objects:
                     end
                     object usrat_DBEdit_NUMBER: TDBEdit
                       Left = 163
-                      Top = -75
+                      Top = 28
                       Width = 101
                       TabOrder = 2
                       Visible = False
                     end
                     object usrat_xDateDBEdit_DOCUMENTDATE: TxDateDBEdit
                       Left = 163
-                      Top = -99
+                      Top = 4
                       Width = 102
                       TabOrder = 1
                       Visible = False
                     end
                     object usrat_DBEdit_USR_SORTNUMBER: TxDBCalculatorEdit
                       Left = 163
-                      Top = -42
+                      Top = 61
                       Cursor = crIBeam
                       TabOrder = 0
                       Visible = False
-                    end
-                    object usrat_DBEdit_USR_EQRATE: TxDBCalculatorEdit
-                      Top = 308
-                      Cursor = crIBeam
-                      TabOrder = 5
                     end
                   end
                 end
@@ -8865,9 +8875,9 @@ Objects:
             object usrg_pAvgSalary: TPanel
               Tag = 0
               Left = 547
-              Top = 294
-              Width = 817
-              Height = 385
+              Top = 305
+              Width = 819
+              Height = 374
               Cursor = crDefault
               Hint = ''
               HelpContext = 0
@@ -8907,8 +8917,8 @@ Objects:
                 Tag = 0
                 Left = 0
                 Top = 0
-                Width = 817
-                Height = 385
+                Width = 819
+                Height = 374
                 Cursor = crDefault
                 Hint = ''
                 HelpContext = 0
@@ -8964,8 +8974,8 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 26
-                    Width = 809
-                    Height = 331
+                    Width = 811
+                    Height = 320
                     Cursor = crDefault
                     Hint = ''
                     HelpContext = 0
@@ -9121,16 +9131,8 @@ Objects:
                         FieldName = 'USR$DESCRIPTION'
                         ReadOnly = False
                         Title.Caption = 'Описание'
-                        Width = 144
+                        Width = 83
                         Visible = True
-                      end
-                      item
-                        Expanded = False
-                        FieldName = 'USR$DOCUMENTKEY'
-                        ReadOnly = False
-                        Title.Caption = 'Документ'
-                        Width = -1
-                        Visible = False
                       end
                       item
                         Color = clWhite
@@ -9183,6 +9185,14 @@ Objects:
                       end
                       item
                         Expanded = False
+                        FieldName = 'USR$DOCUMENTKEY'
+                        ReadOnly = False
+                        Title.Caption = 'Документ'
+                        Width = -1
+                        Visible = False
+                      end
+                      item
+                        Expanded = False
                         FieldName = 'Z_USR$DOCUMENTKEY_NUMBER'
                         ReadOnly = False
                         Title.Caption = 'Номер'
@@ -9210,7 +9220,7 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 0
-                    Width = 809
+                    Width = 811
                     Height = 26
                     Cursor = crDefault
                     Hint = ''
@@ -9372,7 +9382,7 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 0
-                    Width = 809
+                    Width = 811
                     Height = 26
                     Cursor = crDefault
                     Hint = ''
@@ -9452,8 +9462,8 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 26
-                    Width = 809
-                    Height = 331
+                    Width = 811
+                    Height = 320
                     Cursor = crDefault
                     Hint = ''
                     HelpContext = 0
@@ -9532,7 +9542,7 @@ Objects:
                       item
                         Expanded = False
                         FieldName = 'Процент'
-                        Width = 532
+                        Width = 534
                         Visible = True
                       end>
                   end
@@ -9769,7 +9779,7 @@ Objects:
           end
         end
         
-      EDITIONDATE: 2014-05-03T11:56:34+03:00
+      EDITIONDATE: 2014-06-03T11:58:25+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -12144,7 +12154,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-05-05T11:16:52+03:00
+      EDITIONDATE: 2014-06-02T17:27:06+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12162,7 +12172,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-05-12T11:59:41+03:00
+      EDITIONDATE: 2014-06-02T17:27:06+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12180,7 +12190,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-05-05T11:16:52+03:00
+      EDITIONDATE: 2014-06-02T17:27:06+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12198,7 +12208,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-05-05T11:16:52+03:00
+      EDITIONDATE: 2014-06-02T17:27:06+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12216,7 +12226,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-04-28T09:49:15+03:00
+      EDITIONDATE: 2014-06-02T17:27:06+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -12403,29 +12413,29 @@ Objects:
         c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYQVVNSJFNDSEVEVUxFUkhPVwhSZWFkT25seQgNVGl0
         bGUuQ2FwdGlvbgYQ1+Dx7uIg7+4g4/Dg9Ojq8wVXaWR0aAJaB1Zpc2libGUJAAEJQWxpZ25tZW50
         Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUGD1VTUiRERVNDUklQVElPTghSZWFk
-        T25seQgNVGl0bGUuQ2FwdGlvbgYIzu/o8eDt6OUFV2lkdGgDkAAHVmlzaWJsZQkAAQlBbGlnbm1l
-        bnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYPVVNSJERPQ1VNRU5US0VZCFJl
-        YWRPbmx5CA1UaXRsZS5DYXB0aW9uBgjE7urz7OXt8gVXaWR0aAL/B1Zpc2libGUIAAEJQWxpZ25t
-        ZW50Bw10YUxlZnRKdXN0aWZ5BUNvbG9yBwdjbFdoaXRlCEV4cGFuZGVkCAlGaWVsZE5hbWUGEFVT
-        UiRNT0RFUk5TQUxBUlkIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GFNHu4vDl7OXt7eD/IOfg8O/r
-        4PLgBVdpZHRoAv8HVmlzaWJsZQgNRGlzcGxheUZvcm1hdAYEIy4jIwABCUFsaWdubWVudAcNdGFM
-        ZWZ0SnVzdGlmeQhFeHBhbmRlZAgJRmllbGROYW1lBglVU1IkQ09FRkYIUmVhZE9ubHkIDVRpdGxl
-        LkNhcHRpb24GBsru/fQt8gVXaWR0aAL/B1Zpc2libGUIAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0
-        aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUGC1VTUiRJU0NIRUNLCFJlYWRPbmx5CA1UaXRsZS5DYXB0
-        aW9uBgTC6usuBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhw
-        YW5kZWQICUZpZWxkTmFtZQYNVVNSJE9MRFNBTEFSWQhSZWFkT25seQgNVGl0bGUuQ2FwdGlvbgYF
-        zurr4OQFV2lkdGgC/wdWaXNpYmxlCAABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRl
-        ZAgJRmllbGROYW1lBg1VU1IkTkVXU0FMQVJZCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgbR8uDi
-        6uAFV2lkdGgC/wdWaXNpYmxlCAABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRlZAgJ
-        RmllbGROYW1lBgJJRA1UaXRsZS5DYXB0aW9uBg3I5OXt8uj06Org8u7wBVdpZHRoAv8HVmlzaWJs
-        ZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYYWl9VU1Ik
-        RE9DVU1FTlRLRVlfTlVNQkVSCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgXN7uzl8AVXaWR0aAL/
-        B1Zpc2libGUIAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUG
-        HlpfVVNSJERPQ1VNRU5US0VZX0RPQ1VNRU5UREFURQhSZWFkT25seQgNVGl0bGUuQ2FwdGlvbgYE
-        xODy4AVXaWR0aAL/B1Zpc2libGUIAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVk
-        CAlGaWVsZE5hbWUGH1pfVVNSJERPQ1VNRU5US0VZX0RPQzI3MTUyNjA0NzgIUmVhZE9ubHkIDVRp
-        dGxlLkNhcHRpb24GDdLo7yDk7urz7OXt8uAFV2lkdGgC/wdWaXNpYmxlCAAACAj9HAkI
-      EDITIONDATE: 2014-04-22T16:44:59+03:00
+        T25seQgNVGl0bGUuQ2FwdGlvbgYIzu/o8eDt6OUFV2lkdGgCUwdWaXNpYmxlCQABCUFsaWdubWVu
+        dAcNdGFMZWZ0SnVzdGlmeQVDb2xvcgcHY2xXaGl0ZQhFeHBhbmRlZAgJRmllbGROYW1lBhBVU1Ik
+        TU9ERVJOU0FMQVJZCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBhTR7uLw5ezl7e3g/yDn4PDv6+Dy
+        4AVXaWR0aAL/B1Zpc2libGUIDURpc3BsYXlGb3JtYXQGBCMuIyMAAQlBbGlnbm1lbnQHDXRhTGVm
+        dEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYJVVNSJENPRUZGCFJlYWRPbmx5CA1UaXRsZS5D
+        YXB0aW9uBgbK7v30LfIFV2lkdGgC/wdWaXNpYmxlCAABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlm
+        eQhFeHBhbmRlZAgJRmllbGROYW1lBgtVU1IkSVNDSEVDSwhSZWFkT25seQgNVGl0bGUuQ2FwdGlv
+        bgYEwurrLgVXaWR0aAL/B1Zpc2libGUIAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFu
+        ZGVkCAlGaWVsZE5hbWUGDVVTUiRPTERTQUxBUlkIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GBc7q
+        6+DkBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQI
+        CUZpZWxkTmFtZQYNVVNSJE5FV1NBTEFSWQhSZWFkT25seQgNVGl0bGUuQ2FwdGlvbgYG0fLg4urg
+        BVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZp
+        ZWxkTmFtZQYCSUQNVGl0bGUuQ2FwdGlvbgYNyOTl7fLo9Ojq4PLu8AVXaWR0aAL/B1Zpc2libGUI
+        AAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUGD1VTUiRET0NV
+        TUVOVEtFWQhSZWFkT25seQgNVGl0bGUuQ2FwdGlvbgYIxO7q8+zl7fIFV2lkdGgC/wdWaXNpYmxl
+        CAABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRlZAgJRmllbGROYW1lBhhaX1VTUiRE
+        T0NVTUVOVEtFWV9OVU1CRVIIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GBc3u7OXwBVdpZHRoAv8H
+        VmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYe
+        Wl9VU1IkRE9DVU1FTlRLRVlfRE9DVU1FTlREQVRFCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgTE
+        4PLgBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQI
+        CUZpZWxkTmFtZQYfWl9VU1IkRE9DVU1FTlRLRVlfRE9DMjcxNTI2MDQ3OAhSZWFkT25seQgNVGl0
+        bGUuQ2FwdGlvbgYN0ujvIOTu6vPs5e3y4AVXaWR0aAL/B1Zpc2libGUIAAAICP0cCQg=
+      EDITIONDATE: 2014-04-23T15:29:08+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -12573,6 +12583,7 @@ Objects:
       SAT: 0
       SUN: 0
       HOLIDAYISWORK: 0
+      W1_OFFSET: 0
       W1_START1: 1899-12-30T00:00:00+03:00
       W1_END1: 1899-12-30T00:00:00+03:00
       W1_START2: 1899-12-30T00:00:00+03:00
@@ -12581,6 +12592,7 @@ Objects:
       W1_END3: 1899-12-30T00:00:00+03:00
       W1_START4: 1899-12-30T00:00:00+03:00
       W1_END4: 1899-12-30T00:00:00+03:00
+      W2_OFFSET: 0
       W2_START1: 1899-12-30T00:00:00+03:00
       W2_END1: 1899-12-30T00:00:00+03:00
       W2_START2: 1899-12-30T00:00:00+03:00
@@ -12589,6 +12601,7 @@ Objects:
       W2_END3: 1899-12-30T00:00:00+03:00
       W2_START4: 1899-12-30T00:00:00+03:00
       W2_END4: 1899-12-30T00:00:00+03:00
+      W3_OFFSET: 0
       W3_START1: 1899-12-30T00:00:00+03:00
       W3_END1: 1899-12-30T00:00:00+03:00
       W3_START2: 1899-12-30T00:00:00+03:00
@@ -12597,6 +12610,7 @@ Objects:
       W3_END3: 1899-12-30T00:00:00+03:00
       W3_START4: 1899-12-30T00:00:00+03:00
       W3_END4: 1899-12-30T00:00:00+03:00
+      W4_OFFSET: 0
       W4_START1: 1899-12-30T00:00:00+03:00
       W4_END1: 1899-12-30T00:00:00+03:00
       W4_START2: 1899-12-30T00:00:00+03:00
@@ -12605,6 +12619,7 @@ Objects:
       W4_END3: 1899-12-30T00:00:00+03:00
       W4_START4: 1899-12-30T00:00:00+03:00
       W4_END4: 1899-12-30T00:00:00+03:00
+      W5_OFFSET: 0
       W5_START1: 1899-12-30T00:00:00+03:00
       W5_END1: 1899-12-30T00:00:00+03:00
       W5_START2: 1899-12-30T00:00:00+03:00
@@ -12613,6 +12628,7 @@ Objects:
       W5_END3: 1899-12-30T00:00:00+03:00
       W5_START4: 1899-12-30T00:00:00+03:00
       W5_END4: 1899-12-30T00:00:00+03:00
+      W6_OFFSET: 0
       W6_START1: 1899-12-30T00:00:00+03:00
       W6_END1: 1899-12-30T00:00:00+03:00
       W6_START2: 1899-12-30T00:00:00+03:00
@@ -12621,6 +12637,7 @@ Objects:
       W6_END3: 1899-12-30T00:00:00+03:00
       W6_START4: 1899-12-30T00:00:00+03:00
       W6_END4: 1899-12-30T00:00:00+03:00
+      W7_OFFSET: 0
       W7_START1: 1899-12-30T00:00:00+03:00
       W7_END1: 1899-12-30T00:00:00+03:00
       W7_START2: 1899-12-30T00:00:00+03:00
@@ -12629,6 +12646,7 @@ Objects:
       W7_END3: 1899-12-30T00:00:00+03:00
       W7_START4: 1899-12-30T00:00:00+03:00
       W7_END4: 1899-12-30T00:00:00+03:00
+      W8_OFFSET: 0
       W8_START1: 1899-12-30T00:00:00+03:00
       W8_END1: 1899-12-30T00:00:00+03:00
       W8_START2: 1899-12-30T00:00:00+03:00
@@ -12637,17 +12655,9 @@ Objects:
       W8_END3: 1899-12-30T00:00:00+03:00
       W8_START4: 1899-12-30T00:00:00+03:00
       W8_END4: 1899-12-30T00:00:00+03:00
-      W1_OFFSET: 0
-      W2_OFFSET: 0
-      W3_OFFSET: 0
-      W4_OFFSET: 0
-      W5_OFFSET: 0
-      W6_OFFSET: 0
-      W7_OFFSET: 0
-      W8_OFFSET: 0
       EDITIONDATE: 2014-03-14T15:54:21+03:00
-      USR$DAYCICLECOUNT: 7
       USR$WAGE_OLDKEY: ~
+      USR$DAYCICLECOUNT: 7
       USR$CALENDARTYPE: ~
       USR$FIRSTDAYDATE: ~
       USR$HOLIDAYISWORK: 0

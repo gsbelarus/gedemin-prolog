@@ -109,6 +109,8 @@ wg_valid_rules([-by_month_no_bad_type]).
 %  - для больничных
 % [по расчетным дням, по расчетным дням со справкой]
 wg_valid_rules([by_calc_days, by_calc_days_doc]).
+% [от ставки без периодов со справкой]
+wg_valid_rules([by_rate_doc]).
 % [от БПМ, по среднему заработку]
 wg_valid_rules([by_budget, by_avg_wage]).
 % [от ставки, по не полным месяцам]
@@ -375,6 +377,21 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     AvgWage is round(AvgWage0),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+    % - для больничных (от ставки без периодов со справкой)
+    Scope = wg_avg_wage_sick, Rule = by_rate_doc,
+    % правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    % нет рабочих периодов
+    Periods = [],
+    % есть признак Справка
+    append(PK, [pIsAvgWageDoc-1], Pairs),
+    get_param_list(Scope, run, Pairs),
+    % расчет от ставки
+    calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule),
+    !.
+calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от БПМ)
     Scope = wg_avg_wage_sick, Rule = by_budget,
     % правило действительно
@@ -477,6 +494,9 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     get_last_hire(Scope, PK, DateBegin),
     % если дата последнего приема на работу меньше первой даты расчета
     DateBegin @< FirstDate,
+    % и не превышен лимит
+    get_param_list(Scope, run, [pMonthLimitQty-MonthLimitQty, pMonthBefore-MonthBefore]),
+    \+ MonthBefore > MonthLimitQty,
     % то для расчета нужно больше месяцев
     AvgWage = 0, Variant = need_more,
     !.
