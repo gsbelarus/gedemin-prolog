@@ -29,6 +29,7 @@
 
 %% facts
 :-  init_data,
+    working_directory(_, 'kb'),
     [
     % section twg_avg_wage
     %  05. Начисление отпусков
@@ -61,11 +62,12 @@
     gd_const_AvgSalaryRB,
     %usr_wg_TblDayNorm,
     wg_job_ill_type
-    ].
+    ],
+    working_directory(_, '..').
 %%
 
 %% dynamic state
-:- [param_list].
+:- ['kb/param_list'].
 %%
 
 %% flag
@@ -109,8 +111,6 @@ wg_valid_rules([-by_month_no_bad_type]).
 %  - для больничных
 % [по расчетным дням, по расчетным дням со справкой]
 wg_valid_rules([by_calc_days, by_calc_days_doc]).
-% [от ставки без периодов со справкой]
-wg_valid_rules([by_rate_doc]).
 % [от БПМ, по среднему заработку]
 wg_valid_rules([by_budget, by_avg_wage]).
 % [от ставки, по не полным месяцам]
@@ -349,7 +349,9 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
       is_valid_rule(Scope, PK, _, Rule2),
       % если есть признак Справка
       append(PK, [pIsAvgWageDoc-1], Pairs),
-      get_param_list(Scope, run, Pairs)
+      get_param_list(Scope, run, Pairs),
+      % и выполняется одно из правил по полноте месяца
+      rule_month_days_sick(Scope, PK, Periods, _)
     ),
     % то выполнить расчет
     % взять заработок
@@ -367,7 +369,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
                % за каждый период проверки
              ( member(Y2-M2, Periods),
                % взять данные по расчетным дням
-               get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _) ),
+               get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _, _) ),
     % в список расчетных дней
     CalcDaysList ),
     % всего расчетных дней
@@ -378,13 +380,13 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки без периодов со справкой)
-    Scope = wg_avg_wage_sick, Rule = by_rate_doc,
+    Scope = wg_avg_wage_sick, Rule = by_rate,
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
-    % нет рабочих периодов
-    Periods = [],
+    % не выполняется одно из правил по полноте месяца
+    \+ rule_month_days_sick(Scope, PK, Periods, _),
     % есть признак Справка
     append(PK, [pIsAvgWageDoc-1], Pairs),
     get_param_list(Scope, run, Pairs),
@@ -603,7 +605,7 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
                % за каждый период проверки
              ( member(Y2-M2, Periods),
                % взять данные по расчетным дням
-               get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _) ),
+               get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _, _) ),
     % в список расчетных дней
     CalcDaysList ),
     % всего расчетных дней
@@ -621,12 +623,15 @@ rule_month_days_sick(Scope, PK, Periods, Rule) :-
     is_valid_rule(Scope, PK, _, Rule),
     % есть хотя бы один полный месяц
     member(Y-M, Periods),
-    get_month_days_sick(Scope, PK, Y, M, _, _, 1),
+    get_month_days_sick(Scope, PK, Y, M, _, _, IsFullMonth, IsSpecMonth),
+    ( IsFullMonth = 1 ; IsSpecMonth = 1 ),
     !.
 rule_month_days_sick(Scope, PK, Periods, Rule) :-
     Rule = by_calc_days_all,
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
+    % есть рабочие периоды
+    \+ Periods = [],
     % все месяцы полные
     is_full_all_month_sick(Scope, PK, Periods),
     !.
@@ -638,7 +643,8 @@ is_full_all_month_sick(_, _, []):-
     !.
 is_full_all_month_sick(Scope, PK, [Y-M|Periods]) :-
     % есть данные по расчетным дням для полного месяца
-    get_month_days_sick(Scope, PK, Y, M, _, _, 1),
+    get_month_days_sick(Scope, PK, Y, M, _, _, IsFullMonth, IsSpecMonth),
+    ( IsFullMonth = 1 ; IsSpecMonth = 1 ),
     !,
     % проверить остальные месяцы
     is_full_all_month_sick(Scope, PK, Periods).
@@ -1143,7 +1149,7 @@ add_month_days_sick(_, _, []):-
     !.
 add_month_days_sick(Scope, PK, [Y-M|Periods]) :-
     % проверить данные по расчетным дням
-    get_month_days_sick(Scope, PK, Y, M, _, _, _),
+    get_month_days_sick(Scope, PK, Y, M, _, _, _, _),
     !,
     % проверить остальные месяцы
     add_month_days_sick(Scope, PK, Periods).
@@ -1154,19 +1160,20 @@ add_month_days_sick(Scope, PK, [_|Periods]) :-
 
 % взять данные по расчетным дням
 % - для больничных
-get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth) :-
+get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, IsSpecMonth) :-
     % взять из временных параметров данные по расчетным дням
     append(PK, [pYM-Y-M, pRule-_,
                 pMonthDays-MonthDays, pExclDays-_,
-                pCalcDays-CalcDays, pIsFullMonth-IsFullMonth],
+                pCalcDays-CalcDays, pIsFullMonth-IsFullMonth,
+                pIsSpecMonth-IsSpecMonth],
             Pairs),
     get_param_list(Scope, temp, Pairs),
     !.
-get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth) :-
+get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, IsSpecMonth) :-
     % календарных дней в месяце
     month_days(Y, M, MonthDays),
     % исключаемые из месяца дни по правилам
-    excl_month_days_sick(Scope, PK, Y, M, ExclDays0, Variant),
+    excl_month_days_sick(Scope, PK, Y, M, ExclDays0, SpecExclDays, Variant),
     % исключаемые из первого месяца работы дни
     excl_first_month_days_sick(Scope, PK, Y, M, ExclDays1),
     % исключаемые дни
@@ -1174,18 +1181,21 @@ get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth) :-
     % расчетные дни
     CalcDays is MonthDays - ExclDays,
     % полнота месяца
-    ( CalcDays = MonthDays, IsFullMonth = 1 ; IsFullMonth = 0 ),
+    ( CalcDays = MonthDays -> IsFullMonth = 1 ; IsFullMonth = 0 ),
+    % все дни для исключения специальные
+    ( ExclDays = SpecExclDays -> IsSpecMonth = 1 ; IsSpecMonth = 0 ),
     % записать во временные параметры данные по расчетным дням
     append(PK, [pYM-Y-M, pRule-Variant,
                 pMonthDays-MonthDays, pExclDays-ExclDays,
-                pCalcDays-CalcDays, pIsFullMonth-IsFullMonth],
+                pCalcDays-CalcDays, pIsFullMonth-IsFullMonth,
+                pIsSpecMonth-IsSpecMonth],
             Pairs),
     new_param_list(Scope, temp, Pairs),
     !.
 
 % исключаемые из месяца дни
 % - для больничных
-excl_month_days_sick(Scope, PK, Y, M, ExclDays, Rule) :-
+excl_month_days_sick(Scope, PK, Y, M, ExclDays, SpecExclDays, Rule) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % параметры выбора табеля
@@ -1195,7 +1205,7 @@ excl_month_days_sick(Scope, PK, Y, M, ExclDays, Rule) :-
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
     % взять данные из табеля
-    findall( 1,
+    findall( ExclType,
               % для проверяемого месяца
             ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, HoureType, TabelOption),
               % с контролем наличия типа часов
@@ -1203,16 +1213,24 @@ excl_month_days_sick(Scope, PK, Y, M, ExclDays, Rule) :-
               % по типу часов для исключения из расчета
               once( get_data(Scope, kb, usr_wg_HourType, [
                                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                                fID-HoureType, fExcludeForSickList-1] ) )
+                                fID-HoureType, fExcludeForSickList-1,
+                                fExclType-ExclType] ) )
             ),
     % в список дней для исключения
     ExclDaysList),
     % проверить список дней для исключения
     \+ ExclDaysList = [],
     % всего дней для исключения
-    sum_list(ExclDaysList, ExclDays),
+    length(ExclDaysList, ExclDays),
+    % сбор специальных исключаемых дней
+    findall( SpecExclType,
+            ( member(SpecExclType, ExclDaysList),
+              memberchk(SpecExclType, ["kind_day"]) ),
+    SpecExclDaysList),
+    % всего специальных дней для исключения
+    length(SpecExclDaysList, SpecExclDays),
     !.
-excl_month_days_sick(Scope, PK, Y, M, ExclDays, Rule) :-
+excl_month_days_sick(Scope, PK, Y, M, ExclDays, SpecExclDays, Rule) :-
     Rule = by_orders,
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
@@ -1231,38 +1249,44 @@ excl_month_days_sick(Scope, PK, Y, M, ExclDays, Rule) :-
     % в список периодов для исключения
     ExclPeriods),
     % сбор исключаемых дней по списку периодов
-    collect_excl_days(ExclPeriods, Y, M, [], LogDays),
+    collect_excl_days(ExclPeriods, Y, M, [], LogDays, []),
     % всего дней для исключения
     length(LogDays, ExclDays),
     \+ ExclDays =:= 0,
+    % сбор специальных исключаемых дней по списку периодов
+    collect_excl_days(ExclPeriods, Y, M, [], LogSpecDays, ["KINDDAYLINE"]),
+    % всего специальных дней для исключения
+    length(LogSpecDays, SpecExclDays),
     !.
-excl_month_days_sick(_, _, _, _, 0, none) :-
+excl_month_days_sick(_, _, _, _, 0, 0, none) :-
     !.
 
 % сбор исключаемых дней по списку периодов
-collect_excl_days([], _, _, LogDays, LogDays) :-
+collect_excl_days([], _, _, LogDays, LogDays, _) :-
     !.
-collect_excl_days([ExclPeriod|ExclPeriods], Y, M, LogDays0, LogDays2) :-
+collect_excl_days([ExclPeriod|ExclPeriods], Y, M, LogDays0, LogDays2, SpecList) :-
     % сбор исключаемых дней за период
-    collect_excl_days(ExclPeriod, Y, M, LogDays0, LogDays1),
+    collect_excl_days(ExclPeriod, Y, M, LogDays0, LogDays1, SpecList),
     !,
-    collect_excl_days(ExclPeriods, Y, M, LogDays1, LogDays2).
+    collect_excl_days(ExclPeriods, Y, M, LogDays1, LogDays2, SpecList).
 
 % сбор исключаемых дней за период
-collect_excl_days(FromDate-ToDate-_-_, _, _, LogDays, LogDays) :-
+collect_excl_days(FromDate-ToDate-_-_, _, _, LogDays, LogDays, _) :-
     FromDate @> ToDate,
     !.
-collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2) :-
+collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList) :-
     \+ atom_date(FromDate0, date(Y, M, _)),
     date_add(FromDate0, 1, day, FromDate1),
     !,
-    collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2).
-collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2) :-
+    collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList).
+collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList) :-
     % добавление дня для исключения в журнал
-    add_excl_day(FromDate0-ExclType-ExclWeekDay, LogDays0, LogDays1),
+    ( ( SpecList = [] ; memberchk(ExclType, SpecList) )
+      -> add_excl_day(FromDate0-ExclType-ExclWeekDay, LogDays0, LogDays1)
+    ; true ),
     date_add(FromDate0, 1, day, FromDate1),
     !,
-    collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays1, LogDays2).
+    collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays1, LogDays2, SpecList).
 
 % добавление дня для исключения в журнал
 add_excl_day(TheDate-_-_, LogDays, LogDays) :-
@@ -2034,7 +2058,7 @@ avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc) :-
 % выгрузка детальных выходных данных по сотруднику
 avg_wage_sick_det(EmplKey, FirstMoveKey,
                     Period, Rule,
-                    MonthDays, ExclDays, CalcDays, IsFullMonth,
+                    MonthDays, ExclDays, CalcDays, IsFullMonth, IsSpecMonth,
                     Wage,
                     TabDays, NormDays, TabHoures, NormHoures) :-
     % параметры контекста
@@ -2045,7 +2069,8 @@ avg_wage_sick_det(EmplKey, FirstMoveKey,
     % взять данные по расчетным дням
     append(PK, [pYM-Y-M, pRule-Rule,
                 pMonthDays-MonthDays, pExclDays-ExclDays,
-                pCalcDays-CalcDays, pIsFullMonth-IsFullMonth],
+                pCalcDays-CalcDays, pIsFullMonth-IsFullMonth,
+                pIsSpecMonth-IsSpecMonth],
             Pairs),
     get_param_list(Scope, temp, Pairs),
     % взять данные по заработку
@@ -2192,6 +2217,58 @@ struct_vacation_sql(DocKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
     new_param_list(Scope, NextType, Pairs1).
 
 %
+struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
+    atom_date(DateCalc, date(Year, Month, _)),
+    month_days(Year, Month, Days),
+    atom_date(AccDate, date(Year, Month, Days)),
+    once( (SliceOption = 0, FilterVcType = 0 ; true) ),
+    findall( VcType-Slice,
+                ( wg_vacation_slice(VcType, Slice), VcType = FilterVcType ),
+             SliceList0 ),
+    keysort(SliceList0, [Slice0|SliceList1]),
+    append(SliceList1, [Slice0], SliceList),
+    struct_vacation_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage),
+    !.
+
+%
+struct_vacation_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage) :-
+    Slice0 =:= 0,
+    !,
+    struct_vacation_calc(SliceList, Slice, AccDate, DateBegin, DateEnd, AvgWage).
+struct_vacation_calc(_, _, _, '', '', _) :-
+    !.
+struct_vacation_calc([], _-Slice, _, _, _, _) :-
+    Slice =:= 0,
+    !.
+struct_vacation_calc(SliceList, VcType-Slice, AccDate, DateBegin, DateEnd, AvgWage) :-
+    make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
+    atom_date(DateBegin1, date(Y, M, _)),
+    atom_date(IncludeDate, date(Y, M, 1)),
+    sum_vacation_days(DateBegin1, DateEnd1, 1, Duration),
+    Summa is Duration * AvgWage,
+    OutPairs = [
+                pAccDate-AccDate, pIncludeDate-IncludeDate,
+                pDuration-Duration, pSumma-Summa,
+                pDateBegin-DateBegin1, pDateEnd-DateEnd1,
+                pVcType-VcType
+                ],
+    new_param_list(struct_vacation, out, OutPairs),
+    !,
+    struct_vacation_calc(SliceList, VcType-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage).
+
+%
+sum_vacation_days(DateBegin, DateBegin, Duration0, Duration1) :-
+    ( catch( wg_holiday(DateBegin), _, fail ), Duration1 is Duration0 - 1
+    ; Duration1 = Duration0 ),
+    !.
+sum_vacation_days(DateBegin, DateEnd, Duration0, Duration) :-
+    date_add(DateBegin, 1, day, DateBegin1),
+    ( catch( wg_holiday(DateBegin), _, fail ), Duration1 = Duration0
+    ; Duration1 is Duration0 + 1 ),
+    !,
+    sum_vacation_days(DateBegin1, DateEnd, Duration1, Duration).
+
+%
 struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
     Scope = wg_struct_sick, Type = in, NextType = run,
     % формирование параметров выполнения
@@ -2218,20 +2295,6 @@ struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity,
     new_param_list(Scope, NextType, Pairs1).
 
 %
-struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
-    atom_date(DateCalc, date(Year, Month, _)),
-    month_days(Year, Month, Days),
-    atom_date(AccDate, date(Year, Month, Days)),
-    once( (SliceOption = 0, FilterVcType = 0 ; true) ),
-    findall( VcType-Slice,
-                ( wg_vacation_slice(VcType, Slice), VcType = FilterVcType ),
-             SliceList0 ),
-    keysort(SliceList0, [Slice0|SliceList1]),
-    append(SliceList1, [Slice0], SliceList),
-    struct_vacation_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage),
-    !.
-
-%
 struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType) :-
     Scope = wg_struct_sick, Type = in, NextType = run,
     % шаблон первичного ключа
@@ -2250,7 +2313,11 @@ struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, Is
     date_diff(DateBegin, Duration0, DateEnd),
     Duration is Duration0 + 1,
     %
-    sick_slice_list(Scope, Type, CalcType, Duration, SliceList),
+    sick_slice_list(Scope, Type, CalcType, Duration, SliceList0),
+    %
+    date_diff(DateCalc, DurationBefore, DateBegin),
+    sick_slice_list_excl(SliceList0, SliceList, DurationBefore),
+    %
     struct_sick_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK),
     !.
 
@@ -2282,30 +2349,22 @@ sick_slice_list(_, _, SliceList, _, _, _, SliceList) :-
     !.
 
 %
-struct_vacation_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage) :-
-    Slice0 =:= 0,
-    !,
-    struct_vacation_calc(SliceList, Slice, AccDate, DateBegin, DateEnd, AvgWage).
-struct_vacation_calc(_, _, _, '', '', _) :-
+sick_slice_list_excl(SliceList, SliceList, 0) :-
     !.
-struct_vacation_calc([], _-Slice, _, _, _, _) :-
-    Slice =:= 0,
+sick_slice_list_excl([LastSlice|[]], [LastSlice], _) :-
     !.
-struct_vacation_calc(SliceList, VcType-Slice, AccDate, DateBegin, DateEnd, AvgWage) :-
-    make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
-    atom_date(DateBegin1, date(Y, M, _)),
-    atom_date(IncludeDate, date(Y, M, 1)),
-    sum_vacation_days(DateBegin1, DateEnd1, 1, Duration),
-    Summa is Duration * AvgWage,
-    OutPairs = [
-                pAccDate-AccDate, pIncludeDate-IncludeDate,
-                pDuration-Duration, pSumma-Summa,
-                pDateBegin-DateBegin1, pDateEnd-DateEnd1,
-                pVcType-VcType
-                ],
-    new_param_list(struct_vacation, out, OutPairs),
+sick_slice_list_excl([Slice|SliceList], [Slice1|SliceList1], DurationBefore) :-
+    sick_slice_excl(Slice, Slice1, DurationBefore, DurationBefore1),
     !,
-    struct_vacation_calc(SliceList, VcType-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage).
+    sick_slice_list_excl(SliceList, SliceList1, DurationBefore1).
+
+%
+sick_slice_excl(Part-Duration, Part-Duration1, DurationBefore, DurationBefore1) :-
+    Duration0 is Duration - DurationBefore,
+    ( Duration0 > 0 -> Duration1 = Duration0 ; Duration1 = 0),
+    DurationBefore0 is DurationBefore - Duration,
+    ( DurationBefore0 > 0 -> DurationBefore1 = DurationBefore0 ; DurationBefore1 = 0),
+    !.
 
 %
 struct_sick_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK) :-
@@ -2333,7 +2392,7 @@ struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWag
       )
     ; SickPart = SickPart0
     ),
-    Percent is SickPart0 * 100,
+    Percent is SickPart * 100,
     date_add(DateEnd1, 1, day, DateEnd11),
     sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType, Scope, PK),
     ( BudgetOption = 1,
@@ -2400,18 +2459,6 @@ teil_period(DateEnd, DateEnd1, DateBegin2, DateEnd) :-
     !.
 
 %
-sum_vacation_days(DateBegin, DateBegin, Duration0, Duration1) :-
-    ( catch( wg_holiday(DateBegin), _, fail ), Duration1 is Duration0 - 1
-    ; Duration1 = Duration0 ),
-    !.
-sum_vacation_days(DateBegin, DateEnd, Duration0, Duration) :-
-    date_add(DateBegin, 1, day, DateBegin1),
-    ( catch( wg_holiday(DateBegin), _, fail ), Duration1 = Duration0
-    ; Duration1 is Duration0 + 1 ),
-    !,
-    sum_vacation_days(DateBegin1, DateEnd, Duration1, Duration).
-
-%
 sum_sick_days(DateBegin, DateBegin, DOI, DOI, HOI, HOI, _, _, _) :-
     !.
 sum_sick_days(DateBegin, DateEnd, DOI0, DOI, HOI0, HOI, IllType, Scope, PK) :-
@@ -2461,7 +2508,7 @@ get_avg_wage_budget(Scope, Type, Y-M, AvgWageBudget) :-
     % взять БПМ
     findall( Budget0,
                   % взять данные по БПМ
-                ( get_data(Scope, Type, gd_const_budget, [
+                ( get_data(Scope, kb, gd_const_budget, [
                             fConstDate-ConstDate, fBudget-Budget0]),
                   % где дата константы меньше первой даты месяца
                   ConstDate @=< FirstMonthDate

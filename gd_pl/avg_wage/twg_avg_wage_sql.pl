@@ -20,7 +20,7 @@ wg_valid_sql([
             -usr_wg_TblYearNorm/5,
             usr_wg_TblCalLine/7, % 05, 06, 12
             usr_wg_TblCal_FlexLine/68, % 05, 06, 12
-            usr_wg_HourType/12, % 05, 06
+            usr_wg_HourType/13, % 05, 06
             usr_wg_TblCharge/10, % 05, 06, 12
             usr_wg_FeeType/5, % 05, 06, 12
             usr_wg_FeeTypeNoCoef/4,
@@ -388,20 +388,20 @@ WHERE \c
         wg_struct_sick
         ]).
 
-gd_pl_ds(Scope, kb, usr_wg_HourType, 12, [
+gd_pl_ds(Scope, kb, usr_wg_HourType, 13, [
     fEmplKey-integer, fFirstMoveKey-integer,
     fID-integer, fCode-string, fDigitCode-string,
     fDiscription-string, fIsWorked-integer, fShortName-string,
     fForCalFlex-integer, fForOverTime-integer, fForFlex-integer,
-    fExcludeForSickList-integer
+    fExcludeForSickList-integer, fExclType-string
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick
         ]).
 % usr_wg_HourType(EmplKey, FirstMoveKey,
 %   ID, Code, DigitCode, Description, IsWorked, ShortName,
-%   ForCalFlex, ForOverTime, ForFlex, ExcludeForSickList)
-get_sql(Scope, kb, usr_wg_HourType/12,
+%   ForCalFlex, ForOverTime, ForFlex, ExcludeForSickList, ExclType)
+get_sql(Scope, kb, usr_wg_HourType/13,
 "SELECT \c
   pEmplKey AS EmplKey, \c
   pFirstMoveKey AS FirstMoveKey, \c
@@ -414,12 +414,20 @@ get_sql(Scope, kb, usr_wg_HourType/12,
   ht.USR$FORCALFLEX, \c
   ht.USR$FOROVERTIME, \c
   ht.USR$FORFLEX, \c
-  ht.USR$WG_EXCLUDEFORSICKLIST \c
+  ht.USR$WG_EXCLUDEFORSICKLIST, \c
+  CASE ht.ID \c
+    WHEN \c
+      (SELECT id FROM GD_P_GETID(pKindDayHourType_ruid)) \c
+        THEN \'kind_day\' \c
+    ELSE \c
+        \'unknown\' \c
+  END \c
+    AS ExclType \c
 FROM \c
   USR$WG_HOURTYPE ht \c
 ",
     [
-    pEmplKey-_, pFirstMoveKey-_
+    pEmplKey-_, pFirstMoveKey-_, pKindDayHourType_ruid-_
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick

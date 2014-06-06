@@ -242,11 +242,13 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
       gdcSalary.Append
       gdcSalary.FieldByName("USR$ISCHECK").AsVariant = Abs( Wage > 0 )
       gdcSalary.FieldByName("USR$DATE").AsVariant = Period
-      gdcSalary.FieldByName("USR$SALARY").AsVariant = Wage
-      gdcSalary.FieldByName("USR$DOW").AsVariant = TabDays
-      gdcSalary.FieldByName("USR$SCHEDULERDOW").AsVariant = NormDays
-      gdcSalary.FieldByName("USR$HOW").AsVariant = TabHoures
-      gdcSalary.FieldByName("USR$SCHEDULERHOW").AsVariant = NormHoures
+      If Wage > 0 Then
+        gdcSalary.FieldByName("USR$SALARY").AsVariant = Wage
+        gdcSalary.FieldByName("USR$DOW").AsVariant = TabDays
+        gdcSalary.FieldByName("USR$SCHEDULERDOW").AsVariant = NormDays
+        gdcSalary.FieldByName("USR$HOW").AsVariant = TabHoures
+        gdcSalary.FieldByName("USR$SCHEDULERHOW").AsVariant = NormHoures
+      End If
       gdcSalary.Post
       '
       Q_det.NextSolution

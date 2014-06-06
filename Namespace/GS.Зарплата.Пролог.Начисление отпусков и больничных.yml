@@ -5,7 +5,7 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков и больничных"
-  Version: "1.0.0.39"
+  Version: "1.0.0.46"
   Optional: False
   Internal: True
 Objects: 
@@ -483,7 +483,7 @@ Objects:
                     -usr_wg_TblYearNorm/5,
                     usr_wg_TblCalLine/7, % 05, 06, 12
                     usr_wg_TblCal_FlexLine/68, % 05, 06, 12
-                    usr_wg_HourType/12, % 05, 06
+                    usr_wg_HourType/13, % 05, 06
                     usr_wg_TblCharge/10, % 05, 06, 12
                     usr_wg_FeeType/5, % 05, 06, 12
                     usr_wg_FeeTypeNoCoef/4,
@@ -851,20 +851,20 @@ Objects:
                 wg_struct_sick
                 ]).
         
-        gd_pl_ds(Scope, kb, usr_wg_HourType, 12, [
+        gd_pl_ds(Scope, kb, usr_wg_HourType, 13, [
             fEmplKey-integer, fFirstMoveKey-integer,
             fID-integer, fCode-string, fDigitCode-string,
             fDiscription-string, fIsWorked-integer, fShortName-string,
             fForCalFlex-integer, fForOverTime-integer, fForFlex-integer,
-            fExcludeForSickList-integer
+            fExcludeForSickList-integer, fExclType-string
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick
                 ]).
         % usr_wg_HourType(EmplKey, FirstMoveKey,
         %   ID, Code, DigitCode, Description, IsWorked, ShortName,
-        %   ForCalFlex, ForOverTime, ForFlex, ExcludeForSickList)
-        get_sql(Scope, kb, usr_wg_HourType/12,
+        %   ForCalFlex, ForOverTime, ForFlex, ExcludeForSickList, ExclType)
+        get_sql(Scope, kb, usr_wg_HourType/13,
         "SELECT \c
           pEmplKey AS EmplKey, \c
           pFirstMoveKey AS FirstMoveKey, \c
@@ -877,12 +877,20 @@ Objects:
           ht.USR$FORCALFLEX, \c
           ht.USR$FOROVERTIME, \c
           ht.USR$FORFLEX, \c
-          ht.USR$WG_EXCLUDEFORSICKLIST \c
+          ht.USR$WG_EXCLUDEFORSICKLIST, \c
+          CASE ht.ID \c
+            WHEN \c
+              (SELECT id FROM GD_P_GETID(pKindDayHourType_ruid)) \c
+                THEN \'kind_day\' \c
+            ELSE \c
+                \'unknown\' \c
+          END \c
+            AS ExclType \c
         FROM \c
           USR$WG_HOURTYPE ht \c
         ",
             [
-            pEmplKey-_, pFirstMoveKey-_
+            pEmplKey-_, pFirstMoveKey-_, pKindDayHourType_ruid-_
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick
@@ -1480,7 +1488,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-03T13:51:49+03:00
+      EDITIONDATE: 2014-06-05T15:51:55+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1532,7 +1540,8 @@ Objects:
             new_param_list(wg_avg_wage_sick, in, [
                 pMonthQty-6,
                 pFeeGroupKey_ruid-'147071457,274788016',
-                pFeeGroupKeyProp_ruid-'147119175,1354510846'
+                pFeeGroupKeyProp_ruid-'147119175,1354510846',
+                pKindDayHourType_ruid-'147650798,119619099'
                 ]),
             fail.
         twg_avg_wage_in_params:-
@@ -1581,7 +1590,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-03T13:51:37+03:00
+      EDITIONDATE: 2014-06-05T15:15:55+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1707,8 +1716,6 @@ Objects:
         %  - для больничных
         % [по расчетным дням, по расчетным дням со справкой]
         wg_valid_rules([by_calc_days, by_calc_days_doc]).
-        % [от ставки без периодов со справкой]
-        wg_valid_rules([by_rate_doc]).
         % [от БПМ, по среднему заработку]
         wg_valid_rules([by_budget, by_avg_wage]).
         % [от ставки, по не полным месяцам]
@@ -1947,7 +1954,9 @@ Objects:
               is_valid_rule(Scope, PK, _, Rule2),
               % если есть признак Справка
               append(PK, [pIsAvgWageDoc-1], Pairs),
-              get_param_list(Scope, run, Pairs)
+              get_param_list(Scope, run, Pairs),
+              % и выполняется одно из правил по полноте месяца
+              rule_month_days_sick(Scope, PK, Periods, _)
             ),
             % то выполнить расчет
             % взять заработок
@@ -1965,7 +1974,7 @@ Objects:
                        % за каждый период проверки
                      ( member(Y2-M2, Periods),
                        % взять данные по расчетным дням
-                       get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _) ),
+                       get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _, _) ),
             % в список расчетных дней
             CalcDaysList ),
             % всего расчетных дней
@@ -1976,13 +1985,13 @@ Objects:
             !.
         calc_avg_wage(Scope, PK, AvgWage, Rule) :-
             % - для больничных (от ставки без периодов со справкой)
-            Scope = wg_avg_wage_sick, Rule = by_rate_doc,
+            Scope = wg_avg_wage_sick, Rule = by_rate,
             % правило действительно
             is_valid_rule(Scope, PK, _, Rule),
             % подготовка временных данных для расчета
             prep_avg_wage(Scope, PK, Periods),
-            % нет рабочих периодов
-            Periods = [],
+            % не выполняется одно из правил по полноте месяца
+            \+ rule_month_days_sick(Scope, PK, Periods, _),
             % есть признак Справка
             append(PK, [pIsAvgWageDoc-1], Pairs),
             get_param_list(Scope, run, Pairs),
@@ -2201,7 +2210,7 @@ Objects:
                        % за каждый период проверки
                      ( member(Y2-M2, Periods),
                        % взять данные по расчетным дням
-                       get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _) ),
+                       get_month_days_sick(Scope, PK, Y2, M2, _, CalcDays, _, _) ),
             % в список расчетных дней
             CalcDaysList ),
             % всего расчетных дней
@@ -2219,12 +2228,15 @@ Objects:
             is_valid_rule(Scope, PK, _, Rule),
             % есть хотя бы один полный месяц
             member(Y-M, Periods),
-            get_month_days_sick(Scope, PK, Y, M, _, _, 1),
+            get_month_days_sick(Scope, PK, Y, M, _, _, IsFullMonth, IsSpecMonth),
+            ( IsFullMonth = 1 ; IsSpecMonth = 1 ),
             !.
         rule_month_days_sick(Scope, PK, Periods, Rule) :-
             Rule = by_calc_days_all,
             % правило действительно
             is_valid_rule(Scope, PK, _, Rule),
+            % есть рабочие периоды
+            \+ Periods = [],
             % все месяцы полные
             is_full_all_month_sick(Scope, PK, Periods),
             !.
@@ -2236,7 +2248,8 @@ Objects:
             !.
         is_full_all_month_sick(Scope, PK, [Y-M|Periods]) :-
             % есть данные по расчетным дням для полного месяца
-            get_month_days_sick(Scope, PK, Y, M, _, _, 1),
+            get_month_days_sick(Scope, PK, Y, M, _, _, IsFullMonth, IsSpecMonth),
+            ( IsFullMonth = 1 ; IsSpecMonth = 1 ),
             !,
             % проверить остальные месяцы
             is_full_all_month_sick(Scope, PK, Periods).
@@ -2741,7 +2754,7 @@ Objects:
             !.
         add_month_days_sick(Scope, PK, [Y-M|Periods]) :-
             % проверить данные по расчетным дням
-            get_month_days_sick(Scope, PK, Y, M, _, _, _),
+            get_month_days_sick(Scope, PK, Y, M, _, _, _, _),
             !,
             % проверить остальные месяцы
             add_month_days_sick(Scope, PK, Periods).
@@ -2752,19 +2765,20 @@ Objects:
         
         % взять данные по расчетным дням
         % - для больничных
-        get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth) :-
+        get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, IsSpecMonth) :-
             % взять из временных параметров данные по расчетным дням
             append(PK, [pYM-Y-M, pRule-_,
                         pMonthDays-MonthDays, pExclDays-_,
-                        pCalcDays-CalcDays, pIsFullMonth-IsFullMonth],
+                        pCalcDays-CalcDays, pIsFullMonth-IsFullMonth,
+                        pIsSpecMonth-IsSpecMonth],
                     Pairs),
             get_param_list(Scope, temp, Pairs),
             !.
-        get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth) :-
+        get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, IsSpecMonth) :-
             % календарных дней в месяце
             month_days(Y, M, MonthDays),
             % исключаемые из месяца дни по правилам
-            excl_month_days_sick(Scope, PK, Y, M, ExclDays0, Variant),
+            excl_month_days_sick(Scope, PK, Y, M, ExclDays0, SpecExclDays, Variant),
             % исключаемые из первого месяца работы дни
             excl_first_month_days_sick(Scope, PK, Y, M, ExclDays1),
             % исключаемые дни
@@ -2772,18 +2786,21 @@ Objects:
             % расчетные дни
             CalcDays is MonthDays - ExclDays,
             % полнота месяца
-            ( CalcDays = MonthDays, IsFullMonth = 1 ; IsFullMonth = 0 ),
+            ( CalcDays = MonthDays -> IsFullMonth = 1 ; IsFullMonth = 0 ),
+            % все дни для исключения специальные
+            ( ExclDays = SpecExclDays -> IsSpecMonth = 1 ; IsSpecMonth = 0 ),
             % записать во временные параметры данные по расчетным дням
             append(PK, [pYM-Y-M, pRule-Variant,
                         pMonthDays-MonthDays, pExclDays-ExclDays,
-                        pCalcDays-CalcDays, pIsFullMonth-IsFullMonth],
+                        pCalcDays-CalcDays, pIsFullMonth-IsFullMonth,
+                        pIsSpecMonth-IsSpecMonth],
                     Pairs),
             new_param_list(Scope, temp, Pairs),
             !.
         
         % исключаемые из месяца дни
         % - для больничных
-        excl_month_days_sick(Scope, PK, Y, M, ExclDays, Rule) :-
+        excl_month_days_sick(Scope, PK, Y, M, ExclDays, SpecExclDays, Rule) :-
             % разложить первичный ключ
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             % параметры выбора табеля
@@ -2793,7 +2810,7 @@ Objects:
             % правило действительно
             is_valid_rule(Scope, PK, _, Rule),
             % взять данные из табеля
-            findall( 1,
+            findall( ExclType,
                       % для проверяемого месяца
                     ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, HoureType, TabelOption),
                       % с контролем наличия типа часов
@@ -2801,16 +2818,24 @@ Objects:
                       % по типу часов для исключения из расчета
                       once( get_data(Scope, kb, usr_wg_HourType, [
                                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                                        fID-HoureType, fExcludeForSickList-1] ) )
+                                        fID-HoureType, fExcludeForSickList-1,
+                                        fExclType-ExclType] ) )
                     ),
             % в список дней для исключения
             ExclDaysList),
             % проверить список дней для исключения
             \+ ExclDaysList = [],
             % всего дней для исключения
-            sum_list(ExclDaysList, ExclDays),
+            length(ExclDaysList, ExclDays),
+            % сбор специальных исключаемых дней
+            findall( SpecExclType,
+                    ( member(SpecExclType, ExclDaysList),
+                      memberchk(SpecExclType, ["kind_day"]) ),
+            SpecExclDaysList),
+            % всего специальных дней для исключения
+            length(SpecExclDaysList, SpecExclDays),
             !.
-        excl_month_days_sick(Scope, PK, Y, M, ExclDays, Rule) :-
+        excl_month_days_sick(Scope, PK, Y, M, ExclDays, SpecExclDays, Rule) :-
             Rule = by_orders,
             % правило действительно
             is_valid_rule(Scope, PK, _, Rule),
@@ -2829,38 +2854,44 @@ Objects:
             % в список периодов для исключения
             ExclPeriods),
             % сбор исключаемых дней по списку периодов
-            collect_excl_days(ExclPeriods, Y, M, [], LogDays),
+            collect_excl_days(ExclPeriods, Y, M, [], LogDays, []),
             % всего дней для исключения
             length(LogDays, ExclDays),
             \+ ExclDays =:= 0,
+            % сбор специальных исключаемых дней по списку периодов
+            collect_excl_days(ExclPeriods, Y, M, [], LogSpecDays, ["KINDDAYLINE"]),
+            % всего специальных дней для исключения
+            length(LogSpecDays, SpecExclDays),
             !.
-        excl_month_days_sick(_, _, _, _, 0, none) :-
+        excl_month_days_sick(_, _, _, _, 0, 0, none) :-
             !.
         
         % сбор исключаемых дней по списку периодов
-        collect_excl_days([], _, _, LogDays, LogDays) :-
+        collect_excl_days([], _, _, LogDays, LogDays, _) :-
             !.
-        collect_excl_days([ExclPeriod|ExclPeriods], Y, M, LogDays0, LogDays2) :-
+        collect_excl_days([ExclPeriod|ExclPeriods], Y, M, LogDays0, LogDays2, SpecList) :-
             % сбор исключаемых дней за период
-            collect_excl_days(ExclPeriod, Y, M, LogDays0, LogDays1),
+            collect_excl_days(ExclPeriod, Y, M, LogDays0, LogDays1, SpecList),
             !,
-            collect_excl_days(ExclPeriods, Y, M, LogDays1, LogDays2).
+            collect_excl_days(ExclPeriods, Y, M, LogDays1, LogDays2, SpecList).
         
         % сбор исключаемых дней за период
-        collect_excl_days(FromDate-ToDate-_-_, _, _, LogDays, LogDays) :-
+        collect_excl_days(FromDate-ToDate-_-_, _, _, LogDays, LogDays, _) :-
             FromDate @> ToDate,
             !.
-        collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2) :-
+        collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList) :-
             \+ atom_date(FromDate0, date(Y, M, _)),
             date_add(FromDate0, 1, day, FromDate1),
             !,
-            collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2).
-        collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2) :-
+            collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList).
+        collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList) :-
             % добавление дня для исключения в журнал
-            add_excl_day(FromDate0-ExclType-ExclWeekDay, LogDays0, LogDays1),
+            ( ( SpecList = [] ; memberchk(ExclType, SpecList) )
+              -> add_excl_day(FromDate0-ExclType-ExclWeekDay, LogDays0, LogDays1)
+            ; true ),
             date_add(FromDate0, 1, day, FromDate1),
             !,
-            collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays1, LogDays2).
+            collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays1, LogDays2, SpecList).
         
         % добавление дня для исключения в журнал
         add_excl_day(TheDate-_-_, LogDays, LogDays) :-
@@ -3632,7 +3663,7 @@ Objects:
         % выгрузка детальных выходных данных по сотруднику
         avg_wage_sick_det(EmplKey, FirstMoveKey,
                             Period, Rule,
-                            MonthDays, ExclDays, CalcDays, IsFullMonth,
+                            MonthDays, ExclDays, CalcDays, IsFullMonth, IsSpecMonth,
                             Wage,
                             TabDays, NormDays, TabHoures, NormHoures) :-
             % параметры контекста
@@ -3643,7 +3674,8 @@ Objects:
             % взять данные по расчетным дням
             append(PK, [pYM-Y-M, pRule-Rule,
                         pMonthDays-MonthDays, pExclDays-ExclDays,
-                        pCalcDays-CalcDays, pIsFullMonth-IsFullMonth],
+                        pCalcDays-CalcDays, pIsFullMonth-IsFullMonth,
+                        pIsSpecMonth-IsSpecMonth],
                     Pairs),
             get_param_list(Scope, temp, Pairs),
             % взять данные по заработку
@@ -3790,6 +3822,58 @@ Objects:
             new_param_list(Scope, NextType, Pairs1).
         
         %
+        struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
+            atom_date(DateCalc, date(Year, Month, _)),
+            month_days(Year, Month, Days),
+            atom_date(AccDate, date(Year, Month, Days)),
+            once( (SliceOption = 0, FilterVcType = 0 ; true) ),
+            findall( VcType-Slice,
+                        ( wg_vacation_slice(VcType, Slice), VcType = FilterVcType ),
+                     SliceList0 ),
+            keysort(SliceList0, [Slice0|SliceList1]),
+            append(SliceList1, [Slice0], SliceList),
+            struct_vacation_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage),
+            !.
+        
+        %
+        struct_vacation_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage) :-
+            Slice0 =:= 0,
+            !,
+            struct_vacation_calc(SliceList, Slice, AccDate, DateBegin, DateEnd, AvgWage).
+        struct_vacation_calc(_, _, _, '', '', _) :-
+            !.
+        struct_vacation_calc([], _-Slice, _, _, _, _) :-
+            Slice =:= 0,
+            !.
+        struct_vacation_calc(SliceList, VcType-Slice, AccDate, DateBegin, DateEnd, AvgWage) :-
+            make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
+            atom_date(DateBegin1, date(Y, M, _)),
+            atom_date(IncludeDate, date(Y, M, 1)),
+            sum_vacation_days(DateBegin1, DateEnd1, 1, Duration),
+            Summa is Duration * AvgWage,
+            OutPairs = [
+                        pAccDate-AccDate, pIncludeDate-IncludeDate,
+                        pDuration-Duration, pSumma-Summa,
+                        pDateBegin-DateBegin1, pDateEnd-DateEnd1,
+                        pVcType-VcType
+                        ],
+            new_param_list(struct_vacation, out, OutPairs),
+            !,
+            struct_vacation_calc(SliceList, VcType-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage).
+        
+        %
+        sum_vacation_days(DateBegin, DateBegin, Duration0, Duration1) :-
+            ( catch( wg_holiday(DateBegin), _, fail ), Duration1 is Duration0 - 1
+            ; Duration1 = Duration0 ),
+            !.
+        sum_vacation_days(DateBegin, DateEnd, Duration0, Duration) :-
+            date_add(DateBegin, 1, day, DateBegin1),
+            ( catch( wg_holiday(DateBegin), _, fail ), Duration1 = Duration0
+            ; Duration1 is Duration0 + 1 ),
+            !,
+            sum_vacation_days(DateBegin1, DateEnd, Duration1, Duration).
+        
+        %
         struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
             Scope = wg_struct_sick, Type = in, NextType = run,
             % формирование параметров выполнения
@@ -3816,20 +3900,6 @@ Objects:
             new_param_list(Scope, NextType, Pairs1).
         
         %
-        struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
-            atom_date(DateCalc, date(Year, Month, _)),
-            month_days(Year, Month, Days),
-            atom_date(AccDate, date(Year, Month, Days)),
-            once( (SliceOption = 0, FilterVcType = 0 ; true) ),
-            findall( VcType-Slice,
-                        ( wg_vacation_slice(VcType, Slice), VcType = FilterVcType ),
-                     SliceList0 ),
-            keysort(SliceList0, [Slice0|SliceList1]),
-            append(SliceList1, [Slice0], SliceList),
-            struct_vacation_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage),
-            !.
-        
-        %
         struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType) :-
             Scope = wg_struct_sick, Type = in, NextType = run,
             % шаблон первичного ключа
@@ -3848,7 +3918,11 @@ Objects:
             date_diff(DateBegin, Duration0, DateEnd),
             Duration is Duration0 + 1,
             %
-            sick_slice_list(Scope, Type, CalcType, Duration, SliceList),
+            sick_slice_list(Scope, Type, CalcType, Duration, SliceList0),
+            %
+            date_diff(DateCalc, DurationBefore, DateBegin),
+            sick_slice_list_excl(SliceList0, SliceList, DurationBefore),
+            %
             struct_sick_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK),
             !.
         
@@ -3880,30 +3954,22 @@ Objects:
             !.
         
         %
-        struct_vacation_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage) :-
-            Slice0 =:= 0,
-            !,
-            struct_vacation_calc(SliceList, Slice, AccDate, DateBegin, DateEnd, AvgWage).
-        struct_vacation_calc(_, _, _, '', '', _) :-
+        sick_slice_list_excl(SliceList, SliceList, 0) :-
             !.
-        struct_vacation_calc([], _-Slice, _, _, _, _) :-
-            Slice =:= 0,
+        sick_slice_list_excl([LastSlice|[]], [LastSlice], _) :-
             !.
-        struct_vacation_calc(SliceList, VcType-Slice, AccDate, DateBegin, DateEnd, AvgWage) :-
-            make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
-            atom_date(DateBegin1, date(Y, M, _)),
-            atom_date(IncludeDate, date(Y, M, 1)),
-            sum_vacation_days(DateBegin1, DateEnd1, 1, Duration),
-            Summa is Duration * AvgWage,
-            OutPairs = [
-                        pAccDate-AccDate, pIncludeDate-IncludeDate,
-                        pDuration-Duration, pSumma-Summa,
-                        pDateBegin-DateBegin1, pDateEnd-DateEnd1,
-                        pVcType-VcType
-                        ],
-            new_param_list(struct_vacation, out, OutPairs),
+        sick_slice_list_excl([Slice|SliceList], [Slice1|SliceList1], DurationBefore) :-
+            sick_slice_excl(Slice, Slice1, DurationBefore, DurationBefore1),
             !,
-            struct_vacation_calc(SliceList, VcType-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage).
+            sick_slice_list_excl(SliceList, SliceList1, DurationBefore1).
+        
+        %
+        sick_slice_excl(Part-Duration, Part-Duration1, DurationBefore, DurationBefore1) :-
+            Duration0 is Duration - DurationBefore,
+            ( Duration0 > 0 -> Duration1 = Duration0 ; Duration1 = 0),
+            DurationBefore0 is DurationBefore - Duration,
+            ( DurationBefore0 > 0 -> DurationBefore1 = DurationBefore0 ; DurationBefore1 = 0),
+            !.
         
         %
         struct_sick_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK) :-
@@ -3931,7 +3997,7 @@ Objects:
               )
             ; SickPart = SickPart0
             ),
-            Percent is SickPart0 * 100,
+            Percent is SickPart * 100,
             date_add(DateEnd1, 1, day, DateEnd11),
             sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType, Scope, PK),
             ( BudgetOption = 1,
@@ -3998,18 +4064,6 @@ Objects:
             !.
         
         %
-        sum_vacation_days(DateBegin, DateBegin, Duration0, Duration1) :-
-            ( catch( wg_holiday(DateBegin), _, fail ), Duration1 is Duration0 - 1
-            ; Duration1 = Duration0 ),
-            !.
-        sum_vacation_days(DateBegin, DateEnd, Duration0, Duration) :-
-            date_add(DateBegin, 1, day, DateBegin1),
-            ( catch( wg_holiday(DateBegin), _, fail ), Duration1 = Duration0
-            ; Duration1 is Duration0 + 1 ),
-            !,
-            sum_vacation_days(DateBegin1, DateEnd, Duration1, Duration).
-        
-        %
         sum_sick_days(DateBegin, DateBegin, DOI, DOI, HOI, HOI, _, _, _) :-
             !.
         sum_sick_days(DateBegin, DateEnd, DOI0, DOI, HOI0, HOI, IllType, Scope, PK) :-
@@ -4059,7 +4113,7 @@ Objects:
             % взять БПМ
             findall( Budget0,
                           % взять данные по БПМ
-                        ( get_data(Scope, Type, gd_const_budget, [
+                        ( get_data(Scope, kb, gd_const_budget, [
                                     fConstDate-ConstDate, fBudget-Budget0]),
                           % где дата константы меньше первой даты месяца
                           ConstDate @=< FirstMonthDate
@@ -4125,7 +4179,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-03T13:51:23+03:00
+      EDITIONDATE: 2014-06-05T15:44:28+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -9879,7 +9933,8 @@ Objects:
           'avg_wage_out, avg_wage_sick_det
           Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
           Dim AvgWage, AvgWageRule
-          Dim Period, PeriodRule, MonthDays, ExclDays, CalcDays, IsFullMonth, Wage
+          Dim Period, PeriodRule, MonthDays, ExclDays, CalcDays, IsFullMonth, IsSpecMonth
+          Dim Wage
           Dim TabDays, TabHoures, NormDays, NormHoures
         
           T1 = Timer
@@ -9902,9 +9957,9 @@ Objects:
           Scope = "wg_avg_wage_sick"
           
           'params
-          EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
-          FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
-          DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
+          EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
+          FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
+          DateCalc = gdcObject.FieldByName("USR$FROM").AsDateTime
           IsAvgWageDoc = gdcObject.FieldByName("USR$REFERENCE").AsInteger
         
           'clean
@@ -10037,11 +10092,11 @@ Objects:
           Q_out.Termv = Tv_out
           'avg_wage_sick_det(EmplKey, FirstMoveKey,
           '                  Period, Rule,
-          '                  MonthDays, ExclDays, CalcDays, IsFullMonth,
+          '                  MonthDays, ExclDays, CalcDays, IsFullMonth, IsSpecMonth,
           '                  Wage,
           '                  TabDays, NormDays, TabHoures, NormHoures) :-
           P_det = "avg_wage_sick_det"
-          Set Tv_det = Creator.GetObject(13, "TgsPLTermv", "")
+          Set Tv_det = Creator.GetObject(14, "TgsPLTermv", "")
           Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
           Q_det.PredicateName = P_det
           Q_det.Termv = Tv_det
@@ -10067,6 +10122,16 @@ Objects:
             Do Until Q_det.EOF
               Period = Tv_det.ReadDate(2)
               PeriodRule = Tv_det.ReadAtom(3)
+              MonthDays = Tv_det.ReadInteger(4)
+              ExclDays= Tv_det.ReadInteger(5)
+              CalcDays = Tv_det.ReadInteger(6)
+              IsFullMonth = Tv_det.ReadInteger(7)
+              IsSpecMonth = Tv_det.ReadInteger(8)
+              Wage = Tv_det.ReadFloat(9)
+              TabDays = Tv_det.ReadFloat(10)
+              NormDays = Tv_det.ReadFloat(11)
+              TabHoures = Tv_det.ReadFloat(12)
+              NormHoures = Tv_det.ReadFloat(13)
               '
               Select Case AvgWageRule
                 Case "by_calc_days", "by_calc_days_doc"
@@ -10080,27 +10145,22 @@ Objects:
                     Case Else
                       PeriodRule = ""
                   End Select
+                  '
+                  If Not IsFullMonth = 1 And IsSpecMonth = 1 Then
+                    PeriodRule = "условно полный"
+                  End If
+                  '
                 Case "by_budget"
                   PeriodRule = "от БПМ"
                 Case "by_avg_wage"
                   PeriodRule = "по среднему заработку"
-                Case "by_rate"
+                Case "by_rate", "by_rate_doc"
                   PeriodRule = "от ставки"
                 Case "by_not_full"
                   PeriodRule = "по не полным месяцам"
                 Case Else
                   PeriodRule = ""
               End Select
-              '
-              MonthDays = Tv_det.ReadInteger(4)
-              ExclDays= Tv_det.ReadInteger(5)
-              CalcDays = Tv_det.ReadInteger(6)
-              IsFullMonth = Tv_det.ReadInteger(7)
-              Wage = Tv_det.ReadFloat(8)
-              TabDays = Tv_det.ReadFloat(9)
-              NormDays = Tv_det.ReadFloat(10)
-              TabHoures = Tv_det.ReadFloat(11)
-              NormHoures = Tv_det.ReadFloat(12)
               '
               gdcSalary.Append
               gdcSalary.FieldByName("USR$ISFULL").AsVariant = IsFullMonth
@@ -10165,7 +10225,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-05-12T15:34:33+03:00
+      EDITIONDATE: 2014-06-05T16:29:38+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -10629,6 +10689,7 @@ Objects:
           'params
           EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
           FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
+          DateCalc = gdcObject.FieldByName("USR$FROM").AsDateTime
           DateBegin = gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime
           DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
           AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
@@ -10641,20 +10702,6 @@ Objects:
           '
           Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
           IBSQL.Transaction = gdcBaseManager.ReadTransaction
-          IBSQL.SQL.Text = _
-              "SELECT " & _
-              "  t.USR$DATEBEGIN " & _
-              "FROM " & _
-              "  USR$WG_TOTAL t " & _
-              "WHERE " & _
-              "  t.DOCUMENTKEY = :TDK "
-          IBSQL.ParamByName("TDK").AsInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
-          IBSQL.ExecQuery
-          '
-          DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
-          '
-          IBSQL.Close
-        
           IBSQL.SQL.Text = _
               "SELECT " & _
               "  it.USR$CALCTYPE " & _
@@ -10801,7 +10848,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-05-30T18:06:58+03:00
+      EDITIONDATE: 2014-06-05T11:04:14+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -12352,11 +12399,11 @@ Objects:
       NAME: "Height"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 301
+      INT_DATA: 287
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-05-03T16:47:40+03:00
+      EDITIONDATE: 2014-06-03T11:58:45+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -12583,7 +12630,6 @@ Objects:
       SAT: 0
       SUN: 0
       HOLIDAYISWORK: 0
-      W1_OFFSET: 0
       W1_START1: 1899-12-30T00:00:00+03:00
       W1_END1: 1899-12-30T00:00:00+03:00
       W1_START2: 1899-12-30T00:00:00+03:00
@@ -12592,7 +12638,6 @@ Objects:
       W1_END3: 1899-12-30T00:00:00+03:00
       W1_START4: 1899-12-30T00:00:00+03:00
       W1_END4: 1899-12-30T00:00:00+03:00
-      W2_OFFSET: 0
       W2_START1: 1899-12-30T00:00:00+03:00
       W2_END1: 1899-12-30T00:00:00+03:00
       W2_START2: 1899-12-30T00:00:00+03:00
@@ -12601,7 +12646,6 @@ Objects:
       W2_END3: 1899-12-30T00:00:00+03:00
       W2_START4: 1899-12-30T00:00:00+03:00
       W2_END4: 1899-12-30T00:00:00+03:00
-      W3_OFFSET: 0
       W3_START1: 1899-12-30T00:00:00+03:00
       W3_END1: 1899-12-30T00:00:00+03:00
       W3_START2: 1899-12-30T00:00:00+03:00
@@ -12610,7 +12654,6 @@ Objects:
       W3_END3: 1899-12-30T00:00:00+03:00
       W3_START4: 1899-12-30T00:00:00+03:00
       W3_END4: 1899-12-30T00:00:00+03:00
-      W4_OFFSET: 0
       W4_START1: 1899-12-30T00:00:00+03:00
       W4_END1: 1899-12-30T00:00:00+03:00
       W4_START2: 1899-12-30T00:00:00+03:00
@@ -12619,7 +12662,6 @@ Objects:
       W4_END3: 1899-12-30T00:00:00+03:00
       W4_START4: 1899-12-30T00:00:00+03:00
       W4_END4: 1899-12-30T00:00:00+03:00
-      W5_OFFSET: 0
       W5_START1: 1899-12-30T00:00:00+03:00
       W5_END1: 1899-12-30T00:00:00+03:00
       W5_START2: 1899-12-30T00:00:00+03:00
@@ -12628,7 +12670,6 @@ Objects:
       W5_END3: 1899-12-30T00:00:00+03:00
       W5_START4: 1899-12-30T00:00:00+03:00
       W5_END4: 1899-12-30T00:00:00+03:00
-      W6_OFFSET: 0
       W6_START1: 1899-12-30T00:00:00+03:00
       W6_END1: 1899-12-30T00:00:00+03:00
       W6_START2: 1899-12-30T00:00:00+03:00
@@ -12637,7 +12678,6 @@ Objects:
       W6_END3: 1899-12-30T00:00:00+03:00
       W6_START4: 1899-12-30T00:00:00+03:00
       W6_END4: 1899-12-30T00:00:00+03:00
-      W7_OFFSET: 0
       W7_START1: 1899-12-30T00:00:00+03:00
       W7_END1: 1899-12-30T00:00:00+03:00
       W7_START2: 1899-12-30T00:00:00+03:00
@@ -12646,7 +12686,6 @@ Objects:
       W7_END3: 1899-12-30T00:00:00+03:00
       W7_START4: 1899-12-30T00:00:00+03:00
       W7_END4: 1899-12-30T00:00:00+03:00
-      W8_OFFSET: 0
       W8_START1: 1899-12-30T00:00:00+03:00
       W8_END1: 1899-12-30T00:00:00+03:00
       W8_START2: 1899-12-30T00:00:00+03:00
@@ -12655,9 +12694,17 @@ Objects:
       W8_END3: 1899-12-30T00:00:00+03:00
       W8_START4: 1899-12-30T00:00:00+03:00
       W8_END4: 1899-12-30T00:00:00+03:00
+      W1_OFFSET: 0
+      W2_OFFSET: 0
+      W3_OFFSET: 0
+      W4_OFFSET: 0
+      W5_OFFSET: 0
+      W6_OFFSET: 0
+      W7_OFFSET: 0
+      W8_OFFSET: 0
       EDITIONDATE: 2014-03-14T15:54:21+03:00
-      USR$WAGE_OLDKEY: ~
       USR$DAYCICLECOUNT: 7
+      USR$WAGE_OLDKEY: ~
       USR$CALENDARTYPE: ~
       USR$FIRSTDAYDATE: ~
       USR$HOLIDAYISWORK: 0
@@ -12928,11 +12975,13 @@ Objects:
               gdcSalary.Append
               gdcSalary.FieldByName("USR$ISCHECK").AsVariant = Abs( Wage > 0 )
               gdcSalary.FieldByName("USR$DATE").AsVariant = Period
-              gdcSalary.FieldByName("USR$SALARY").AsVariant = Wage
-              gdcSalary.FieldByName("USR$DOW").AsVariant = TabDays
-              gdcSalary.FieldByName("USR$SCHEDULERDOW").AsVariant = NormDays
-              gdcSalary.FieldByName("USR$HOW").AsVariant = TabHoures
-              gdcSalary.FieldByName("USR$SCHEDULERHOW").AsVariant = NormHoures
+              If Wage > 0 Then
+                gdcSalary.FieldByName("USR$SALARY").AsVariant = Wage
+                gdcSalary.FieldByName("USR$DOW").AsVariant = TabDays
+                gdcSalary.FieldByName("USR$SCHEDULERDOW").AsVariant = NormDays
+                gdcSalary.FieldByName("USR$HOW").AsVariant = TabHoures
+                gdcSalary.FieldByName("USR$SCHEDULERHOW").AsVariant = NormHoures
+              End If
               gdcSalary.Post
               '
               Q_det.NextSolution
@@ -12975,7 +13024,7 @@ Objects:
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVEZMUFI=
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-05-30T16:02:21+03:00
+      EDITIONDATE: 2014-06-06T11:30:40+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -13016,32 +13065,12 @@ Objects:
       NAME: "Macros_CalcAvgAddPay"
       COMMENT: ~
       SCRIPT: | 
-        '#include wg_CalcAvgAddPay_pl
-        Option Explicit
+        '#include WG_CALCAVGADDPAY
+        option explicit
+        sub Macros_CalcAvgAddPay(OwnerForm)
+          call wg_CalcAvgAddPay(OwnerForm)
+        end sub
         
-        Sub Macros_CalcAvgAddPay(OwnerForm)
-        '
-          Dim gdcObject, gdcDetailObject, gdcSalary, Ret
-        
-          OwnerForm.GetComponent("actApply").Execute
-        
-          Set gdcObject = OwnerForm.gdcObject
-          Set gdcDetailObject = OwnerForm.gdcDetailObject
-          Set gdcSalary = OwnerForm.GetComponent("usrg_gdcAvgSalaryStr")
-          
-          Dim MonthBefore
-          MonthBefore = 0
-          Do
-            Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore)
-            Select Case Ret
-              Case "need_more"
-                MonthBefore = MonthBefore + 1
-              Case Else
-                Exit Do
-            End Select
-          Loop
-        '
-        End Sub
         
       DISPLAYSCRIPT: | 
         MACROS_CALCAVGADDPAY
@@ -13060,13 +13089,13 @@ Objects:
         AABGTlNURkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-05-12T17:39:12+03:00
+      EDITIONDATE: 2014-06-06T11:40:43+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
         Items: 
           - 
-            ADDFUNCTIONKEY: "540049114_99701464 wg_CalcAvgAddPay_pl"
+            ADDFUNCTIONKEY: "147113827_1354510846 wg_CalcAvgAddPay"
   - 
     Properties: 
       Class: "TgdcMacrosGroup"
@@ -13103,7 +13132,7 @@ Objects:
       ISREBUILD: 0
       EXECUTEDATE: ~
       SHORTCUT: 0
-      EDITIONDATE: 2014-05-12T17:39:12+03:00
+      EDITIONDATE: 2014-06-06T11:40:43+03:00
       DISPLAYINMENU: 1
       RUNONLOGIN: 0
   - 
@@ -13121,18 +13150,215 @@ Objects:
       NAME: "Macros_CalcAvgAddPay_Total"
       COMMENT: ~
       SCRIPT: | 
+        '#include WG_CALCAVGADDPAY
+        option explicit
+        sub Macros_CalcAvgAddPay_Total(OwnerForm)
+          dim gdcObject, gdcDetailObject
+          set gdcObject = OwnerForm.gdcObject
+          set gdcDetailObject = OwnerForm.gdcDetailObject
+        
+          if (gdcObject.State = dsEdit) then gdcObject.Post
+          if (gdcDetailObject.State = dsEdit) or (gdcDetailObject.State = dsInsert) then gdcDetailObject.Post
+          gdcDetailObject.First
+          while not gdcDetailObject.EoF
+            call wg_CalcAvgAddPay(OwnerForm)
+            gdcDetailObject.Next
+          wend
+        end sub
+        
+        
+      DISPLAYSCRIPT: | 
+        MACROS_CALCAVGADDPAY_TOTAL
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147113651_1354510846 gdc_dlgUserComplexDocument147113610_1354510846"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QJAAAAT1dORVJGT1JNCQAAAE9XTkVSRk9STQAAAAAAAAAAAAAAAAsAAAAAAAAAAAAA
+        AABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-06-06T11:46:26+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147113827_1354510846 wg_CalcAvgAddPay"
+  - 
+    Properties: 
+      Class: "TgdcMacros"
+      RUID: 540049109_99701464
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_dlgUserComplexDocument147113610_1354510846"
+      MACROSGROUPKEY: "147113652_1354510846 Локальные макросы"
+      FUNCTIONKEY: "540049113_99701464 Macros_CalcAvgAddPay_Total"
+      NAME: "Произвести итоговый расчет"
+      SERVERKEY: ~
+      ISLOCALEXECUTE: 0
+      ISREBUILD: 0
+      EXECUTEDATE: ~
+      SHORTCUT: 0
+      EDITIONDATE: 2014-06-06T11:46:26+03:00
+      DISPLAYINMENU: 1
+      RUNONLOGIN: 0
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 147113745_1354510846
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 147113746_1354510846
+    Fields: 
+      NAME: "usrg_actAvgGenerate"
+      DESCRIPTION: ~
+      PARENT: "147113651_1354510846 gdc_dlgUserComplexDocument147113610_1354510846"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "usrg_actAvgGenerate"
+      SUBTYPE: ""
+      EDITIONDATE: 2010-03-31T16:53:56+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147113748_1354510846
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 147113746_1354510846
+    Fields: 
+      OBJECTNAME: "gdc_dlgUserComplexDocument147113610_1354510846"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_actAvgGenerateOnExecute"
+      COMMENT: ~
+      SCRIPT: | 
         '#include wg_CalcAvgAddPay_pl
         Option Explicit
         
-        Sub Macros_CalcAvgAddPay_Total(OwnerForm)
+        Sub usrg_actAvgGenerateOnExecute(ByVal Sender)
         '
           Dim gdcObject, gdcDetailObject, gdcSalary, Ret
         
-          OwnerForm.GetComponent("actApply").Execute
+          Sender.OwnerForm.GetComponent("actApply").Execute
         
-          Set gdcObject = OwnerForm.gdcObject
-          Set gdcDetailObject = OwnerForm.gdcDetailObject
-          Set gdcSalary = OwnerForm.GetComponent("usrg_gdcAvgSalaryStr")
+          Set gdcObject = Sender.OwnerForm.gdcObject
+          Set gdcDetailObject = Sender.OwnerForm.gdcDetailObject
+          Set gdcSalary = Sender.OwnerForm.GetComponent("usrg_gdcAvgSalaryStr")
+        
+          Dim MonthBefore
+          MonthBefore = 0
+          Do
+            Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore)
+            Select Case Ret
+              Case "need_more"
+                MonthBefore = MonthBefore + 1
+              Case Else
+                Exit Do
+            End Select
+          Loop
+        '
+        End Sub
+        
+        
+        
+      DISPLAYSCRIPT: | 
+        USRG_ACTAVGGENERATEONEXECUTE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONEXECUTE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147113651_1354510846 gdc_dlgUserComplexDocument147113610_1354510846"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2014-06-06T11:36:52+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "540049114_99701464 wg_CalcAvgAddPay_pl"
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 147113746_1354510846
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_actAvgGenerate"
+      PARENTNAME: "gdc_dlgUserComplexDocument147113610_1354510846"
+      OBJECTKEY: "147113745_1354510846 gdc_dlgUserComplexDocument147113610_1354510846\\usrg_actAvgGenerate"
+      EVENTNAME: "ONEXECUTE"
+      FUNCTIONKEY: "147113748_1354510846 usrg_actAvgGenerateOnExecute"
+      DISABLE: ~
+      EDITIONDATE: 2014-06-06T11:36:53+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 147113836_1354510846
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 147113842_1354510846
+    Fields: 
+      NAME: "usrg_actGenerate"
+      DESCRIPTION: ~
+      PARENT: "147113651_1354510846 gdc_dlgUserComplexDocument147113610_1354510846"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "usrg_actGenerate"
+      SUBTYPE: ""
+      EDITIONDATE: 2010-03-31T18:03:13+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147113844_1354510846
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 147113842_1354510846
+    Fields: 
+      OBJECTNAME: "gdc_dlgUserComplexDocument147113610_1354510846"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_actGenerateOnExecute"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include wg_CalcAvgAddPay_pl
+        Option Explicit
+        
+        Sub usrg_actGenerateOnExecute(ByVal Sender)
+        '
+          Dim gdcObject, gdcDetailObject, gdcSalary, Ret
+        
+          Sender.OwnerForm.GetComponent("actApply").Execute
+        
+          Set gdcObject = Sender.OwnerForm.gdcObject
+          Set gdcDetailObject = Sender.OwnerForm.gdcDetailObject
+          Set gdcSalary = Sender.OwnerForm.GetComponent("usrg_gdcAvgSalaryStr")
         
           Dim MonthBefore
         
@@ -13155,24 +13381,25 @@ Objects:
         '
         End Sub
         
+        
       DISPLAYSCRIPT: | 
-        MACROS_CALCAVGADDPAY_TOTAL
+        USRG_ACTGENERATEONEXECUTE
         
       MODIFYDATE: ~
       OWNERNAME: ~
       FUNCTIONTYPE: ~
-      EVENT: ~
+      EVENT: "ONEXECUTE"
       LOCALNAME: ~
       PUBLICFUNCTION: 1
       SHORTCUT: ~
       GROUPNAME: ~
       MODULECODE: "147113651_1354510846 gdc_dlgUserComplexDocument147113610_1354510846"
       ENTEREDPARAMS: !!binary > 
-        U0xQUlBSU1QJAAAAT1dORVJGT1JNCQAAAE9XTkVSRk9STQAAAAAAAAAAAAAAAAsAAAAAAAAAAAAA
-        AABGTlNURkxQUg==
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
       INHERITEDRULE: 0
-      USEDEBUGINFO: 0
-      EDITIONDATE: 2014-05-30T16:00:22+03:00
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2014-06-06T11:46:22+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -13181,21 +13408,16 @@ Objects:
             ADDFUNCTIONKEY: "540049114_99701464 wg_CalcAvgAddPay_pl"
   - 
     Properties: 
-      Class: "TgdcMacros"
-      RUID: 540049109_99701464
+      Class: "TgdcEvent"
+      RUID: 147113842_1354510846
       AlwaysOverwrite: False
       DontRemove: False
       IncludeSiblings: False
     Fields: 
-      OBJECTNAME: "gdc_dlgUserComplexDocument147113610_1354510846"
-      MACROSGROUPKEY: "147113652_1354510846 Локальные макросы"
-      FUNCTIONKEY: "540049113_99701464 Macros_CalcAvgAddPay_Total"
-      NAME: "Произвести итоговый расчет"
-      SERVERKEY: ~
-      ISLOCALEXECUTE: 0
-      ISREBUILD: 0
-      EXECUTEDATE: ~
-      SHORTCUT: 0
-      EDITIONDATE: 2014-05-30T16:00:22+03:00
-      DISPLAYINMENU: 1
-      RUNONLOGIN: 0
+      OBJECTNAME: "usrg_actGenerate"
+      PARENTNAME: "gdc_dlgUserComplexDocument147113610_1354510846"
+      OBJECTKEY: "147113836_1354510846 gdc_dlgUserComplexDocument147113610_1354510846\\usrg_actGenerate"
+      EVENTNAME: "ONEXECUTE"
+      FUNCTIONKEY: "147113844_1354510846 usrg_actGenerateOnExecute"
+      DISABLE: ~
+      EDITIONDATE: 2014-06-06T11:46:22+03:00

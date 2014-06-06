@@ -37,6 +37,7 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   'params
   EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
   FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
+  DateCalc = gdcObject.FieldByName("USR$FROM").AsDateTime
   DateBegin = gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime
   DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
   AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
@@ -49,20 +50,6 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   '
   Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
   IBSQL.Transaction = gdcBaseManager.ReadTransaction
-  IBSQL.SQL.Text = _
-      "SELECT " & _
-      "  t.USR$DATEBEGIN " & _
-      "FROM " & _
-      "  USR$WG_TOTAL t " & _
-      "WHERE " & _
-      "  t.DOCUMENTKEY = :TDK "
-  IBSQL.ParamByName("TDK").AsInteger = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
-  IBSQL.ExecQuery
-  '
-  DateCalc = IBSQL.FieldByName("USR$DATEBEGIN").AsDateTime
-  '
-  IBSQL.Close
-
   IBSQL.SQL.Text = _
       "SELECT " & _
       "  it.USR$CALCTYPE " & _

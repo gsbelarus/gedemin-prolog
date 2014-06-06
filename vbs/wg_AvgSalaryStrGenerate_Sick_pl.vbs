@@ -22,7 +22,8 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   'avg_wage_out, avg_wage_sick_det
   Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
   Dim AvgWage, AvgWageRule
-  Dim Period, PeriodRule, MonthDays, ExclDays, CalcDays, IsFullMonth, Wage
+  Dim Period, PeriodRule, MonthDays, ExclDays, CalcDays, IsFullMonth, IsSpecMonth
+  Dim Wage
   Dim TabDays, TabHoures, NormDays, NormHoures
 
   T1 = Timer
@@ -45,9 +46,9 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   Scope = "wg_avg_wage_sick"
   
   'params
-  EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
-  FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
-  DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
+  EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
+  FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
+  DateCalc = gdcObject.FieldByName("USR$FROM").AsDateTime
   IsAvgWageDoc = gdcObject.FieldByName("USR$REFERENCE").AsInteger
 
   'clean
@@ -180,11 +181,11 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   Q_out.Termv = Tv_out
   'avg_wage_sick_det(EmplKey, FirstMoveKey,
   '                  Period, Rule,
-  '                  MonthDays, ExclDays, CalcDays, IsFullMonth,
+  '                  MonthDays, ExclDays, CalcDays, IsFullMonth, IsSpecMonth,
   '                  Wage,
   '                  TabDays, NormDays, TabHoures, NormHoures) :-
   P_det = "avg_wage_sick_det"
-  Set Tv_det = Creator.GetObject(13, "TgsPLTermv", "")
+  Set Tv_det = Creator.GetObject(14, "TgsPLTermv", "")
   Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_det.PredicateName = P_det
   Q_det.Termv = Tv_det
@@ -210,6 +211,16 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
     Do Until Q_det.EOF
       Period = Tv_det.ReadDate(2)
       PeriodRule = Tv_det.ReadAtom(3)
+      MonthDays = Tv_det.ReadInteger(4)
+      ExclDays= Tv_det.ReadInteger(5)
+      CalcDays = Tv_det.ReadInteger(6)
+      IsFullMonth = Tv_det.ReadInteger(7)
+      IsSpecMonth = Tv_det.ReadInteger(8)
+      Wage = Tv_det.ReadFloat(9)
+      TabDays = Tv_det.ReadFloat(10)
+      NormDays = Tv_det.ReadFloat(11)
+      TabHoures = Tv_det.ReadFloat(12)
+      NormHoures = Tv_det.ReadFloat(13)
       '
       Select Case AvgWageRule
         Case "by_calc_days", "by_calc_days_doc"
@@ -223,27 +234,22 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
             Case Else
               PeriodRule = ""
           End Select
+          '
+          If IsSpecMonth = 1 Then
+            PeriodRule = "условно полный"
+          End If
+          '
         Case "by_budget"
           PeriodRule = "от Ѕѕћ"
         Case "by_avg_wage"
           PeriodRule = "по среднему заработку"
-        Case "by_rate"
+        Case "by_rate", "by_rate_doc"
           PeriodRule = "от ставки"
         Case "by_not_full"
           PeriodRule = "по не полным мес€цам"
         Case Else
           PeriodRule = ""
       End Select
-      '
-      MonthDays = Tv_det.ReadInteger(4)
-      ExclDays= Tv_det.ReadInteger(5)
-      CalcDays = Tv_det.ReadInteger(6)
-      IsFullMonth = Tv_det.ReadInteger(7)
-      Wage = Tv_det.ReadFloat(8)
-      TabDays = Tv_det.ReadFloat(9)
-      NormDays = Tv_det.ReadFloat(10)
-      TabHoures = Tv_det.ReadFloat(11)
-      NormHoures = Tv_det.ReadFloat(12)
       '
       gdcSalary.Append
       gdcSalary.FieldByName("USR$ISFULL").AsVariant = IsFullMonth
