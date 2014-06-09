@@ -58,6 +58,7 @@
     % section twg_struct
     %wg_holiday,
     wg_vacation_slice,
+    wg_vacation_compensation,
     gd_const_budget,
     gd_const_AvgSalaryRB,
     %usr_wg_TblDayNorm,
@@ -2217,6 +2218,22 @@ struct_vacation_sql(DocKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
     new_param_list(Scope, NextType, Pairs1).
 
 %
+struct_vacation_in(DateCalc, _, _, AvgWage, _) :-
+    wg_vacation_compensation(DateFrom, Duration, 1),
+    atom_date(DateCalc, date(Year, Month, _)),
+    month_days(Year, Month, Days),
+    atom_date(AccDate, date(Year, Month, Days)),
+    atom_date(DateFrom, date(Y, M, _)),
+    atom_date(IncludeDate, date(Y, M, 1)),
+    Summa is Duration * AvgWage,
+    OutPairs = [
+                pAccDate-AccDate, pIncludeDate-IncludeDate,
+                pDuration-Duration, pSumma-Summa,
+                pDateBegin-AccDate, pDateEnd-AccDate,
+                pVcType-0
+                ],
+    new_param_list(struct_vacation, out, OutPairs),
+    !.
 struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
     atom_date(DateCalc, date(Year, Month, _)),
     month_days(Year, Month, Days),

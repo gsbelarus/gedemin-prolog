@@ -5,7 +5,7 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков и больничных"
-  Version: "1.0.0.46"
+  Version: "1.0.0.50"
   Optional: False
   Internal: True
 Objects: 
@@ -500,6 +500,7 @@ Objects:
                     % section twg_struct
                     %wg_holiday/1,
                     wg_vacation_slice/2,
+                    wg_vacation_compensation/3,
                     gd_const_budget/2,
                     gd_const_AvgSalaryRB/2,
                     %usr_wg_TblDayNorm/8,
@@ -1400,6 +1401,24 @@ Objects:
             pDocKey-_
             ]).
         
+        gd_pl_ds(wg_struct_vacation, kb, wg_vacation_compensation, 3, [
+            fDateFrom-integer, fDuration-float, fCompensation-integer
+            ]).
+        % wg_vacation_compensation(DateFrom, Duration, Compensation)
+        get_sql(wg_struct_vacation, kb, wg_vacation_compensation/3,
+        "SELECT \c
+          USR$FROM AS DateFrom, \c
+          COALESCE(USR$DURATION,0) AS Duration, \c
+          COALESCE(USR$COMPENSATION,0) AS Compensation \c
+        FROM \c
+          USR$WG_VACATION \c
+        WHERE \c
+          DOCUMENTKEY = pDocKey \c
+        ",
+            [
+            pDocKey-_
+            ]).
+        
         gd_pl_ds(wg_struct_sick, kb, gd_const_budget, 2, [
             fConstDate-date, fBudget-float
             ]).
@@ -1488,7 +1507,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-05T15:51:55+03:00
+      EDITIONDATE: 2014-06-09T16:28:06+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1636,6 +1655,7 @@ Objects:
         
         %% facts
         :-  init_data,
+            working_directory(_, 'kb'),
             [
             % section twg_avg_wage
             %  05. Начисление отпусков
@@ -1664,15 +1684,17 @@ Objects:
             % section twg_struct
             %wg_holiday,
             wg_vacation_slice,
+            wg_vacation_compensation,
             gd_const_budget,
             gd_const_AvgSalaryRB,
             %usr_wg_TblDayNorm,
             wg_job_ill_type
-            ].
+            ],
+            working_directory(_, '..').
         %%
         
         %% dynamic state
-        :- [param_list].
+        :- ['kb/param_list'].
         %%
         
         %% flag
@@ -3822,6 +3844,22 @@ Objects:
             new_param_list(Scope, NextType, Pairs1).
         
         %
+        struct_vacation_in(DateCalc, _, _, AvgWage, _) :-
+            wg_vacation_compensation(DateFrom, Duration, 1),
+            atom_date(DateCalc, date(Year, Month, _)),
+            month_days(Year, Month, Days),
+            atom_date(AccDate, date(Year, Month, Days)),
+            atom_date(DateFrom, date(Y, M, _)),
+            atom_date(IncludeDate, date(Y, M, 1)),
+            Summa is Duration * AvgWage,
+            OutPairs = [
+                        pAccDate-AccDate, pIncludeDate-IncludeDate,
+                        pDuration-Duration, pSumma-Summa,
+                        pDateBegin-AccDate, pDateEnd-AccDate,
+                        pVcType-0
+                        ],
+            new_param_list(struct_vacation, out, OutPairs),
+            !.
         struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
             atom_date(DateCalc, date(Year, Month, _)),
             month_days(Year, Month, Days),
@@ -4179,7 +4217,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-05T15:44:28+03:00
+      EDITIONDATE: 2014-06-09T18:26:17+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -5154,7 +5192,7 @@ Objects:
           Top = -8
           Width = 1382
           Height = 744
-          ActiveControl = usrg_PageControl1
+          ActiveControl = nil
           PixelsPerInch = 96
           TextHeight = 13
           object btnAccess: TButton
@@ -6127,6 +6165,8 @@ Objects:
                       Left = 100
                       Top = 33
                       Width = 180
+                      Fields = 'usr$wg_listnum'
+                      ListTable = 'GD_CONTACT C'
                       SortOrder = soAsc
                       Condition = 
                         'ID in (SELECT usr$emplkey FROM usr$wg_emplworkterm term LEFT JOI' +
@@ -6577,20 +6617,22 @@ Objects:
                         Visible = True
                       end
                       item
+                        Alignment = taRightJustify
                         Expanded = False
                         FieldName = 'USR$OLDSALARY'
                         ReadOnly = False
                         Title.Caption = 'Оклад'
-                        Width = -1
-                        Visible = False
+                        Width = 60
+                        Visible = True
                       end
                       item
+                        Alignment = taRightJustify
                         Expanded = False
                         FieldName = 'USR$NEWSALARY'
                         ReadOnly = False
                         Title.Caption = 'Текущий оклад'
-                        Width = -1
-                        Visible = False
+                        Width = 96
+                        Visible = True
                       end
                       item
                         Expanded = False
@@ -6862,7 +6904,7 @@ Objects:
               Category = 'wage'
               Caption = 'Редактировать'
               Checked = False
-              Enabled = False
+              Enabled = True
               HelpContext = 0
               Hint = 'Редактировать'
               ImageIndex = 1
@@ -6874,7 +6916,7 @@ Objects:
               Category = 'wage'
               Caption = 'Удалить'
               Checked = False
-              Enabled = False
+              Enabled = True
               HelpContext = 0
               Hint = 'Удалить'
               ImageIndex = 2
@@ -6999,7 +7041,7 @@ Objects:
           end
         end
         
-      EDITIONDATE: 2014-03-21T15:04:01+03:00
+      EDITIONDATE: 2014-06-09T15:20:04+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -13421,3 +13463,148 @@ Objects:
       FUNCTIONKEY: "147113844_1354510846 usrg_actGenerateOnExecute"
       DISABLE: ~
       EDITIONDATE: 2014-06-06T11:46:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147021956_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 147021954_119619099
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserComplexDocument147020774_119619099"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "Tgdc_dlgUserComplexDocument147020774_119619099SyncField"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include wg_SetWageDocLookupParams
+        '#include wg_RoundSum
+        option explicit
+        sub Tgdc_dlgUserComplexDocument147020774_119619099SyncField(Self, Field, SyncList)
+          call Inherited(Self, "SyncField", Array(Self, Field, SyncList))
+          
+          call Tgdc_dlgUserComplexDocument147020774_119619099SyncField_(Self, Field, SyncList)
+        end sub
+        
+        sub Tgdc_dlgUserComplexDocument147020774_119619099SyncField_(Self, Field, SyncList)
+          if Assigned(Field) then
+            ' шапка
+            if Field.DataSet.Self = Self.gdcObject.Self then
+              select case Field.FieldName
+                case "USR$TOTALDOCKEY"
+        '          Self.gdcObject.FieldByName("usr$emplkey").value = Null
+        '          Self.gdcObject.FieldByName("usr$firstmovekey").value = Null
+                  wg_SetWageDocLookupParams(Self)
+                case "USR$EMPLKEY"
+                  wg_SetWageDocLookupParams(Self)
+                case "USR$FROM"
+                  if Field.AsDateTime < Self.gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime then
+                    Self.gdcObject.FieldByName("usr$datebegin").AsDateTime = Field.AsDateTime
+                  end if
+                case "USR$DATEBEGIN"
+                  if Field.AsDateTime > Self.gdcObject.FieldByName("USR$DATEEND").AsDateTime then
+                    Self.gdcObject.FieldByName("USR$DATEEND").AsDateTime = Field.AsDateTime
+                  else
+                    Tgdc_dlgUserComplexDocument147020774_119619099SyncField_CalcDuration(Self)
+                  end if
+                case "USR$DATEEND"
+                  Tgdc_dlgUserComplexDocument147020774_119619099SyncField_CalcDuration(Self)
+                case "USR$COMPENSATION"
+                  If Field.AsInteger = 0 Then
+                    Tgdc_dlgUserComplexDocument147020774_119619099SyncField_CalcDuration(Self)
+                  End If
+        '        case "USR$DURATION"
+        
+                ' ср. заработок - пересчитываем сумму отпускных
+                case "USR$AVGSUMMA"
+                  Tgdc_dlgUserComplexDocument147020774_119619099SyncField_ReCalcStrSum(Self.gdcDetailObject)
+              end select
+            else           ' позиция
+              select case Field.FieldName
+                case "USR$DURATION"
+                  Self.gdcDetailObject.FieldByName("usr$summa").AsCurrency = wg_RoundSum(gdcBaseManager.GetIDByRUIDString(wg_FeeType_Holiday_RUID), _
+                    Field.AsCurrency * Self.gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency)
+              end select
+            end if
+          end if
+        end sub
+        
+        ' расчет продолжительности отпуска
+        sub Tgdc_dlgUserComplexDocument147020774_119619099SyncField_CalcDuration(ByRef Self)
+          dim gdcObject, wg_Structure
+          set gdcObject = Self.gdcObject
+        
+          if not gdcObject.FieldByName("USR$DATEEND").IsNull and _
+             not gdcObject.FieldByName("USR$DATEBEGIN").IsNull then
+        
+            set wg_Structure = Self.Objects("Structure")
+            gdcObject.FieldByName("USR$DURATION").AsInteger = _
+              wg_Structure.CalcHolidayDuration( _
+                gdcObject.FieldByName("usr$datebegin").AsVariant, _
+                gdcObject.FieldByName("usr$dateend").AsVariant)
+          else
+            gdcObject.FieldByName("USR$DURATION").AsInteger = 0
+          end if
+        end sub
+        
+        sub Tgdc_dlgUserComplexDocument147020774_119619099SyncField_ReCalcStrSum(ByRef DataSet)
+        ' пересохраняем позиции начисления для перерасчета сумм
+        
+          DataSet.Cancel
+          DataSet.First
+          while not DataSet.EOF
+            DataSet.Edit
+            DataSet.FieldByName("USR$DURATION").AsCurrency = _
+              DataSet.FieldByName("USR$DURATION").AsCurrency
+            DataSet.Post
+            DataSet.Next
+          wend
+          DataSet.First
+        end sub
+        
+      DISPLAYSCRIPT: | 
+        TGDC_DLGUSERCOMPLEXDOCUMENT147020774_119619099SYNCFIELD
+        TGDC_DLGUSERCOMPLEXDOCUMENT147020774_119619099SYNCFIELD_
+        TGDC_DLGUSERCOMPLEXDOCUMENT147020774_119619099SYNCFIELD_CALCDURATION
+        TGDC_DLGUSERCOMPLEXDOCUMENT147020774_119619099SYNCFIELD_RECALCSTRSUM
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147021953_119619099 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgHGR\\Tgdc_dlgUserComplexDocument\\Tgdc_dlgUserComplexDocument147020774_119619099"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNU
+        BQAAAEZJRUxEBQAAAEZJRUxEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNUCAAAAFNZ
+        TkNMSVNUCAAAAFNZTkNMSVNUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2014-06-09T18:04:12+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147025267_449804462 wg_SetWageDocLookupParams"
+          - 
+            ADDFUNCTIONKEY: "147804276_375143752 wg_RoundSum"
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 147021954_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserComplexDocument147020774_119619099"
+      PARENTNAME: "Tgdc_dlgUserComplexDocument"
+      OBJECTKEY: "147021953_119619099 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgHGR\\Tgdc_dlgUserComplexDocument\\Tgdc_dlgUserComplexDocument147020774_119619099"
+      EVENTNAME: "SYNCFIELD"
+      FUNCTIONKEY: "147021956_119619099 Tgdc_dlgUserComplexDocument147020774_119619099SyncField"
+      DISABLE: ~
+      EDITIONDATE: 2014-06-09T18:04:12+03:00

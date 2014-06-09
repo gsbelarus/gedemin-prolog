@@ -37,6 +37,7 @@ wg_valid_sql([
             % section twg_struct
             %wg_holiday/1,
             wg_vacation_slice/2,
+            wg_vacation_compensation/3,
             gd_const_budget/2,
             gd_const_AvgSalaryRB/2,
             %usr_wg_TblDayNorm/8,
@@ -928,6 +929,24 @@ WHERE \c
 UNION ALL \c
 SELECT \c
   4 AS VcType, COALESCE(USR$COMPENSATIONDAY,0) AS Slice \c
+FROM \c
+  USR$WG_VACATION \c
+WHERE \c
+  DOCUMENTKEY = pDocKey \c
+",
+    [
+    pDocKey-_
+    ]).
+
+gd_pl_ds(wg_struct_vacation, kb, wg_vacation_compensation, 3, [
+    fDateFrom-integer, fDuration-float, fCompensation-integer
+    ]).
+% wg_vacation_compensation(DateFrom, Duration, Compensation)
+get_sql(wg_struct_vacation, kb, wg_vacation_compensation/3,
+"SELECT \c
+  USR$FROM AS DateFrom, \c
+  COALESCE(USR$DURATION,0) AS Duration, \c
+  COALESCE(USR$COMPENSATION,0) AS Compensation \c
 FROM \c
   USR$WG_VACATION \c
 WHERE \c
