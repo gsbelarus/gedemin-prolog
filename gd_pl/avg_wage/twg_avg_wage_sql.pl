@@ -443,8 +443,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblCharge, 10, [
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
         ]).
-% usr_wg_TblCharge(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin,
-%   Debit, FeeTypeKey, DOW, HOW, PayPeriod)
+% usr_wg_TblCharge(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, FeeTypeKey, DOW, HOW, PayPeriod)
 get_sql(Scope, kb, usr_wg_TblCharge/10,
 "SELECT \c
   tch.USR$EMPLKEY, \c
@@ -553,7 +552,7 @@ JOIN \c
     ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \c
 WHERE \c
   ft.USR$WG_FEEGROUPKEY IN \c
-(SELECT id FROM GD_P_GETID(pFeeGroupKey_ruid)) \c
+    (SELECT id FROM GD_P_GETID(pFeeGroupKey_ruid)) \c
 ",
     [
     pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_ruid-_

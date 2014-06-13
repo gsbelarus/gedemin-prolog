@@ -1746,7 +1746,9 @@ month_bad_type(Scope, PK, Y-M) :-
 usr_wg_TblCharge_mix(Scope, ArgPairs, ChargeOption) :-
     ChargeOption = tbl_charge,
     get_data(Scope, kb, usr_wg_TblCharge, [fPayPeriod-PayPeriod|ArgPairs]),
-    PayPeriod < 2.
+    once( ( PayPeriod < 2
+          ; \+ memberchk(Scope, [wg_avg_wage_avg]) )
+        ).
 % или начисление из dbf
 % с согласованием спецификации по TblCharge
 usr_wg_TblCharge_mix(Scope, ArgPairs, ChargeOption) :-

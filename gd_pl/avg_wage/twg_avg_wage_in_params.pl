@@ -23,10 +23,13 @@ twg_avg_wage_in_params:-
         pMonthQty-12, pAvgDays-29.7,
         pFeeGroupKey_ruid-'147071456,274788016',
         pFeeGroupKeyNoCoef_ruid-'147757383,84733194',
+        % А, УБЗ, Т
         pBadHourType_xid_IN-'147650804, 147650786, 147650802',
         pBadHourType_dbid-119619099,
+        % Больничный (80%)
         pBadFeeType_xid_IN-'151000730',
         pBadFeeType_dbid-2109681374,
+        % Ненормированный график
         pSpecDep_ruid-'156913837,131572570'
         ]),
     fail.
