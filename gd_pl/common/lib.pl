@@ -30,6 +30,25 @@ to_currency(NumIn, NumOut, Round) :-
     number(NumIn), integer(Round),
     NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
     !.
+    
+% round_sum(+SumIn, +SumOut, +RoundType, +RoundValue)
+round_sum(SumIn, SumOut, RoundType, RoundValue) :-
+    number(SumIn), integer(RoundType), number(RoundValue),
+    Delta = 0.00001,
+    round_sum(SumIn, SumOut, RoundType, RoundValue, Delta),
+    !.
+% round_sum(+SumIn, +SumOut, +RoundType, +RoundValue, +Delta)
+round_sum(SumIn, SumOut, 1, RoundValue, Delta) :-
+    SumOut is round((SumIn + Delta) / 10) * 10,
+    !.
+round_sum(SumIn, SumOut, 2, RoundValue, Delta) :-
+    SumOut is round((SumIn + Delta) / RoundValue) * RoundValue,
+    !.
+round_sum(SumIn, SumOut, 3, RoundValue, Delta) :-
+    SumOut is float_integer_part((SumIn + Delta) / RoundValue) * RoundValue,
+    !.
+round_sum(Sum, Sum, _, _, _) :-
+    !.
 
 % make_list(+Num, -List)
 make_list(Num, List) :-
