@@ -225,7 +225,7 @@ WHERE \c
 
 gd_pl_ds(Scope, kb, usr_wg_FeeType_Dict, 6, [
     fID-integer, fAlias-string, fName-string,
-    RoundByFeeType-integer, RoundType-integer, RoundValue-float
+    fRoundByFeeType-integer, fRoundType-integer, fRoundValue-float
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony
@@ -509,6 +509,8 @@ WHERE \c
   calc.USR$DATEBEGIN < \'pDateCalcTo\' \c
   AND \c
   COALESCE(calc.USR$DATEEND, '2100-01-01') >= \'pDateCalcFrom\' \c
+  AND \c
+  COALESCE(calc.USR$CHILDCOUNT, 0) > 0 \c
 ORDER BY \c
   calc.USR$DATEBEGIN \c
 ",

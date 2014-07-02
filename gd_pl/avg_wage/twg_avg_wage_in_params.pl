@@ -53,8 +53,8 @@ twg_avg_wage_in_params:-
     fail.
 twg_avg_wage_in_params:-
     new_param_list(wg_struct_sick, in, [
-        pBudgetPart-0.5,
         pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
+        pBugetCalcType-1, pBudgetPart-0.5,
         pJobIllType_ruid-'147036273,151520244',
         pBudget_ruid-'147073065,1224850260',
         pAvgSalaryRB_ruid-'147445419,274788016',

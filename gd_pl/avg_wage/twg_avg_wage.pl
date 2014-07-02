@@ -2103,7 +2103,7 @@ struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity,
     new_param_list(Scope, NextType, Pairs1).
 
 %
-struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType) :-
+struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType0, BudgetOption, IsPregnancy, IllType) :-
     Scope = wg_struct_sick, Type = in, NextType = run,
     % шаблон первичного ключа
     PK = [pEmplKey-_, pFirstMoveKey-_],
@@ -2121,6 +2121,9 @@ struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, Is
     date_diff(DateBegin, Duration0, DateEnd),
     Duration is Duration0 + 1,
     %
+    ( BudgetOption = 1 -> get_param(Scope, Type, pBugetCalcType-CalcType)
+    ; CalcType = CalcType0
+    ),
     sick_slice_list(Scope, Type, CalcType, Duration, SliceList0),
     %
     date_diff(DateCalc, DurationBefore, DateBegin),

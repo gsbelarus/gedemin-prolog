@@ -1,0 +1,2352 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 195379689_166214404
+  Name: "GS.Зарплата.Пролог.Алименты и штрафы"
+  Caption: "Алименты и штрафы"
+  Version: "1.0.0.10"
+  Optional: False
+  Internal: True
+Uses: 
+  - "528622143_99701464 GS.Зарплата.Пролог.Начисление отпусков и больничных"
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 195362816_166214404
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 195362815_166214404
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "twg_fee_in_params"
+      COMMENT: ~
+      SCRIPT: | 
+        %% twg_fee_in_params
+        %  входные параметры для twg_fee
+        %
+        
+        %:- ['../common/lib', '../common/params'].
+        
+        twg_fee_in_params:-
+            Type = in, Section = pCommon,
+            member(Scope, [
+                wg_fee_alimony
+                ]),
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % записать общие входные параметры
+            new_param_list(Scope, Type, [
+                Section-1,
+                pStartDate-'2012-01-01',
+                pKindOfWork_Basic_ruid-'147017405,119619099',
+                pPayFormSalary_ruid-'147009181,119619099',
+                pFeeGroupKey_IncomeTax_ruid-'147021000,274788016',  % Облагается ПН
+                pDocType_Total_ruid-'147567052,119619099',
+                pTblCal_DocType_Plan_ruid-'147567935,1514418708',
+                pTblCal_DocType_Fact_ruid-'187613422,1596169984'
+                ]),
+            fail.
+        twg_fee_in_params:-
+            Type = in, Section = pAlimony,
+            member(Scope, [
+                wg_fee_alimony
+                ]),
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % записать входные параметры
+            new_param_list(Scope, Type, [
+                Section-1,
+                pFeeGroupKey_ruid-'147732349,375143752',           % Для алиментов
+                pDocType_Alimony_ruid-'147067079,453357870',       % 04. Алименты
+                pVar_BV_ruid-'147021364,256548741',           % БВ
+                pVar_ForAlimony_ruid-'147068435,453357870',   % ДЛЯАЛИМЕНТОВ
+                pBudget_ruid-'147073065,1224850260', % БПМ
+                pFeeType_Alimony_ruid-'147567138,119619099',     % Алименты
+                pFeeType_HolidayComp_ruid-'147076028,274788016', % Компенсация отпуска
+                pFeeType_IncomeTax_ruid-'147567139,119619099',   % Подоходный
+                pFeeType_TransferDed_ruid-'147069035,453357870', % Расходы по переводу
+                pFeeType_AlimonyDebt_ruid-'147067786,453357870'  % Долг по алиментам
+                ]),
+            fail.
+        twg_fee_in_params:-
+            Type = fit, Section = 1,
+            member(Scope, [
+                wg_fee_alimony
+                ]),
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % записать входные параметры
+            new_param_list(Scope, Type, [
+                pRestPercent-0.3, % Процент остатка
+                pPercent-1.0,     % Процент списания долга
+                pCalcDelta-10000  % Дельта для расчета при нехватке средств
+                ]),
+            fail.
+        twg_fee_in_params:-
+            Type = fit, Section = 2,
+            member(Scope, [
+                wg_fee_alimony
+                ]),
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % Процент от БПМ (не менее) от количества детей
+            member([ChildQtyCmp, LivingWagePerc],
+                [ ['=:=0', 0.0], ['=1', 0.5], ['=2', 0.75], ['>=3', 1.0] ]),
+            % записать входные параметры
+            new_param_list(Scope, Type,
+                [pChildQtyCmp-ChildQtyCmp, pLivingWagePerc-LivingWagePerc]),
+            fail.
+        twg_fee_in_params.
+        
+        :- twg_fee_in_params.
+        
+         %
+        %%
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-07-02T17:08:12+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 195362817_166214404
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 195362815_166214404
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "twg_fee_sql"
+      COMMENT: ~
+      SCRIPT: | 
+        %% twg_fee_sql
+        %  спецификации и sql-шаблоны для базы знаний twg_fee
+        %
+        
+        :-
+            GetSQL = [gd_pl_ds/5, get_sql/5],
+            %dynamic(GetSQL),
+            multifile(GetSQL),
+            discontiguous(GetSQL).
+        
+        %
+        wg_valid_sql(
+                    [
+                    usr_wg_MovementLine/15,
+                    usr_wg_TblCharge/11,
+                    usr_wg_TblCharge_AlimonyDebt/9,
+                    usr_wg_FeeType/4,
+                    usr_wg_FeeType_Taxable/3,
+                    usr_wg_FeeType_Dict/6,
+                    usr_wg_TblCalLine/7,
+                    usr_wg_TblCal_FlexLine/68,
+                    usr_wg_FCRate/2,
+                    gd_const_budget/2,
+                    usr_wg_Variables/2,
+                    usr_wg_Alimony/12,
+                    usr_wg_TransferType/4,
+                    usr_wg_TransferScale/3,
+                    usr_wg_AlimonyDebt/8,
+                    -
+                    ]).
+        
+        %
+        is_valid_sql(Functor/Arity) :-
+            wg_valid_sql(ValidSQL),
+            member(Functor/Arity, ValidSQL),
+            !.
+        
+        /* база знаний */
+        
+        gd_pl_ds(Scope, kb, usr_wg_MovementLine, 15, [
+            fEmplKey-integer, fDocumentKey-integer, fFirstMoveKey-integer,
+            fMoveYear-integer, fMoveMonth-integer, fDateBegin-date,
+            fScheduleKey-integer, fMovementType-integer,
+            fRate-float, fListNumber-string, fMSalary-float,
+            fPayFormKey-integer, fSalaryKey-integer, fTSalary-float, fAvgWageRate-float
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
+        %   MoveYear, MoveMonth, DateBegin,
+        %   ScheduleKey, MovementType, Rate, ListNumber, MSalary,
+        %   PayFormKey, SalaryKey, TSalary, AvgWageRate)
+        get_sql(Scope, kb, usr_wg_MovementLine/15,
+        "SELECT \c
+          ml.USR$EMPLKEY, \c
+          ml.DOCUMENTKEY, \c
+          ml.USR$FIRSTMOVE AS FirstMoveKey, \c
+          EXTRACT(YEAR FROM ml.USR$DATEBEGIN) AS MoveYear, \c
+          EXTRACT(MONTH FROM ml.USR$DATEBEGIN) AS MoveMonth, \c
+          ml.USR$DATEBEGIN, \c
+          ml.USR$SCHEDULEKEY, \c
+          ml.USR$MOVEMENTTYPE, \c
+          COALESCE(ml.USR$RATE, 0) AS Rate, \c
+          ml.USR$LISTNUMBER, \c
+          COALESCE(ml.USR$MSALARY, 0) AS MSalary, \c
+          COALESCE(ml.USR$PAYFORMKEY, 0) AS PayFormKey, \c
+          (SELECT id FROM GD_P_GETID(pPayFormSalary_ruid)) AS SalaryKey, \c
+          COALESCE(ml.USR$TSALARY, 0) AS TSalary, \c
+          8 * COALESCE(USR$THOURRATE, 0) AS AvgWageRate \c
+        FROM \c
+          USR$WG_MOVEMENTLINE ml \c
+        JOIN \c
+          USR$WG_KINDOFWORK kw \c
+            ON kw.ID = ml.USR$KINDOFWORKKEY \c
+        WHERE \c
+          ml.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          ml.USR$KINDOFWORKKEY = \c
+            (SELECT id FROM GD_P_GETID(pKindOfWork_Basic_ruid)) \c
+        ORDER BY \c
+          ml.USR$EMPLKEY, \c
+          ml.USR$FIRSTMOVE, \c
+          ml.USR$DATEBEGIN \c
+        ",
+            [
+            pEmplKey-_, pPayFormSalary_ruid-_, pKindOfWork_Basic_ruid-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(Scope, kb, usr_wg_TblCharge, 11, [
+            fDocKey-integer, fEmplKey-integer, fFirstMoveKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+            fDebit-float, fCredit-float, fFeeTypeKey-integer,
+            fDOW-float, fHOW-float
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        % usr_wg_TblCharge(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, DOW, HOW)
+        get_sql(Scope, kb, usr_wg_TblCharge/11,
+        "SELECT \c
+          tch.USR$DOCUMENTKEY, \c
+          tch.USR$EMPLKEY, \c
+          tch.USR$FIRSTMOVEKEY, \c
+          EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear, \c
+          EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth, \c
+          tch.USR$DATEBEGIN, \c
+          tch.USR$DEBIT, \c
+          tch.USR$CREDIT, \c
+          tch.USR$FEETYPEKEY, \c
+          tch.USR$DOW, \c
+          tch.USR$HOW \c
+        FROM \c
+          USR$WG_TBLCHARGE tch \c
+        WHERE \c
+          tch.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          tch.USR$TOTALDOCKEY = pTotalDocKey \c
+        ",
+            [
+            pEmplKey-_, pTotalDocKey-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(Scope, kb, usr_wg_TblCharge_AlimonyDebt, 9, [
+            fDocKey-integer, fEmplKey-integer, fFirstMoveKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+            fDebit-float, fCredit-float, fFeeTypeKey-integer
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        % usr_wg_TblCharge_AlimonyDebt(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey)
+        get_sql(Scope, kb, usr_wg_TblCharge_AlimonyDebt/9,
+        "SELECT \c
+          tch.USR$DOCUMENTKEY, \c
+          tch.USR$EMPLKEY, \c
+          tch.USR$FIRSTMOVEKEY, \c
+          EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear, \c
+          EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth, \c
+          tch.USR$DATEBEGIN, \c
+          tch.USR$DEBIT, \c
+          tch.USR$CREDIT, \c
+          tch.USR$FEETYPEKEY \c
+        FROM \c
+          USR$WG_TBLCHARGE tch \c
+        WHERE \c
+          tch.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          tch.USR$DATEBEGIN < \'pDateCalcFrom\' \c
+          AND \c
+          tch.USR$FEETYPEKEY = \c
+            (SELECT id FROM GD_P_GETID(pFeeType_AlimonyDebt_ruid)) \c
+        ",
+            [
+            pEmplKey-_, pDateCalcFrom-_, pFeeType_AlimonyDebt_ruid-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(Scope, kb, usr_wg_FeeType, 4, [
+            fEmplKey-integer,
+            fFeeGroupKey-integer, fFeeTypeKey-integer, fAvgDayHOW-integer
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        % usr_wg_FeeType(EmplKey, FeeGroupKey, FeeTypeKey, AvgDayHOW)
+        get_sql(Scope, kb, usr_wg_FeeType/4,
+        "SELECT \c
+          pEmplKey AS EmplKey,  \c
+          ft.USR$WG_FEEGROUPKEY, \c
+          ft.USR$WG_FEETYPEKEY, \c
+          ft_avg.USR$AVGDAYHOW \c
+        FROM \c
+          USR$CROSS179_256548741 ft \c
+        JOIN \c
+          USR$WG_FEETYPE ft_avg \c
+            ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \c
+        WHERE \c
+          ft.USR$WG_FEEGROUPKEY = \c
+            (SELECT id FROM GD_P_GETID(pFeeGroupKey_ruid)) \c
+        ",
+            [
+            pEmplKey-_, pFeeGroupKey_ruid-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(Scope, kb, usr_wg_FeeType_Taxable, 3, [
+            fEmplKey-integer,
+            fFeeGroupKey-integer, fFeeTypeKey-integer
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        % usr_wg_FeeType_Taxable(EmplKey, FeeGroupKey, FeeTypeKey)
+        get_sql(Scope, kb, usr_wg_FeeType_Taxable/3,
+        "SELECT \c
+          pEmplKey AS EmplKey,  \c
+          ft.USR$WG_FEEGROUPKEY, \c
+          ft.USR$WG_FEETYPEKEY \c
+        FROM \c
+          USR$CROSS179_256548741 ft \c
+        JOIN \c
+          USR$WG_FEETYPE ft_avg \c
+            ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \c
+        WHERE \c
+          ft.USR$WG_FEEGROUPKEY = \c
+            (SELECT id FROM GD_P_GETID(pFeeGroupKey_IncomeTax_ruid)) \c
+        ",
+            [
+            pEmplKey-_, pFeeGroupKey_IncomeTax_ruid-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(Scope, kb, usr_wg_FeeType_Dict, 6, [
+            fID-integer, fAlias-string, fName-string,
+            fRoundByFeeType-integer, fRoundType-integer, fRoundValue-float
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        % usr_wg_FeeType_Dict(ID, Alias, Name, RoundByFeeType, RoundType, RoundValue)
+        get_sql(Scope, kb, usr_wg_FeeType_Dict/6,
+        "SELECT \c
+          ft.ID, \c
+          CASE ft.ID \c
+            WHEN \c
+              (SELECT id FROM GD_P_GETID(pFeeType_Alimony_ruid)) \c
+                THEN \'ftAlimony\' \c
+            WHEN \c
+              (SELECT id FROM GD_P_GETID(pFeeType_HolidayComp_ruid)) \c
+                THEN \'ftHolidayComp\' \c
+            WHEN \c
+              (SELECT id FROM GD_P_GETID(pFeeType_IncomeTax_ruid)) \c
+                THEN \'ftIncomeTax\' \c
+            WHEN \c
+              (SELECT id FROM GD_P_GETID(pFeeType_TransferDed_ruid)) \c
+                THEN \'ftTransferDed\' \c
+            WHEN \c
+              (SELECT id FROM GD_P_GETID(pFeeType_AlimonyDebt_ruid)) \c
+                THEN \'ftAlimonyDebt\' \c
+            ELSE \c
+                \'unknown\' \c
+          END \c
+            AS Alias, \c
+          USR$NAME, \c
+          USR$ROUNDBYFEETYPE, \c
+          USR$ROUNDTYPE, \c
+          USR$ROUNDVALUE \c
+        FROM \c
+          USR$WG_FEETYPE ft \c
+        ",
+            [
+            pFeeType_Alimony_ruid-_,
+            pFeeType_HolidayComp_ruid-_,
+            pFeeType_IncomeTax_ruid-_,
+            pFeeType_TransferDed_ruid-_,
+            pFeeType_AlimonyDebt_ruid-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(Scope, kb, usr_wg_TblCalLine, 7, [
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDate-date,
+            fDuration-float, fHoureType-integer
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        % usr_wg_TblCalLine(EmplKey, FirstMoveKey, CalYear, CalMonth, Date, Duration, HoureType)
+        get_sql(Scope, kb, usr_wg_TblCalLine/7,
+        "SELECT \c
+          tc.USR$EMPLKEY, \c
+          tc.USR$FIRSTMOVEKEY, \c
+          EXTRACT(YEAR FROM tcl.USR$DATE) AS CalYear, \c
+          EXTRACT(MONTH FROM tcl.USR$DATE) AS CalMonth, \c
+          tcl.USR$DATE, \c
+          tcl.USR$DURATION, \c
+          tcl.USR$HOURTYPE \c
+        FROM \c
+          USR$WG_TBLCAL tc \c
+        JOIN \c
+          USR$WG_TBLCALLINE tcl \c
+            ON tcl.MASTERKEY = tc.DOCUMENTKEY \c
+        WHERE \c
+          tc.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          tcl.USR$DATE >= \'pDateCalcFrom\' \c
+          AND \c
+          tcl.USR$DATE < \'pDateCalcTo\' \c
+        ORDER BY \c
+          tc.USR$EMPLKEY, \c
+          tc.USR$FIRSTMOVEKEY, \c
+          tcl.USR$DATE \c
+        ",
+            [
+            pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, [
+            fFlexType-string,
+            fEmplKey-integer, fFirstMoveKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+            fS1-variant, fH1-variant, fS2-variant, fH2-variant,
+            fS3-variant, fH3-variant, fS4-variant, fH4-variant,
+            fS5-variant, fH5-variant, fS6-variant, fH6-variant,
+            fS7-variant, fH7-variant, fS8-variant, fH8-variant,
+            fS9-variant, fH9-variant, fS10-variant, fH10-variant,
+            fS11-variant, fH11-variant, fS12-variant, fH12-variant,
+            fS13-variant, fH13-variant, fS14-variant, fH14-variant,
+            fS15-variant, fH15-variant, fS16-variant, fH16-variant,
+            fS17-variant, fH17-variant, fS18-variant, fH18-variant,
+            fS19-variant, fH19-variant, fS20-variant, fH20-variant,
+            fS21-variant, fH21-variant, fS22-variant, fH22-variant,
+            fS23-variant, fH23-variant, fS24-variant, fH24-variant,
+            fS25-variant, fH25-variant, fS26-variant, fH26-variant,
+            fS27-variant, fH27-variant, fS28-variant, fH28-variant,
+            fS29-variant, fH29-variant, fS30-variant, fH30-variant,
+            fS31-variant, fH31-variant
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        % usr_wg_TblCal_FlexLine(FlexType, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
+        get_sql(Scope, kb, usr_wg_TblCal_FlexLine/68,
+        "SELECT \c
+          CASE gd.DOCUMENTTYPEKEY \c
+            WHEN \c
+              (SELECT id FROM GD_P_GETID(pTblCal_DocType_Plan_ruid)) \c
+                THEN \'plan\' \c
+            WHEN \c
+              (SELECT id FROM GD_P_GETID(pTblCal_DocType_Fact_ruid)) \c
+                THEN \'fact\' \c
+            ELSE \c
+                \'unknown\' \c
+          END \c
+            AS FlexType, \c
+          tcfl.USR$EMPLKEY, \c
+          tcfl.USR$FIRSTMOVEKEY, \c
+          EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear, \c
+          EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth, \c
+          t.USR$DATEBEGIN, \c
+          tcfl.USR$S1, tcfl.USR$H1, tcfl.USR$S2, tcfl.USR$H2, \c
+          tcfl.USR$S3, tcfl.USR$H3, tcfl.USR$S4, tcfl.USR$H4, \c
+          tcfl.USR$S5, tcfl.USR$H5, tcfl.USR$S6, tcfl.USR$H6, \c
+          tcfl.USR$S7, tcfl.USR$H7, tcfl.USR$S8, tcfl.USR$H8, \c
+          tcfl.USR$S9, tcfl.USR$H9, tcfl.USR$S10, tcfl.USR$H10, \c
+          tcfl.USR$S11, tcfl.USR$H11, tcfl.USR$S12, tcfl.USR$H12, \c
+          tcfl.USR$S13, tcfl.USR$H13, tcfl.USR$S14, tcfl.USR$H14, \c
+          tcfl.USR$S15, tcfl.USR$H15, tcfl.USR$S16, tcfl.USR$H16, \c
+          tcfl.USR$S17, tcfl.USR$H17, tcfl.USR$S18, tcfl.USR$H18, \c
+          tcfl.USR$S19, tcfl.USR$H19, tcfl.USR$S20, tcfl.USR$H20, \c
+          tcfl.USR$S21, tcfl.USR$H21, tcfl.USR$S22, tcfl.USR$H22, \c
+          tcfl.USR$S23, tcfl.USR$H23, tcfl.USR$S24, tcfl.USR$H24, \c
+          tcfl.USR$S25, tcfl.USR$H25, tcfl.USR$S26, tcfl.USR$H26, \c
+          tcfl.USR$S27, tcfl.USR$H27, tcfl.USR$S28, tcfl.USR$H28, \c
+          tcfl.USR$S29, tcfl.USR$H29, tcfl.USR$S30, tcfl.USR$H30, \c
+          tcfl.USR$S31, tcfl.USR$H31 \c
+        FROM \c
+          GD_DOCUMENT gd \c
+        JOIN \c
+          USR$WG_TBLCAL_FLEXLINE tcfl \c
+            ON gd.ID = tcfl.DOCUMENTKEY \c
+        JOIN \c
+          USR$WG_TBLCAL_FLEX tcf \c
+            ON tcf.DOCUMENTKEY = tcfl.MASTERKEY \c
+        JOIN \c
+          USR$WG_TOTAL t \c
+            ON t.DOCUMENTKEY = tcf.USR$TOTALDOCKEY \c
+        WHERE \c
+          tcfl.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          t.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
+          AND \c
+          t.USR$DATEBEGIN < \'pDateCalcTo\' \c
+         ORDER BY \c
+           tcfl.USR$EMPLKEY, \c
+           tcfl.USR$FIRSTMOVEKEY, \c
+           t.USR$DATEBEGIN \c
+        ",
+            [
+            pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_,
+            pTblCal_DocType_Plan_ruid-_, pTblCal_DocType_Fact_ruid-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(wg_fee_alimony, kb, usr_wg_FCRate, 2, [
+            fDate-date, fMinWage-float
+            ]).
+        % usr_wg_FCRate(Date, MinWage)
+        get_sql(wg_fee_alimony, kb, usr_wg_FCRate/2,
+        "SELECT \c
+          fc.USR$WG_DATE, \c
+          fc.USR$WG_MINWAGE \c
+        FROM \c
+          USR$WG_FCRATE fc \c
+        WHERE \c
+          fc.USR$WG_DATE >= \'pStartDate\' \c
+        ORDER BY \c
+          fc.USR$WG_DATE \c
+        ",
+            [
+            pStartDate-_
+            ]).
+        
+        gd_pl_ds(wg_fee_alimony, kb, gd_const_budget, 2, [
+            fConstDate-date, fBudget-float
+            ]).
+        % gd_const_budget(ConstDate, Budget)
+        get_sql(wg_fee_alimony, kb, gd_const_budget/2,
+        "SELECT \c
+          cv.CONSTDATE, \c
+          CAST(cv.CONSTVALUE AS DECIMAL(15,4)) AS Budget \c
+        FROM \c
+          GD_CONSTVALUE cv \c
+        JOIN \c
+          GD_CONST c \c
+            ON c.ID  =  cv.CONSTKEY \c
+        WHERE \c
+          cv.CONSTDATE >= \'pStartDate\' \c
+          AND \c
+          cv.CONSTKEY = \c
+            (SELECT id FROM GD_P_GETID(pBudget_ruid)) \c
+        ORDER BY \c
+          cv.CONSTDATE \c
+        ",
+            [
+            pStartDate-_, pBudget_ruid-_
+            ]).
+        
+        gd_pl_ds(wg_fee_alimony, kb, usr_wg_Variables, 2, [
+            fAlias-string, fName-string
+            ]).
+        % usr_wg_Varuables(Alias, Name)
+        get_sql(wg_fee_alimony, kb, usr_wg_Variables/2,
+        "SELECT \c
+          \'vBV\' AS Alias, \c
+          USR$NAME \c
+        FROM \c
+          USR$WG_VARIABLES \c
+        WHERE \c
+          ID = (SELECT id FROM GD_P_GETID(pVar_BV_ruid)) \c
+        UNION ALL \c
+        SELECT \c
+          \'vForAlimony\' AS Alias, \c
+          USR$NAME \c
+        FROM \c
+          USR$WG_VARIABLES \c
+        WHERE \c
+          ID = (SELECT id FROM GD_P_GETID(pVar_ForAlimony_ruid)) \c
+        ",
+            [
+            pVar_BV_ruid-_, pVar_ForAlimony_ruid-_
+            ]).
+        
+        gd_pl_ds(wg_fee_alimony, kb, usr_wg_Alimony, 12, [
+            fDocKey-integer, fEmplKey-integer,
+            fDateBegin-date, fDateEnd-date,
+            fDebtSum-float, fFormula-string,
+            fTransferTypeKey-integer, fRecipient-integer,
+            fRestPercent-float, fChildCount-integer,
+            fPercent-float, fLivingWagePerc-float
+            ]).
+        % usr_wg_Alimony(DocKey, EmplKey, DateBegin, DateEnd, DebtSum, Formula, TransferTypeKey, Recipient, RestPercent, ChildCount, Percent, LivingWagePerc)
+        get_sql(wg_fee_alimony, kb, usr_wg_Alimony/12,
+        "SELECT \c
+          calc.DOCUMENTKEY, \c
+          calc.USR$EMPLKEY, \c
+          calc.USR$DATEBEGIN, \c
+          COALESCE(calc.USR$DATEEND, CAST(\'2100-01-01\' AS DATE)) AS DateEnd, \c
+          calc.USR$DEBTSUM, \c
+          calc.USR$FORMULA, \c
+          calc.USR$TRANSFERTYPEKEY, \c
+          calc.USR$RECIPIENT, \c
+          calc.USR$RESTPERCENT, \c
+          calc.USR$CHILDCOUNT, \c
+          calc.USR$PERCENT, \c
+          calc.USR$LIVINGWAGEPERC \c
+        FROM \c
+          USR$WG_ALIMONY calc \c
+        JOIN \c
+          GD_DOCUMENT d
+            ON calc.DOCUMENTKEY = d.ID \c
+        WHERE \c
+          d.COMPANYKEY = <COMPANYKEY/> \c
+          AND \c
+          d.DOCUMENTTYPEKEY = (SELECT id FROM GD_P_GETID(pDocType_Alimony_ruid)) \c
+          AND \c
+          calc.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          calc.USR$DATEBEGIN < \'pDateCalcTo\' \c
+          AND \c
+          COALESCE(calc.USR$DATEEND, '2100-01-01') >= \'pDateCalcFrom\' \c
+          AND \c
+          COALESCE(calc.USR$CHILDCOUNT, 0) > 0 \c
+        ORDER BY \c
+          calc.USR$DATEBEGIN \c
+        ",
+            [
+            pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_, pDocType_Alimony_ruid-_
+            ]).
+        
+        gd_pl_ds(wg_fee_alimony, kb, usr_wg_TransferType, 4, [
+            fID-integer, fParent-integer,
+            fDateBegin-date, fName-string
+            ]).
+        % usr_wg_TransferType(ID, Parent, DateBegin, Name)
+        get_sql(wg_fee_alimony, kb, usr_wg_TransferType/4,
+        "SELECT \c
+          tt.ID, \c
+          COALESCE(tt.PARENT, 0) AS Parent, \c
+          COALESCE(tt.USR$DATE, current_date) AS DateBegin, \c
+          tt.USR$NAME \c
+        FROM \c
+          USR$WG_TRANSFERTYPE tt \c
+        ORDER BY \c
+          Parent, DateBegin, tt.ID \c
+        ",
+            [
+            ]).
+        
+        gd_pl_ds(wg_fee_alimony, kb, usr_wg_TransferScale, 3, [
+            fTranferTypeKey-integer,
+            fStartSum-float, fPercent-float
+            ]).
+        % usr_wg_TransferScale(TranferTypeKey, StartSum, Percent)
+        get_sql(wg_fee_alimony, kb, usr_wg_TransferScale/3,
+        "SELECT \c
+          ts.USR$TRANSFERTYPEKEY, \c
+          COALESCE(ts.USR$STARTSUM, 0) AS StartSum, \c
+          COALESCE(ts.USR$PERCENT, 0) AS Percent \c
+        FROM \c
+          USR$WG_TRANSFERSCALE ts \c
+        ORDER BY \c
+          ts.USR$TRANSFERTYPEKEY, StartSum \c
+        ",
+            [
+            ]).
+        
+        gd_pl_ds(wg_fee_alimony, kb, usr_wg_AlimonyDebt, 8, [
+            fDocKey-integer, fEmplKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+            fAlimonyKey-integer, fTotalDocKey-integer, fDebtSum-float
+            ]).
+        % usr_wg_AlimonyDebt(DocKey, EmplKey, CalYear, CalMonth, DateBegin, AlimonyKey, TotalDocKey, DebtSum)
+        get_sql(wg_fee_alimony, kb, usr_wg_AlimonyDebt/8,
+        "SELECT \c
+          aldebt.DOCUMENTKEY, \c
+          al.USR$EMPLKEY, \c
+          EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear, \c
+          EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth, \c
+          t.USR$DATEBEGIN, \c
+          aldebt.USR$ALIMONYKEY, \c
+          aldebt.USR$TOTALDOCKEY, \c
+          aldebt.USR$DEBTSUM \c
+        FROM \c
+          USR$WG_ALIMONYDEBT aldebt \c
+        JOIN \c
+          USR$WG_ALIMONY al \c
+            ON al.DOCUMENTKEY = aldebt.USR$ALIMONYKEY \c
+        JOIN \c
+          USR$WG_TOTAL t \c
+            ON t.DOCUMENTKEY = aldebt.USR$TOTALDOCKEY \c
+        WHERE \c
+          al.USR$EMPLKEY = pEmplKey \c
+          AND \c
+          t.USR$DATEBEGIN < \'pDateCalcFrom\' \c
+        ORDER BY \c
+          t.USR$DATEBEGIN \c
+        ",
+            [
+            pEmplKey-_, pDateCalcFrom-_
+            ]).
+        
+        /* удаление данных */
+        
+        get_sql(wg_fee_alimony, del, usr_wg_AlimonyDebt_delete,
+        "DELETE \c
+        FROM \c
+          USR$WG_ALIMONYDEBT aldebt \c
+        WHERE \c
+          aldebt.USR$TOTALDOCKEY = pTotalDocKey \c
+          AND \c
+          aldebt.USR$ALIMONYKEY IN \c
+            (SELECT al.DOCUMENTKEY FROM USR$WG_ALIMONY al WHERE al.USR$EMPLKEY = pEmplKey) \c
+        ",
+            [
+            pEmplKey-_, pTotalDocKey-_
+            ]).
+        
+        /**/
+        
+         %
+        %%
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-07-02T17:08:24+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 195362815_166214404
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "twg_fee"
+      COMMENT: ~
+      SCRIPT: | 
+        %% twg_fee
+        % Зарплата и Отдел кадров -> Зарплата -> 02. Прочие доходы, расходы, льготы
+        %    04. Алименты
+        %    11. Штрафы
+        %
+        
+        :- retractall(debug_mode).
+        
+        % ! при использовании в ТП Гедымин
+        % ! для begin & end debug mode section
+        % ! убрать символ процента из первой позиции
+        /* %%% begin debug mode section
+        
+        %% saved state
+        :- ['../gd_pl_state/load_atom', '../gd_pl_state/date', '../gd_pl_state/dataset'].
+        %%
+        
+        %% include
+        %#INCLUDE lib
+        %#INCLUDE params
+        %#INCLUDE wg_data_mix
+        :- ['../common/lib', '../common/params', '../common/wg_data_mix'].
+        %#INCLUDE twg_fee_sql
+        :- [twg_fee_sql].
+        %#INCLUDE twg_fee_in_params
+        %:- [twg_fee_in_params].
+        %%
+        
+        %% facts
+        :-  init_data,
+            working_directory(_, 'kb'),
+            [
+            usr_wg_MovementLine,
+            usr_wg_TblCharge,
+            usr_wg_TblCharge_AlimonyDebt,
+            usr_wg_FeeType,
+            usr_wg_FeeType_Taxable,
+            usr_wg_FeeType_Dict,
+            usr_wg_TblCalLine,
+            usr_wg_TblCal_FlexLine,
+            usr_wg_FCRate,
+            gd_const_budget,
+            usr_wg_Variables,
+            usr_wg_Alimony,
+            usr_wg_TransferType,
+            usr_wg_TransferScale,
+            usr_wg_AlimonyDebt
+            ],
+            working_directory(_, '..').
+        %%
+        
+        %% dynamic state
+        :- ['kb/param_list'].
+        %%
+        
+        %% flag
+        :- assertz(debug_mode).
+        %%
+        
+        % ! при использовании в ТП Гедымин
+        % ! для begin & end debug mode section
+        % ! убрать символ процента из первой позиции
+        */ %%% end debug mode section
+        
+        :- ps32k_lgt(64, 128, 64).
+        
+        /* реализация - расчет */
+        %param_list(wg_fee_alimony,in,[pEmplKey-147132195,pDateBegin-'2014-05-01',pTotalDocKey-150492516,pFeeTypeKey-147046709,pRoundType-2,pRoundValue-1.0]).
+        
+        % расчет итогового начисления
+        fee_calc(Scope) :-
+            % - для алиментов
+            Scope = wg_fee_alimony,
+            % для каждого сотрудника
+            get_param(Scope, in, pEmplKey-EmplKey),
+            % выполнить расчет
+            fee_calc(Scope, EmplKey),
+            % найти альтернативу
+            fail.
+        fee_calc(_) :-
+            % больше альтернатив нет
+            !.
+        
+        % выполнить расчет
+        fee_calc(Scope, EmplKey) :-
+            % - для алиментов
+            Scope = wg_fee_alimony,
+            % удалить временные данные по расчету
+            forall( get_param(Scope, temp, pEmplKey-EmplKey, Pairs),
+                    dispose_param_list(Scope, temp, Pairs) ),
+            % расчет табеля
+            calc_tab(Scope, EmplKey),
+            % расчет суммы
+            cacl_amount(Scope, EmplKey),
+            % расчет формулы
+            calc_formula(Scope, EmplKey),
+            % расчет перевода
+            cacl_transf(Scope, EmplKey),
+            % контроль остатка
+            check_rest(Scope, EmplKey),
+            % расчет долгов
+            % todo: calc_debt(Scope, EmplKey),
+            !.
+        
+        % расчет табеля
+        calc_tab(Scope, EmplKey) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp, Section = pCalcTab,
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % последний прием на работу
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
+            get_last_hire(Scope, PK, DateIn),
+            % начало итогового месяца
+            get_param_list(Scope, in, [pEmplKey-EmplKey, pDateBegin-DateBegin]),
+            DateBegin @>= DateIn,
+            % табель за итоговый месяц
+            atom_date(DateBegin, date(Y, M, _)),
+            calc_month_tab(Scope, PK, Y-M, TabDays),
+            sum_days_houres(TabDays, TDays, THoures),
+            % спецификация временных данных
+            append([ [Section-1], PK,
+                     [pYM-Y-M, pTDays-TDays, pTHoures-THoures] ],
+                        TabPairs),
+            % добавить временные данные
+            new_param_list(Scope, Type, TabPairs),
+            % спецификация алиментов
+            SpecAlimony = [
+                        fDocKey-AlimonyKey, fEmplKey-EmplKey,
+                        fDateBegin-ADateBegin, fDateEnd-ADateEnd ],
+            % спецификация временных данных
+            append([ [Section-2], PK,
+                     [pAlimonyKey-AlimonyKey, pDateBegin-ADateBegin, pDateEnd-ADateEnd],
+                     [pYM-Y-M, pTDays-ADays, pTHoures-AHoures, pTCoef-TCoef] ],
+                        AlimonyPairs),
+            % для всех алиментов
+            forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
+                    ( % посчитать дни и часы для периода действия алиментов
+                      sum_days_houres(TabDays, ADays, AHoures, ADateBegin, ADateEnd),
+                      % вычислить коеффициент от общего табеля за месяц
+                      TCoef is AHoures / THoures,
+                      % добавить временные данные
+                      new_param_list(Scope, Type, AlimonyPairs)
+                    )
+                  ),
+            !.
+        
+        % расчет суммы
+        cacl_amount(Scope, EmplKey) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % собрать начисления по Группе начислений
+            fee_group_charges(Scope, EmplKey, Charges),
+            % Общая сумма
+            charges_sum(Charges, AmountAll),
+            % Исключаемые начисления
+            charges_excl(Scope, EmplKey, Charges, ChargesExcl),
+            % Исключаемая сумма
+            charges_sum(ChargesExcl, [debit(1), credit(0)], AmountExcl),
+            % Подоходный налог (ПН)
+            get_data(Scope, kb, usr_wg_FeeType_Dict, [
+                        fID-IncomeTaxFeeType, fAlias-"ftIncomeTax" ]),
+            charges_sum(Charges, [debit(0), credit(1)], [IncomeTaxFeeType], IncomeTax),
+            % собрать виды начислений, облагаемые ПН
+            findall( TaxableFeeType,
+                     get_data(Scope, kb, usr_wg_FeeType_Taxable, [
+                                 fEmplKey-EmplKey, fFeeTypeKey-TaxableFeeType ]),
+            TaxableFeeTypeList),
+            % Облагаемая ПН сумма
+            charges_sum(Charges, [debit(1), credit(0)], TaxableFeeTypeList, AmountTaxable),
+            % Коеффициент ПН
+            IncomeTaxCoef is IncomeTax / AmountTaxable,
+            % Облагаемая ПН Исключаемая сумма
+            charges_sum(ChargesExcl, [debit(1), credit(0)], TaxableFeeTypeList, AmountTaxableExcl),
+            % Исключаемый ПН
+            IncomeTaxExcl is AmountTaxableExcl * IncomeTaxCoef,
+            % Расчетная сумма = Общая сумма - Исключаемая сумма - Исключаемый ПН
+            ForAlimony0 is AmountAll - AmountExcl - IncomeTaxExcl,
+            to_currency(ForAlimony0, ForAlimony, 0),
+            % спецификация временных данных
+            AmountPairs = [
+                        Section-1, pEmplKey-EmplKey, pForAlimony-ForAlimony,
+                        pAmountAll-AmountAll, pAmountExcl-AmountExcl, pIncomeTaxExcl-IncomeTaxExcl,
+                        pAmountTaxableExcl-AmountTaxableExcl, pIncomeTaxCoef-IncomeTaxCoef,
+                        pIncomeTax-IncomeTax, pAmountTaxable-AmountTaxable ],
+            % добавить временные данные
+            new_param_list(Scope, Type, AmountPairs),
+            !.
+        
+        % расчет формулы
+        calc_formula(Scope, EmplKey) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % спецификация алиментов
+            SpecAlimony = [
+                        fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
+                        fChildCount-_, fLivingWagePerc-_ ],
+            % спецификации временных данных
+            FormulaPairs = [
+                        Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                        pAlimonyCharge-_, pChargeStep-_,
+                        pAlimonySum-_,  pByBudget-_,
+                        pFormula-Formula, pForAlimony-_, pBV-_,
+                        pEval-_, pTCoef-_, pResult-_,
+                        pChildCount-_, pLivingWagePerc-_,
+                        pBudgetConst-_, pBudgetPart-_ ],
+            % для всех алиментов
+            forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
+                    ( % получить сумму по формуле
+                      calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs),
+                      % добавить временные данные
+                      new_param_list(Scope, Type, FormulaPairs)
+                    )
+                  ),
+            !.
+        
+        % расчет формулы по спецификациям
+        calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
+            get_param_list(Scope, run, [
+                            pEmplKey-EmplKey, pDateCalcTo-DateCalcTo ]),
+            % спецификация алиментов
+            SpecAlimony = [
+                        fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
+                        fChildCount-ChildCount0, fLivingWagePerc-LivingWagePerc0 ],
+            % сопоставить с данными по умолчанию
+            fit_data(Scope,
+                        [pChildCount-ChildCount0, pLivingWagePerc-LivingWagePerc0],
+                        [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc]),
+            % спецификация временных данных
+            FormulaPairs = [
+                        Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                        pAlimonyCharge-AlimonySum, pChargeStep-1,
+                        pAlimonySum-AlimonySum, pByBudget-ByBudget,
+                        pFormula-Formula, pForAlimony-ForAlimony, pBV-BV,
+                        pEval-Eval, pTCoef-TCoef, pResult-Result,
+                        pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc,
+                        pBudgetConst-BudgetConst, pBudgetPart-BudgetPart ],
+            % сумма БВ
+            get_data(Scope, kb, usr_wg_Variables, [fAlias-"vBV", fName-Var_BV]),
+            get_min_wage(Scope, DateCalcTo, BV),
+            replace_all(Formula, Var_BV, BV, Formula1),
+            % сумма Для алиментов
+            get_data(Scope, kb, usr_wg_Variables, [fAlias-"vForAlimony", fName-Var_ForAlimony]),
+            get_param_list(Scope, Type, [
+                            pCalcAmount-1,
+                            pEmplKey-EmplKey, pForAlimony-ForAlimony ]),
+            replace_all(Formula1, Var_ForAlimony, ForAlimony, Formula2),
+            % Результат
+            replace_all(Formula2, ",", ".", Formula3),
+            catch( term_to_atom(Expr, Formula3), _, fail ),
+            catch( Eval is Expr, _, fail),
+            get_param_list(Scope, Type, [
+                            pCalcTab-2,
+                            pAlimonyKey-AlimonyKey, pTCoef-TCoef ]),
+            Result is Eval * TCoef,
+            % Часть БПМ
+            get_budget(Scope, DateCalcTo, BudgetConst),
+            BudgetPart is BudgetConst * LivingWagePerc,
+            % сумма Удержания
+            ( Result < BudgetPart, AlimonySum0 = BudgetPart, ByBudget = 1
+            ; AlimonySum0 = Result, ByBudget = 0
+            ),
+            get_round_data(Scope, EmplKey, "ftAlimony", RoundType, RoundValue),
+            round_sum(AlimonySum0, AlimonySum, RoundType, RoundValue),
+            !.
+        
+        % расчет перевода
+        cacl_transf(Scope, EmplKey) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % спецификация алиментов
+            SpecAlimony = [
+                        fEmplKey-EmplKey, fDocKey-AlimonyKey,
+                        fTransferTypeKey-TransferTypeKey0, fRecipient-Recipient0 ],
+            % спецификация параметров алиментов
+            AlimonyParams = [
+                        pCalcFormula-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                        pAlimonyCharge-AlimonyCharge ],
+            % спецификация временных данных
+            TransfPairs = [
+                        Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey1,
+                        pTransfSum-TransfSum, pTransfByGroup-TransfByGroup,
+                        pTransferTypeKey-TransferTypeKey, pRecipient-Recipient,
+                        pForTransfAmount-ForTransfAmount, pTransfPercent-TransfPercent ],
+            % спецификации данных за перевод
+            TransfData = [AlimonyKey, TransferTypeKey0, Recipient0, AlimonyCharge],
+            TransfAggrData = [
+                        AlimonyKey1, TransfByGroup, TransferTypeKey, Recipient,
+                        ForTransfAmount, TransfPercent, TransfSum ],
+            % собрать данные за перевод
+            findall( TransfData,
+                     ( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
+                       TransferTypeKey0 > 0,
+                       get_param_list(Scope, Type, AlimonyParams)
+                     ),
+            TransfDataList ),
+            % агрегировать суммы за перевод
+            aggr_fransf(Scope, EmplKey, TransfDataList, TransfAggrDataList),
+            % для всех переводов
+            forall( member(TransfAggrData, TransfAggrDataList),
+                    % добавить временные данные
+                    new_param_list(Scope, Type, TransfPairs)
+                  ),
+            !.
+        
+        % пересчитать суммы переводов
+        recacl_transf(Scope, EmplKey) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
+            % удалить временные данные по переводам
+            forall( get_param_list(Scope, Type, [Section-_, pEmplKey-EmplKey], Pairs),
+                    dispose_param_list(Scope, Type, Pairs) ),
+            % расчет перевода
+            cacl_transf(Scope, EmplKey),
+            !.
+        
+        % контроль остатка
+        check_rest(Scope, EmplKey) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp, Section = pCheckRest,
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % спецификация алиментов
+            SpecAlimony = [
+                        fDocKey-AlimonyKey, fEmplKey-EmplKey, fRestPercent-RestPercent0 ],
+            % спецификация параметров алиментов
+            AlimonyParams = [
+                        pCalcFormula-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                        pAlimonySum-AlimonySum ],
+            % спецификация параметров контроля
+            CheckParams = [
+                        pCalcAmount-1, pEmplKey-EmplKey, pAmountAll-AmountAll ],
+            % спецификация временных данных
+            CheckPairs = [
+                        Section-1, pEmplKey-EmplKey,
+                        pAlimonyAmount-AlimonyAmount, pCheckAmount-CheckAmount,
+                        pAmountAll-AmountAll, pRestPercent-RestPercent, pRestAmount-RestAmount
+                         ],
+            AlimonyPairs = [
+                        Section-2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                        pAlimonyCoef-AlimonyCoef,
+                        pAlimonySum-AlimonySum, pAlimonyAmount-AlimonyAmount ],
+            % Итог по алиментам
+            findall( AlimonySum,
+                     get_param_list(Scope, Type, AlimonyParams),
+            AlimonySumList),
+            sum_list(AlimonySumList, AlimonyAmount),
+            % Процент остатка
+            findall( RestPercent0,
+                     get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
+            RestPercentList),
+            min_list(RestPercentList, RestPercent0),
+            fit_data(Scope, [pRestPercent-RestPercent0], [pRestPercent-RestPercent]),
+            % сумма Контроля
+            get_param_list(Scope, Type, CheckParams),
+            RestAmount is AmountAll * RestPercent,
+            CheckAmount is AmountAll - RestAmount,
+            % добавить временные данные
+            new_param_list(Scope, Type, CheckPairs),
+            % для всех алиментов
+            forall( get_param_list(Scope, Type, AlimonyParams),
+                    ( % вычислить коеффициент от Итога
+                      AlimonyCoef is AlimonySum / AlimonyAmount,
+                      % добавить временные данные
+                      new_param_list(Scope, Type, AlimonyPairs)
+                    )
+                  ),
+            % Дельта для расчета при нехватке средств
+            get_param(Scope, fit, pCalcDelta-CalcDelta),
+            % контроль остатка по сумме Контроля
+            check_rest(Scope, EmplKey, CheckAmount, 0, CalcDelta, 0),
+            !.
+        
+        % контроль остатка по сумме Контроля
+        check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, _, CalcDeltaOption) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp, Section = pCheckRest,
+            % спецификация параметров алиментов
+            AlimonyParams = [
+                        pCalcFormula-1, pEmplKey-EmplKey, pAlimonyCharge-AlimonyCharge ],
+            % спецификация параметров переводов
+            TransfParams = [
+                        pCalcTransf-1, pEmplKey-EmplKey, pTransfSum-TransfSum ],
+            % спецификация временных данных
+            CheckPairs = [
+                        Section-3, pEmplKey-EmplKey,
+                        pReserveAmount-ReserveAmount,
+                        pCheckAmount-CheckAmount, pCalcDelta-CalcDelta0,
+                        pChargeAmount-ChargeAmount,
+                        pAlimonyChargeAmount-AlimonyChargeAmount, pTransfAmount-TransfAmount ],
+            % сумма к Удержанию
+            findall( AlimonyCharge,
+                     get_param_list(Scope, Type, AlimonyParams),
+            AlimonyChargeList),
+            sum_list(AlimonyChargeList, AlimonyChargeAmount),
+            findall( TransfSum,
+                     get_param_list(Scope, Type, TransfParams),
+            TransfSumList),
+            sum_list(TransfSumList, TransfAmount),
+            ChargeAmount is AlimonyChargeAmount + TransfAmount,
+            % сумма Резерва
+            ReserveAmount is CheckAmount - CalcDelta0 * CalcDeltaOption,
+            % сумма для Проверки не меньше суммы к Удержанию
+            \+ CheckAmount < ChargeAmount,
+            % добавить временные данные
+            new_param_list(Scope, Type, CheckPairs),
+            !.
+        check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcDeltaOption) :-
+            % - для алиментов
+            Scope = wg_fee_alimony,
+            % увеличить Дельту
+            CalcDelta1 is CalcDelta0 + CalcDelta * CalcDeltaOption,
+            % сумма Резерва
+            ReserveAmount0 is CheckAmount - CalcDelta1,
+            ( ReserveAmount0 > 0, ReserveAmount = ReserveAmount0
+            ; ReserveAmount = 0
+            ),
+            % распределить суммы по коэфициентам от суммы Резерва
+            charge_by_coef(Scope, EmplKey, ReserveAmount),
+            % пересчитать суммы переводов
+            recacl_transf(Scope, EmplKey),
+            !,
+            check_rest(Scope, EmplKey, CheckAmount, CalcDelta1, CalcDelta, 1).
+        
+        % распределить суммы по коэфициентам от суммы Контроля
+        charge_by_coef(Scope, EmplKey, ForCheckAmount) :-
+            % - для алиментов
+            Scope = wg_fee_alimony, Type = temp,
+            Section1 = pCalcFormula, Section2 = pCheckRest,
+            % спецификации параметров алиментов
+            AlimonyParams1 = [
+                        Section1-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                        pAlimonyCharge-_, pChargeStep-ChargeStep ],
+            AlimonyParams2 = [
+                        Section2-2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                        pAlimonyCoef-AlimonyCoef ],
+            get_round_data(Scope, EmplKey, "ftAlimony", RoundType, RoundValue),
+            % для всех алиментов
+            forall( get_param_list(Scope, Type, AlimonyParams1, Pairs),
+                    ( % вычислить Пропорцию
+                      get_param_list(Scope, Type, AlimonyParams2),
+                      AlimonyCharge0 is ForCheckAmount * AlimonyCoef,
+                      round_sum(AlimonyCharge0, AlimonyCharge, RoundType, RoundValue),
+                      ChargeStep1 is ChargeStep + 1,
+                      % заменить сумму Удержания
+                      replace_list(Pairs, [pAlimonyCharge-_, pChargeStep-_],
+                                      [pAlimonyCharge-AlimonyCharge, pChargeStep-ChargeStep1],
+                                          Pairs1),
+                      dispose_param_list(Scope, Type, Pairs),
+                      new_param_list(Scope, Type, Pairs1)
+                    )
+                  ),
+            !.
+        
+        % агрегировать суммы за перевод
+        aggr_fransf(_, _, [], []) :-
+            !.
+        aggr_fransf(Scope, EmplKey, [TransfData|TransfDataList], [TransfAggrData|TransfAggrDataList]) :-
+            %
+            aggr_fransf(Scope, EmplKey, TransfData, [TransfData|TransfDataList], TransfDataList1, TransfAggrData),
+            !,
+            aggr_fransf(Scope, EmplKey, TransfDataList1, TransfAggrDataList).
+        
+        %
+        aggr_fransf(Scope, EmplKey, TransfData, TransfDataList, TransfDataList1, TransfAggrData) :-
+            % спецификации данных за перевод
+            TransfData = [AlimonyKey, TransferTypeKey, Recipient, AlimonyCharge0],
+            TransfAggrData = [
+                        AlimonyKey, TransfByGroup, TransferTypeKey, Recipient,
+                        ForTransfAmount, TransfPercent, TransfSum ],
+            % для получателей
+            ( Recipient > 0,
+              % собрать суммы по Группе [Вид перевода, Получатель]
+              findall( AlimonyCharge,
+                       member([_, TransferTypeKey, Recipient, AlimonyCharge], TransfDataList),
+              AlimonyChargeList)
+            ; % иначе Исходная сумма
+              AlimonyChargeList = [AlimonyCharge0]
+            ),
+            % Итог
+            sum_list(AlimonyChargeList, ForTransfAmount),
+            % Признак группы
+            ( length(AlimonyChargeList, 1),
+              TransfByGroup = 0
+            ;
+              TransfByGroup = 1
+            ),
+            % Процент от Итога
+            get_transf_percent(Scope, EmplKey, TransferTypeKey, ForTransfAmount, TransfPercent),
+            % Сумма за перевод
+            TransfSum0 is ForTransfAmount * TransfPercent / 100,
+            get_round_data(Scope, EmplKey, "ftTransferDed", RoundType, RoundValue),
+            round_sum(TransfSum0, TransfSum, RoundType, RoundValue),
+            % для получателей
+            ( Recipient > 0, \+ length(AlimonyChargeList, 1),
+              % исключить Группу из списка данных
+              findall( [AlimonyKey1, TransferTypeKey1, Recipient1, AlimonySum1],
+                       ( member([AlimonyKey1, TransferTypeKey1, Recipient1, AlimonySum1], TransfDataList),
+                         \+ [TransferTypeKey, Recipient] = [TransferTypeKey1, Recipient1]
+                       ),
+              TransfDataList1)
+            ; % иначе исключить Текущие данные
+              selectchk(TransfData, TransfDataList, TransfDataList1)
+            ),
+            !.
+        
+        % взять параметры округления
+        get_round_data(Scope, _, Alias, RoundType, RoundValue) :-
+            get_data(Scope, kb, usr_wg_FeeType_Dict, [
+                        fAlias-Alias, fRoundByFeeType-1,
+                        fRoundType-RoundType, fRoundValue-RoundValue ]),
+            !.
+        get_round_data(Scope, EmplKey, _, RoundType, RoundValue) :-
+            get_param_list(Scope, in, [
+                        pEmplKey-EmplKey,
+                        pRoundType-RoundType, pRoundValue-RoundValue ]),
+            !.
+        
+        % Процент перевода
+        get_transf_percent(Scope, EmplKey, TransferTypeKey, Sum, Percent) :-
+            get_param_list(Scope, run, [pEmplKey-EmplKey, pDateCalcTo-DateCalcTo]),
+            findall( TransferData,
+                     get_transf_type(Scope, DateCalcTo, TransferTypeKey, TransferData),
+            TransferDataList),
+            msort(TransferDataList, TransferDataList1),
+            last(TransferDataList1, _-TransferTypeKey1),
+            get_transf_scale(Scope, TransferTypeKey1, Sum, Percent),
+            !.
+        get_transf_percent(_, _, _, _, 0.0) :-
+            !.
+        
+        % Расценки на перевод
+        get_transf_type(Scope, DateCalcTo, TransferTypeKey0, DateBegin-TransferTypeKey) :-
+            get_data(Scope, kb, usr_wg_TransferType, [
+                        fID-TransferTypeKey, fParent-TransferTypeKey0,
+                        fDateBegin-DateBegin ]),
+            \+ get_data(Scope, kb, usr_wg_TransferType, [
+                            fParent-TransferTypeKey]),
+            DateBegin @< DateCalcTo.
+        get_transf_type(Scope, DateCalcTo, TransferTypeKey0, TransferData) :-
+            get_data(Scope, kb, usr_wg_TransferType, [
+                        fID-TransferTypeKey1, fParent-TransferTypeKey0 ]),
+            get_transf_type(Scope, DateCalcTo, TransferTypeKey1, TransferData).
+        
+        % Шкала расценок
+        get_transf_scale(Scope, TransferTypeKey, Sum, Percent) :-
+            findall( StartSum-Percent0,
+                     ( get_data(Scope, kb, usr_wg_TransferScale, [
+                                 fTranferTypeKey-TransferTypeKey,
+                                 fStartSum-StartSum, fPercent-Percent0 ]),
+                       Sum >= StartSum ),
+            ScaleDataList),
+            msort(ScaleDataList, ScaleDataList1),
+            last(ScaleDataList1, _-Percent),
+            !.
+        get_transf_scale(_, _, _, 0.0) :-
+            !.
+        
+        % собрать начисления по Группе начислений
+        fee_group_charges(Scope, EmplKey, Charges) :-
+            % спецификация для начислений
+            SpecTblCharge =  [
+                fEmplKey-EmplKey,
+                fCalYear-Y, fCalMonth-M, fDateBegin-DateBegin,
+                fDebit-Debit, fCredit-Credit,
+                fFeeTypeKey-FeeTypeKey ],
+            % спецификация для группы начислений
+            SpecFeeType =  [
+                fEmplKey-EmplKey, fFeeTypeKey-FeeTypeKey ],
+            % спецификация данных начисления
+            ChargeData = [
+                Y-M, DateBegin, Debit, Credit, FeeTypeKey ],
+            % взять данные
+            findall( ChargeData,
+                      % по начислениям
+                    ( get_data(Scope, kb, usr_wg_TblCharge, SpecTblCharge),
+                      % с наличием суммы
+                      once( ( \+ Debit =:= 0 ; \+ Credit =:= 0 ) ),
+                      % и соответствующего типа
+                      get_data(Scope, kb, usr_wg_FeeType, SpecFeeType)
+                    ),
+            % в список
+            Charges ),
+            !.
+        
+        % исключаемые начисления
+        charges_excl(Scope, EmplKey, Charges, ChargesExcl) :-
+            % спецификация данных начисления
+            ChargeData = [
+                _-_, DateBegin, _, _, FeeTypeKey ],
+            % собрать исключаемые начисления
+            findall( ChargeData,
+                     ( member(ChargeData, Charges),
+                       is_fee_type_excl(Scope, EmplKey, DateBegin, FeeTypeKey)
+                     ),
+            ChargesExcl ),
+            !.
+        
+        % сумма начислений
+        charges_sum(Charges, Amount) :-
+            charges_sum(Charges, [], [], 0, Amount),
+            !.
+        %
+        charges_sum(Charges, Options, Amount) :-
+            charges_sum(Charges, Options, [], 0, Amount),
+            !.
+        %
+        charges_sum(Charges, Options, ValidFeeTypes, Amount) :-
+            charges_sum(Charges, Options, ValidFeeTypes, 0, Amount),
+            !.
+        %
+        charges_sum([], _, _, Amount, Amount) :-
+            !.
+        charges_sum([Charge|Charges], Options, ValidFeeTypes, Amount0, Amount) :-
+            charge_acc(Charge, Options, ValidFeeTypes, Amount0, Amount1),
+            !,
+            charges_sum(Charges, Options, ValidFeeTypes, Amount1, Amount).
+        
+        % накопление суммы начислений
+        charge_acc(ChargeData, Options, ValidFeeTypes, Amount0, Amount1) :-
+            % спецификация данных
+            ChargeData = [
+                _-_, _, Debit, Credit, FeeTypeKey ],
+            % если тип начисления дейсвителен
+            ( ValidFeeTypes = [] ; memberchk(FeeTypeKey, ValidFeeTypes) ),
+            % установить опции
+            ( memberchk(debit(InclDebit), Options) ; InclDebit = 1 ),
+            ( memberchk(credit(InclCredit), Options) ; InclCredit = 1 ),
+            % и произвести накопление
+            Amount1 is Amount0 + Debit * InclDebit - Credit * InclCredit,
+            !.
+        charge_acc(_, _, _, Amount, Amount) :-
+            !.
+        
+        % тип начисления исключается из расчета
+        is_fee_type_excl(Scope, EmplKey, DateBegin, FeeTypeKey) :-
+            % - для алиментов
+            Scope = wg_fee_alimony,
+            % если вид начисления "Компенсация отпуска"
+            get_data(Scope, kb, usr_wg_FeeType_Dict, [
+                        fID-FeeTypeKey, fAlias-Alias ]),
+            memberchk(Alias, ["ftHolidayComp"]),
+            % и сотрудник уволен в месяце текущей даты
+            is_fired(Scope, EmplKey, DateBegin),
+            !.
+        
+        % сотрудник уволен в месяце текущей даты
+        is_fired(Scope, EmplKey, DateBegin) :-
+            atom_date(DateBegin, date(Y, M, _)),
+            get_data(Scope, kb, usr_wg_MovementLine, [
+                        fEmplKey-EmplKey,
+                        fMoveYear-Y, fMoveMonth-M,
+                        fMovementType-3 ]),
+            !.
+        
+        % сопоставить с данными по умолчанию
+        fit_data(Scope, [Name-Value0], [Name-Value]) :-
+            % - для алиментов (Процент остатка)
+            Scope = wg_fee_alimony, Type = fit,
+            Name = pRestPercent,
+            get_param(Scope, Type, Name-Value1),
+            ( Value0 < Value1, Value = Value1
+            ; Value = Value0
+            ),
+            !.
+        % сопоставить с данными по умолчанию
+        fit_data(Scope, [Name-Value0], [Name-Value]) :-
+            % - для алиментов ( Процент списания долга)
+            Scope = wg_fee_alimony, Type = fit,
+            Name = pPercent,
+            ( Value0 > 0, Value = Value0
+            ; get_param(Scope, Type, Name-Value)
+            ),
+            !.
+        fit_data(Scope, Pairs0, Pairs) :-
+            % - для алиментов (Процент от БПМ)
+            Scope = wg_fee_alimony, Type = fit,
+            Pairs0 = [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc0],
+            Pairs = [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc],
+            Pairs1 = [pChildQtyCmp-ChildQtyCmp, pLivingWagePerc-LivingWagePerc1],
+            %
+            get_param_list(Scope, Type, Pairs1),
+            catch( atomic_concat(ChildCount, ChildQtyCmp, Atom), _, fail ),
+            catch( term_to_atom(Term, Atom), _, fail),
+            catch( Term, _, fail),
+            %
+            ( LivingWagePerc0 < LivingWagePerc1, LivingWagePerc = LivingWagePerc1
+            ; LivingWagePerc = LivingWagePerc0
+            ),
+            !.
+        fit_data(_, Pairs, Pairs) :-
+            !.
+        
+        /* реализация - расширение для клиента */
+        
+        % загрузка входных данных по сотруднику
+        fee_calc_in(Scope, EmplKey, DateBegin, TotalDocKey, FeeTypeKey, RoundType, RoundValue) :-
+            Scope = wg_fee_alimony, Type = in, Section = pEmplKey,
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+            % записать входные параметры
+            new_param_list(Scope, Type, [
+                pEmplKey-EmplKey, pDateBegin-DateBegin,
+                pTotalDocKey-TotalDocKey, pFeeTypeKey-FeeTypeKey,
+                pRoundType-RoundType, pRoundValue-RoundValue
+                ]),
+            !.
+        
+        % подготовка данных выполнения
+        fee_calc_prep(Scope) :-
+            Scope = wg_fee_alimony, Type = in, TypeNextStep = run,
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-TypeNextStep-DT]),
+            % для каждого сотрудника
+            get_param_list(Scope, Type, [pEmplKey-_, pDateBegin-DateBegin], Pairs),
+            % собрать входные данные
+            findall( Pairs0,
+                     ( member(Template, [pCommon-1, pAlimony-1]),
+                       get_param_list(Scope, Type, [Template], Pairs0)
+                     ),
+            PairsList ),
+            append(PairsList, PairsNextStep0),
+            % сформировать данные выполнения
+            atom_date(DateBegin, date(Y, M, _)),
+            atom_date(DateCalcFrom, date(Y, M, 1)),
+            date_add(DateBegin, 1, month, DateBegin1),
+            atom_date(DateBegin1, date(Y1, M1, _)),
+            atom_date(DateCalcTo, date(Y1, M1, 1)),
+            % записать данные выполнения
+            append([Pairs,
+                    [pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo],
+                    PairsNextStep0],
+                        PairsNextStep),
+            new_param_list(Scope, TypeNextStep, PairsNextStep),
+            % найти альтернативу
+            fail.
+        fee_calc_prep(_) :-
+            % больше альтернатив нет
+            !.
+        
+        % выгрузка данных выполнения по сотруднику
+        fee_calc_run(Scope, EmplKey) :-
+            Scope = wg_fee_alimony, Type = run, Section = PK,
+            % первичный ключ
+            PK = [pEmplKey-EmplKey],
+            % взять данные выполнения
+            get_param_list(Scope, Type, PK),
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]).
+        
+        % формирование SQL-запросов по сотруднику
+        fee_calc_sql(Scope, EmplKey, PredicateName, Arity, SQL) :-
+            Scope = wg_fee_alimony, Type = run, TypeNextStep = query,
+            % взять локальное время
+            get_local_date_time(DT),
+            % записать отладочную информацию
+            new_param_list(Scope, debug, [Scope-Type-TypeNextStep-DT]),
+            % взять данные выполнения для подстановки параметров
+            get_param_list(Scope, Type, [pEmplKey-EmplKey], Pairs),
+            % для каждой спецификации набора данных
+            gd_pl_ds(Scope, kb, PredicateName, Arity, _),
+            Query = PredicateName/Arity,
+            is_valid_sql(Query),
+            % взять SQL-строку с параметрами
+            get_sql(Scope, kb, Query, SQL0, Params),
+            % сопоставить параметры с данными выполнения
+            member_list(Params, Pairs),
+            % подготовить SQL-запрос
+            prepare_sql(SQL0, Params, SQL),
+            % записать данные по SQL-запросу
+            PairsNextStep = [pEmplKey-EmplKey, pQuery-Query, pSQL-SQL],
+            new_param_list(Scope, TypeNextStep, PairsNextStep).
+        
+        /**/
+        
+         %
+        %%
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-07-07T17:46:17+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "151189469_18175251 lib"
+          - 
+            ADDFUNCTIONKEY: "151189468_18175251 params"
+          - 
+            ADDFUNCTIONKEY: "151042959_187967073 wg_data_mix"
+          - 
+            ADDFUNCTIONKEY: "195362817_166214404 twg_fee_sql"
+          - 
+            ADDFUNCTIONKEY: "195362816_166214404 twg_fee_in_params"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 195361376_166214404
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "wg_FeeAlimonyCalc_pl"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        '#include wg_WageSettings
+        '
+        '#include pl_GetScriptIDByName
+        
+        Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal FeeTypeKey, ByRef obj_FeeData)
+        '
+          Dim T, T1, T2
+          '
+          Dim Creator
+          '
+          Dim PL, Ret, Pred, Tv, PredFile, Append
+          Dim ScriptName, Scope
+          'fee_calc_in, fee_calc_prep
+          Dim P_in, Tv_in, Q_in, P_prep, Tv_prep, Q_prep
+          Dim EmplKey, DateBegin, RoundType, RoundValue
+          'fee_calc_run, fee_calc_sql
+          Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql
+          Dim PredicateName, Arity, SQL
+          'fee_calc
+          Dim P_main, Tv_main, Q_main
+          'fee_calc_out, fee_calc_det
+          Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
+          Dim Amount
+        
+          T1 = Timer
+          wg_FeeAlimonyCalc_pl = 0
+            
+          'init
+          Set Creator = New TCreator
+          Set PL = Creator.GetObject(nil, "TgsPLClient", "")
+          Ret = PL.Initialise("")
+          If Not Ret Then
+            Exit Function
+          End If
+          'debug
+          PL.Debug = False
+          'load
+          ScriptName = "twg_fee"
+          Ret = PL.LoadScript(pl_GetScriptIDByName(ScriptName))
+          If Not Ret Then
+            Exit Function
+          End If
+          Scope = "wg_fee_alimony"
+          'debug
+          PL.Debug = True
+        
+          'params
+          EmplKey = wg_EmployeeCharge.EmployeeKey
+          DateBegin = wg_EmployeeCharge.BeginDate
+          '
+          RoundType = wg_WageSettings.Wage.RoundType
+          RoundValue = wg_WageSettings.Wage.RoundValue
+        
+          'fee_calc_in(Scope, EmplKey, DateBegin, TotalDocKey, FeeTypeKey, RoundType, RoundValue)
+          P_in = "fee_calc_in"
+          Set Tv_in = Creator.GetObject(7, "TgsPLTermv", "")
+          Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
+          '
+          Tv_in.PutAtom 0, Scope
+          Tv_in.PutInteger 1, EmplKey
+          Tv_in.PutDate 2, DateBegin
+          Tv_in.PutInteger 3, TotalDocKey
+          Tv_in.PutInteger 4, FeeTypeKey
+          Tv_in.PutInteger 5, RoundType
+          Tv_in.PutFloat 6, RoundValue
+          '
+          Q_in.PredicateName = P_in
+          Q_in.Termv = Tv_in
+          '
+          Q_in.OpenQuery
+          If Q_in.EOF Then
+            Exit Function
+          End If
+          Q_in.Close
+        
+          'fee_calc_prep(Scope)
+          P_prep = "fee_calc_prep"
+          Set Tv_prep = Creator.GetObject(1, "TgsPLTermv", "")
+          Set Q_prep = Creator.GetObject(nil, "TgsPLQuery", "")
+          '
+          Tv_prep.PutAtom 0, Scope
+          '
+          Q_prep.PredicateName = P_prep
+          Q_prep.Termv = Tv_prep
+          '
+          Q_prep.OpenQuery
+          If Q_prep.EOF Then
+            Exit Function
+          End If
+          Q_prep.Close
+        
+          'save param_list
+          If PL.Debug Then
+            Pred = "param_list"
+            PredFile = "param_list"
+            Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+            PL.SavePredicatesToFile Pred, Tv, PredFile
+          End If
+        
+          'fee_calc_run(Scope, EmplKey)
+          P_run = "fee_calc_run"
+          Set Tv_run = Creator.GetObject(2, "TgsPLTermv", "")
+          Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_run.PredicateName = P_run
+          Q_run.Termv = Tv_run
+          'fee_calc_sql(Scope, EmplKey, PredicateName, Arity, SQL)
+          P_sql = "fee_calc_sql"
+          Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")
+          Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_sql.PredicateName = P_sql
+          Q_sql.Termv = Tv_sql
+          '
+          Tv_run.PutAtom 0, Scope
+          '
+          Q_run.OpenQuery
+          If Q_run.EOF Then
+            Exit Function
+          End If
+          '
+          Append = False
+          '
+          Do Until Q_run.EOF
+            EmplKey = Tv_run.ReadInteger(1)
+            '
+            Tv_sql.Reset
+            Tv_sql.PutAtom 0, Scope
+            Tv_sql.PutInteger 1, EmplKey
+            Q_sql.OpenQuery
+            '
+            Do Until Q_sql.EOF
+              PredicateName = Tv_sql.ReadAtom(2)
+              Arity = Tv_sql.ReadInteger(3)
+              SQL = Tv_sql.ReadString(4)
+              '
+              Ret =  PL.MakePredicatesOfSQLSelect _
+                        (SQL, _
+                        gdcBaseManager.ReadTransaction, _
+                        PredicateName, PredicateName, Append)
+              '
+              Q_sql.NextSolution
+            Loop
+            Q_sql.Close
+            '
+            Append = True
+            '
+            Q_run.NextSolution
+          Loop
+          Q_run.Close
+        
+          'save param_list
+          If PL.Debug Then
+            Pred = "param_list"
+            PredFile = "param_list"
+            Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+            PL.SavePredicatesToFile Pred, Tv, PredFile
+          End If
+        
+          'fee_calc(Scope)
+          P_main = "fee_calc"
+          Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
+          Set Q_main = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_main.PredicateName = P_main
+          Q_main.Termv = Tv_main
+          '
+          Tv_main.PutAtom 0, Scope
+          '
+          Q_main.OpenQuery
+          If Q_main.EOF Then
+            Exit Function
+          End If
+          Q_main.Close
+        
+          'save param_list
+          If PL.Debug Then
+            Pred = "param_list"
+            PredFile = "param_list"
+            Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+            PL.SavePredicatesToFile Pred, Tv, PredFile
+          End If
+        
+          '  todo:
+          'fee_calc_out
+          'fee_calc_det
+        
+          
+          T2 = Timer
+          T = T2 - T1
+        '
+        End Function
+        
+      DISPLAYSCRIPT: | 
+        WG_FEEALIMONYCALC_PL
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QRAAAAV0dfRU1QTE9ZRUVDSEFSR0URAAAAV0dfRU1QTE9ZRUVDSEFSR0UAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QLAAAAVE9UQUxET0NLRVkLAAAAVE9UQUxET0NLRVkA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QKAAAARkVFVFlQRUtFWQoAAABGRUVUWVBF
+        S0VZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNUCwAAAE9CSl9GRUVEQVRBCwAAAE9C
+        Sl9GRUVEQVRBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-07-02T17:03:08+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147019760_119619099 wg_WageSettings"
+          - 
+            ADDFUNCTIONKEY: "151158419_5956463 pl_GetScriptIDByName"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 147656112_119619099
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "WAGE"
+      LANGUAGE: "VBScript"
+      NAME: "wg_FeeAlimonyCalc"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include wg_MonthHour
+        '#include wg_GetAlimonySum
+        '#include wg_CalcTransferSum
+        '#include wg_RoundSum
+        '#include wg_EmplMoveList
+        '#include wg_TblCal
+        '#include wg_WageSettings
+        '#include wg_GetAccountKey
+        '<pl>
+        '#include wg_FeeAlimonyCalc_pl
+        '</pl>
+        function wg_FeeAlimonyCalc(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal FeeTypeKey, ByRef obj_FeeData)
+        'Расчет алиментов, долга по алиментам и расходов на их пересылку
+          wg_FeeAlimonyCalc = 0
+        
+          '<pl>
+          Set frmAlimony = _
+            Application.FindComponent("gdc_frmUserComplexDocument147567052_119619099")
+          Set dlgAlimony = _
+            frmAlimony.FindComponent("gdc_dlgUserComplexDocument147567052_119619099")
+          Set Prolog_Alimony = _
+            dlgAlimony.FindComponent("usrg_Prolog_Alimony")
+          '
+          If Assigned(Prolog_Alimony) Then
+            If Prolog_Alimony.Checked = True Then
+              'Расчет через Пролог-скрипт
+              wg_FeeAlimonyCalc = _
+                wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, obj_FeeData)
+              Exit Function
+            End If
+          End If
+          '</pl>
+        
+        'Удаление результатов прошлого расчета
+          set Creator = New TCreator
+          set SQLUpdate = Creator.GetObject(nil, "TIBSQL", "")
+          set SQLUpdate.Transaction = wg_EmployeeCharge.Transaction
+          'Удаление результатов прошлого расчета из журнала долга
+          SQLUpdate.SQL.Text = "DELETE " & _
+            "FROM usr$wg_alimonydebt aldebt " & _
+            "WHERE " & _
+            "    usr$totaldockey = :totaldockey " & _
+            "  AND aldebt.usr$alimonykey IN " & _
+            " (SELECT al.documentkey " & _
+            "  FROM usr$wg_alimony al " & _
+            "  WHERE al.usr$emplkey = :emplkey) "
+        
+          SQLUpdate.ParamByName("totaldockey").AsInteger = TotalDocKey
+          SQLUpdate.ParamByName("emplkey").AsInteger = wg_EmployeeCharge.EmployeeKey
+          SQLUpdate.ExecQuery
+          SQLUpdate.Close
+          'Удаление результатов прошлого расчета из журнала погашенных месяцев
+          SQLUpdate.SQL.Text = "DELETE " & _
+            "FROM usr$wg_alimonypayedmonth " & _
+            "WHERE " & _
+            "  usr$totaldockey = :totaldockey " & _
+            "  AND usr$alimonydebtkey IN ( " & _
+            "    SELECT aldebt.documentkey " & _
+            "    FROM usr$wg_alimonydebt aldebt " & _
+            "      JOIN usr$wg_alimony al ON aldebt.usr$alimonykey = al.documentkey AND al.usr$emplkey = :emplkey) "
+        
+          SQLUpdate.ParamByName("totaldockey").AsInteger = TotalDocKey
+          SQLUpdate.ParamByName("emplkey").AsInteger = wg_EmployeeCharge.EmployeeKey
+          SQLUpdate.ExecQuery
+          SQLUpdate.Close
+        
+          set MoveCard = wg_EmplMoveList.MoveCardList(wg_EmployeeCharge.EmployeeKey, null)._
+            MoveCardByDate(wg_EmployeeCharge.EndDate)
+          if Assigned(MoveCard) then
+        
+            'Журнал долгов по алиментам
+            set gdcAlimonyDebt = Creator.GetObject(nil, "TgdcUserDocument", "")
+            gdcAlimonyDebt.SubType = "147072391_453357870"
+            gdcAlimonyDebt.Transaction = wg_EmployeeCharge.Transaction
+            gdcAlimonyDebt.Open
+        
+            'Определим кол-во отработанных часов (для определения текущего долга по алиментам в месяцах)
+            if wg_WageSettings.Wage.Alimonymonthdebt then
+        '      set Tbl = wg_TblCal.EmplTblCal(wg_EmployeeCharge.Employeekey, MoveCard.FirstMoveKey)
+        '      AddDebtMontFlg = (Tbl.WorkDuration = 0)
+              AddDebtMontFlg = False
+            else
+              AddDebtMontFlg = False
+            end if
+        
+            wg_FeeType_TransferDed_ID = gdcBaseManager.GetIDByRUIDString(wg_FeeType_TransferDed_RUID)
+            wg_FeeType_AlimonyDebt_ID = gdcBaseManager.GetIDByRUIDString(wg_FeeType_AlimonyDebt_RUID)
+            'Класс для работы с алиментами
+            set wg_Alimony = New Twg_Alimony
+        
+            wg_EmployeeCharge.FirstMoveKey = MoveCard.FirstMoveKey
+            'Класс для расчета формул
+            set wg_FoCal = New Twg_FoCal
+            set wg_FoCal.ReadTransaction = wg_EmployeeCharge.ReadTransaction
+            wg_FoCal.EmplKey   = wg_EmployeeCharge.Employeekey
+            wg_FoCal.DateBegin = wg_EmployeeCharge.BeginDate
+            wg_FoCal.DateEnd   = wg_EmployeeCharge.EndDate
+            'Запрос для добавления погашенных месяцев в отдельный журнал
+            SQLUpdate.SQL.Text = " INSERT INTO usr$wg_alimonypayedmonth " & _
+              " (usr$totaldockey, usr$alimonydebtkey, usr$payedmonth) " & _
+              " VALUES (:totaldockey, :alimonydebtkey, :payedmonth) "
+        
+            set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
+            IBSQL.Transaction = wg_EmployeeCharge.ReadTransaction
+            'Выбираем документы о назначении алиментов
+            IBSQL.SQL.Text = " SELECT calc.* " & _
+              " FROM usr$wg_alimony calc " & _
+              " LEFT JOIN GD_DOCUMENT d ON calc.DOCUMENTKEY = d.ID " & _
+              " WHERE d.COMPANYKEY = <COMPANYKEY/> AND " & _
+              "   calc.usr$emplkey = :emplkey AND " & _
+              "   calc.usr$datebegin <= :dateend AND " & _
+              "   (calc.usr$dateend >= :datebegin or calc.usr$dateend is NULL) " & _
+              "   AND d.documenttypekey = :doctype " & _
+              " ORDER BY calc.usr$datebegin "
+            IBSQL.ParamByName("DateBegin").AsDateTime = wg_EmployeeCharge.BeginDate
+            IBSQL.ParamByName("DateEnd").AsDateTime =  wg_EmployeeCharge.EndDate
+            IBSQL.ParamByName("emplkey").AsInteger = wg_EmployeeCharge.Employeekey
+            IBSQL.ParamByName("doctype").AsInteger = gdcBaseManager.GetIdByRuidString("147067079_453357870")
+            IBSQL.ExecQuery
+        
+            'Оставшееся деньги
+            RestSum = wg_EmployeeCharge.Debit - wg_EmployeeCharge.Credit + wg_EmployeeCharge.PayedOut
+        
+           'Добавление алиментов в объект класса wg_Alimony
+            AlimonyReservAll = 0
+            while not IBSQL.Eof
+              if AddDebtMontFlg then
+              'Накопление долга по алиментам в месяцах, если сотрудник не проработал ни одного часа
+                gdcAlimonyDebt.Insert
+                gdcAlimonyDebt.FieldByName("usr$totaldockey").AsInteger = TotalDocKey
+                gdcAlimonyDebt.FieldByName("usr$alimonykey").AsInteger = IBSQL.FieldByName("documentkey").AsInteger
+                gdcAlimonyDebt.FieldByName("usr$debtsum").AsCurrency = 0
+                gdcAlimonyDebt.FieldByName("usr$debtmonth").AsInteger = 1
+                gdcAlimonyDebt.Post
+              else
+                FormulaStr = Replace(Replace(IBSQL.FieldByName("usr$formula").AsString, ".", Application.DecimalSeparatorSys), ",", Application.DecimalSeparatorSys)
+        
+                Sum = wg_GetAlimonySum(wg_FoCal, FormulaStr, _
+                      IBSQL.FieldByName("usr$datebegin").AsDateTime, wg_EmployeeCharge.BeginDate)
+                'Проверка на бюджет прожиточного минимума
+                if wg_EmployeeCharge.BeginDate >= DateSerial(2009, 5, 1) then
+                  LivingWage = wg_MonthHour.LivingWage(wg_EmployeeCharge.BeginDate)
+                  Count = IBSQL.FieldByName("USR$CHILDCOUNT").AsInteger
+                  
+                  if IBSQL.FieldByName("USR$LIVINGWAGEPERC").AsCurrency <= 0 then
+                    if Count = 1 then
+                      LivingWage = LivingWage / 2
+                    elseif Count = 2 then
+                      LivingWage = LivingWage * 75 / 100
+                    elseif Count >= 3 then
+        
+                    end if
+                  else
+                    LivingWage = LivingWage *  IBSQL.FieldByName("USR$LIVINGWAGEPERC").AsCurrency / 100
+                  end if
+                  if Sum < LivingWage then
+                    Sum = LivingWage
+                  end if
+                end if
+               'Округление
+                Sum = wg_RoundSum(FeeTypeKey, Sum)
+                'Суммы для резерва денег по алименты и суммы для их перевода
+                if not IBSQL.FieldByName("usr$transfertypekey").isNull then
+                  ReservTransferSum = wg_RoundSum(wg_FeeType_TransferDed_ID, Sum * _
+                    wg_TransferDed.Types(IBSQL.FieldByName("usr$transfertypekey").AsInteger).GetPercent(wg_EmployeeCharge.EndDate, Sum) / 100)
+                else
+                  ReservTransferSum = 0
+                end if
+                'Если резервировать некуда, то ...
+                if AlimonyReservAll + Sum + ReservTransferSum > RestSum then
+                  SumTmp = RestSum - AlimonyReservAll            'Резервируем все деньги, которые остаются
+                else
+                  SumTmp = Sum + ReservTransferSum
+                end if
+                if SumTmp < 0 then
+                  SumTmp = 0
+                end if
+                'Добавление данных по алиментам в экземпляр класса
+                call wg_Alimony.Add(IBSQL.FieldByName("documentkey").AsInteger, Sum, _
+                               IBSQL.FieldByName("usr$restpercent").AsCurrency, _
+                               IBSQL.FieldByName("usr$transfertypekey").Value, SumTmp) 'Sum + ReservTransferSum)
+                AlimonyReservAll = AlimonyReservAll + SumTmp 'Sum + ReservTransferSum
+              end if
+              IBSQL.Next
+            wend
+            IBSQL.Close
+            'Если по сотруднику было накапливание долга по месяцам, то расчет можно завершать
+            if AddDebtMontFlg then
+              gdcAlimonyDebt.Close
+              wg_EmployeeCharge.FirstMoveKey = Null
+              exit function
+            end if
+            'Выборка долгов по алиментам. Сортировка: по долгам в суммах, по дате начала долга
+            IBSQL.SQL.Text = "SELECT line.documentkey, IIF(line.usr$debtsum > 0 and line.usr$debtsum > alrest.credit, 0, 1) AS debttype,  " & _
+              "  total.usr$datebegin AS thedate, al.documentkey AS alimonykey,  " & _
+              "  line.usr$debtsum, alrest.credit, line.usr$debtmonth, pmonth.mcount,  " & _
+              "  al.usr$restpercent, al.usr$datebegin, al.usr$transfertypekey, al.usr$formula, al.usr$percent  " & _
+              " FROM GD_DOCUMENT d " & _
+              " LEFT JOIN usr$wg_alimony al ON al.DOCUMENTKEY = d.ID " & _
+              "  LEFT JOIN usr$wg_alimonydebt line ON al.documentkey = line.usr$alimonykey " & _
+              "  LEFT JOIN usr$wg_total total ON total.documentkey = line.usr$totaldockey  " & _
+              "  LEFT JOIN USR$WG_P_TBLCHARGEBYDOC(al.usr$emplkey, :feetypekey, line.documentkey) alrest ON 1=1  " & _
+              "  LEFT JOIN USR$WG_P_ALIMONYPAYEDMONTH(line.documentkey) pmonth ON 1=1  " & _
+              "WHERE  " & _
+              "  al.usr$emplkey = :emplkey  " & _
+              "  AND (alrest.credit < line.usr$debtsum OR line.usr$debtmonth > pmonth.mcount)  " & _
+              "  AND d.DOCUMENTTYPEKEY = :ruid  " & _
+              "  AND total.USR$DATEBEGIN <= :DB  " & _
+              "ORDER BY 2, 3 "
+            IBSQL.ParamByName("feetypekey").AsInteger = wg_FeeType_AlimonyDebt_ID
+            IBSQL.ParamByName("DB").AsDateTime = wg_EmployeeCharge.BeginDate
+            IBSQL.ParamByName("emplkey").AsInteger = wg_EmployeeCharge.Employeekey
+            IBSQL.ParamByName("ruid").AsInteger = gdcBaseManager.GetIdByRuidString("147067079_453357870")
+            IBSQL.ExecQuery
+        '    while not (IBSQL.Eof or RestSum <= MustPaySum)
+            'Добавление долгов по алиментам в объект класса wg_Alimony
+            while not IBSQL.Eof
+        
+              if (IBSQL.FieldByName("usr$percent").AsCurrency > 0) and _
+                 (IBSQL.FieldByName("usr$percent").AsCurrency < 100) then
+                'sum = (RestSum - AlimonyReservAll) * IBSQL.FieldByName("usr$percent").AsCurrency / 100
+                sum = (RestSum) * IBSQL.FieldByName("usr$percent").AsCurrency / 100
+                if sum > (IBSQL.FieldByName("usr$debtsum").AsCurrency - IBSQL.FieldByName("credit").AsCurrency) then _
+                  sum = IBSQL.FieldByName("usr$debtsum").AsCurrency  - IBSQL.FieldByName("credit").AsCurrency
+                sum = wg_RoundSum(wg_FeeType_AlimonyDebt_ID, Sum)
+              else
+                sum = IBSQL.FieldByName("usr$debtsum").AsCurrency - IBSQL.FieldByName("credit").AsCurrency
+              end if
+              if sum < 0 then sum = 0
+              'Если алиментов, по которым есть долг, нет в списке алиментов, то добавим алименты в список
+              if not wg_Alimony.Exists(IBSQL.FieldByName("alimonykey").AsInteger) then
+                call wg_Alimony.Add(IBSQL.FieldByName("alimonykey").AsInteger, 0, _
+                             IBSQL.FieldByName("usr$restpercent").AsCurrency, _
+                             IBSQL.FieldByName("usr$transfertypekey").Value, 0)
+              end if
+              AlimonyKey = IBSQL.FieldByName("alimonykey").AsInteger
+              'Долг в месяцах
+              DebtMonthCount = IBSQL.FieldByName("usr$debtmonth").AsInteger - IBSQL.FieldByName("mcount").AsInteger
+        
+              call wg_Alimony.ItemByID(AlimonyKey).Add(_
+                IBSQL.FieldByName("documentkey").AsInteger, Sum, DebtMonthCount)
+        
+              if DebtMonthCount > 0 then
+                if wg_Alimony.ItemByID(AlimonyKey).ForDebtMonthSum = 0 then
+                  DebtMontSum = wg_GetAlimonySum(wg_FoCal, IBSQL.FieldByName("usr$formula").AsString, _
+                        IBSQL.FieldByName("usr$datebegin").AsDateTime, wg_EmployeeCharge.BeginDate)
+                 'Округление
+                  DebtMontSum = wg_RoundSum(FeeTypeKey, DebtMontSum)
+                  wg_Alimony.ItemByID(AlimonyKey).ForDebtMonthSum = DebtMontSum
+                  DebtAllMontSum = DebtMontSum * DebtMonthCount
+                else
+                  DebtAllMontSum = wg_Alimony.ItemByID(AlimonyKey).ForDebtMonthSum * DebtMonthCount
+                end if
+              else
+                DebtAllMontSum = 0
+              end if
+              wg_Alimony.ItemByID(AlimonyKey).MustPaySum = _
+                wg_Alimony.ItemByID(AlimonyKey).MustPaySum + Sum + DebtAllMontSum
+              IBSQL.Next
+            wend
+            IBSQL.Close
+        
+            AlimonyDebtAllSum = 0
+            AlimonyAllSum = 0
+            TransferAllSum = 0
+            OverReservedSum = 0
+            
+            
+            dim AccountKey, AccountKeyDebt, AccountKeyTransf
+            AccountKey = wg_GetAccountKey(FeeTypeKey, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
+            AccountKeyDebt = wg_GetAccountKey(wg_FeeType_AlimonyDebt_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
+            AccountKeyTransf = wg_GetAccountKey(wg_FeeType_TransferDed_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
+        
+            
+        '    set gdcAlimonyDebt = Nothing
+           'Цикл по алиментам
+            for i = 0 to wg_Alimony.Count - 1
+            'Определим сумму за перевод и сумму, которую может выплатить сотрудник (с учетом расходов за перевод)
+              'Процент остатка. Т.е. процент, который нужно оставить сотруднику
+              RestPercentSum = wg_Alimony.Item(i).RestPercent * _
+                              (wg_EmployeeCharge.Debit - wg_EmployeeCharge.Credit + wg_EmployeeCharge.PayedOut) / 100
+        
+              'Сумма для резерва сумм других алиментов. Т.е. сначала нужно выплатить деньги по алиментам, а потом по их долгам
+              'Из общей резервной суммы нужно исключить текущие алименты и те, которые уже расчитали
+              AlimonyReservAll = AlimonyReservAll - wg_Alimony.Item(i).ReservedSum
+        
+        '      if AlimonyReservedSum > RestSum then
+        '      end if
+              OutArray = wg_CalcTransferSum(wg_Alimony.Item(i).MustPaySum, wg_Alimony.Item(i).TransferTypeKey, _
+                wg_EmployeeCharge.BeginDate, RestSum - RestPercentSum - AlimonyReservAll)
+              CanPaySum = OutArray(0)
+              TransferSum = OutArray(1)
+              'Занести сумму за пересылку алиментов в начисления по табелю
+              if TransferSum > 0 then
+                call wg_EmployeeCharge.AddCharge(0, TransferSum, Null, TotalDocKey, wg_FeeType_TransferDed_ID,_
+                     wg_Alimony.Item(i).ID, wg_EmployeeCharge.BeginDate, 0, 0)
+                     
+                call wg_EmployeeCharge.AddChargeRegNew(0, TransferSum, TotalDocKey, wg_FeeType_TransferDed_ID, _
+                     AccountKeyTransf, wg_EmployeeCharge.BeginDate, wg_Alimony.Item(i).ID)
+        
+              end if
+        
+              'Определение по каким документам возможны выплаты
+              'Текущий долг по алиментам
+              if wg_Alimony.Item(i).Sum > CanPaySum then
+              'Добавление текущего долга в журнал долга по алиментам
+        '        if not Assigned(gdcAlimonyDebt) then
+        '          set gdcAlimonyDebt = Creator.GetObject(nil, "TgdcUserDocument", "")
+        '          gdcAlimonyDebt.SubType = "147072391_453357870"
+        '          gdcAlimonyDebt.Transaction = wg_EmployeeCharge.Transaction
+        '          gdcAlimonyDebt.Open
+        '        end if
+                gdcAlimonyDebt.Insert
+                gdcAlimonyDebt.FieldByName("usr$totaldockey").AsInteger = TotalDocKey
+                gdcAlimonyDebt.FieldByName("usr$alimonykey").AsInteger = wg_Alimony.Item(i).ID
+                gdcAlimonyDebt.FieldByName("usr$debtsum").AsCurrency = wg_Alimony.Item(i).Sum - CanPaySum
+                gdcAlimonyDebt.FieldByName("usr$debtmonth").AsInteger = 0
+                gdcAlimonyDebt.Post
+        
+                AlimonyDebt = wg_Alimony.Item(i).Sum - CanPaySum
+                AlimonySum = CanPaySum
+              else
+                AlimonySum = wg_Alimony.Item(i).Sum
+              end if
+              'Занести сумму выплаченных алиментов в начисления по табелю
+              if AlimonySum > 0 then
+                call wg_EmployeeCharge.AddCharge(0, AlimonySum, Null, TotalDocKey, FeeTypeKey,_
+                  wg_Alimony.Item(i).ID, wg_EmployeeCharge.BeginDate, 0, 0)
+                call wg_EmployeeCharge.AddChargeRegNew(0, AlimonySum, TotalDocKey, FeeTypeKey, _
+                  AccountKey, wg_EmployeeCharge.BeginDate, wg_Alimony.Item(i).ID)
+              end if
+        
+             'Гашение долгов в суммах
+              TmpSum = CanPaySum - AlimonySum
+              for j = 0 to wg_Alimony.Item(i).Count - 1
+                if TmpSum > 0 then
+                  if wg_Alimony.Item(i).Item(j).Sum > 0 then
+                    if wg_Alimony.Item(i).Item(j).Sum <= TmpSum then
+                      AlimonyDebtSum = wg_Alimony.Item(i).Item(j).Sum
+                    else
+                      AlimonyDebtSum = TmpSum
+                    end if
+                    'Занести сумму выплаченного долга в начисления по табелю
+                    call wg_EmployeeCharge.AddCharge(0, AlimonyDebtSum, Null, TotalDocKey, wg_FeeType_AlimonyDebt_ID,_
+                      wg_Alimony.Item(i).Item(j).ID, wg_EmployeeCharge.BeginDate, 0, 0)
+                      
+                    call wg_EmployeeCharge.AddChargeRegNew(0, AlimonyDebtSum, TotalDocKey, _
+                      wg_FeeType_AlimonyDebt_ID, AccountKeyDebt, wg_EmployeeCharge.BeginDate, wg_Alimony.Item(i).Item(j).ID)
+        
+        
+                    AlimonyDebtAllSum = AlimonyDebtAllSum + AlimonyDebtSum
+                    TmpSum = TmpSum - AlimonyDebtSum 'wg_Alimony.Item(i).Item(j).Sum
+                    end if
+                else
+                  exit for
+                end if
+              next
+             'Гашение долгов в месяцах
+              TmpSum = CanPaySum - AlimonySum - AlimonyDebtSum
+              for j = 0 to wg_Alimony.Item(i).Count - 1
+                if TmpSum > 0 then
+                  if wg_Alimony.Item(i).Item(j).DebtMonth > 0 then
+                    'Сумма за все месяцы
+                    DebtAllMontSum = wg_Alimony.Item(i).ForDebtMonthSum * wg_Alimony.Item(i).Item(j).DebtMonth
+        
+                    if DebtAllMontSum <= TmpSum then
+                      AlimonyMonthDebtSum = DebtAllMontSum
+                      PayedMonthCount = wg_Alimony.Item(i).Item(j).DebtMonth
+                    else
+                      AlimonyMonthDebtSum = TmpSum
+        '              PayedMonthCount = Int(DebtAllMontSum / wg_Alimony.Item(i).ForDebtMonthSum) + 1
+                      PayedMonthCount = Int(AlimonyMonthDebtSum / wg_Alimony.Item(i).ForDebtMonthSum)
+        
+                      if AlimonyMonthDebtSum / wg_Alimony.Item(i).ForDebtMonthSum - PayedMonthCount > 0 then
+                        PayedMonthCount = PayedMonthCount + 1
+                      end if
+        
+        
+                    end if
+                    'Добавим сумму, которую должны выплатить по погашенным месяцам в журнал долгов,
+                    ' иначе получится отрицательный кредит по долгу.
+                    'TODO: это можно сделать в классе
+                    gdcAlimonyDebt.Insert
+                    gdcAlimonyDebt.FieldByName("usr$totaldockey").AsInteger = TotalDocKey
+                    gdcAlimonyDebt.FieldByName("usr$alimonykey").AsInteger = wg_Alimony.Item(i).ID
+                    gdcAlimonyDebt.FieldByName("usr$debtmonth").AsInteger = 0
+                    gdcAlimonyDebt.FieldByName("usr$debtsum").AsCurrency = PayedMonthCount * wg_Alimony.Item(i).ForDebtMonthSum
+                    gdcAlimonyDebt.Post
+                    'Занести сумму выплаченного долга в начисления по табелю на добавленный выше документ
+                    call wg_EmployeeCharge.AddCharge(0, AlimonyMonthDebtSum, Null, TotalDocKey, wg_FeeType_AlimonyDebt_ID,_
+                      gdcAlimonyDebt.ID, wg_EmployeeCharge.BeginDate, 0, 0)
+                      
+                    call wg_EmployeeCharge.AddChargeRegNew(0, AlimonyMonthDebtSum, TotalDocKey, _
+                      wg_FeeType_AlimonyDebt_ID, AccountKeyDebt, wg_EmployeeCharge.BeginDate, gdcAlimonyDebt.ID)
+        
+                    'Занести погашенные месяцы в журнал
+                    SQLUpdate.ParamByName("totaldockey").AsInteger = TotalDocKey
+                    SQLUpdate.ParamByName("alimonydebtkey").AsInteger = wg_Alimony.Item(i).Item(j).ID
+                    SQLUpdate.ParamByName("payedmonth").AsInteger = PayedMonthCount
+                    SQLUpdate.ExecQuery
+                    SQLUpdate.Close
+        
+                    AlimonyDebtAllSum = AlimonyDebtAllSum + AlimonyMonthDebtSum
+                    TmpSum = TmpSum - AlimonyMonthDebtSum
+                  end if
+                else
+                  exit for
+                end if
+              next
+        
+              AlimonyAllSum = AlimonyAllSum + AlimonySum
+              TransferAllSum = TransferAllSum + TransferSum
+              RestSum = RestSum - AlimonySum - AlimonyDebtSum - TransferSum
+            next
+        
+        '  'Добавление сумм в журнал начислений
+        '    'Алименты
+        '    if AlimonyAllSum > 0 then
+        '      AccountKey = wg_GetAccountKey(FeeTypeKey, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
+        '      call wg_EmployeeCharge.AddChargeReg(0, AlimonyAllSum, TotalDocKey, FeeTypeKey, AccountKey, Null)
+        '    end if
+        '    'Выплаты долга по алиментам
+        '    if AlimonyDebtAllSum > 0 then               'Сумма выплаты по долгу за алименты
+        '      AccountKey = wg_GetAccountKey(wg_FeeType_AlimonyDebt_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
+        '      call wg_EmployeeCharge.AddChargeReg(0, AlimonyDebtAllSum, TotalDocKey, wg_FeeType_AlimonyDebt_ID, AccountKey, Null)
+        '    end if
+        '    'За почтовый перевод
+        '    if TransferAllSum <> 0 then
+        '      AccountKey = wg_GetAccountKey(wg_FeeType_TransferDed_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
+        '      call wg_EmployeeCharge.AddChargeReg(0, TransferAllSum, TotalDocKey, wg_FeeType_TransferDed_ID, AccountKey, Null)
+        '    end if
+        
+            gdcAlimonyDebt.Close
+        
+            wg_FeeAlimonyCalc = AlimonyAllSum + AlimonyDebtAllSum + TransferAllSum
+            wg_EmployeeCharge.FirstMoveKey = Null
+          end if
+        end function
+        
+        
+      DISPLAYSCRIPT: | 
+        WG_FEEALIMONYCALC
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: "Алименты, расчет"
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QRAAAAV0dfRU1QTE9ZRUVDSEFSR0URAAAAV0dfRU1QTE9ZRUVDSEFSR0UAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QLAAAAVE9UQUxET0NLRVkLAAAAVE9UQUxET0NLRVkA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QKAAAARkVFVFlQRUtFWQoAAABGRUVUWVBF
+        S0VZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNUCwAAAE9CSl9GRUVEQVRBCwAAAE9C
+        Sl9GRUVEQVRBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: ~
+      EDITIONDATE: 2014-06-24T09:57:06+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147019334_119619099 wg_MonthHour"
+          - 
+            ADDFUNCTIONKEY: "147168466_481542897 wg_GetAlimonySum"
+          - 
+            ADDFUNCTIONKEY: "147166442_481542897 wg_CalcTransferSum"
+          - 
+            ADDFUNCTIONKEY: "147804276_375143752 wg_RoundSum"
+          - 
+            ADDFUNCTIONKEY: "147743985_374487969 wg_EmplMoveList"
+          - 
+            ADDFUNCTIONKEY: "147170974_274788016 wg_TblCal"
+          - 
+            ADDFUNCTIONKEY: "147019760_119619099 wg_WageSettings"
+          - 
+            ADDFUNCTIONKEY: "147269378_531940465 wg_GetAccountKey"
+          - 
+            ADDFUNCTIONKEY: "195361376_166214404 wg_FeeAlimonyCalc_pl"

@@ -7,6 +7,40 @@
 
 /* реализация - общий код */
 
+% взять БВ
+get_min_wage(Scope, DateCalcTo, MinWage) :-
+    findall( MinWage0,
+                  % взять данные по БВ
+                ( get_data(Scope, kb, usr_wg_FCRate, [
+                            fDate-Date, fMinWage-MinWage0]),
+                  % где дата константы меньше первой даты месяца
+                  Date @< DateCalcTo
+                ),
+    % в список БВ
+    MinWageList),
+    % последние данные по БВ
+    last(MinWageList, MinWage),
+    !.
+get_min_wage(_, _, 0) :-
+    !.
+
+% взять БПМ
+get_budget(Scope, DateCalcTo, Budget) :-
+    findall( Budget0,
+                  % взять данные по БПМ
+                ( get_data(Scope, kb, gd_const_budget, [
+                            fConstDate-ConstDate, fBudget-Budget0]),
+                  % где дата константы меньше первой даты месяца
+                  ConstDate @< DateCalcTo
+                ),
+    % в список БПМ
+    BudgetList),
+    % последние данные по БПМ
+    last(BudgetList, Budget),
+    !.
+get_budget(_, _, 0) :-
+    !.
+
 % взять дату последнего приема на работу
 get_last_hire(Scope, PK, DateIn) :-
     % разложить первичный ключ

@@ -1,0 +1,658 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 147753062_69526485
+  Name: "GS.Общие.Хранилище"
+  Caption: "GS.Общие.Хранилище"
+  Version: "1.0.0.3"
+  Optional: False
+  Internal: True
+  Comment: "Основные папки хранилища."
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147240137_1234867257
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990000_17 GLOBAL"
+      NAME: "DFM"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-09-08T15:27:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147015466_1522056380
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990000_17 GLOBAL"
+      NAME: "NewForm"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2011-08-17T10:10:47+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147072890_2032709850
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990000_17 GLOBAL"
+      NAME: "Options"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T14:59:42+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147034316_2032709850
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990000_17 GLOBAL"
+      NAME: "SubTypes"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T12:00:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147028717_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "TdlgInvDocument"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T11:37:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147028743_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "TdlgInvPriceList"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T11:37:08+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147292406_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "TfrmGedeminMain"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2012-11-06T15:49:04+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 154996723_1440956890
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgAttrUserDefined"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-19T18:28:59+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147037361_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgAttrUserDefinedTree"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T12:17:59+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147257911_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgCompany"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2012-04-03T11:20:33+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147126476_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgCompanyAccount"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-10-04T10:20:20+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147156109_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgDepartment"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2011-04-15T14:06:50+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147034312_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgEmployee"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T12:04:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147036464_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgGood"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T12:12:05+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147036466_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgGoodGroup"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2004-02-26T14:59:58+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147030553_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgGoodMetal"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2005-09-22T15:36:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147055846_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgOurCompany"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:08:17+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147438530_1542685433
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgUser"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-08-18T16:44:17+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147240236_1234867257
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgUserComplexDocument"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-09-08T15:36:02+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147240190_1234867257
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgUserDocumentLine"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T12:17:59+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147030551_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_dlgUserSimpleDocument"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T11:37:18+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 396903548_1523996594
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmAttrUserDefined"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T11:37:18+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147045497_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmAttrUserDefinedLBRBTree"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T12:47:52+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147054907_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmAttrUserDefinedTree"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:08:17+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147438528_1542685433
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmExplorer"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-08-18T16:44:17+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147057915_1220615315
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmInvDocument"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2009-04-13T14:10:54+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147164331_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmInvSelectGoodRemains"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2011-06-09T13:34:51+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147164335_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmInvSelectRemains"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2011-06-09T13:34:51+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147258212_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmInvViewRemains"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2012-04-12T18:19:28+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147037359_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmMainGood"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T12:17:59+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147417517_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmSetting"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2013-06-20T11:16:06+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147182156_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmTable"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2011-11-18T12:45:56+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147057842_1633690722
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmUserComplexDocument"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T11:37:08+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147057828_1220615315
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_frmUserSimpleDocument"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T11:37:18+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147055844_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_wage_dlgPosition"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:08:17+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147321842_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_wage_dlgTableCalendar"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2013-05-22T15:01:33+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147034314_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdc_wage_frmTableCalendarMain"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T12:04:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147631311_84733194
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147240137_1234867257 GLOBAL\\DFM"
+      NAME: "Tgdv_dlgInvCardParams"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2013-11-11T14:55:07+03:00

@@ -38,7 +38,7 @@ round_sum(SumIn, SumOut, RoundType, RoundValue) :-
     round_sum(SumIn, SumOut, RoundType, RoundValue, Delta),
     !.
 % round_sum(+SumIn, +SumOut, +RoundType, +RoundValue, +Delta)
-round_sum(SumIn, SumOut, 1, RoundValue, Delta) :-
+round_sum(SumIn, SumOut, 1, _, Delta) :-
     SumOut is round((SumIn + Delta) / 10) * 10,
     !.
 round_sum(SumIn, SumOut, 2, RoundValue, Delta) :-
@@ -82,12 +82,17 @@ replace_all(In, _, _, In).
 % replace(+In, +Search, +Replace, -Out)
 replace(In, Search, Replace, Out) :-
     text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
-    append(Part1, MiddleCodes, InCodes),
-    append(SearchCodes, Part2, MiddleCodes),
-    append([Part1, ReplaceCodes, Part2], OutCodes),
+    replace_list(InCodes, SearchCodes, ReplaceCodes, OutCodes),
     text_in_out(In, OutCodes, Out),
     !.
 replace(In, _, _, In).
+
+% replace_list(+In, +Search, +Replace, -Out)
+replace_list(In, Search, Replace, Out) :-
+    append(Part1, Middle, In),
+    append(Search, Part2, Middle),
+    append([Part1, Replace, Part2], Out),
+    !.
 
 %
 text_list([], []) :-
