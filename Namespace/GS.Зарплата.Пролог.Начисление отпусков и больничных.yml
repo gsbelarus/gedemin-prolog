@@ -4,8 +4,8 @@ StructureVersion: "1.0"
 Properties: 
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
-  Caption: "Начисление отпусков и больничных"
-  Version: "1.0.0.51"
+  Caption: "Начисление отпусков, больничных, по-среднему"
+  Version: "1.0.0.59"
   Optional: False
   Internal: True
 Objects: 
@@ -203,6 +203,161 @@ Objects:
   - 
     Properties: 
       Class: "TgdcFunction"
+      RUID: 151189469_18175251
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 151189370_18175251
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "lib"
+      COMMENT: ~
+      SCRIPT: | 
+        % lib
+        
+        % день недели
+        weekday(date(Year, Month, Day), WeekDay) :-
+            A is (14 - Month) // 12,
+            Y is Year - A,
+            M is Month + 12 * A - 2,
+            WeekDay0 is (7000 + (Day + Y + Y // 4 - Y // 100 + Y // 400 + (31 * M) // 12)) mod 7,
+            WeekDay is WeekDay0 + 1,
+            !.
+        weekday(Date, WeekDay) :-
+            atom_date(Date, date(Year, Month, Day)),
+            weekday(date(Year, Month, Day), WeekDay),
+            !.
+        
+        % подготовка SQL-строки
+        prepare_sql(InSQL, [], InSQL) :-
+            !.
+        prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
+            replace_all(InSQL, Key, Value, InSQL1),
+            !,
+            prepare_sql(InSQL1, Pairs, OutSQL).
+        
+        % to_currency(+NumIn, -NumOut)
+        to_currency(NumIn, NumOut) :-
+            to_currency(NumIn, NumOut, 4),
+            !.
+        % to_currency(+NumIn, -NumOut, +Round)
+        to_currency(NumIn, NumOut, Round) :-
+            number(NumIn), integer(Round),
+            NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
+            !.
+        
+        % round_sum(+SumIn, +SumOut, +RoundType, +RoundValue)
+        round_sum(SumIn, SumOut, RoundType, RoundValue) :-
+            number(SumIn), integer(RoundType), number(RoundValue),
+            Delta = 0.00001,
+            round_sum(SumIn, SumOut, RoundType, RoundValue, Delta),
+            !.
+        % round_sum(+SumIn, +SumOut, +RoundType, +RoundValue, +Delta)
+        round_sum(SumIn, SumOut, 1, RoundValue, Delta) :-
+            SumOut is round((SumIn + Delta) / 10) * 10,
+            !.
+        round_sum(SumIn, SumOut, 2, RoundValue, Delta) :-
+            SumOut is round((SumIn + Delta) / RoundValue) * RoundValue,
+            !.
+        round_sum(SumIn, SumOut, 3, RoundValue, Delta) :-
+            SumOut is float_integer_part((SumIn + Delta) / RoundValue) * RoundValue,
+            !.
+        round_sum(Sum, Sum, _, _, _) :-
+            !.
+        
+        % make_list(+Num, -List)
+        make_list(Num, List) :-
+            integer(Num),
+            make_list(Num, List, 0),
+            !.
+        
+        make_list(Num, [], Num) :-
+            !.
+        make_list(Num, [_|Tail], Zero) :-
+            Num1 is Num - 1,
+            !,
+            make_list(Num1, Tail, Zero).
+        
+        
+        % exist_in(+Search, +In)
+        exist_in(Search, In) :-
+            text_list([Search, In], [SearchCodes, InCodes]),
+            append(_, MiddleCodes, InCodes),
+            append(SearchCodes, _, MiddleCodes),
+            !.
+        
+        % replace_all(+In, +Search, +Replace, -Out)
+        replace_all(In, Search, Replace, Out) :-
+            replace(In, Search, Replace, In1),
+            \+ In = In1,
+            !,
+            replace_all(In1, Search, Replace, Out).
+        replace_all(In, _, _, In).
+        
+        % replace(+In, +Search, +Replace, -Out)
+        replace(In, Search, Replace, Out) :-
+            text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
+            append(Part1, MiddleCodes, InCodes),
+            append(SearchCodes, Part2, MiddleCodes),
+            append([Part1, ReplaceCodes, Part2], OutCodes),
+            text_in_out(In, OutCodes, Out),
+            !.
+        replace(In, _, _, In).
+        
+        %
+        text_list([], []) :-
+            !.
+        text_list([Head|Teil], [Head1|Rest]) :-
+            text_in_out(Head, Head1, Head),
+            !,
+            text_list(Teil, Rest).
+        
+        %
+        text_in_out(In, OutCodes, Out) :-
+            ( atom(In), atom_codes(Out, OutCodes)
+            ; string(In), string_codes(Out, OutCodes)
+            ; number(In), number_codes(Out, OutCodes)
+            ; integer_list(In), Out = In ),
+            !.
+        
+        %
+        integer_list([]) :-
+            !.
+        integer_list([Head|Tail]) :-
+            integer(Head),
+            !,
+            integer_list(Tail).
+        
+        %
+        member_list([], _) :-
+            !.
+        member_list([Head|Tail], List) :-
+            memberchk(Head, List),
+            !,
+            member_list(Tail, List).
+        
+        %
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-07-02T17:05:27+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
       RUID: 151189468_18175251
       AlwaysOverwrite: False
       DontRemove: False
@@ -313,123 +468,291 @@ Objects:
   - 
     Properties: 
       Class: "TgdcFunction"
-      RUID: 151189469_18175251
+      RUID: 151042959_187967073
       AlwaysOverwrite: False
       DontRemove: False
       IncludeSiblings: False
-      HeadObject: 151189370_18175251
     Fields: 
       OBJECTNAME: "APPLICATION"
       MODULE: "PROLOG"
       LANGUAGE: "VBScript"
-      NAME: "lib"
+      NAME: "wg_data_mix"
       COMMENT: ~
       SCRIPT: | 
-        % lib
-        
-        % день недели
-        weekday(date(Year, Month, Day), WeekDay) :-
-            A is (14 - Month) // 12,
-            Y is Year - A,
-            M is Month + 12 * A - 2,
-            WeekDay0 is (7000 + (Day + Y + Y // 4 - Y // 100 + Y // 400 + (31 * M) // 12)) mod 7,
-            WeekDay is WeekDay0 + 1,
-            !.
-        weekday(Date, WeekDay) :-
-            atom_date(Date, date(Year, Month, Day)),
-            weekday(date(Year, Month, Day), WeekDay),
-            !.
-        
-        % подготовка SQL-строки
-        prepare_sql(InSQL, [], InSQL) :-
-            !.
-        prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
-            replace_all(InSQL, Key, Value, InSQL1),
-            !,
-            prepare_sql(InSQL1, Pairs, OutSQL).
-        
-        % to_currency(+NumIn, -NumOut)
-        to_currency(NumIn, NumOut) :-
-            to_currency(NumIn, NumOut, 4),
-            !.
-        % to_currency(+NumIn, -NumOut, +Round)
-        to_currency(NumIn, NumOut, Round) :-
-            number(NumIn), integer(Round),
-            NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
-            !.
-        
-        % make_list(+Num, -List)
-        make_list(Num, List) :-
-            integer(Num),
-            make_list(Num, List, 0),
-            !.
-        
-        make_list(Num, [], Num) :-
-            !.
-        make_list(Num, [_|Tail], Zero) :-
-            Num1 is Num - 1,
-            !,
-            make_list(Num1, Tail, Zero).
-        
-        
-        % exist_in(+Search, +In)
-        exist_in(Search, In) :-
-            text_list([Search, In], [SearchCodes, InCodes]),
-            append(_, MiddleCodes, InCodes),
-            append(SearchCodes, _, MiddleCodes),
-            !.
-        
-        % replace_all(+In, +Search, +Replace, -Out)
-        replace_all(In, Search, Replace, Out) :-
-            replace(In, Search, Replace, In1),
-            \+ In = In1,
-            !,
-            replace_all(In1, Search, Replace, Out).
-        replace_all(In, _, _, In).
-        
-        % replace(+In, +Search, +Replace, -Out)
-        replace(In, Search, Replace, Out) :-
-            text_list([In, Search, Replace], [InCodes, SearchCodes, ReplaceCodes]),
-            append(Part1, MiddleCodes, InCodes),
-            append(SearchCodes, Part2, MiddleCodes),
-            append([Part1, ReplaceCodes, Part2], OutCodes),
-            text_in_out(In, OutCodes, Out),
-            !.
-        replace(In, _, _, In).
-        
+        %% wg_data_mix
+        %  смешанные данные для twg_avg_wage, twg_fee
         %
-        text_list([], []) :-
+        
+        %:- ['../gd_pl_state/date', '../gd_pl_state/dataset'].
+        %:- ['../common/lib', '../common/params'].
+        
+        /* реализация - общий код */
+        
+        % взять БВ
+        get_min_wage(Scope, DateCalcTo, MinWage) :-
+            findall( MinWage0,
+                          % взять данные по БВ
+                        ( get_data(Scope, kb, usr_wg_FCRate, [
+                                    fDate-Date, fMinWage-MinWage0]),
+                          % где дата константы меньше первой даты месяца
+                          Date @< DateCalcTo
+                        ),
+            % в список БВ
+            MinWageList),
+            % последние данные по БВ
+            last(MinWageList, MinWage),
             !.
-        text_list([Head|Teil], [Head1|Rest]) :-
-            text_in_out(Head, Head1, Head),
+        get_min_wage(_, _, 0) :-
+            !.
+        
+        % взять БПМ
+        get_budget(Scope, DateCalcTo, Budget) :-
+            findall( Budget0,
+                          % взять данные по БПМ
+                        ( get_data(Scope, kb, gd_const_budget, [
+                                    fConstDate-ConstDate, fBudget-Budget0]),
+                          % где дата константы меньше первой даты месяца
+                          ConstDate @< DateCalcTo
+                        ),
+            % в список БПМ
+            BudgetList),
+            % последние данные по БПМ
+            last(BudgetList, Budget),
+            !.
+        get_budget(_, _, 0) :-
+            !.
+        
+        % взять дату последнего приема на работу
+        get_last_hire(Scope, PK, DateIn) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять даты
+            findall( EmplKey-FirstMoveKey-DateIn0,
+                     % для первого движения по типу 1 (прием на работу)
+                     get_data(Scope, kb, usr_wg_MovementLine, [
+                                 fEmplKey-EmplKey,
+                                 fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
+                                 fDateBegin-DateIn0, fMovementType-1 ]),
+            % в список дат приема на работу
+            DateInList ),
+            % определить дату последнего приема на работу
+            last(DateInList, EmplKey-FirstMoveKey-DateIn),
+            !.
+        
+        % формирование временных данных по графику работы
+        make_schedule(Scope, PK) :-
+            % временные данные по графику работы уже есть
+            get_param_list(Scope, temp, [pScheduleKey-_|PK]),
+            !.
+        make_schedule(Scope, PK) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять данные по движению
+            findall( Date-ScheduleKey,
+                     get_data(Scope, kb, usr_wg_MovementLine, [
+                                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                                 fDateBegin-Date, fScheduleKey-ScheduleKey]),
+            MoveList ),
+            % взять дату ограничения расчета
+            get_param_list(Scope, run, [pDateCalcTo-DateCalcTo|PK]),
+            % добавить временные данные по графику работы
+            add_schedule(Scope, PK, MoveList, DateCalcTo),
+            !.
+        
+        % добавить временные данные по графику работы
+        add_schedule(_, _, [], _) :-
+            !.
+        add_schedule(Scope, PK, [DateFrom-ScheduleKey], DateCalcTo) :-
+            append(PK,
+                    [pDateFrom-DateFrom, pDateTo-DateCalcTo, pScheduleKey-ScheduleKey],
+                        Pairs),
+            new_param_list(Scope, temp, Pairs),
+            !.
+        add_schedule(Scope, PK, [DateFrom-ScheduleKey, DateTo-ScheduleKey1 | MoveList], DateCalcTo) :-
+            append(PK,
+                    [pDateFrom-DateFrom, pDateTo-DateTo, pScheduleKey-ScheduleKey],
+                        Pairs),
+            new_param_list(Scope, temp, Pairs),
             !,
-            text_list(Teil, Rest).
+            add_schedule(Scope, PK, [DateTo-ScheduleKey1 | MoveList], DateCalcTo).
         
-        %
-        text_in_out(In, OutCodes, Out) :-
-            ( atom(In), atom_codes(Out, OutCodes)
-            ; string(In), string_codes(Out, OutCodes)
-            ; number(In), number_codes(Out, OutCodes)
-            ; integer_list(In), Out = In ),
+        % взять последний график рабочего времени
+        get_last_schedule(Scope, PK, ScheduleKey) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять график
+            findall( ScheduleKey0,
+                     % для движения по сотруднику
+                     get_data(Scope, kb, usr_wg_MovementLine, [
+                                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                                 fScheduleKey-ScheduleKey0]),
+            % в список графиков
+            ScheduleKeyList ),
+            % определить последний график рабочего времени
+            last(ScheduleKeyList, ScheduleKey),
             !.
         
-        %
-        integer_list([]) :-
+        % проверить вхождение даты в график
+        check_schedule(Scope, PK, TheDay, ScheduleKey) :-
+            append(PK,
+                    [pDateFrom-DateFrom, pDateTo-DateTo, pScheduleKey-ScheduleKey],
+                        Pairs),
+            get_param_list(Scope, temp, Pairs),
+            TheDay @>= DateFrom, TheDay @< DateTo,
             !.
-        integer_list([Head|Tail]) :-
-            integer(Head),
+        check_schedule(Scope, PK, _, ScheduleKey) :-
+            get_last_schedule(Scope, PK, ScheduleKey),
+            !.
+        
+        % расчитать табель за месяц по одному из параметров
+        calc_month_tab(Scope, PK, Y-M, TabDays) :-
+            % параметры выбора табеля
+            member(TabelOption, [tbl_cal_flex, tbl_cal, tbl_charge, dbf_sums]),
+            % взять данные из табеля
+            findall( Date-DOW-HOW,
+                    % для проверяемого месяца
+                    ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, _, TabelOption),
+                    % с контролем наличия дней или часов
+                    once( ( DOW > 0 ; HOW > 0 ) )
+                    ),
+            % в список дата-день-часы
+            TabDays),
+            % проверить список табеля
+            \+ TabDays = [],
+            !.
+        calc_month_tab(_, _, _, []) :-
+            !.
+        
+        % сумма дней и часов
+        sum_days_houres(ListDays, Days, Houres) :-
+            sum_days_houres(ListDays, Days, Houres, '', ''),
+            !.
+        sum_days_houres(ListDays, Days, Houres, DateBegin, DateEnd) :-
+            sum_days_houres(ListDays, Days, Houres, 0, 0, DateBegin, DateEnd),
+            !.
+        %
+        sum_days_houres([], Days, Houres, Days, Houres, _, _).
+        sum_days_houres([Date-DOW-HOW|ListDays], Days, Houres, Days0, Houres0, DateBegin, DateEnd) :-
+              % если в заданном периоде
+            ( ( Date @>= DateBegin, Date @=< DateEnd
+              % или полный расчет
+              ; [DateBegin, DateEnd] = ['', '']
+              ),
+              % то добавить дни и часы
+              Days1 is Days0 + DOW,
+              Houres1 is Houres0 + HOW
+            ; % иначе исключать
+              Days1 is Days0,
+              Houres1 is Houres0
+            ),
             !,
-            integer_list(Tail).
+            sum_days_houres(ListDays, Days, Houres, Days1, Houres1, DateBegin, DateEnd).
         
-        %
-        member_list([], _) :-
-            !.
-        member_list([Head|Tail], List) :-
-            memberchk(Head, List),
-            !,
-            member_list(Tail, List).
+        /* реализация - смешанные данные */
         
-        %
+        %% взять данные по начислению
+        % начисление из TblCharge
+        usr_wg_TblCharge_mix(Scope, ArgPairs, ChargeOption) :-
+            ChargeOption = tbl_charge,
+            get_data(Scope, kb, usr_wg_TblCharge, [fPayPeriod-PayPeriod|ArgPairs]),
+            once( ( PayPeriod < 2
+                  ; \+ memberchk(Scope, [wg_avg_wage_avg]) )
+                ).
+        % или начисление из dbf
+        % с согласованием спецификации по TblCharge
+        usr_wg_TblCharge_mix(Scope, ArgPairs, ChargeOption) :-
+            ChargeOption = dbf_sums,
+            % спецификация usr_wg_TblCharge
+            ValuePairs = [
+                        fEmplKey-EmplKey, fFirstMoveKey-_,
+                        fCalYear-CalYear, fCalMonth-CalMonth, fDateBegin-DateBegin,
+                        fDebit-Debit, fFeeTypeKey-_
+                        ],
+            member_list(ArgPairs, ValuePairs),
+            % спецификация usr_wg_DbfSums
+            DataPairs =  [
+                        fEmplKey-EmplKey,
+                        fInYear-CalYear, fInMonth-CalMonth, fDateBegin-DateBegin,
+                        fInSum-Debit
+                        ],
+            get_data(Scope, kb, usr_wg_DbfSums, DataPairs).
+        
+        %% взять данные по графику
+        % день месяца по календарному графику
+        usr_wg_TblDayNorm_mix(Scope, PK, Y-M, Date, Duration, WorkDay, NormOption) :-
+            NormOption = tbl_cal_flex,
+            get_Flex_by_type(Scope, PK, Y-M, Date, WorkDay, Duration, _, "plan").
+        % или день месяца по справочнику графика рабочего времени
+        usr_wg_TblDayNorm_mix(Scope, PK, Y-M, TheDay, WDuration, WorkDay, NormOption) :-
+            NormOption = tbl_day_norm,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            get_data(Scope, kb, usr_wg_TblCalDay, [
+                        fScheduleKey-ScheduleKey,
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fWYear-Y, fWMonth-M, fTheDay-TheDay,
+                        fWDuration-WDuration, fWorkDay-WorkDay ]),
+            check_schedule(Scope, PK, TheDay, ScheduleKey).
+        
+        %% взять данные по табелю
+        % день месяца по табелю мастера
+        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
+            TabelOption = tbl_cal_flex,
+            get_Flex_by_type(Scope, PK, Y-M, Date, Days, Duration, HoureType, "fact").
+        % или день месяца по табелю
+        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
+            TabelOption = tbl_cal,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            get_data(Scope, kb, usr_wg_TblCalLine, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fCalYear-Y, fCalMonth-M, fDate-Date,
+                        fDuration-Duration, fHoureType-HoureType]),
+            once( (Duration > 0, Days = 1 ; Days = 0) ).
+        % или табель дни-часы из начислений
+        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
+            TabelOption = tbl_charge,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            ArgPairs = [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fCalYear-Y, fCalMonth-M, fDateBegin-Date,
+                        fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
+            get_data(Scope, kb, usr_wg_TblCharge, [fPayPeriod-_|ArgPairs]),
+            once( get_data(Scope, kb, usr_wg_FeeType, [
+                            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                            fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
+        % или день месяца из dbf
+        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, 0, InHoures, 0, TabelOption) :-
+            TabelOption = dbf_sums,
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
+            get_data(Scope, kb, usr_wg_DbfSums, [
+                        fEmplKey-EmplKey, fInHoures-InHoures,
+                        fInYear-Y, fInMonth-M, fDateBegin-Date]).
+        
+        % день месяца по календарному графику или табелю мастера
+        % FlexType: "plan" ; "fact"
+        get_Flex_by_type(Scope, PK, Y-M, Date, Days, Duration, HoureType, FlexType) :-
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, _),
+            make_list(62, TeilArgs),
+            Term =..[ usr_wg_TblCal_FlexLine, FlexType, EmplKey, FirstMoveKey, Y, M, _ | TeilArgs ],
+            catch( call( Term ), _, fail),
+            member(D, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]),
+            atom_date(Date, date(Y, M, D)),
+            S is (D - 1) * 2 + 6 + 1,
+            H is S + 1,
+            arg(S, Term, Duration0),
+            once( ( number(Duration0), Duration = Duration0
+                    ; atom_number(Duration0, Duration)
+                    ; Duration = 0 ) ),
+            arg(H, Term, HoureType0),
+            once( ( number(HoureType0), HoureType = HoureType0
+                    ; atom_number(HoureType0, HoureType)
+                    ; HoureType = 0 ) ),
+            once( (Duration > 0, Days = 1 ; Days = 0) ).
+        
+        /**/
+        
+         %
+        %%
         
         
       DISPLAYSCRIPT: ~
@@ -445,7 +768,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-04-17T11:11:35+03:00
+      EDITIONDATE: 2014-07-02T17:07:33+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1548,10 +1871,13 @@ Objects:
                 pMonthQty-12, pAvgDays-29.7,
                 pFeeGroupKey_ruid-'147071456,274788016',
                 pFeeGroupKeyNoCoef_ruid-'147757383,84733194',
+                % А, УБЗ, Т
                 pBadHourType_xid_IN-'147650804, 147650786, 147650802',
                 pBadHourType_dbid-119619099,
+                % Больничный (80%)
                 pBadFeeType_xid_IN-'151000730',
                 pBadFeeType_dbid-2109681374,
+                % Ненормированный график
                 pSpecDep_ruid-'156913837,131572570'
                 ]),
             fail.
@@ -1575,8 +1901,8 @@ Objects:
             fail.
         twg_avg_wage_in_params:-
             new_param_list(wg_struct_sick, in, [
-                pBudgetPart-0.5,
                 pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
+                pBugetCalcType-1, pBudgetPart-0.5,
                 pJobIllType_ruid-'147036273,151520244',
                 pBudget_ruid-'147073065,1224850260',
                 pAvgSalaryRB_ruid-'147445419,274788016',
@@ -1609,7 +1935,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-05T15:15:55+03:00
+      EDITIONDATE: 2014-07-02T17:06:58+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1644,9 +1970,9 @@ Objects:
         
         %% include
         %#INCLUDE lib
-        :- ['../common/lib'].
         %#INCLUDE params
-        :- ['../common/params'].
+        %#INCLUDE wg_data_mix
+        :- ['../common/lib', '../common/params', '../common/wg_data_mix'].
         %#INCLUDE twg_avg_wage_sql
         :- [twg_avg_wage_sql].
         %#INCLUDE twg_avg_wage_in_params
@@ -1781,22 +2107,6 @@ Objects:
             get_last_schedule(Scope, PK, ScheduleKey),
             % равен графику специального отдела
             get_spec_dep(Scope, PK, ScheduleKey),
-            !.
-        
-        % взять последний график рабочего времени
-        get_last_schedule(Scope, PK, ScheduleKey) :-
-            % разложить первичный ключ
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-            % взять график
-            findall( ScheduleKey0,
-                     % для движения по сотруднику
-                     get_data(Scope, kb, usr_wg_MovementLine, [
-                                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                                 fScheduleKey-ScheduleKey0]),
-            % в список графиков
-            ScheduleKeyList ),
-            % определить последний график рабочего времени
-            last(ScheduleKeyList, ScheduleKey),
             !.
         
         % взять график специального отдела
@@ -2353,43 +2663,6 @@ Objects:
             !,
             add_TblCharge(PayPeriod1, List1, DateBegin1, List3, 0, 0).
         
-        % формирование временных данных по графику работы
-        make_schedule(Scope, PK) :-
-            % временные данные по графику работы уже есть
-            get_param_list(Scope, temp, [pScheduleKey-_|PK]),
-            !.
-        make_schedule(Scope, PK) :-
-            % разложить первичный ключ
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-            % взять данные по движению
-            findall( Date-ScheduleKey,
-                     get_data(Scope, kb, usr_wg_MovementLine, [
-                                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                                 fDateBegin-Date, fScheduleKey-ScheduleKey]),
-            MoveList ),
-            % взять дату ограничения расчета
-            get_param_list(Scope, run, [pDateCalcTo-DateCalcTo|PK]),
-            % добавить временные данные по графику работы
-            add_schedule(Scope, PK, MoveList, DateCalcTo),
-            !.
-        
-        % добавить временные данные по графику работы
-        add_schedule(_, _, [], _) :-
-            !.
-        add_schedule(Scope, PK, [DateFrom-ScheduleKey], DateCalcTo) :-
-            append(PK,
-                    [pDateFrom-DateFrom, pDateTo-DateCalcTo, pScheduleKey-ScheduleKey],
-                        Pairs),
-            new_param_list(Scope, temp, Pairs),
-            !.
-        add_schedule(Scope, PK, [DateFrom-ScheduleKey, DateTo-ScheduleKey1 | MoveList], DateCalcTo) :-
-            append(PK,
-                    [pDateFrom-DateFrom, pDateTo-DateTo, pScheduleKey-ScheduleKey],
-                        Pairs),
-            new_param_list(Scope, temp, Pairs),
-            !,
-            add_schedule(Scope, PK, [DateTo-ScheduleKey1 | MoveList], DateCalcTo).
-        
         % периоды для проверки
         get_periods(Scope, PK, Periods) :-
             % взять временные данные по списку периодов
@@ -2400,32 +2673,36 @@ Objects:
             append(PK, [pDateCalcFrom-DateFrom, pDateCalcTo-DateTo], Pairs1),
             get_param_list(Scope, run, Pairs1),
             % сформировать список периодов
-            make_periods(Scope, PK, DateFrom, DateTo, Periods),
+            make_periods(Scope, PK, DateFrom, DateTo, Periods, 0),
             % добавить временные данные по списку периодов
             append(PK, [pPeriods-Periods], Pairs2),
             new_param_list(Scope, temp, Pairs2),
             !.
         
         % сформировать список периодов
-        make_periods(_, _, DateFrom, DateTo, []) :-
+        make_periods(_, _, DateFrom, DateTo, [], _) :-
             DateFrom @>= DateTo,
             !.
-        make_periods(Scope, PK, DateFrom, DateTo, [Y-M|Periods]) :-
+        make_periods(Scope, PK, DateFrom, DateTo, [Y-M|Periods], NormOption) :-
             atom_date(DateFrom, date(Y, M, _)),
             % период является рабочим
-            is_work_period(Scope, PK, Y-M),
+            is_work_period(Scope, PK, Y-M, NormOption),
             % добавить месяц
             date_add(DateFrom, 1, month, DateFrom1),
             !,
-            make_periods(Scope, PK, DateFrom1, DateTo, Periods).
-        make_periods(Scope, PK, DateFrom, DateTo, Periods) :-
+            make_periods(Scope, PK, DateFrom1, DateTo, Periods, NormOption).
+        make_periods(Scope, PK, DateFrom, DateTo, Periods, NormOption) :-
             % добавить месяц
             date_add(DateFrom, 1, month, DateFrom1),
             !,
-            make_periods(Scope, PK, DateFrom1, DateTo, Periods).
+            make_periods(Scope, PK, DateFrom1, DateTo, Periods, NormOption).
         
         %  период является рабочим
-        is_work_period(Scope, PK, Y-M) :-
+        is_work_period(_, _, _, NormOption) :-
+            % есть признак расчета нормы времени
+            NormOption = 1,
+            !.
+        is_work_period(Scope, PK, Y-M, _) :-
             % календарных дней в месяце
             month_days(Y, M, MonthDays),
             % последняя дата месяца
@@ -2435,23 +2712,6 @@ Objects:
             % если дата приема на работу не больше последней даты месяца
             DateIn @=< LastMonthDate,
             % то период является рабочим
-            !.
-        
-        % взять дату последнего приема на работу
-        get_last_hire(Scope, PK, DateIn) :-
-            % разложить первичный ключ
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-            % взять даты
-            findall( DateIn0,
-                     % для первого движения по типу 1 (прием на работу)
-                     get_data(Scope, kb, usr_wg_MovementLine, [
-                                 fEmplKey-EmplKey,
-                                 fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
-                                 fDateBegin-DateIn0, fMovementType-1 ]),
-            % в список дат приема на работу
-            DateInList ),
-            % определить дату последнего приема на работу
-            last(DateInList, DateIn),
             !.
         
         % добавление временных данных по расчету дней и часов
@@ -3198,39 +3458,8 @@ Objects:
             append(PK, [pDateNormFrom-DateFrom, pDateNormTo-DateTo], Pairs),
             get_param_list(Scope, run, Pairs),
             % сформировать список периодов
-            make_periods(Scope, PK, DateFrom, DateTo, Periods),
+            make_periods(Scope, PK, DateFrom, DateTo, Periods, 1),
             !.
-        
-        % расчитать табель за месяц по одному из параметров
-        calc_month_tab(Scope, PK, Y-M, TabDays) :-
-            % параметры выбора табеля
-            member(TabelOption, [tbl_cal_flex, tbl_cal, tbl_charge, dbf_sums]),
-            % взять данные из табеля
-            findall( Date-DOW-HOW,
-                    % для проверяемого месяца
-                    ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, _, TabelOption),
-                    % с контролем наличия дней или часов
-                    once( (DOW > 0 ; HOW > 0 ) )
-                    ),
-            % в список дата-день-часы
-            TabDays),
-            % проверить список табеля
-            \+ TabDays = [],
-            !.
-        calc_month_tab(_, _, _, []) :-
-            !.
-        
-        % сумма дней и часов
-        sum_days_houres(ListDays, Days, Houres) :-
-            sum_days_houres(ListDays, Days, Houres, 0, 0),
-            !.
-        %
-        sum_days_houres([], Days, Houres, Days, Houres).
-        sum_days_houres([_-DOW-HOW|ListDays], Days, Houres, Days0, Houres0) :-
-            Days1 is Days0 + DOW,
-            Houres1 is Houres0 + HOW,
-            !,
-            sum_days_houres(ListDays, Days, Houres, Days1, Houres1).
         
         % проверка месяца по заработку
         % - для отпусков
@@ -3364,120 +3593,6 @@ Objects:
             once( get_data(Scope, kb, usr_wg_BadFeeType, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-FeeTypeKey]) ),
             !.
-        
-        /* реализация - смешанные данные */
-        
-        %% взять данные по начислению
-        % начисление из TblCharge
-        usr_wg_TblCharge_mix(Scope, ArgPairs, ChargeOption) :-
-            ChargeOption = tbl_charge,
-            get_data(Scope, kb, usr_wg_TblCharge, [fPayPeriod-PayPeriod|ArgPairs]),
-            once( ( PayPeriod < 2
-                  ; \+ memberchk(Scope, [wg_avg_wage_avg]) )
-                ).
-        % или начисление из dbf
-        % с согласованием спецификации по TblCharge
-        usr_wg_TblCharge_mix(Scope, ArgPairs, ChargeOption) :-
-            ChargeOption = dbf_sums,
-            % спецификация usr_wg_TblCharge
-            ValuePairs = [
-                        fEmplKey-EmplKey, fFirstMoveKey-_,
-                        fCalYear-CalYear, fCalMonth-CalMonth, fDateBegin-DateBegin,
-                        fDebit-Debit, fFeeTypeKey-_
-                        ],
-            member_list(ArgPairs, ValuePairs),
-            % спецификация usr_wg_DbfSums
-            DataPairs =  [
-                        fEmplKey-EmplKey,
-                        fInYear-CalYear, fInMonth-CalMonth, fDateBegin-DateBegin,
-                        fInSum-Debit
-                        ],
-            get_data(Scope, kb, usr_wg_DbfSums, DataPairs).
-        
-        %% взять данные по графику
-        % день месяца по календарному графику
-        usr_wg_TblDayNorm_mix(Scope, PK, Y-M, Date, Duration, WorkDay, NormOption) :-
-            NormOption = tbl_cal_flex,
-            get_Flex_by_type(Scope, PK, Y-M, Date, WorkDay, Duration, _, "plan").
-        % или день месяца по справочнику графика рабочего времени
-        usr_wg_TblDayNorm_mix(Scope, PK, Y-M, TheDay, WDuration, WorkDay, NormOption) :-
-            NormOption = tbl_day_norm,
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-            get_data(Scope, kb, usr_wg_TblCalDay, [
-                        fScheduleKey-ScheduleKey,
-                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                        fWYear-Y, fWMonth-M, fTheDay-TheDay,
-                        fWDuration-WDuration, fWorkDay-WorkDay ]),
-            check_schedule(Scope, PK, TheDay, ScheduleKey).
-        
-        %
-        check_schedule(Scope, PK, TheDay, ScheduleKey) :-
-            append(PK,
-                    [pDateFrom-DateFrom, pDateTo-DateTo, pScheduleKey-ScheduleKey],
-                        Pairs),
-            get_param_list(Scope, temp, Pairs),
-            TheDay @>= DateFrom, TheDay @< DateTo,
-            !.
-        check_schedule(Scope, PK, _, ScheduleKey) :-
-            get_last_schedule(Scope, PK, ScheduleKey),
-            !.
-        
-        %% взять данные по табелю
-        % день месяца по табелю мастера
-        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
-            TabelOption = tbl_cal_flex,
-            get_Flex_by_type(Scope, PK, Y-M, Date, Days, Duration, HoureType, "fact").
-        % или день месяца по табелю
-        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
-            TabelOption = tbl_cal,
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-            get_data(Scope, kb, usr_wg_TblCalLine, [
-                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                        fCalYear-Y, fCalMonth-M, fDate-Date,
-                        fDuration-Duration, fHoureType-HoureType]),
-            once( (Duration > 0, Days = 1 ; Days = 0) ).
-        % или табель дни-часы из начислений
-        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
-            TabelOption = tbl_charge,
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-            ArgPairs = [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                        fCalYear-Y, fCalMonth-M, fDateBegin-Date,
-                        fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
-            get_data(Scope, kb, usr_wg_TblCharge, [fPayPeriod-_|ArgPairs]),
-            once( get_data(Scope, kb, usr_wg_FeeType, [
-                            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                            fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
-        % или день месяца из dbf
-        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, 0, InHoures, 0, TabelOption) :-
-            TabelOption = dbf_sums,
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
-            get_data(Scope, kb, usr_wg_DbfSums, [
-                        fEmplKey-EmplKey, fInHoures-InHoures,
-                        fInYear-Y, fInMonth-M, fDateBegin-Date]).
-        
-        % день месяца по календарному графику или табелю мастера
-        % FlexType: "plan" ; "fact"
-        get_Flex_by_type(Scope, PK, Y-M, Date, Days, Duration, HoureType, FlexType) :-
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-            gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, _),
-            make_list(62, TeilArgs),
-            Term =..[ usr_wg_TblCal_FlexLine, FlexType, EmplKey, FirstMoveKey, Y, M, _ | TeilArgs ],
-            catch( call( Term ), _, fail),
-            member(D, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-                        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]),
-            atom_date(Date, date(Y, M, D)),
-            S is (D - 1) * 2 + 6 + 1,
-            H is S + 1,
-            arg(S, Term, Duration0),
-            once( ( number(Duration0), Duration = Duration0
-                    ; atom_number(Duration0, Duration)
-                    ; Duration = 0 ) ),
-            arg(H, Term, HoureType0),
-            once( ( number(HoureType0), HoureType = HoureType0
-                    ; atom_number(HoureType0, HoureType)
-                    ; HoureType = 0 ) ),
-            once( (Duration > 0, Days = 1 ; Days = 0) ).
-        
         
         /* реализация - механизм подготовки данных */
         
@@ -3940,7 +4055,7 @@ Objects:
             new_param_list(Scope, NextType, Pairs1).
         
         %
-        struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType) :-
+        struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType0, BudgetOption, IsPregnancy, IllType) :-
             Scope = wg_struct_sick, Type = in, NextType = run,
             % шаблон первичного ключа
             PK = [pEmplKey-_, pFirstMoveKey-_],
@@ -3958,6 +4073,9 @@ Objects:
             date_diff(DateBegin, Duration0, DateEnd),
             Duration is Duration0 + 1,
             %
+            ( BudgetOption = 1 -> get_param(Scope, Type, pBugetCalcType-CalcType)
+            ; CalcType = CalcType0
+            ),
             sick_slice_list(Scope, Type, CalcType, Duration, SliceList0),
             %
             date_diff(DateCalc, DurationBefore, DateBegin),
@@ -4030,21 +4148,26 @@ Objects:
             Pairs0 = [pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType],
             append(PK, Pairs0, Pairs),
             get_param_list(Scope, temp, Pairs),
-            %
-            ( BudgetOption = 1,
-              ( SickPart0 =:= 0, SickPart = 0.0
-              ; SickPart = 1.0
-              )
-            ; SickPart = SickPart0
-            ),
+            SickPart is SickPart0 * 1.0,
             Percent is SickPart * 100,
             date_add(DateEnd1, 1, day, DateEnd11),
             sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType, Scope, PK),
+              % если расчет от БПМ
             ( BudgetOption = 1,
-              get_avg_wage_budget(Scope, in, Y-M, AvgWage)
-            ; check_avg_wage(Scope, IsPregnancy, Y-M, AvgWage0, AvgWage)
+              get_avg_wage_budget(Scope, in, Y-M, AvgWage),
+              Summa is round(DOI * AvgWage * SickPart)
+              % или есть признак Декретный
+            ; IsPregnancy = 1,
+              Summa is round(DOI * AvgWage0 * SickPart)
+              % иначе проверка на превышение по среднему заработку в РБ
+            ; Summa0 is round(DOI * AvgWage0 * SickPart),
+              % для среднедневной зп для месяца по среднемесячной зп в РБ
+              avg_wage_by_avg_salary(Scope, Y-M, AvgWage1),
+              % процент не учитывается
+              Summa1 is round(DOI * AvgWage1),
+              % берется минимальная сумма
+              Summa is min(Summa0, Summa1)
             ),
-            Summa is round(DOI * AvgWage * SickPart),
             OutPairs = [
                         pAccDate-AccDate, pIncludeDate-IncludeDate,
                         pPercent-Percent, pDOI-DOI, pHOI-HOI, pSumma-Summa,
@@ -4054,19 +4177,6 @@ Objects:
             !,
             struct_sick_calc(SliceList, SickPart-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage0, Scope, PK).
         
-        %
-        check_avg_wage(_, 1, _, AvgWage, AvgWage) :-
-            % есть признак Декретный
-            !.
-        check_avg_wage(Scope, _, Y-M, AvgWage0, AvgWage) :-
-            % среднедневная зп для месяца по среднемесячной зп
-            avg_wage_by_avg_salary(Scope, Y-M, AvgWage1),
-            % определить среднедневную зп
-            ( AvgWage0 =< AvgWage1, AvgWage = AvgWage0
-            ; AvgWage = AvgWage1 ),
-            !.
-        check_avg_wage(_, _, _, AvgWage, AvgWage) :-
-            !.
         %
         make_period(DateBegin, DateEnd, DateBegin, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2) :-
             head_period(DateBegin, DateEnd, DateEnd1, Slice, Slice2),
@@ -4174,7 +4284,7 @@ Objects:
         get_avg_wage_budget(_, _, _, 0) :-
             !.
         
-        % среднедневная зп для месяца по среднемесячной зп
+        % среднедневная зп для месяца по среднемесячной зп в РБ
         avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
             % первая дата месяца
             atom_date(FirstMonthDate, date(Y, M, 1)),
@@ -4219,7 +4329,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-13T15:34:35+03:00
+      EDITIONDATE: 2014-07-02T17:06:28+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -4228,6 +4338,8 @@ Objects:
             ADDFUNCTIONKEY: "151189469_18175251 lib"
           - 
             ADDFUNCTIONKEY: "151189468_18175251 params"
+          - 
+            ADDFUNCTIONKEY: "151042959_187967073 wg_data_mix"
           - 
             ADDFUNCTIONKEY: "151189470_18175251 twg_avg_wage_sql"
           - 
@@ -11944,7 +12056,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-05-12T10:46:27+03:00
+      EDITIONDATE: 2014-06-19T12:05:57+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11962,7 +12074,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-02-26T10:01:11+03:00
+      EDITIONDATE: 2014-06-19T12:05:57+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11980,7 +12092,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-02-26T10:01:11+03:00
+      EDITIONDATE: 2014-06-19T12:05:57+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11998,7 +12110,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-05-12T10:46:27+03:00
+      EDITIONDATE: 2014-06-19T12:05:57+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -12121,11 +12233,11 @@ Objects:
       NAME: "Height"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 273
+      INT_DATA: 507
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-03-03T17:40:45+03:00
+      EDITIONDATE: 2014-06-26T09:56:24+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -12263,7 +12375,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-02T17:27:06+03:00
+      EDITIONDATE: 2014-06-20T10:07:15+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12281,7 +12393,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-02T17:27:06+03:00
+      EDITIONDATE: 2014-06-20T10:07:15+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12299,7 +12411,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-02T17:27:06+03:00
+      EDITIONDATE: 2014-06-20T10:07:15+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12317,7 +12429,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-02T17:27:06+03:00
+      EDITIONDATE: 2014-06-20T10:07:15+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"

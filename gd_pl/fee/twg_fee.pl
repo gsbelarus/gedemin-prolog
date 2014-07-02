@@ -72,7 +72,7 @@ fee_calc(Scope) :-
     % - для алиментов
     Scope = wg_fee_alimony,
     % для каждого сотрудника
-    get_param_list(Scope, in, [pEmplKey-EmplKey]),
+    get_param(Scope, in, pEmplKey-EmplKey),
     % выполнить расчет
     fee_calc(Scope, EmplKey),
     % найти альтернативу
@@ -96,18 +96,16 @@ fee_calc(Scope, EmplKey) :-
     calc_formula(Scope, EmplKey),
     % расчет перевода
     cacl_transf(Scope, EmplKey),
-    % расчет долгов
-    calc_debt(Scope, EmplKey),
     % контроль остатка
-    check_rest(Scope, EmplKey),
-    % добавление начислений
-    add_charges(Scope, EmplKey),
+    % todo: check_rest(Scope, EmplKey),
+    % расчет долгов
+    % todo: calc_debt(Scope, EmplKey),
     !.
 
 % расчет табеля
 calc_tab(Scope, EmplKey) :-
     % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pAlimonyCalcTab,
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcTab,
     % взять локальное время
     get_local_date_time(DT),
     % записать отладочную информацию
@@ -123,10 +121,11 @@ calc_tab(Scope, EmplKey) :-
     calc_month_tab(Scope, PK, Y-M, TabDays),
     sum_days_houres(TabDays, TDays, THoures),
     % спецификация временных данных
-    append([ [Section-1], PK, [pYM-Y-M, pTDays-TDays, pTHoures-THoures] ],
-                TPairs),
+    append([ [Section-1], PK,
+             [pYM-Y-M, pTDays-TDays, pTHoures-THoures] ],
+                TabPairs),
     % добавить временные данные
-    new_param_list(Scope, Type, TPairs),
+    new_param_list(Scope, Type, TabPairs),
     % спецификация алиментов
     SpecAlimony = [
                 fDocKey-AlimonyKey, fEmplKey-EmplKey,
@@ -135,7 +134,7 @@ calc_tab(Scope, EmplKey) :-
     append([ [Section-2], PK,
              [pAlimonyKey-AlimonyKey, pDateBegin-ADateBegin, pDateEnd-ADateEnd],
              [pYM-Y-M, pTDays-ADays, pTHoures-AHoures, pTCoef-TCoef] ],
-                APairs),
+                AlimonyPairs),
     % для всех алиментов
     forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
             ( % посчитать дни и часы для периода действия алиментов
@@ -143,7 +142,7 @@ calc_tab(Scope, EmplKey) :-
               % вычислить коеффициент от общего табеля за месяц
               TCoef is AHoures / THoures,
               % добавить временные данные
-              new_param_list(Scope, Type, APairs)
+              new_param_list(Scope, Type, AlimonyPairs)
             )
           ),
     !.
@@ -151,7 +150,7 @@ calc_tab(Scope, EmplKey) :-
 % расчет суммы
 cacl_amount(Scope, EmplKey) :-
     % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pAlimonyCalcAmount,
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
     % взять локальное время
     get_local_date_time(DT),
     % записать отладочную информацию
@@ -185,38 +184,205 @@ cacl_amount(Scope, EmplKey) :-
     ForAlimony0 is AmountAll - AmountExcl - IncomeTaxExcl,
     to_currency(ForAlimony0, ForAlimony, 0),
     % спецификация временных данных
-    Pairs = [
-        Section-1, pEmplKey-EmplKey, pForAlimony-ForAlimony,
-        pAmountAll-AmountAll, pAmountExcl-AmountExcl, pIncomeTaxExcl-IncomeTaxExcl,
-        pAmountTaxableExcl-AmountTaxableExcl, pIncomeTaxCoef-IncomeTaxCoef,
-        pIncomeTax-IncomeTax, pAmountTaxable-AmountTaxable ],
+    AmountPairs = [
+                Section-1, pEmplKey-EmplKey, pForAlimony-ForAlimony,
+                pAmountAll-AmountAll, pAmountExcl-AmountExcl, pIncomeTaxExcl-IncomeTaxExcl,
+                pAmountTaxableExcl-AmountTaxableExcl, pIncomeTaxCoef-IncomeTaxCoef,
+                pIncomeTax-IncomeTax, pAmountTaxable-AmountTaxable ],
     % добавить временные данные
-    new_param_list(Scope, Type, Pairs),
+    new_param_list(Scope, Type, AmountPairs),
     !.
 
 % расчет формулы
 calc_formula(Scope, EmplKey) :-
     % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pAlimonyCalcFormula,
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
     % взять локальное время
     get_local_date_time(DT),
     % записать отладочную информацию
     new_param_list(Scope, debug, [Scope-Type-Section-DT]),
-    true,
+    % спецификация алиментов
+    SpecAlimony = [
+                fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
+                fChildCount-_, fLivingWagePerc-_ ],
+    % спецификация временных данных
+    FormulaPairs =  [
+                Section-1, pEmplKey-EmplKey,
+                pAlimonyKey-AlimonyKey, pAlimonySum-_, pByBudget-_,
+                pFormula-Formula, pForAlimony-_, pBV-_,
+                pEval-_, pTCoef-_, pResult-_,
+                pChildCount-_, pLivingWagePerc-_,
+                pBudgetConst-_, pBudgetPart-_ ],
+    % для всех алиментов
+    forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
+            ( % получить сумму по формуле
+              calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs),
+              % добавить временные данные
+              new_param_list(Scope, Type, FormulaPairs)
+            )
+          ),
+    !.
+
+% расчет формулы по спецификациям
+calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
+    % - для алиментов
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
+    get_param_list(Scope, run, [
+                    pEmplKey-EmplKey, pDateCalcTo-DateCalcTo ]),
+    % спецификация алиментов
+    SpecAlimony = [
+                fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
+                fChildCount-ChildCount0, fLivingWagePerc-LivingWagePerc0 ],
+    % сопоставить с данными по умолчанию
+    fit_data(Scope,
+                [pChildCount-ChildCount0, pLivingWagePerc-LivingWagePerc0],
+                [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc]),
+    % спецификация временных данных
+    FormulaPairs = [
+                Section-1, pEmplKey-EmplKey,
+                pAlimonyKey-AlimonyKey, pAlimonySum-AlimonySum, pByBudget-ByBudget,
+                pFormula-Formula, pForAlimony-ForAlimony, pBV-BV,
+                pEval-Eval, pTCoef-TCoef, pResult-Result,
+                pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc,
+                pBudgetConst-BudgetConst, pBudgetPart-BudgetPart ],
+    % сумма БВ
+    get_data(Scope, kb, usr_wg_Variables, [fAlias-"vBV", fName-Var_BV]),
+    get_min_wage(Scope, DateCalcTo, BV),
+    replace_all(Formula, Var_BV, BV, Formula1),
+    % сумма Для алиментов
+    get_data(Scope, kb, usr_wg_Variables, [fAlias-"vForAlimony", fName-Var_ForAlimony]),
+    get_param_list(Scope, Type, [
+                    pCalcAmount-1,
+                    pEmplKey-EmplKey, pForAlimony-ForAlimony ]),
+    replace_all(Formula1, Var_ForAlimony, ForAlimony, Formula2),
+    % Результат
+    replace_all(Formula2, ",", ".", Formula3),
+    catch( term_to_atom(Expr, Formula3), _, fail ),
+    catch( Eval is Expr, _, fail),
+    get_param_list(Scope, Type, [
+                    pCalcTab-2,
+                    pAlimonyKey-AlimonyKey, pTCoef-TCoef ]),
+    Result is Eval * TCoef,
+    % Часть БПМ
+    get_budget(Scope, DateCalcTo, BudgetConst),
+    BudgetPart is BudgetConst * LivingWagePerc,
+    % сумма Удержания
+    ( Result < BudgetPart, AlimonySum0 = BudgetPart, ByBudget = 1
+    ; AlimonySum0 = Result, ByBudget = 0
+    ),
+    get_round_data(Scope, EmplKey, "ftAlimony", RoundType, RoundValue),
+    round_sum(AlimonySum0, AlimonySum, RoundType, RoundValue),
     !.
 
 % расчет перевода
 cacl_transf(Scope, EmplKey) :-
     % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pAlimonyCalcTransfer,
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
     % взять локальное время
     get_local_date_time(DT),
     % записать отладочную информацию
     new_param_list(Scope, debug, [Scope-Type-Section-DT]),
-    true,
+    % спецификация алиментов
+    SpecAlimony = [
+                fEmplKey-EmplKey, fDocKey-AlimonyKey,
+                fTransferTypeKey-TransferTypeKey0, fRecipient-Recipient0 ],
+    % сперцификация параметров алиментов
+    AlimonyParams = [
+                pCalcFormula-1, pEmplKey-EmplKey,
+                pAlimonyKey-AlimonyKey, pAlimonySum-AlimonySum ],
+    % спецификация временных данных
+    TransfPairs = [
+                Section-1, pEmplKey-EmplKey,
+                pAlimonyKey-AlimonyKey1, pTransfSum-TransfSum,
+                pTransfByGroup-TransfByGroup,
+                pTransferTypeKey-TransferTypeKey, pRecipient-Recipient,
+                pForTransfAmount-ForTransfAmount, pTransfPercent-TransfPercent ],
+    % спецификации данных за перевод
+    TransfData = [AlimonyKey, TransferTypeKey0, Recipient0, AlimonySum],
+    TransfAggrData = [
+                AlimonyKey1, TransfByGroup, TransferTypeKey, Recipient,
+                ForTransfAmount, TransfPercent, TransfSum ],
+    % собрать данные за перевод
+    findall( TransfData,
+             ( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
+               TransferTypeKey0 > 0,
+               get_param_list(Scope, Type, AlimonyParams)
+             ),
+    TransfDataList ),
+    % агрегировать суммы за перевод
+    aggr_fransf(Scope, EmplKey, TransfDataList, TransfAggrDataList),
+    % для всех переводов
+    forall( member(TransfAggrData, TransfAggrDataList),
+            % добавить временные данные
+            new_param_list(Scope, Type, TransfPairs)
+          ),
     !.
 
-% процент для вида начислений "Расходы по переводу"
+% агрегировать суммы за перевод
+aggr_fransf(_, _, [], []) :-
+    !.
+aggr_fransf(Scope, EmplKey, [TransfData|TransfDataList], [TransfAggrData|TransfAggrDataList]) :-
+    %
+    aggr_fransf(Scope, EmplKey, TransfData, [TransfData|TransfDataList], TransfDataList1, TransfAggrData),
+    !,
+    aggr_fransf(Scope, EmplKey, TransfDataList1, TransfAggrDataList).
+
+%
+aggr_fransf(Scope, EmplKey, TransfData, TransfDataList, TransfDataList1, TransfAggrData) :-
+    % спецификации данных за перевод
+    TransfData = [AlimonyKey, TransferTypeKey, Recipient, AlimonySum0],
+    TransfAggrData = [
+                AlimonyKey, TransfByGroup, TransferTypeKey, Recipient,
+                ForTransfAmount, TransfPercent, TransfSum ],
+    % для получателей
+    ( Recipient > 0,
+      % собрать суммы по Группе [Вид перевода, Получатель]
+      findall( AlimonySum,
+               member([_, TransferTypeKey, Recipient, AlimonySum], TransfDataList),
+      AlimonySumList)
+    ; % иначе Исходная сумма
+      AlimonySumList = [AlimonySum0]
+    ),
+    % Итог
+    sum_list(AlimonySumList, ForTransfAmount),
+    % Признак группы
+    ( length(AlimonySumList, 1),
+      TransfByGroup = 0
+    ;
+      TransfByGroup = 1
+    ),
+    % Процент от Итога
+    get_transf_percent(Scope, EmplKey, TransferTypeKey, ForTransfAmount, TransfPercent),
+    % Сумма за перевод
+    TransfSum0 is ForTransfAmount * TransfPercent / 100,
+    get_round_data(Scope, EmplKey, "ftTransferDed", RoundType, RoundValue),
+    round_sum(TransfSum0, TransfSum, RoundType, RoundValue),
+    % для получателей
+    ( Recipient > 0, \+ length(AlimonySumList, 1),
+      % исключить Группу из списка данных
+      findall( [AlimonyKey1, TransferTypeKey1, Recipient1, AlimonySum1],
+               ( member([AlimonyKey1, TransferTypeKey1, Recipient1, AlimonySum1], TransfDataList),
+                 \+ [TransferTypeKey, Recipient] = [TransferTypeKey1, Recipient1]
+               ),
+      TransfDataList1)
+    ; % иначе исключить Текущие данные
+      selectchk(TransfData, TransfDataList, TransfDataList1)
+    ),
+    !.
+    
+% взять параметры округления
+get_round_data(Scope, _, Alias, RoundType, RoundValue) :-
+    get_data(Scope, kb, usr_wg_FeeType_Dict, [
+                fAlias-Alias, fRoundByFeeType-1,
+                fRoundType-RoundType, fRoundValue-RoundValue ]),
+    !.
+get_round_data(Scope, EmplKey, _, RoundType, RoundValue) :-
+    get_param_list(Scope, in, [
+                pEmplKey-EmplKey,
+                pRoundType-RoundType, pRoundValue-RoundValue ]),
+    !.
+
+% Процент перевода
 get_transf_percent(Scope, EmplKey, TransferTypeKey, Sum, Percent) :-
     get_param_list(Scope, run, [pEmplKey-EmplKey, pDateCalcTo-DateCalcTo]),
     findall( TransferData,
@@ -355,23 +521,38 @@ is_fired(Scope, EmplKey, DateBegin) :-
 
 % сопоставить с данными по умолчанию
 fit_data(Scope, [Name-Value0], [Name-Value]) :-
-    % - для алиментов (Процент остатка, Процент списания долга)
+    % - для алиментов (Процент остатка)
     Scope = wg_fee_alimony, Type = fit,
-    memberchk(Name, [pRestPercent, pPercent]),
-    ( Value0 > 0, Value = Value0 ; get_param(Scope, Type, Name-Value) ),
+    Name = pRestPercent,
+    get_param(Scope, Type, Name-Value1),
+    ( Value0 < Value1, Value = Value1
+    ; Value = Value0
+    ),
+    !.
+% сопоставить с данными по умолчанию
+fit_data(Scope, [Name-Value0], [Name-Value]) :-
+    % - для алиментов ( Процент списания долга)
+    Scope = wg_fee_alimony, Type = fit,
+    Name = pPercent,
+    ( Value0 > 0, Value = Value0
+    ; get_param(Scope, Type, Name-Value)
+    ),
     !.
 fit_data(Scope, Pairs0, Pairs) :-
     % - для алиментов (Процент от БПМ)
     Scope = wg_fee_alimony, Type = fit,
-    Pairs0 = [pChildeCount-ChildCount, pLivingWagePerc-LivingWagePerc0],
-    Pairs = [pChildeCount-ChildCount, pLivingWagePerc-LivingWagePerc],
-    ( LivingWagePerc0 > 0, LivingWagePerc = LivingWagePerc0
-    ; Pairs1 = [pChildQtyCmp-ChildQtyCmp, pLivingWagePerc-LivingWagePerc1],
-      get_param_list(Scope, Type, Pairs1),
-      catch( atomic_concat(ChildCount, ChildQtyCmp, Atom), _, fail ),
-      catch( term_to_atom(Term, Atom), _, fail),
-      catch( Term, _, fail),
-      LivingWagePerc = LivingWagePerc1 ),
+    Pairs0 = [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc0],
+    Pairs = [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc],
+    Pairs1 = [pChildQtyCmp-ChildQtyCmp, pLivingWagePerc-LivingWagePerc1],
+    %
+    get_param_list(Scope, Type, Pairs1),
+    catch( atomic_concat(ChildCount, ChildQtyCmp, Atom), _, fail ),
+    catch( term_to_atom(Term, Atom), _, fail),
+    catch( Term, _, fail),
+    %
+    ( LivingWagePerc0 < LivingWagePerc1, LivingWagePerc = LivingWagePerc1
+    ; LivingWagePerc = LivingWagePerc0
+    ),
     !.
 fit_data(_, Pairs, Pairs) :-
     !.
