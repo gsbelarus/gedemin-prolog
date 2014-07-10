@@ -26,6 +26,7 @@ wg_valid_sql(
             usr_wg_TransferType/4,
             usr_wg_TransferScale/3,
             usr_wg_AlimonyDebt/8,
+            usr_wg_AlimonyDebt_delete/0,
             -
             ]).
 
@@ -592,7 +593,9 @@ ORDER BY \c
 
 /* удаление данных */
 
-get_sql(wg_fee_alimony, del, usr_wg_AlimonyDebt_delete,
+gd_pl_ds(wg_fee_alimony, cmd, usr_wg_AlimonyDebt_delete, 0, []).
+% usr_wg_AlimonyDebt_delete
+get_sql(wg_fee_alimony, cmd, usr_wg_AlimonyDebt_delete/0,
 "DELETE \c
 FROM \c
   USR$WG_ALIMONYDEBT aldebt \c

@@ -1,5 +1,15 @@
 ﻿% lib
 
+%:- ['../gd_pl_state/date'].
+
+% get_local_stamp(-Stamp)
+get_local_stamp(Stamp) :-
+    get_local_date_time(DateTime),
+    get_time(TimeStamp),
+    Fract is round(float_fractional_part(TimeStamp) * 1000) // 1,
+    atomic_list_concat([DateTime, '.', Fract], Stamp),
+    !.
+
 % день недели
 weekday(date(Year, Month, Day), WeekDay) :-
     A is (14 - Month) // 12,
