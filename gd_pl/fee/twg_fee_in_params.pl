@@ -10,7 +10,7 @@ twg_fee_in_params:-
         wg_fee_alimony
         ]),
     % взять локальное время
-    get_local_date_time(DT),
+    get_local_stamp(DT),
     % записать отладочную информацию
     new_param_list(Scope, debug, [Scope-Type-Section-DT]),
     % записать общие входные параметры
@@ -31,7 +31,7 @@ twg_fee_in_params:-
         wg_fee_alimony
         ]),
     % взять локальное время
-    get_local_date_time(DT),
+    get_local_stamp(DT),
     % записать отладочную информацию
     new_param_list(Scope, debug, [Scope-Type-Section-DT]),
     % записать входные параметры
@@ -55,14 +55,15 @@ twg_fee_in_params:-
         wg_fee_alimony
         ]),
     % взять локальное время
-    get_local_date_time(DT),
+    get_local_stamp(DT),
     % записать отладочную информацию
     new_param_list(Scope, debug, [Scope-Type-Section-DT]),
     % записать входные параметры
     new_param_list(Scope, Type, [
         pRestPercent-0.3, % Процент остатка
         pPercent-1.0,     % Процент списания долга
-        pCalcDelta-10000  % Дельта для расчета при нехватке средств
+        pCalcDelta-1000,  % Дельта для расчета при нехватке средств
+        pDropDebtLimit-0  % Ограничение по списанию долгов
         ]),
     fail.
 twg_fee_in_params:-
@@ -71,7 +72,7 @@ twg_fee_in_params:-
         wg_fee_alimony
         ]),
     % взять локальное время
-    get_local_date_time(DT),
+    get_local_stamp(DT),
     % записать отладочную информацию
     new_param_list(Scope, debug, [Scope-Type-Section-DT]),
     % Процент от БПМ (не менее) от количества детей
