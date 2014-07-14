@@ -449,27 +449,28 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     length(Wages, MonthQty),
     % итоговый заработок
     sum_list(Wages, Amount),
-    % взять часы
-    findall( THoures,
+    % признак расчета по часам
+    get_param(Scope, run, pCalcByHoure-CalcByHoure),
+    ( CalcByHoure = 1 -> Variant = avg_houre ; Variant = avg_day),
+    % взять отработанное время
+    findall( TWork,
                % за период проверки
              ( member(Y2-M2, Periods),
-               % взять данные по часам за месяц
-               get_month_norm_tab(Scope, PK, Y2-M2, _, _, _, THoures),
+               % взять данные по дням и часам за месяц
+               get_month_norm_tab(Scope, PK, Y2-M2, _, TDays, _, THoures),
                % для заработка
                get_month_wage(Scope, PK, Y2, M2, _, Wage2),
                % значение которого больше 0
-               Wage2 > 0 ),
-    % в список часов
-    Durations),
-    % всего часов по табелю
-    sum_list(Durations, TotalTab),
-    % среднечасовой заработок
-    catch( AvgHoureWage is Amount / TotalTab, _, fail ),
-    get_param(Scope, run, pCalcByHoure-CalcByHoure),
-    % расчет по часам или дням
-    ( CalcByHoure = 1, AvgWage is round(AvgHoureWage), Variant = avg_houre
-    ; AvgWage is round(8 * AvgHoureWage), Variant = avg_day
-    ),
+               Wage2 > 0,
+               % признаку расчета по часам
+               ( CalcByHoure = 1 -> TWork = THoures ; TWork = TDays ) ),
+    % в список
+    TWorkList),
+    % всего отработано по табелю
+    sum_list(TWorkList, TotalTab),
+    % средний заработок
+    catch( AvgWage0 is Amount / TotalTab, _, fail ),
+    AvgWage is round(AvgWage0),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     % - для начисления по-среднему (нужно больше месяцев)
@@ -842,7 +843,9 @@ get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
     % - для начисления по-среднему
     Scope = wg_avg_wage_avg,
     % расчитать заработок за месяц
-    cacl_month_wage_avg(Scope, PK, Y, M, Wage),
+    %cacl_month_wage_avg(Scope, PK, Y, M, Wage),
+    % по методу для Больничных
+    cacl_month_wage_sick(Scope, PK, Y, M, Wage),
     % записать во временные параметры данные по заработку
     append(PK, [pYM-Y-M, pWage-Wage], Pairs),
     new_param_list(Scope, temp, Pairs),

@@ -5,7 +5,7 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.61"
+  Version: "1.0.0.63"
   Optional: False
   Internal: True
 Objects: 
@@ -217,6 +217,16 @@ Objects:
       SCRIPT: | 
         % lib
         
+        %:- ['../gd_pl_state/date'].
+        
+        % get_local_stamp(-Stamp)
+        get_local_stamp(Stamp) :-
+            get_local_date_time(DateTime),
+            get_time(TimeStamp),
+            Fract is round(float_fractional_part(TimeStamp) * 1000) // 1,
+            atomic_list_concat([DateTime, '.', Fract], Stamp),
+            !.
+        
         % день недели
         weekday(date(Year, Month, Day), WeekDay) :-
             A is (14 - Month) // 12,
@@ -359,7 +369,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-07-07T17:45:46+03:00
+      EDITIONDATE: 2014-07-11T11:30:56+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1890,6 +1900,7 @@ Objects:
             new_param_list(wg_avg_wage_sick, in, [
                 pMonthQty-6,
                 pFeeGroupKey_ruid-'147071457,274788016',
+                % Группа Пропорциональных начислений для Больничных
                 pFeeGroupKeyProp_ruid-'147119175,1354510846',
                 pKindDayHourType_ruid-'147650798,119619099'
                 ]),
@@ -1897,7 +1908,9 @@ Objects:
         twg_avg_wage_in_params:-
             new_param_list(wg_avg_wage_avg, in, [
                 pMonthQty-2, pMonthBonusQty-12, pMonthLimitQty-2,
-                pFeeGroupKey_ruid-'147113780,1354510846'
+                pFeeGroupKey_ruid-'147113780,1354510846',
+                % Группа Пропорциональных начислений для Больничных
+                pFeeGroupKeyProp_ruid-'147119175,1354510846'
                 ]),
             fail.
         twg_avg_wage_in_params:-
@@ -1940,7 +1953,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-07-02T17:06:58+03:00
+      EDITIONDATE: 2014-07-14T13:33:22+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2406,27 +2419,28 @@ Objects:
             length(Wages, MonthQty),
             % итоговый заработок
             sum_list(Wages, Amount),
-            % взять часы
-            findall( THoures,
+            % признак расчета по часам
+            get_param(Scope, run, pCalcByHoure-CalcByHoure),
+            ( CalcByHoure = 1 -> Variant = avg_houre ; Variant = avg_day),
+            % взять отработанное время
+            findall( TWork,
                        % за период проверки
                      ( member(Y2-M2, Periods),
-                       % взять данные по часам за месяц
-                       get_month_norm_tab(Scope, PK, Y2-M2, _, _, _, THoures),
+                       % взять данные по дням и часам за месяц
+                       get_month_norm_tab(Scope, PK, Y2-M2, _, TDays, _, THoures),
                        % для заработка
                        get_month_wage(Scope, PK, Y2, M2, _, Wage2),
                        % значение которого больше 0
-                       Wage2 > 0 ),
-            % в список часов
-            Durations),
-            % всего часов по табелю
-            sum_list(Durations, TotalTab),
-            % среднечасовой заработок
-            catch( AvgHoureWage is Amount / TotalTab, _, fail ),
-            get_param(Scope, run, pCalcByHoure-CalcByHoure),
-            % расчет по часам или дням
-            ( CalcByHoure = 1, AvgWage is round(AvgHoureWage), Variant = avg_houre
-            ; AvgWage is round(8 * AvgHoureWage), Variant = avg_day
-            ),
+                       Wage2 > 0,
+                       % признаку расчета по часам
+                       ( CalcByHoure = 1 -> TWork = THoures ; TWork = TDays ) ),
+            % в список
+            TWorkList),
+            % всего отработано по табелю
+            sum_list(TWorkList, TotalTab),
+            % средний заработок
+            catch( AvgWage0 is Amount / TotalTab, _, fail ),
+            AvgWage is round(AvgWage0),
             !.
         calc_avg_wage(Scope, PK, AvgWage, Variant) :-
             % - для начисления по-среднему (нужно больше месяцев)
@@ -2799,7 +2813,9 @@ Objects:
             % - для начисления по-среднему
             Scope = wg_avg_wage_avg,
             % расчитать заработок за месяц
-            cacl_month_wage_avg(Scope, PK, Y, M, Wage),
+            %cacl_month_wage_avg(Scope, PK, Y, M, Wage),
+            % по методу для Больничных
+            cacl_month_wage_sick(Scope, PK, Y, M, Wage),
             % записать во временные параметры данные по заработку
             append(PK, [pYM-Y-M, pWage-Wage], Pairs),
             new_param_list(Scope, temp, Pairs),
@@ -4334,7 +4350,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-07-02T17:06:28+03:00
+      EDITIONDATE: 2014-07-14T13:33:07+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
