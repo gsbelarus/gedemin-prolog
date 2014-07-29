@@ -5,11 +5,11 @@ Properties:
   RUID: 195379689_166214404
   Name: "GS.Зарплата.Пролог.Алименты и штрафы"
   Caption: "Алименты и штрафы"
-  Version: "1.0.0.11"
+  Version: "1.0.0.14"
   Optional: False
   Internal: True
 Uses: 
-  - "528622143_99701464 GS.Зарплата.Пролог.Начисление отпусков и больничных"
+  - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
   - 
     Properties: 
@@ -884,11 +884,11 @@ Objects:
             % расчет табеля
             calc_tab(Scope, EmplKey),
             % расчет суммы
-            calc_amount(Scope, EmplKey),
+            cacl_amount(Scope, EmplKey),
             % расчет формулы
             calc_formula(Scope, EmplKey),
             % расчет перевода
-            calc_transf(Scope, EmplKey, 1),
+            cacl_transf(Scope, EmplKey),
             % контроль остатка
             check_rest(Scope, EmplKey),
             % начисление долгов
@@ -945,7 +945,7 @@ Objects:
             !.
         
         % расчет суммы
-        calc_amount(Scope, EmplKey) :-
+        cacl_amount(Scope, EmplKey) :-
             % - для алиментов
             Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
             % взять локальное время
@@ -1031,8 +1031,9 @@ Objects:
                         fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
                         fChildCount-ChildCount0, fLivingWagePerc-LivingWagePerc0 ],
             % сопоставить с данными по умолчанию
+            LivingWagePerc1 is LivingWagePerc0 / 100,
             fit_data(Scope,
-                        [pChildCount-ChildCount0, pLivingWagePerc-LivingWagePerc0],
+                        [pChildCount-ChildCount0, pLivingWagePerc-LivingWagePerc1],
                         [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc]),
             % спецификация временных данных
             FormulaPairs = [
@@ -1074,13 +1075,13 @@ Objects:
             !.
         
         % расчет перевода
-        calc_transf(Scope, EmplKey, Stage) :-
+        cacl_transf(Scope, EmplKey) :-
             % - для алиментов
             Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
             % взять локальное время
             get_local_stamp(DT),
             % записать отладочную информацию
-            new_param_list(Scope, debug, [Scope-Type-Section/Stage-DT]),
+            new_param_list(Scope, debug, [Scope-Type-Section-DT]),
             % спецификация алиментов
             SpecAlimony = [
                         fEmplKey-EmplKey, fDocKey-AlimonyKey,
@@ -1095,7 +1096,7 @@ Objects:
                         pDebtCharge-DebtCharge ],
             % спецификация временных данных
             TransfPairs = [
-                        Section-Stage, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey1,
+                        Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey1,
                         pTransfSum-TransfSum, pTransfByGroup-TransfByGroup,
                         pTransferTypeKey-TransferTypeKey, pRecipient-Recipient,
                         pForTransfAmount-ForTransfAmount, pTransfPercent-TransfPercent ],
@@ -1129,14 +1130,14 @@ Objects:
             !.
         
         % пересчитать суммы переводов
-        recalc_transf(Scope, EmplKey, Stage) :-
+        recacl_transf(Scope, EmplKey) :-
             % - для алиментов
             Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
             % удалить временные данные по переводам
             forall( get_param_list(Scope, Type, [Section-_, pEmplKey-EmplKey], Pairs),
                     dispose_param_list(Scope, Type, Pairs) ),
             % расчет перевода
-            calc_transf(Scope, EmplKey, Stage),
+            cacl_transf(Scope, EmplKey),
             !.
         
         % агрегировать суммы за перевод
@@ -1228,7 +1229,8 @@ Objects:
                      get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
             RestPercentList),
             min_list(RestPercentList, RestPercent0),
-            fit_data(Scope, [pRestPercent-RestPercent0], [pRestPercent-RestPercent]),
+            RestPercent1 is RestPercent0 / 100,
+            fit_data(Scope, [pRestPercent-RestPercent1], [pRestPercent-RestPercent]),
             % сумма Контроля
             get_param_list(Scope, Type, CheckParams),
             RestAmount is AmountAll * RestPercent,
@@ -1300,7 +1302,7 @@ Objects:
             % распределить суммы по Коэфициентам от суммы Резерва
             charge_by_coef(Scope, EmplKey, ReserveAmount),
             % пересчитать суммы переводов
-            recalc_transf(Scope, EmplKey, 2),
+            recacl_transf(Scope, EmplKey),
             !,
             check_rest(Scope, EmplKey, CheckAmount, CalcDelta1, CalcDelta, 1).
         
@@ -1474,7 +1476,8 @@ Objects:
                       RestCoef is RestAmount / RestAmountAll,
                       % Процент списания долга
                       % сопоставить с данными по умолчанию
-                      fit_data(Scope, [pPercent-Percent], [pPercent-DebtPercent]),
+                      Percent1 is Percent / 100,
+                      fit_data(Scope, [pPercent-Percent1], [pPercent-DebtPercent]),
                       % добавить временные данные
                       new_param_list(Scope, Type, DebtPairs3)
                     )
@@ -1537,15 +1540,13 @@ Objects:
             sum_list(DebtChargeList, DebtChargeAmount),
             % добавить временные данные
             new_param_list(Scope, Type, DebtPairs5),
-            % пересчитать суммы переводов
-            recalc_transf(Scope, EmplKey, 3),
             !.
         
         % списать Остатки долгов
         drop_debt_charge(Scope, RestDataList, _, RestBalance) :-
             % - для алиментов
             Scope = wg_fee_alimony,
-            ( RestDataList = [] ; RestBalance = 0 ),
+            ( RestDataList = [] ; RestBalance =< 0 ),
             !.
         drop_debt_charge(Scope, [_-AlimonyDebtKey-RestSum|RestDataList], DebtPairs4, RestBalance) :-
             % - для алиментов
@@ -1579,9 +1580,9 @@ Objects:
             % спецификации параметров
             CheckParams = [
                         pCheckRest-3, pEmplKey-EmplKey,
-                        pAlimonyChargeAmount-AlimonyChargeAmount ],
-            TransfParams = [
-                        pCalcTransf-_, pEmplKey-EmplKey, pTransfSum-TransfSum ],
+                        pChargeAmount-ChargeAmount,
+                        pAlimonyChargeAmount-AlimonyChargeAmount,
+                        pTransfAmount-TransfAmount ],
             DebtParams = [
                         pDropDebt-5, pEmplKey-EmplKey,
                         pDebtChargeAmount-DebtChargeAmount ],
@@ -1589,22 +1590,16 @@ Objects:
             TotalPairs = [
                         Section-1, pEmplKey-EmplKey,
                         pTotalChargeAmount-TotalChargeAmount,
+                        pChargeAmount-ChargeAmount,
                         pAlimonyChargeAmount-AlimonyChargeAmount,
                         pDebtChargeAmount-DebtChargeAmount,
                         pTransfAmount-TransfAmount ],
-            % Алименты
+            % Итог
             get_param_list(Scope, Type, CheckParams),
-            % Списание долгов
             ( get_param_list(Scope, Type, DebtParams)
             ; DebtChargeAmount = 0.0
             ),
-            % Переводы
-            findall( TransfSum,
-                     get_param_list(Scope, Type, TransfParams),
-            TransfSumList),
-            sum_list(TransfSumList, TransfAmount),
-            % Итого
-            TotalChargeAmount is AlimonyChargeAmount + DebtChargeAmount + TransfAmount,
+            TotalChargeAmount is ChargeAmount + DebtChargeAmount,
             % добавить временные данные
             new_param_list(Scope, NextType, TotalPairs),
             !.
@@ -1959,7 +1954,7 @@ Objects:
                         fID-FeeTypeKey, fAlias-"ftTransferDed" ]),
             % спецификация параметров перевода
             TransfParams = [
-                        pCalcTransf-_, pEmplKey-EmplKey,
+                        pCalcTransf-1, pEmplKey-EmplKey,
                         pTransfSum-ChargeSum, pAlimonyKey-DocKey ],
             % взять данные по переводу
             get_param_list(Scope, Type, TransfParams),
@@ -1998,7 +1993,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-07-14T09:57:17+03:00
+      EDITIONDATE: 2014-07-15T13:40:20+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

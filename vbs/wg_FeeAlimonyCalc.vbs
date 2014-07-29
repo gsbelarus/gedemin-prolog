@@ -13,15 +13,20 @@ function wg_FeeAlimonyCalc(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal Fee
 '–асчет алиментов, долга по алиментам и расходов на их пересылку
   wg_FeeAlimonyCalc = 0
 
-  dim AccountKey, AccountKeyDebt, AccountKeyTransf
+  Dim wg_FeeType_TransferDed_ID, wg_FeeType_AlimonyDebt_ID
+  Dim AccountKey, AccountKeyDebt, AccountKeyTransf
+
+  wg_FeeType_TransferDed_ID = gdcBaseManager.GetIDByRUIDString(wg_FeeType_TransferDed_RUID)
+  wg_FeeType_AlimonyDebt_ID = gdcBaseManager.GetIDByRUIDString(wg_FeeType_AlimonyDebt_RUID)
+
   AccountKey = wg_GetAccountKey(FeeTypeKey, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
-  AccountKeyTransf = wg_GetAccountKey(wg_FeeType_TransferDed_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
   AccountKeyDebt = wg_GetAccountKey(wg_FeeType_AlimonyDebt_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
+  AccountKeyTransf = wg_GetAccountKey(wg_FeeType_TransferDed_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
 
   '<pl>
   Dim AccountKeyArr
   '
-  AccountKeyArr = Array(AccountKey, AccountKeyTransf, AccountKeyDebt)
+  AccountKeyArr = Array(AccountKey, AccountKeyDebt, AccountKeyTransf)
 
   Dim frmAlimony, dlgAlimony, Prolog_Alimony
   '
@@ -80,7 +85,7 @@ function wg_FeeAlimonyCalc(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal Fee
   if Assigned(MoveCard) then
 
     '∆урнал долгов по алиментам
-    set gdcAlimonyDebt = Creator.GetObject(nil, "TgdcUserDocument", "")
+    Set gdcAlimonyDebt = Creator.GetObject(nil, "TgdcUserDocument", "")
     gdcAlimonyDebt.SubType = "147072391_453357870"
     gdcAlimonyDebt.Transaction = wg_EmployeeCharge.Transaction
     gdcAlimonyDebt.Open
@@ -94,8 +99,6 @@ function wg_FeeAlimonyCalc(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal Fee
       AddDebtMontFlg = False
     end if
 
-    wg_FeeType_TransferDed_ID = gdcBaseManager.GetIDByRUIDString(wg_FeeType_TransferDed_RUID)
-    wg_FeeType_AlimonyDebt_ID = gdcBaseManager.GetIDByRUIDString(wg_FeeType_AlimonyDebt_RUID)
     ' ласс дл€ работы с алиментами
     set wg_Alimony = New Twg_Alimony
 

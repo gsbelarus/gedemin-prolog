@@ -90,11 +90,11 @@ fee_calc(Scope, EmplKey) :-
     % расчет табеля
     calc_tab(Scope, EmplKey),
     % расчет суммы
-    calc_amount(Scope, EmplKey),
+    cacl_amount(Scope, EmplKey),
     % расчет формулы
     calc_formula(Scope, EmplKey),
     % расчет перевода
-    calc_transf(Scope, EmplKey, 1),
+    cacl_transf(Scope, EmplKey),
     % контроль остатка
     check_rest(Scope, EmplKey),
     % начисление долгов
@@ -151,7 +151,7 @@ calc_tab(Scope, EmplKey) :-
     !.
 
 % расчет суммы
-calc_amount(Scope, EmplKey) :-
+cacl_amount(Scope, EmplKey) :-
     % - для алиментов
     Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
     % взять локальное время
@@ -237,8 +237,9 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
                 fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
                 fChildCount-ChildCount0, fLivingWagePerc-LivingWagePerc0 ],
     % сопоставить с данными по умолчанию
+    LivingWagePerc1 is LivingWagePerc0 / 100,
     fit_data(Scope,
-                [pChildCount-ChildCount0, pLivingWagePerc-LivingWagePerc0],
+                [pChildCount-ChildCount0, pLivingWagePerc-LivingWagePerc1],
                 [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc]),
     % спецификация временных данных
     FormulaPairs = [
@@ -280,13 +281,13 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
     !.
 
 % расчет перевода
-calc_transf(Scope, EmplKey, Stage) :-
+cacl_transf(Scope, EmplKey) :-
     % - для алиментов
     Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
     % взять локальное время
     get_local_stamp(DT),
     % записать отладочную информацию
-    new_param_list(Scope, debug, [Scope-Type-Section/Stage-DT]),
+    new_param_list(Scope, debug, [Scope-Type-Section-DT]),
     % спецификация алиментов
     SpecAlimony = [
                 fEmplKey-EmplKey, fDocKey-AlimonyKey,
@@ -301,7 +302,7 @@ calc_transf(Scope, EmplKey, Stage) :-
                 pDebtCharge-DebtCharge ],
     % спецификация временных данных
     TransfPairs = [
-                Section-Stage, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey1,
+                Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey1,
                 pTransfSum-TransfSum, pTransfByGroup-TransfByGroup,
                 pTransferTypeKey-TransferTypeKey, pRecipient-Recipient,
                 pForTransfAmount-ForTransfAmount, pTransfPercent-TransfPercent ],
@@ -335,14 +336,14 @@ calc_transf(Scope, EmplKey, Stage) :-
     !.
 
 % пересчитать суммы переводов
-recalc_transf(Scope, EmplKey, Stage) :-
+recacl_transf(Scope, EmplKey) :-
     % - для алиментов
     Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
     % удалить временные данные по переводам
     forall( get_param_list(Scope, Type, [Section-_, pEmplKey-EmplKey], Pairs),
             dispose_param_list(Scope, Type, Pairs) ),
     % расчет перевода
-    calc_transf(Scope, EmplKey, Stage),
+    cacl_transf(Scope, EmplKey),
     !.
 
 % агрегировать суммы за перевод
@@ -434,7 +435,8 @@ check_rest(Scope, EmplKey) :-
              get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
     RestPercentList),
     min_list(RestPercentList, RestPercent0),
-    fit_data(Scope, [pRestPercent-RestPercent0], [pRestPercent-RestPercent]),
+    RestPercent1 is RestPercent0 / 100,
+    fit_data(Scope, [pRestPercent-RestPercent1], [pRestPercent-RestPercent]),
     % сумма Контроля
     get_param_list(Scope, Type, CheckParams),
     RestAmount is AmountAll * RestPercent,
@@ -506,7 +508,7 @@ check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
     % распределить суммы по Коэфициентам от суммы Резерва
     charge_by_coef(Scope, EmplKey, ReserveAmount),
     % пересчитать суммы переводов
-    recalc_transf(Scope, EmplKey, 2),
+    recacl_transf(Scope, EmplKey),
     !,
     check_rest(Scope, EmplKey, CheckAmount, CalcDelta1, CalcDelta, 1).
 
@@ -680,7 +682,8 @@ drop_debt_rest(Scope, EmplKey, DateIn, Balance) :-
               RestCoef is RestAmount / RestAmountAll,
               % Процент списания долга
               % сопоставить с данными по умолчанию
-              fit_data(Scope, [pPercent-Percent], [pPercent-DebtPercent]),
+              Percent1 is Percent / 100,
+              fit_data(Scope, [pPercent-Percent1], [pPercent-DebtPercent]),
               % добавить временные данные
               new_param_list(Scope, Type, DebtPairs3)
             )
@@ -743,15 +746,13 @@ drop_debt_bal(Scope, EmplKey) :-
     sum_list(DebtChargeList, DebtChargeAmount),
     % добавить временные данные
     new_param_list(Scope, Type, DebtPairs5),
-    % пересчитать суммы переводов
-    recalc_transf(Scope, EmplKey, 3),
     !.
 
 % списать Остатки долгов
 drop_debt_charge(Scope, RestDataList, _, RestBalance) :-
     % - для алиментов
     Scope = wg_fee_alimony,
-    ( RestDataList = [] ; RestBalance = 0 ),
+    ( RestDataList = [] ; RestBalance =< 0 ),
     !.
 drop_debt_charge(Scope, [_-AlimonyDebtKey-RestSum|RestDataList], DebtPairs4, RestBalance) :-
     % - для алиментов
@@ -785,9 +786,9 @@ calc_total(Scope, EmplKey) :-
     % спецификации параметров
     CheckParams = [
                 pCheckRest-3, pEmplKey-EmplKey,
-                pAlimonyChargeAmount-AlimonyChargeAmount ],
-    TransfParams = [
-                pCalcTransf-_, pEmplKey-EmplKey, pTransfSum-TransfSum ],
+                pChargeAmount-ChargeAmount,
+                pAlimonyChargeAmount-AlimonyChargeAmount,
+                pTransfAmount-TransfAmount ],
     DebtParams = [
                 pDropDebt-5, pEmplKey-EmplKey,
                 pDebtChargeAmount-DebtChargeAmount ],
@@ -795,22 +796,16 @@ calc_total(Scope, EmplKey) :-
     TotalPairs = [
                 Section-1, pEmplKey-EmplKey,
                 pTotalChargeAmount-TotalChargeAmount,
+                pChargeAmount-ChargeAmount,
                 pAlimonyChargeAmount-AlimonyChargeAmount,
                 pDebtChargeAmount-DebtChargeAmount,
                 pTransfAmount-TransfAmount ],
-    % Алименты
+    % Итог
     get_param_list(Scope, Type, CheckParams),
-    % Списание долгов
     ( get_param_list(Scope, Type, DebtParams)
     ; DebtChargeAmount = 0.0
     ),
-    % Переводы
-    findall( TransfSum,
-             get_param_list(Scope, Type, TransfParams),
-    TransfSumList),
-    sum_list(TransfSumList, TransfAmount),
-    % Итого
-    TotalChargeAmount is AlimonyChargeAmount + DebtChargeAmount + TransfAmount,
+    TotalChargeAmount is ChargeAmount + DebtChargeAmount,
     % добавить временные данные
     new_param_list(Scope, NextType, TotalPairs),
     !.
@@ -1165,7 +1160,7 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) 
                 fID-FeeTypeKey, fAlias-"ftTransferDed" ]),
     % спецификация параметров перевода
     TransfParams = [
-                pCalcTransf-_, pEmplKey-EmplKey,
+                pCalcTransf-1, pEmplKey-EmplKey,
                 pTransfSum-ChargeSum, pAlimonyKey-DocKey ],
     % взять данные по переводу
     get_param_list(Scope, Type, TransfParams),

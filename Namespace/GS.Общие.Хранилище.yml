@@ -5,7 +5,7 @@ Properties:
   RUID: 147753062_69526485
   Name: "GS.Общие.Хранилище"
   Caption: "GS.Общие.Хранилище"
-  Version: "1.0.0.3"
+  Version: "1.0.0.4"
   Optional: False
   Internal: True
   Comment: "Основные папки хранилища."

@@ -19,6 +19,7 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   'fee_calc_sql, fee_calc_cmd
   Dim P_sql, Tv_sql, Q_sql, P_cmd, Tv_cmd, Q_cmd
   Dim PredicateName, Arity, SQL
+  Dim SQLUpdate
   'fee_calc
   Dim P_main, Tv_main, Q_main
   'fee_calc_out, fee_calc_charge
@@ -27,9 +28,12 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   'fee_calc_debt
   Dim P_debt, Tv_debt, Q_debt
   Dim AlimonyKey, DebtSum
+  Dim gdcAlimonyDebt
 
   T1 = Timer
-  wg_FeeAlimonyCalc_pl = 0
+
+  Result = 0
+  wg_FeeAlimonyCalc_pl = Result
     
   'init
   Set Creator = New TCreator
@@ -109,12 +113,6 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   Set Q_run = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_run.PredicateName = P_run
   Q_run.Termv = Tv_run
-  'fee_calc_sql(Scope, EmplKey, PredicateName, Arity, SQL)
-  P_sql = "fee_calc_sql"
-  Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")
-  Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
-  Q_sql.PredicateName = P_sql
-  Q_sql.Termv = Tv_sql
   '
   Tv_run.PutAtom 0, Scope
   '
@@ -122,7 +120,23 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   If Q_run.EOF Then
     Exit Function
   End If
+
+  'fee_calc_sql(Scope, EmplKey, PredicateName, Arity, SQL)
+  P_sql = "fee_calc_sql"
+  Set Tv_sql = Creator.GetObject(5, "TgsPLTermv", "")
+  Set Q_sql = Creator.GetObject(nil, "TgsPLQuery", "")
+  Q_sql.PredicateName = P_sql
+  Q_sql.Termv = Tv_sql
+  'fee_calc_cmd(Scope, EmplKey, PredicateName, Arity, SQL)
+  P_cmd = "fee_calc_cmd"
+  Set Tv_cmd = Creator.GetObject(5, "TgsPLTermv", "")
+  Set Q_cmd = Creator.GetObject(nil, "TgsPLQuery", "")
+  Q_cmd.PredicateName = P_cmd
+  Q_cmd.Termv = Tv_cmd
   '
+  Set SQLUpdate = Creator.GetObject(nil, "TIBSQL", "")
+  Set SQLUpdate.Transaction = wg_EmployeeCharge.Transaction
+
   Append = False
   '
   Do Until Q_run.EOF
@@ -148,6 +162,24 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     Q_sql.Close
     '
     Append = True
+    '
+    Tv_cmd.Reset
+    Tv_cmd.PutAtom 0, Scope
+    Tv_cmd.PutInteger 1, EmplKey
+    Q_cmd.OpenQuery
+    '
+    Do Until Q_cmd.EOF
+      PredicateName = Tv_cmd.ReadAtom(2)
+      Arity = Tv_cmd.ReadInteger(3)
+      SQL = Tv_cmd.ReadString(4)
+      '
+      SQLUpdate.SQL.Text = SQL
+      SQLUpdate.ExecQuery
+      SQLUpdate.Close
+      '
+      Q_cmd.NextSolution
+    Loop
+    Q_cmd.Close
     '
     Q_run.NextSolution
   Loop
@@ -184,16 +216,88 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
 
-  '  todo:
-
   'fee_calc_out(Scope, EmplKey, Result)
-  
-  '  wg_FeeAlimonyCalc_pl = Result
+  P_out = "fee_calc_out"
+  Set Tv_out = Creator.GetObject(3, "TgsPLTermv", "")
+  Set Q_out = Creator.GetObject(nil, "TgsPLQuery", "")
+  Q_out.PredicateName = P_out
+  Q_out.Termv = Tv_out
+  '
+  Tv_out.PutAtom 0, Scope
+  '
+  Q_out.OpenQuery
+  If Q_out.EOF Then
+    Exit Function
+  End If
 
   'fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex)
-  
-  'fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum)
+  P_charge = "fee_calc_charge"
+  Set Tv_charge = Creator.GetObject(6, "TgsPLTermv", "")
+  Set Q_charge = Creator.GetObject(nil, "TgsPLQuery", "")
+  Q_charge.PredicateName = P_charge
+  Q_charge.Termv = Tv_charge
 
+  'fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum)
+  P_debt = "fee_calc_debt"
+  Set Tv_debt = Creator.GetObject(4, "TgsPLTermv", "")
+  Set Q_debt = Creator.GetObject(nil, "TgsPLQuery", "")
+  Q_debt.PredicateName = P_debt
+  Q_debt.Termv = Tv_debt
+  'Журнал долгов по алиментам
+  Set gdcAlimonyDebt = Creator.GetObject(nil, "TgdcUserDocument", "")
+  gdcAlimonyDebt.SubType = "147072391_453357870"
+  gdcAlimonyDebt.Transaction = wg_EmployeeCharge.Transaction
+  gdcAlimonyDebt.Open
+    
+  Do Until Q_out.EOF
+    EmplKey = Tv_out.ReadInteger(1)
+    Result = Tv_out.ReadFloat(2)
+    '
+    Tv_charge.Reset
+    Tv_charge.PutAtom 0, Scope
+    Tv_charge.PutInteger 1, EmplKey
+    Q_charge.OpenQuery
+    '
+    Do Until Q_charge.EOF
+      ChargeSum = Tv_charge.ReadFloat(2)
+      FeeTypeKey = Tv_charge.ReadInteger(3)
+      DocKey = Tv_charge.ReadInteger(4)
+      AccountKeyIndex = Tv_charge.ReadInteger(5)
+      '
+      Call wg_EmployeeCharge.AddCharge(0, ChargeSum, Null, TotalDocKey, FeeTypeKey, _
+          DocKey, wg_EmployeeCharge.BeginDate, 0, 0)
+      Call wg_EmployeeCharge.AddChargeRegNew(0, ChargeSum, TotalDocKey, FeeTypeKey, _
+          AccountKeyArr(AccountKeyIndex), wg_EmployeeCharge.BeginDate, DocKey)
+      '
+      Q_charge.NextSolution
+    Loop
+    Q_charge.Close
+    '
+    Tv_debt.Reset
+    Tv_debt.PutAtom 0, Scope
+    Tv_debt.PutInteger 1, EmplKey
+    Q_debt.OpenQuery
+    '
+    Do Until Q_debt.EOF
+      AlimonyKey = Tv_debt.ReadInteger(2)
+      DebtSum = Tv_debt.ReadFloat(3)
+      '
+      gdcAlimonyDebt.Insert
+      gdcAlimonyDebt.FieldByName("usr$totaldockey").AsInteger = TotalDocKey
+      gdcAlimonyDebt.FieldByName("usr$alimonykey").AsInteger = AlimonyKey
+      gdcAlimonyDebt.FieldByName("usr$debtsum").AsCurrency = DebtSum
+      gdcAlimonyDebt.FieldByName("usr$debtmonth").AsInteger = 0
+      gdcAlimonyDebt.Post
+      '
+      Q_debt.NextSolution
+    Loop
+    Q_debt.Close
+    '
+    Q_out.NextSolution
+  Loop
+  Q_out.Close
+
+  gdcAlimonyDebt.Close
 
   'save param_list
   If PL.Debug Then
@@ -202,6 +306,8 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
+
+  wg_FeeAlimonyCalc_pl = Result
 
   T2 = Timer
   T = T2 - T1
