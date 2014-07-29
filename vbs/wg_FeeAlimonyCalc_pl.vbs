@@ -154,7 +154,7 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
       '
       Ret =  PL.MakePredicatesOfSQLSelect _
                 (SQL, _
-                gdcBaseManager.ReadTransaction, _
+                wg_EmployeeCharge.Transaction, _
                 PredicateName, PredicateName, Append)
       '
       Q_sql.NextSolution

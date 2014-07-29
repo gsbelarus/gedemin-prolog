@@ -90,11 +90,11 @@ fee_calc(Scope, EmplKey) :-
     % расчет табеля
     calc_tab(Scope, EmplKey),
     % расчет суммы
-    cacl_amount(Scope, EmplKey),
+    calc_amount(Scope, EmplKey),
     % расчет формулы
     calc_formula(Scope, EmplKey),
     % расчет перевода
-    cacl_transf(Scope, EmplKey),
+    calc_transf(Scope, EmplKey),
     % контроль остатка
     check_rest(Scope, EmplKey),
     % начисление долгов
@@ -151,7 +151,7 @@ calc_tab(Scope, EmplKey) :-
     !.
 
 % расчет суммы
-cacl_amount(Scope, EmplKey) :-
+calc_amount(Scope, EmplKey) :-
     % - для алиментов
     Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
     % взять локальное время
@@ -178,7 +178,9 @@ cacl_amount(Scope, EmplKey) :-
     % Облагаемая ПН сумма
     charges_sum(Charges, [debit(1), credit(0)], TaxableFeeTypeList, AmountTaxable),
     % Коеффициент ПН
-    IncomeTaxCoef is IncomeTax / AmountTaxable,
+    ( AmountTaxable =:= 0, IncomeTaxCoef = 0
+    ; IncomeTaxCoef is IncomeTax / AmountTaxable
+    ),
     % Облагаемая ПН Исключаемая сумма
     charges_sum(ChargesExcl, [debit(1), credit(0)], TaxableFeeTypeList, AmountTaxableExcl),
     % Исключаемый ПН
@@ -281,7 +283,7 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
     !.
 
 % расчет перевода
-cacl_transf(Scope, EmplKey) :-
+calc_transf(Scope, EmplKey) :-
     % - для алиментов
     Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
     % взять локальное время
@@ -336,14 +338,17 @@ cacl_transf(Scope, EmplKey) :-
     !.
 
 % пересчитать суммы переводов
-recacl_transf(Scope, EmplKey) :-
+recalc_transf(Scope, EmplKey) :-
     % - для алиментов
     Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
+    % удалить отладочную информацию по переводам
+    forall( get_param_list(Scope, debug, [Scope-Type-Section/_], Pairs),
+            dispose_param_list(Scope, debug, Pairs) ),
     % удалить временные данные по переводам
     forall( get_param_list(Scope, Type, [Section-_, pEmplKey-EmplKey], Pairs),
             dispose_param_list(Scope, Type, Pairs) ),
     % расчет перевода
-    cacl_transf(Scope, EmplKey),
+    calc_transf(Scope, EmplKey),
     !.
 
 % агрегировать суммы за перевод
@@ -357,19 +362,15 @@ aggr_fransf(Scope, EmplKey, [TransfData|TransfDataList], [TransfAggrData|TransfA
 %
 aggr_fransf(Scope, EmplKey, TransfData, TransfDataList, TransfDataList1, TransfAggrData) :-
     % спецификации данных за перевод
-    TransfData = [AlimonyKey, TransferTypeKey, Recipient, AlimonyCharge0],
+    TransfData = [AlimonyKey, TransferTypeKey, Recipient, _],
     TransfAggrData = [
                 AlimonyKey, TransfByGroup, TransferTypeKey, Recipient,
                 ForTransfAmount, TransfPercent, TransfSum ],
-    % для получателей
-    ( Recipient > 0,
-      % собрать суммы по Группе [Вид перевода, Получатель]
-      findall( AlimonyCharge,
-               member([_, TransferTypeKey, Recipient, AlimonyCharge], TransfDataList),
-      AlimonyChargeList)
-    ; % иначе Исходная сумма
-      AlimonyChargeList = [AlimonyCharge0]
-    ),
+    % собрать суммы по Группе [Документ, Вид перевода, Получатель]
+    findall( AlimonyCharge,
+             member([AlimonyKey, TransferTypeKey, Recipient, AlimonyCharge],
+                     TransfDataList),
+    AlimonyChargeList),
     % Итог
     sum_list(AlimonyChargeList, ForTransfAmount),
     % Признак группы
@@ -384,8 +385,8 @@ aggr_fransf(Scope, EmplKey, TransfData, TransfDataList, TransfDataList1, TransfA
     TransfSum0 is ForTransfAmount * TransfPercent / 100,
     get_round_data(Scope, EmplKey, "ftTransferDed", RoundType, RoundValue),
     round_sum(TransfSum0, TransfSum, RoundType, RoundValue),
-    % для получателей
-    ( Recipient > 0, \+ length(AlimonyChargeList, 1),
+    % если есть Группа
+    ( \+ length(AlimonyChargeList, 1),
       % исключить Группу из списка данных
       findall( [AlimonyKey1, TransferTypeKey1, Recipient1, AlimonySum1],
                ( member([AlimonyKey1, TransferTypeKey1, Recipient1, AlimonySum1], TransfDataList),
@@ -508,7 +509,7 @@ check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
     % распределить суммы по Коэфициентам от суммы Резерва
     charge_by_coef(Scope, EmplKey, ReserveAmount),
     % пересчитать суммы переводов
-    recacl_transf(Scope, EmplKey),
+    recalc_transf(Scope, EmplKey),
     !,
     check_rest(Scope, EmplKey, CheckAmount, CalcDelta1, CalcDelta, 1).
 
@@ -606,6 +607,8 @@ drop_debt(Scope, EmplKey) :-
     drop_debt_rest(Scope, EmplKey, DateIn, Balance),
     % списание Долгов
     drop_debt_bal(Scope, EmplKey),
+    % пересчитать суммы переводов
+    recalc_transf(Scope, EmplKey),
     !.
 drop_debt(Scope, _) :-
     % - для алиментов
@@ -662,6 +665,7 @@ drop_debt_rest(Scope, EmplKey, DateIn, Balance) :-
     % сумма Баланса для остатков по долгам
     get_round_data(Scope, EmplKey, "ftAlimonyDebt", _, RoundValue),
     round_sum(Balance, RestBalance, 3, RoundValue),
+    RestBalance > 0,
     % Общая сумма остатков по долгам
     findall( RestSum,
              get_param_list(Scope, Type, DebtPairs1),
