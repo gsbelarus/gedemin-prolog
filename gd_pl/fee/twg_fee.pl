@@ -32,6 +32,7 @@
     [
     usr_wg_MovementLine,
     usr_wg_TblCharge,
+    usr_wg_TblCharge_Extra,
     usr_wg_TblCharge_AlimonyDebt,
     usr_wg_FeeType,
     usr_wg_FeeType_Taxable,
@@ -157,11 +158,35 @@ calc_tab(Scope, EmplKey) :-
 % расчет суммы
 calc_amount(Scope, EmplKey) :-
     % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount, Shape = 3,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
+    % спецификация временных данных
+    AmountPairs = [
+                Section-Shape, pEmplKey-EmplKey,
+                pForAlimony-ForAlimony, pAmountAll-AmountAll ],
+    % по предыдущим Итоговым начислениям
+    calc_amount(Scope, EmplKey, 1),
+    get_param_list(Scope, Type, [
+                    pCalcAmount-1, pEmplKey-EmplKey,
+                    pForAlimony-ForAlimony1, pAmountAll-AmountAll1 ]),
+    % по дате Зачисления
+    calc_amount(Scope, EmplKey, 2),
+    get_param_list(Scope, Type, [
+                    pCalcAmount-2, pEmplKey-EmplKey,
+                    pForAlimony-ForAlimony2, pAmountAll-AmountAll2 ]),
+    % для Расчета
+    ForAlimony is ForAlimony2 - ForAlimony1,
+    AmountAll is AmountAll2 - AmountAll1,
+    % добавить временные данные
+    new_param_list(Scope, Type, AmountPairs),
+    !.
+%
+calc_amount(Scope, EmplKey, Shape) :-
+    % - для алиментов
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
     % собрать начисления по Группе начислений
-    fee_group_charges(Scope, EmplKey, Charges),
+    fee_group_charges(Scope, EmplKey, Charges, Shape),
     % Общая сумма
     charges_sum(Charges, AmountAll),
     % Исключаемые начисления
@@ -192,7 +217,7 @@ calc_amount(Scope, EmplKey) :-
     to_currency(ForAlimony0, ForAlimony, 0),
     % спецификация временных данных
     AmountPairs = [
-                Section-1, pEmplKey-EmplKey, pForAlimony-ForAlimony,
+                Section-Shape, pEmplKey-EmplKey, pForAlimony-ForAlimony,
                 pAmountAll-AmountAll, pAmountExcl-AmountExcl, pIncomeTaxExcl-IncomeTaxExcl,
                 pAmountTaxableExcl-AmountTaxableExcl, pIncomeTaxCoef-IncomeTaxCoef,
                 pIncomeTax-IncomeTax, pAmountTaxable-AmountTaxable ],
@@ -203,17 +228,51 @@ calc_amount(Scope, EmplKey) :-
 % расчет формулы
 calc_formula(Scope, EmplKey) :-
     % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula, Shape = 3,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
+    % спецификация алиментов
+    SpecAlimony = [
+                fDocKey-AlimonyKey, fEmplKey-EmplKey ],
+    % спецификации параметров алиментов
+    FormulaParams1 = [
+                Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                pAlimonySum-AlimonySum1 ],
+    FormulaParams2 = [
+                Section-2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                pAlimonySum-AlimonySum2 ],
+    % спецификация временных данных
+    FormulaPairs = [
+                Section-Shape, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                pAlimonyCharge-AlimonySum, pAlimonySum-AlimonySum ],
+    % по предыдущим Итоговым начислениям
+    calc_formula(Scope, EmplKey, 1),
+    % по дате Зачисления
+    calc_formula(Scope, EmplKey, 2),
+    % для всех алиментов
+    forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
+            ( % получить сумму по формуле
+              get_param_list(Scope, Type, FormulaParams1),
+              get_param_list(Scope, Type, FormulaParams2),
+              AlimonySum is AlimonySum2 - AlimonySum1,
+              AlimonySum > 0,
+              % добавить временные данные
+              new_param_list(Scope, Type, FormulaPairs)
+            )
+          ),
+    !.
+%
+calc_formula(Scope, EmplKey, Shape) :-
+    % - для алиментов
+    Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
     % спецификация алиментов
     SpecAlimony = [
                 fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
                 fChildCount-_, fLivingWagePerc-_ ],
     % спецификации временных данных
     FormulaPairs = [
-                Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
-                pAlimonyCharge-_, pAlimonySum-_,  pByBudget-_,
+                Section-Shape, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                pAlimonySum-_,  pByBudget-_,
                 pFormula-Formula, pForAlimony-_, pBV-_,
                 pEval-_, pTCoef-_, pResult-_,
                 pChildCount-_, pLivingWagePerc-_,
@@ -221,7 +280,7 @@ calc_formula(Scope, EmplKey) :-
     % для всех алиментов
     forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
             ( % получить сумму по формуле
-              calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs),
+              calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs, Shape),
               % добавить временные данные
               new_param_list(Scope, Type, FormulaPairs)
             )
@@ -229,7 +288,7 @@ calc_formula(Scope, EmplKey) :-
     !.
 
 % расчет формулы по спецификациям
-calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
+calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs, Shape) :-
     % - для алиментов
     Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
     get_param_list(Scope, run, [
@@ -245,8 +304,8 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
                 [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc]),
     % спецификация временных данных
     FormulaPairs = [
-                Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
-                pAlimonyCharge-AlimonySum, pAlimonySum-AlimonySum, pByBudget-ByBudget,
+                Section-Shape, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                pAlimonySum-AlimonySum, pByBudget-ByBudget,
                 pFormula-Formula, pForAlimony-ForAlimony, pBV-BV,
                 pEval-Eval, pTCoef-TCoef, pResult-Result,
                 pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc,
@@ -258,28 +317,25 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
     % сумма Для алиментов
     get_data(Scope, kb, usr_wg_Variables, [fAlias-"vForAlimony", fName-Var_ForAlimony]),
     get_param_list(Scope, Type, [
-                    pCalcAmount-1,
-                    pEmplKey-EmplKey, pForAlimony-ForAlimony ]),
+                    pCalcAmount-Shape, pEmplKey-EmplKey, pForAlimony-ForAlimony ]),
     replace_all(Formula1, Var_ForAlimony, ForAlimony, Formula2),
     % Результат
     replace_all(Formula2, ",", ".", Formula3),
     catch( term_to_atom(Expr, Formula3), _, fail ),
     catch( Eval is Expr, _, fail),
     get_param_list(Scope, Type, [
-                    pCalcTab-2,
-                    pAlimonyKey-AlimonyKey, pTCoef-TCoef ]),
+                    pCalcTab-2, pAlimonyKey-AlimonyKey, pTCoef-TCoef ]),
     Result is Eval * TCoef,
     % Часть БПМ
     get_budget(Scope, DateCalcTo, BudgetConst),
     BudgetPart is BudgetConst * LivingWagePerc,
     % сумма Удержания
-    ( Result < BudgetPart ->
+    ( Shape = 2, Result < BudgetPart ->
       AlimonySum0 = BudgetPart, ByBudget = 1
     ; AlimonySum0 = Result, ByBudget = 0
     ),
     get_round_data(Scope, EmplKey, "ftAlimony", RoundType, RoundValue),
     round_sum(AlimonySum0, AlimonySum, RoundType, RoundValue),
-    AlimonySum > 0,
     !.
 
 % расчет расходов по переводу
@@ -294,7 +350,7 @@ calc_transf(Scope, EmplKey, Stage) :-
                 fTransferTypeKey-TransferTypeKey0, fRecipient-Recipient0 ],
     % спецификация параметров алиментов
     AlimonyParams = [
-                pCalcFormula-1, pEmplKey-EmplKey,
+                pCalcFormula-3, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pAlimonyCharge-AlimonyCharge ],
     % спецификация параметров списания долгов алиментов
     DebtParams = [
@@ -399,11 +455,11 @@ check_rest(Scope, EmplKey) :-
                 fDocKey-AlimonyKey, fEmplKey-EmplKey, fRestPercent-RestPercent0 ],
     % спецификация параметров алиментов
     AlimonyParams = [
-                pCalcFormula-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                pCalcFormula-3, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                 pAlimonySum-AlimonySum ],
     % спецификация параметров контроля
     CheckParams = [
-                pCalcAmount-1, pEmplKey-EmplKey, pAmountAll-AmountAll ],
+                pCalcAmount-3, pEmplKey-EmplKey, pAmountAll-AmountAll ],
     % спецификация временных данных
     CheckPairs = [
                 Section-1, pEmplKey-EmplKey,
@@ -452,7 +508,7 @@ check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
     Scope = wg_fee_alimony, Type = temp, Section = pCheckRest,
     % спецификация параметров алиментов
     AlimonyParams = [
-                pCalcFormula-1, pEmplKey-EmplKey, pAlimonyCharge-AlimonyCharge ],
+                pCalcFormula-3, pEmplKey-EmplKey, pAlimonyCharge-AlimonyCharge ],
     % спецификация параметров переводов
     TransfParams = [
                 pCalcTransf-_, pEmplKey-EmplKey, pTransfCharge-TransfCharge ],
@@ -508,7 +564,7 @@ charge_by_coef(Scope, EmplKey, ReserveAmount) :-
     Section1 = pCalcFormula, Section2 = pCheckRest,
     % спецификации параметров алиментов
     AlimonyParams1 = [
-                Section1-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                Section1-3, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                 pAlimonyCharge-_ ],
     AlimonyParams2 = [
                 Section2-2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
@@ -540,7 +596,7 @@ add_debt(Scope, EmplKey) :-
     param_list_debug(Scope, Type-Section),
     % спецификации параметров алиментов
     AlimonyParams = [
-                pCalcFormula-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                pCalcFormula-3, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                 pAlimonyCharge-AlimonyCharge, pAlimonySum-AlimonySum ],
     % спецификация временных данных
     DebtPairs = [
@@ -905,24 +961,28 @@ get_transf_scale(_, _, _, 0.0) :-
     !.
 
 % собрать начисления по Группе начислений
-fee_group_charges(Scope, EmplKey, Charges) :-
+fee_group_charges(Scope, EmplKey, Charges, Shape) :-
     % спецификация для начислений
     SpecTblCharge =  [
         fEmplKey-EmplKey,
         fCalYear-Y, fCalMonth-M, fDateBegin-DateBegin,
         fDebit-Debit, fCredit-Credit,
-        fFeeTypeKey-FeeTypeKey ],
+        fFeeTypeKey-FeeTypeKey, fTotalDocKey-TotalDocKey ],
     % спецификация для группы начислений
     SpecFeeType =  [
         fEmplKey-EmplKey, fFeeTypeKey-FeeTypeKey ],
     % спецификация данных начисления
     ChargeData = [
         Y-M, DateBegin, Debit, Credit, FeeTypeKey ],
+    % ссылка на текущее Итоговое начисление
+    get_param(Scope, run, pTotalDocKey-TotalDocKey0),
     % взять данные
     findall( ChargeData,
               % по начислениям
-            ( get_data(Scope, kb, usr_wg_TblCharge, SpecTblCharge),
-              % с наличием суммы
+            ( get_data(Scope, kb, usr_wg_TblCharge_Extra, SpecTblCharge),
+              % с фильтром для вида расчета
+              ( Shape = 1, \+ TotalDocKey = TotalDocKey0 ; Shape = 2 ),
+              % наличием суммы
               once( ( \+ Debit =:= 0 ; \+ Credit =:= 0 ) ),
               % и соответствующего типа
               get_data(Scope, kb, usr_wg_FeeType, SpecFeeType)
@@ -1164,7 +1224,7 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) 
                 fID-FeeTypeKey, fAlias-"ftAlimony" ]),
     % спецификация параметров алиментов
     AlimonyParams = [
-                pCalcFormula-1, pEmplKey-EmplKey,
+                pCalcFormula-3, pEmplKey-EmplKey,
                 pAlimonyCharge-ChargeSum, pAlimonyKey-DocKey ],
     % взять данные по алиментам
     get_param_list(Scope, Type, AlimonyParams),

@@ -13,6 +13,7 @@ wg_valid_sql(
             [
             usr_wg_MovementLine/15,
             usr_wg_TblCharge/11,
+            usr_wg_TblCharge_Extra/10,
             usr_wg_TblCharge_AlimonyDebt/9,
             usr_wg_FeeType/4,
             usr_wg_FeeType_Taxable/3,
@@ -123,6 +124,44 @@ WHERE \c
 ",
     [
     pEmplKey-_, pTotalDocKey-_
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony
+        ]).
+
+gd_pl_ds(Scope, kb, usr_wg_TblCharge_Extra, 10, [
+    fDocKey-integer, fEmplKey-integer, fFirstMoveKey-integer,
+    fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+    fDebit-float, fCredit-float, fFeeTypeKey-integer,
+    fTotalDocKey-integer
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony
+        ]).
+% usr_wg_TblCharge_Extra(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, TotalDocKey)
+get_sql(Scope, kb, usr_wg_TblCharge_Extra/10,
+"SELECT \c
+  tch.USR$DOCUMENTKEY, \c
+  tch.USR$EMPLKEY, \c
+  tch.USR$FIRSTMOVEKEY, \c
+  EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear, \c
+  EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth, \c
+  tch.USR$DATEBEGIN, \c
+  tch.USR$DEBIT, \c
+  tch.USR$CREDIT, \c
+  tch.USR$FEETYPEKEY, \c
+  tch.USR$TOTALDOCKEY
+FROM \c
+  USR$WG_TBLCHARGE tch \c
+WHERE \c
+  tch.USR$EMPLKEY = pEmplKey \c
+  AND \c
+  tch.USR$DATEBEGIN >= \'pDateCalcFrom\' \c
+  AND \c
+  tch.USR$DATEBEGIN < \'pDateCalcTo\' \c
+",
+    [
+    pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony
