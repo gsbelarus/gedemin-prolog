@@ -62,8 +62,7 @@ twg_fee_in_params:-
     new_param_list(Scope, Type, [
         pRestPercent-0.3, % Процент остатка
         pPercent-1.0,     % Процент списания долга
-        pCalcDelta-1000,  % Дельта для расчета при нехватке средств
-        pDropDebtLimit-0  % Ограничение по списанию долгов
+        pCalcDelta-100    % Дельта для расчета при нехватке средств
         ]),
     fail.
 twg_fee_in_params:-

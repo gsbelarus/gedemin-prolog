@@ -77,3 +77,14 @@ get_scope_type_list(ScopeTypeList) :-
     !.
 
 %
+param_list_debug(Scope, Param) :-
+    Type = debug,
+    % взять локальное время
+    get_local_stamp(DT),
+    % удалить отладочную информацию
+    dispose_param_list(Scope, Type, [Param|_]),
+    % записать отладочную информацию
+    new_param_list(Scope, Type, [Param, DT]),
+    !.
+
+%
