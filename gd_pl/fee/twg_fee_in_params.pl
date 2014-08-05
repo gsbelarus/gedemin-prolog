@@ -9,10 +9,8 @@ twg_fee_in_params:-
     member(Scope, [
         wg_fee_alimony
         ]),
-    % взять локальное время
-    get_local_stamp(DT),
     % записать отладочную информацию
-    new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+    param_list_debug(Scope, Type-Section),
     % записать общие входные параметры
     new_param_list(Scope, Type, [
         Section-1,
@@ -30,10 +28,8 @@ twg_fee_in_params:-
     member(Scope, [
         wg_fee_alimony
         ]),
-    % взять локальное время
-    get_local_stamp(DT),
     % записать отладочную информацию
-    new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+    param_list_debug(Scope, Type-Section),
     % записать входные параметры
     new_param_list(Scope, Type, [
         Section-1,
@@ -54,10 +50,8 @@ twg_fee_in_params:-
     member(Scope, [
         wg_fee_alimony
         ]),
-    % взять локальное время
-    get_local_stamp(DT),
     % записать отладочную информацию
-    new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+    param_list_debug(Scope, Type-Section),
     % записать входные параметры
     new_param_list(Scope, Type, [
         pRestPercent-0.3, % Процент остатка
@@ -70,10 +64,8 @@ twg_fee_in_params:-
     member(Scope, [
         wg_fee_alimony
         ]),
-    % взять локальное время
-    get_local_stamp(DT),
     % записать отладочную информацию
-    new_param_list(Scope, debug, [Scope-Type-Section-DT]),
+    param_list_debug(Scope, Type-Section),
     % Процент от БПМ (не менее) от количества детей
     member([ChildQtyCmp, LivingWagePerc],
         [ ['=:=0', 0.0], ['=1', 0.5], ['=2', 0.75], ['>=3', 1.0] ]),

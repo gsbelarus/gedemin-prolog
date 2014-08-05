@@ -164,7 +164,7 @@ calc_amount(Scope, EmplKey) :-
     % спецификация временных данных
     AmountPairs = [
                 Section-Shape, pEmplKey-EmplKey,
-                pForAlimony-ForAlimony, pAmountAll-AmountAll ],
+                pForAlimony-ForAlimony, pAmountAll-AmountAll, pByTransit-ByTransit ],
     % по предыдущим Итоговым начислениям
     calc_amount(Scope, EmplKey, 1),
     get_param_list(Scope, Type, [
@@ -178,6 +178,7 @@ calc_amount(Scope, EmplKey) :-
     % для Расчета
     ForAlimony is ForAlimony2 - ForAlimony1,
     AmountAll is AmountAll2 - AmountAll1,
+    ( ForAlimony1 > 0 -> ByTransit = 1 ; ByTransit = 0 ),
     % добавить временные данные
     new_param_list(Scope, Type, AmountPairs),
     !.
@@ -240,11 +241,11 @@ calc_formula(Scope, EmplKey) :-
                 pAlimonySum-AlimonySum1 ],
     FormulaParams2 = [
                 Section-2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
-                pAlimonySum-AlimonySum2 ],
+                pAlimonySum-AlimonySum2, pByBudget-ByBudget ],
     % спецификация временных данных
     FormulaPairs = [
                 Section-Shape, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
-                pAlimonyCharge-AlimonySum, pAlimonySum-AlimonySum ],
+                pAlimonyCharge-AlimonySum, pAlimonySum-AlimonySum, pByBudget-ByBudget ],
     % по предыдущим Итоговым начислениям
     calc_formula(Scope, EmplKey, 1),
     % по дате Зачисления
@@ -329,7 +330,7 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs, Shape) :-
     % Часть БПМ
     get_budget(Scope, DateCalcTo, BudgetConst),
     BudgetPart is BudgetConst * LivingWagePerc,
-    % сумма Удержания
+    % сумма Удержания c Контролем от БПМ
     ( Shape = 2, Result < BudgetPart ->
       AlimonySum0 = BudgetPart, ByBudget = 1
     ; AlimonySum0 = Result, ByBudget = 0
@@ -353,9 +354,9 @@ calc_transf(Scope, EmplKey, Stage) :-
                 pCalcFormula-3, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pAlimonyCharge-AlimonyCharge ],
     % спецификация параметров списания долгов алиментов
-    DebtParams = [
-                pDropDebt-4, pEmplKey-EmplKey,
-                pAlimonyKey-AlimonyKey, pDebtCharge-DebtCharge ],
+    DropDebtParams = [
+                pDropDebt-5, pEmplKey-EmplKey,
+                pAlimonyKey-AlimonyKey, pDropDebtCharge-DropDebtCharge ],
     % спецификация временных данных
     TransfPairs = [
                 Section-Stage, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey1,
@@ -365,8 +366,8 @@ calc_transf(Scope, EmplKey, Stage) :-
     % спецификации данных для расходов по переводу
     AlimonyData = [
                 AlimonyKey, TransferTypeKey0, Recipient0, AlimonyCharge ],
-    DebtData = [
-                AlimonyKey, TransferTypeKey0, Recipient0, DebtCharge ],
+    DropDebtData = [
+                AlimonyKey, TransferTypeKey0, Recipient0, DropDebtCharge ],
     AggrTransfData = [
                 AlimonyKey1, TransfByGroup, TransferTypeKey, Recipient,
                 ForTransfAmount, TransfPercent, TransfCharge ],
@@ -377,13 +378,13 @@ calc_transf(Scope, EmplKey, Stage) :-
                get_param_list(Scope, Type, AlimonyParams)
              ),
     AlimonyDataList ),
-    findall( DebtData,
+    findall( DropDebtData,
              ( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
                TransferTypeKey0 > 0,
-               get_param_list(Scope, Type, DebtParams)
+               get_param_list(Scope, Type, DropDebtParams)
              ),
-    DebtDataList ),
-    append(AlimonyDataList, DebtDataList, TransfDataList),
+    DropDebtDataList ),
+    append(AlimonyDataList, DropDebtDataList, TransfDataList),
     % агрегировать суммы расходов по переводам
     aggr_fransf(Scope, EmplKey, TransfDataList, AggrTransfDataList),
     % удалить временные данные по переводам
@@ -459,7 +460,8 @@ check_rest(Scope, EmplKey) :-
                 pAlimonySum-AlimonySum ],
     % спецификация параметров контроля
     CheckParams = [
-                pCalcAmount-3, pEmplKey-EmplKey, pAmountAll-AmountAll ],
+                pCalcAmount-3, pEmplKey-EmplKey,
+                pAmountAll-AmountAll ],
     % спецификация временных данных
     CheckPairs = [
                 Section-1, pEmplKey-EmplKey,
@@ -684,7 +686,7 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
                 Section-2, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pDropDebtAmount-DropDebtAmount,
                 pRestDebtAmount-RestDebtAmount, pEvalDebtAmount-EvalDebtAmount,
-                pDebtAmount-DebtAmount, pDebtPercent-DebtPercent ],
+                pForAlimony-ForAlimony, pDebtPercent-DebtPercent ],
     TotalDebtPairs = [
                 Section-3, pEmplKey-EmplKey,
                 pDropDeptBalance-DropDeptBalance,
@@ -727,20 +729,16 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
             ( % суммировать Остатки по долгам
               findall( RestSum,
                        get_param_list(Scope, Type, RestDebtPairs),
-              RestSumList ),
-              sum_list(RestSumList, RestDebtAmount),
-              % суммировать Долги
-              findall( DebtSum,
-                       ( get_data(Scope, kb, usr_wg_AlimonyDebt, SpecAlimonyDebt),
-                         DateBegin @>= DateIn
-                       ),
-              DebtSumList),
-              sum_list(DebtSumList, DebtAmount),
+              RestDebtList ),
+              sum_list(RestDebtList, RestDebtAmount),
+              % сумма Для алиментов
+              get_param_list(Scope, Type, [
+                    pCalcAmount-3, pEmplKey-EmplKey, pForAlimony-ForAlimony ]),
               % Процент Списания долга
               Percent1 is Percent / 100,
               fit_data(Scope, [pPercent-Percent1], [pPercent-DebtPercent]),
               % расчет Списания долга
-              EvalDebtAmount0 is DebtAmount * DebtPercent,
+              EvalDebtAmount0 is ForAlimony * DebtPercent,
               round_sum(EvalDebtAmount0, EvalDebtAmount, RoundType, RoundValue),
               % сумма Списания долга
               ( EvalDebtAmount < RestDebtAmount ->
@@ -777,8 +775,7 @@ drop_debt_charge(Scope, EmplKey) :-
     % Итоги для Списания долгов
     TotalDebtParams = [
                 Section-3, pEmplKey-EmplKey,
-                pDropDeptBalance-DropDeptBalance,
-                pDropDebtTotal-DropDebtTotal ],
+                pDropDeptBalance-DropDeptBalance, pDropDebtTotal-DropDebtTotal ],
     get_param_list(Scope, Type, TotalDebtParams),
     ( DropDeptBalance < DropDebtTotal,
       ByDropDebtCoef = 1
