@@ -2,6 +2,19 @@
 
 %:- ['../gd_pl_state/date'].
 
+% term_to_file(+Term, +FilePath, +Mode)
+term_to_file(Term, FilePath, Mode) :-
+    memberchk(Mode, [write, append]),
+    open(FilePath, Mode, Stream, [encoding(utf8)]),
+    forall( catch(Term, _, fail),
+            ( writeq(Stream, Term), write(Stream,'.'), nl(Stream) )
+          ),
+    close(Stream, [force(true)]),
+    !.
+term_to_file(Term, FilePath) :-
+    term_to_file(Term, FilePath, write),
+    !.
+
 % get_local_stamp(-Stamp)
 get_local_stamp(Stamp) :-
     get_local_date_time(DateTime),

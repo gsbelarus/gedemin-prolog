@@ -14,7 +14,7 @@ twg_fee_in_params:-
     % записать общие входные параметры
     new_param_list(Scope, Type, [
         Section-1,
-        pStartDate-'2012-01-01',
+        pStartDate-'2012-01-01', pNullDate-'2100-01-01',
         pKindOfWork_Basic_ruid-'147017405,119619099',
         pPayFormSalary_ruid-'147009181,119619099',
         pFeeGroupKey_IncomeTax_ruid-'147021000,274788016',  % Облагается ПН
@@ -55,7 +55,7 @@ twg_fee_in_params:-
     % записать входные параметры
     new_param_list(Scope, Type, [
         pRestPercent-0.3, % Процент остатка
-        pPercent-1.0,     % Процент списания долга
+        pPercent-0.2,     % Процент списания долга
         pCalcDelta-100    % Дельта для расчета при нехватке средств
         ]),
     fail.

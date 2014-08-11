@@ -5,7 +5,7 @@ Properties:
   RUID: 151049506_187967073
   Name: "GS.Зарплата.Пролог.Общие"
   Caption: "Общие"
-  Version: "1.0.0.2"
+  Version: "1.0.0.3"
   Optional: False
   Internal: True
 Objects: 
@@ -236,6 +236,19 @@ Objects:
         
         %:- ['../gd_pl_state/date'].
         
+        % term_to_file(+Term, +FilePath, +Mode)
+        term_to_file(Term, FilePath, Mode) :-
+            memberchk(Mode, [write, append]),
+            open(FilePath, Mode, Stream, [encoding(utf8)]),
+            forall( catch(Term, _, fail),
+                    ( writeq(Stream, Term), write(Stream,'.'), nl(Stream) )
+                  ),
+            close(Stream, [force(true)]),
+            !.
+        term_to_file(Term, FilePath) :-
+            term_to_file(Term, FilePath, write),
+            !.
+        
         % get_local_stamp(-Stamp)
         get_local_stamp(Stamp) :-
             get_local_date_time(DateTime),
@@ -386,7 +399,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-07-11T11:30:56+03:00
+      EDITIONDATE: 2014-08-11T11:29:28+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
