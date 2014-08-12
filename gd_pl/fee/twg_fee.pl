@@ -272,7 +272,7 @@ calc_formula(Scope, EmplKey) :-
                 pAlimonyCharge-_,
                 pAlimonySum-_,  pByBudget-_,
                 pFormula-Formula, pForAlimony-_, pBV-_,
-                pEval-_, pTCoef-_, pResult-_,
+                pResult-_, pEval-_, pTCoef-_,
                 pChildCount-_, pLivingWagePerc-_,
                 pBudgetConst-_, pBudgetPart-_ ],
     % для всех алиментов
@@ -306,7 +306,7 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
                 pAlimonyCharge-AlimonySum,
                 pAlimonySum-AlimonySum, pByBudget-ByBudget,
                 pFormula-Formula, pForAlimony-ForAlimony, pBV-BV,
-                pEval-Eval, pTCoef-TCoef, pResult-Result,
+                pResult-Result, pEval-Eval, pTCoef-TCoef,
                 pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc,
                 pBudgetConst-BudgetConst, pBudgetPart-BudgetPart ],
     % сумма БВ
@@ -321,23 +321,23 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
     % Результат
     replace_all(Formula2, ",", ".", Formula3),
     ( catch( term_to_atom(Expr, Formula3), _, fail ),
-      catch( Eval is Expr, _, fail), FormulaError = 0
-    ; Eval = 0, FormulaError = 1
+      catch( Eval is round(Expr) * 1.0, _, fail), FormulaError = 0
+    ; Eval = 0.0, FormulaError = 1
     ),
     get_param_list(Scope, Type, [
                     pCalcTab-2, pAlimonyKey-AlimonyKey, pTCoef-TCoef ]),
-    Result is Eval * TCoef,
+    Result is round(Eval * TCoef) * 1.0,
     % Часть БПМ
     ( ChildCount > 0 ->
       get_budget(Scope, DateCalcTo, BudgetConst),
-      BudgetPart is BudgetConst * LivingWagePerc
-    ; BudgetPart = 0
+      BudgetPart is round(BudgetConst * LivingWagePerc) * 1.0
+    ; BudgetPart = 0.0
     ),
     % Оплачено по Предыдущему периоду
     once( ( get_param_list(Scope, Type, [
                             pCalcAmount-5, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                             pAlimonySumPaid-AlimonySumPaid ])
-          ; AlimonySumPaid = 0
+          ; AlimonySumPaid = 0.0
           )
         ),
     % сумма Удержания c Контролем от БПМ
@@ -498,7 +498,7 @@ check_rest(Scope, EmplKey) :-
     fit_data(Scope, [pRestPercent-RestPercent1], [pRestPercent-RestPercent]),
     % сумма Контроля
     get_param_list(Scope, Type, CheckParams),
-    RestAmount is AmountAll * RestPercent,
+    RestAmount is round(AmountAll * RestPercent) * 1.0,
     CheckAmount is round(AmountAll - RestAmount) * 1.0,
     % добавить временные данные
     new_param_list(Scope, Type, CheckPairs),
@@ -534,7 +534,7 @@ check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
                 pBalance-Balance, pChargeAmount-ChargeAmount,
                 pAlimonyChargeAmount-AlimonyChargeAmount, pTransfAmount-TransfAmount,
                 pReserveAmount-ReserveAmount, pCheckAmount-CheckAmount,
-                pCalcDelta-CalcDelta0, pChargeStep-ChargeStep ],
+                pCalcDelta-CalcDelta, pChargeStep-ChargeStep ],
     % сумма к Удержанию
     findall( AlimonyCharge,
              get_param_list(Scope, Type, AlimonyParams),
@@ -666,7 +666,7 @@ drop_debt(Scope, EmplKey) :-
     % Списание долгов
     drop_debt_charge(Scope, EmplKey),
     % Контроль остатка после Списания долгов
-    %drop_debt_check_rest(Scope, EmplKey),
+    drop_debt_check_rest(Scope, EmplKey),
     !.
 drop_debt(Scope, _) :-
     % - для алиментов
@@ -705,7 +705,8 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
     TotalDebtPairs = [
                 Section-3, pEmplKey-EmplKey,
                 pDropDeptBalance-DropDeptBalance,
-                pDropDebtTotal-DropDebtTotal, pRestDebtTotal-RestDebtTotal ],
+                pDropDebtTotal-DropDebtTotal, pRestDebtTotal-RestDebtTotal,
+                pCalcDelta-CalcDelta, pChargeStep-0 ],
     CoefDebtPairs = [
                 Section-4, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pDropDebtCoef-DropDebtCoef ],
@@ -777,6 +778,8 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
     DropDebtAmountList ),
     sum_list(DropDebtAmountList, DropDebtTotal),
     DropDebtTotal > 0,
+    % Дельта для расчета при нехватке средств
+    get_param(Scope, fit, pCalcDelta-CalcDelta),
     % добавить временные данные
     new_param_list(Scope, Type, TotalDebtPairs),
     % для всех Списаний долгов по Алиментам
@@ -814,7 +817,7 @@ drop_debt_charge(Scope, EmplKey, DropDeptBalance, ByDropDebtCoef) :-
                 Section-1, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pAlimonyDebtKey-AlimonyDebtKey,
                 pRestSum-RestSum, pDateBegin-DateBegin ],
-    DropDebtPairs = [
+    DropDebtParams = [
                 Section-2, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pDropDebtAmount-DropDebtAmount ],
     CoefDebtParams = [
@@ -831,7 +834,7 @@ drop_debt_charge(Scope, EmplKey, DropDeptBalance, ByDropDebtCoef) :-
     % параметры Округления
     get_round_data(Scope, EmplKey, "ftAlimonyDebt", RoundType, RoundValue),
     % для всех Долгов по алиментам
-    forall( get_param_list(Scope, Type, DropDebtPairs),
+    forall( get_param_list(Scope, Type, DropDebtParams),
             ( % собрать Остатки долгов
               findall( DateBegin-AlimonyDebtKey-RestSum,
                        get_param_list(Scope, Type, RestDebtParams),
@@ -886,6 +889,54 @@ drop_debt_charge(Scope, [_-AlimonyDebtKey-RestSum|RestDebtDataList], DropDebtCha
     DropDeptBalance1 is DropDeptBalance - DropDebtCharge,
     !,
     drop_debt_charge(Scope, RestDebtDataList, DropDebtChargePairs1, DropDebtAmount1, DropDeptBalance1, RoundType, RoundValue).
+
+% Контроль остатка после Списания долгов
+drop_debt_check_rest(Scope, EmplKey) :-
+    Type = temp, NextType = out,
+    % спецификация параметров Контроля остатка
+    CheckParams = [
+                pCheckRest-1, pEmplKey-EmplKey,
+                pCheckAmount-CheckAmount ],
+    % спецификация параметров Общего итога
+    TotalParams = [
+                pCalcTotal-1, pEmplKey-EmplKey,
+                pAllChargeTotal-AllChargeTotal ],
+    % спецификация параметров Итога Списания долгов
+    TotalDebtParams = [
+                pDropDebt-3, pEmplKey-EmplKey,
+                pDropDeptBalance-DropDeptBalance,
+                pCalcDelta-CalcDelta, pChargeStep-ChargeStep ],
+    % сумма Контроля остатка
+    get_param_list(Scope, Type, CheckParams),
+    % сумма Итога
+    calc_total(Scope, EmplKey),
+    get_param_list(Scope, NextType, TotalParams),
+    % Контроль остатка
+    AllChargeTotal > CheckAmount,
+    % уменьшение Баланса для Списания долгов
+    get_param_list(Scope, Type, TotalDebtParams, TotalDebtPairs),
+    DropDeptBalance1 is DropDeptBalance - CalcDelta,
+    DropDeptBalance1 > 0,
+    % Списание долгов по Балансу
+    drop_debt_charge(Scope, EmplKey, DropDeptBalance1, 1),
+    % изменение Итога Списания долгов
+    ChargeStep1 is ChargeStep + 1,
+    replace_list(TotalDebtPairs,
+                    [pDropDeptBalance-DropDeptBalance],
+                    [pDropDeptBalance-DropDeptBalance1],
+                        TotalDebtPairs1),
+    replace_list(TotalDebtPairs1,
+                    [pChargeStep-ChargeStep],
+                    [pChargeStep-ChargeStep1],
+                        TotalDebtPairs2),
+    dispose_param_list(Scope, Type, TotalDebtPairs),
+    new_param_list(Scope, Type, TotalDebtPairs2),
+    % пересчитать расходы по Переводу
+    calc_transf(Scope, EmplKey, 3),
+    !,
+    drop_debt_check_rest(Scope, EmplKey).
+drop_debt_check_rest(_, _) :-
+    !.
 
 % расчет итога
 calc_total(Scope, EmplKey) :-
