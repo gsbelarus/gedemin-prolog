@@ -651,8 +651,8 @@ drop_debt(Scope, EmplKey) :-
     get_last_hire(Scope, PK, DateIn),
     % есть данные по долгам
     once( ( get_data(Scope, kb, usr_wg_AlimonyDebt, [
-                        fEmplKey-EmplKey, fDateBegin-DebtDate ]),
-            DebtDate @>= DateIn
+                        fEmplKey-EmplKey, fDateDebt-DateDebt ]),
+            DateDebt @>= DateIn
           )
         ),
     % спецификация параметров Контроля
@@ -685,7 +685,7 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
     % спецификация Долгов по алиментам
     SpecAlimonyDebt = [
                 fDocKey-AlimonyDebtKey, fEmplKey-EmplKey,
-                fCalYear-Y, fCalMonth-M, fDateBegin-DateBegin,
+                fCalYear-Y, fCalMonth-M, fDateDebt-DateDebt,
                 fAlimonyKey-AlimonyKey, fDebtSum-DebtSum ],
     % спецификация Списания долгов по алиментам
     SpecAlimonyPaid = [
@@ -696,7 +696,7 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
                 Section-1, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pAlimonyDebtKey-AlimonyDebtKey,
                 pRestSum-RestSum, pDebtSum-DebtSum, pPaidSum-PaidSum,
-                pYM-Y-M, pDateBegin-DateBegin ],
+                pYM-Y-M, pDateDebt-DateDebt ],
     DropDebtPairs = [
                 Section-2, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pDropDebtAmount-DropDebtAmount,
@@ -717,7 +717,7 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
     DropDeptBalance > 0,
     % для всех Долгов по алиментам
     forall( ( get_data(Scope, kb, usr_wg_AlimonyDebt, SpecAlimonyDebt),
-              DateBegin @>= DateIn
+              DateDebt @>= DateIn
             ),
             ( % суммировать Cписание долгов
               findall( PaidSum0,
@@ -816,7 +816,7 @@ drop_debt_charge(Scope, EmplKey, DropDeptBalance, ByDropDebtCoef) :-
     RestDebtParams = [
                 Section-1, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pAlimonyDebtKey-AlimonyDebtKey,
-                pRestSum-RestSum, pDateBegin-DateBegin ],
+                pRestSum-RestSum, pDateDebt-DateDebt ],
     DropDebtParams = [
                 Section-2, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pDropDebtAmount-DropDebtAmount ],
@@ -836,7 +836,7 @@ drop_debt_charge(Scope, EmplKey, DropDeptBalance, ByDropDebtCoef) :-
     % для всех Долгов по алиментам
     forall( get_param_list(Scope, Type, DropDebtParams),
             ( % собрать Остатки долгов
-              findall( DateBegin-AlimonyDebtKey-RestSum,
+              findall( DateDebt-AlimonyDebtKey-RestSum,
                        get_param_list(Scope, Type, RestDebtParams),
               RestDebtDataList0 ),
               % в порядке их образования

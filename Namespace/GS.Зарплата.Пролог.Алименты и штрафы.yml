@@ -5,7 +5,7 @@ Properties:
   RUID: 195379689_166214404
   Name: "GS.Зарплата.Пролог.Алименты и штрафы"
   Caption: "Алименты и штрафы"
-  Version: "1.0.0.47"
+  Version: "1.0.0.50"
   Optional: False
   Internal: True
 Uses: 
@@ -749,17 +749,17 @@ Objects:
         
         gd_pl_ds(wg_fee_alimony, kb, usr_wg_AlimonyDebt, 8, [
             fDocKey-integer, fEmplKey-integer,
-            fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+            fCalYear-integer, fCalMonth-integer, fDateDebt-date,
             fAlimonyKey-integer, fTotalDocKey-integer, fDebtSum-float
             ]).
-        % usr_wg_AlimonyDebt(DocKey, EmplKey, CalYear, CalMonth, DateBegin, AlimonyKey, TotalDocKey, DebtSum)
+        % usr_wg_AlimonyDebt(DocKey, EmplKey, CalYear, CalMonth, DateDebt, AlimonyKey, TotalDocKey, DebtSum)
         get_sql(wg_fee_alimony, kb, usr_wg_AlimonyDebt/8,
         "\n SELECT \n \c
           aldebt.DOCUMENTKEY, \n \c
           al.USR$EMPLKEY, \n \c
-          EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear, \n \c
-          EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth, \n \c
-          t.USR$DATEBEGIN, \n \c
+          EXTRACT(YEAR FROM aldebt.USR$DATEDEBT) AS CalYear, \n \c
+          EXTRACT(MONTH FROM aldebt.USR$DATEDEBT) AS CalMonth, \n \c
+          aldebt.USR$DATEDEBT, \n \c
           aldebt.USR$ALIMONYKEY, \n \c
           aldebt.USR$TOTALDOCKEY, \n \c
           aldebt.USR$DEBTSUM \n \c
@@ -768,15 +768,12 @@ Objects:
         JOIN \n \c
           USR$WG_ALIMONY al \n \c
             ON al.DOCUMENTKEY = aldebt.USR$ALIMONYKEY \n \c
-        JOIN \n \c
-          USR$WG_TOTAL t \n \c
-            ON t.DOCUMENTKEY = aldebt.USR$TOTALDOCKEY \n \c
         WHERE \n \c
           al.USR$EMPLKEY = pEmplKey \n \c
           AND \n \c
-          t.USR$DATEBEGIN < 'pDateCalcFrom' \n \c
+          aldebt.USR$DATEDEBT < 'pDateCalcFrom' \n \c
         ORDER BY \n \c
-          t.USR$DATEBEGIN \n \c
+          aldebt.USR$DATEDEBT \n \c
         ",
             [
             pEmplKey-_, pDateCalcFrom-_
@@ -791,13 +788,15 @@ Objects:
         FROM \n \c
           USR$WG_ALIMONYDEBT aldebt \n \c
         WHERE \n \c
-          aldebt.USR$TOTALDOCKEY = pTotalDocKey \n \c
+          aldebt.USR$DATEDEBT >= 'pDateCalcFrom' \n \c
+          AND \n \c
+          aldebt.USR$DATEDEBT < 'pDateCalcTo' \n \c
           AND \n \c
           aldebt.USR$ALIMONYKEY IN \n \c
             (SELECT al.DOCUMENTKEY FROM USR$WG_ALIMONY al WHERE al.USR$EMPLKEY = pEmplKey) \n \c
         ",
             [
-            pEmplKey-_, pTotalDocKey-_
+            pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_
             ]).
         
         /**/
@@ -819,7 +818,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-11T14:47:05+03:00
+      EDITIONDATE: 2014-08-13T09:44:04+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1487,8 +1486,8 @@ Objects:
             get_last_hire(Scope, PK, DateIn),
             % есть данные по долгам
             once( ( get_data(Scope, kb, usr_wg_AlimonyDebt, [
-                                fEmplKey-EmplKey, fDateBegin-DebtDate ]),
-                    DebtDate @>= DateIn
+                                fEmplKey-EmplKey, fDateDebt-DateDebt ]),
+                    DateDebt @>= DateIn
                   )
                 ),
             % спецификация параметров Контроля
@@ -1521,7 +1520,7 @@ Objects:
             % спецификация Долгов по алиментам
             SpecAlimonyDebt = [
                         fDocKey-AlimonyDebtKey, fEmplKey-EmplKey,
-                        fCalYear-Y, fCalMonth-M, fDateBegin-DateBegin,
+                        fCalYear-Y, fCalMonth-M, fDateDebt-DateDebt,
                         fAlimonyKey-AlimonyKey, fDebtSum-DebtSum ],
             % спецификация Списания долгов по алиментам
             SpecAlimonyPaid = [
@@ -1532,7 +1531,7 @@ Objects:
                         Section-1, pEmplKey-EmplKey,
                         pAlimonyKey-AlimonyKey, pAlimonyDebtKey-AlimonyDebtKey,
                         pRestSum-RestSum, pDebtSum-DebtSum, pPaidSum-PaidSum,
-                        pYM-Y-M, pDateBegin-DateBegin ],
+                        pYM-Y-M, pDateDebt-DateDebt ],
             DropDebtPairs = [
                         Section-2, pEmplKey-EmplKey,
                         pAlimonyKey-AlimonyKey, pDropDebtAmount-DropDebtAmount,
@@ -1553,7 +1552,7 @@ Objects:
             DropDeptBalance > 0,
             % для всех Долгов по алиментам
             forall( ( get_data(Scope, kb, usr_wg_AlimonyDebt, SpecAlimonyDebt),
-                      DateBegin @>= DateIn
+                      DateDebt @>= DateIn
                     ),
                     ( % суммировать Cписание долгов
                       findall( PaidSum0,
@@ -1652,7 +1651,7 @@ Objects:
             RestDebtParams = [
                         Section-1, pEmplKey-EmplKey,
                         pAlimonyKey-AlimonyKey, pAlimonyDebtKey-AlimonyDebtKey,
-                        pRestSum-RestSum, pDateBegin-DateBegin ],
+                        pRestSum-RestSum, pDateDebt-DateDebt ],
             DropDebtParams = [
                         Section-2, pEmplKey-EmplKey,
                         pAlimonyKey-AlimonyKey, pDropDebtAmount-DropDebtAmount ],
@@ -1672,7 +1671,7 @@ Objects:
             % для всех Долгов по алиментам
             forall( get_param_list(Scope, Type, DropDebtParams),
                     ( % собрать Остатки долгов
-                      findall( DateBegin-AlimonyDebtKey-RestSum,
+                      findall( DateDebt-AlimonyDebtKey-RestSum,
                                get_param_list(Scope, Type, RestDebtParams),
                       RestDebtDataList0 ),
                       % в порядке их образования
@@ -2218,7 +2217,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-12T14:05:03+03:00
+      EDITIONDATE: 2014-08-13T09:46:54+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -2536,6 +2535,7 @@ Objects:
               gdcAlimonyDebt.FieldByName("usr$alimonykey").AsInteger = AlimonyKey
               gdcAlimonyDebt.FieldByName("usr$debtsum").AsCurrency = DebtSum
               gdcAlimonyDebt.FieldByName("usr$debtmonth").AsInteger = 0
+              gdcAlimonyDebt.FieldByName("usr$datedebt").AsDateTime = DateBegin
               gdcAlimonyDebt.Post
               '
               Q_debt.NextSolution
@@ -2582,7 +2582,7 @@ Objects:
         VU5US0VZQVJSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-07-29T12:40:35+03:00
+      EDITIONDATE: 2014-08-13T10:22:40+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

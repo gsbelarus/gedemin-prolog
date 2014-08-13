@@ -609,17 +609,17 @@ ORDER BY \n \c
 
 gd_pl_ds(wg_fee_alimony, kb, usr_wg_AlimonyDebt, 8, [
     fDocKey-integer, fEmplKey-integer,
-    fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+    fCalYear-integer, fCalMonth-integer, fDateDebt-date,
     fAlimonyKey-integer, fTotalDocKey-integer, fDebtSum-float
     ]).
-% usr_wg_AlimonyDebt(DocKey, EmplKey, CalYear, CalMonth, DateBegin, AlimonyKey, TotalDocKey, DebtSum)
+% usr_wg_AlimonyDebt(DocKey, EmplKey, CalYear, CalMonth, DateDebt, AlimonyKey, TotalDocKey, DebtSum)
 get_sql(wg_fee_alimony, kb, usr_wg_AlimonyDebt/8,
 "\n SELECT \n \c
   aldebt.DOCUMENTKEY, \n \c
   al.USR$EMPLKEY, \n \c
-  EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear, \n \c
-  EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth, \n \c
-  t.USR$DATEBEGIN, \n \c
+  EXTRACT(YEAR FROM aldebt.USR$DATEDEBT) AS CalYear, \n \c
+  EXTRACT(MONTH FROM aldebt.USR$DATEDEBT) AS CalMonth, \n \c
+  aldebt.USR$DATEDEBT, \n \c
   aldebt.USR$ALIMONYKEY, \n \c
   aldebt.USR$TOTALDOCKEY, \n \c
   aldebt.USR$DEBTSUM \n \c
@@ -628,15 +628,12 @@ FROM \n \c
 JOIN \n \c
   USR$WG_ALIMONY al \n \c
     ON al.DOCUMENTKEY = aldebt.USR$ALIMONYKEY \n \c
-JOIN \n \c
-  USR$WG_TOTAL t \n \c
-    ON t.DOCUMENTKEY = aldebt.USR$TOTALDOCKEY \n \c
 WHERE \n \c
   al.USR$EMPLKEY = pEmplKey \n \c
   AND \n \c
-  t.USR$DATEBEGIN < 'pDateCalcFrom' \n \c
+  aldebt.USR$DATEDEBT < 'pDateCalcFrom' \n \c
 ORDER BY \n \c
-  t.USR$DATEBEGIN \n \c
+  aldebt.USR$DATEDEBT \n \c
 ",
     [
     pEmplKey-_, pDateCalcFrom-_
@@ -651,13 +648,15 @@ get_sql(wg_fee_alimony, cmd, usr_wg_AlimonyDebt_delete/0,
 FROM \n \c
   USR$WG_ALIMONYDEBT aldebt \n \c
 WHERE \n \c
-  aldebt.USR$TOTALDOCKEY = pTotalDocKey \n \c
+  aldebt.USR$DATEDEBT >= 'pDateCalcFrom' \n \c
+  AND \n \c
+  aldebt.USR$DATEDEBT < 'pDateCalcTo' \n \c
   AND \n \c
   aldebt.USR$ALIMONYKEY IN \n \c
     (SELECT al.DOCUMENTKEY FROM USR$WG_ALIMONY al WHERE al.USR$EMPLKEY = pEmplKey) \n \c
 ",
     [
-    pEmplKey-_, pTotalDocKey-_
+    pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_
     ]).
 
 /**/

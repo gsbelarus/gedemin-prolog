@@ -287,6 +287,7 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
       gdcAlimonyDebt.FieldByName("usr$alimonykey").AsInteger = AlimonyKey
       gdcAlimonyDebt.FieldByName("usr$debtsum").AsCurrency = DebtSum
       gdcAlimonyDebt.FieldByName("usr$debtmonth").AsInteger = 0
+      gdcAlimonyDebt.FieldByName("usr$datedebt").AsDateTime = DateBegin
       gdcAlimonyDebt.Post
       '
       Q_debt.NextSolution
