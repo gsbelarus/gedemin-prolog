@@ -5,6 +5,8 @@
 %   12. Начисление по-среднему
 %
 
+:- style_check([-atom]).
+
 :- retractall(debug_mode).
 
 % ! при использовании в ТП Гедымин
@@ -50,7 +52,7 @@
     usr_wg_SpecDep,
     %  06. Начисление больничных
     usr_wg_AvgWage,
-    usr_wg_FeeTypeProp,
+    usr_wg_FeeTypeProp, % 06, 12
     wg_holiday,
     usr_wg_ExclDays,
     % 12. Начисление по-среднему
