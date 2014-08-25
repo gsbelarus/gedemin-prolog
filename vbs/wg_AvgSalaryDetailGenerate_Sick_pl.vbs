@@ -3,7 +3,8 @@ Option Explicit
 
 Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
 '
-  Dim Creator
+  Dim Creator, IsDebug
+  IsDebug = True
   '
   Dim PL, Ret, Pred, Tv, Append
   Dim PredFile
@@ -13,6 +14,9 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   'struct_sick_in
   Dim P_in, Tv_in, Q_in
   Dim DateCalc, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType
+  'struct_sick_err
+  Dim P_err, Tv_err, Q_err
+  Dim ErrMessage
   'struct_sick_out
   Dim P_out, Tv_out, Q_out
   Dim AccDate, IncludeDate, Percent, DOI, HOI, Summa
@@ -27,12 +31,14 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
     Exit Function
   End If
   'debug
-  PL.Debug = True
+  PL.Debug = (False And IsDebug And plGlobalDebug)
   'load
   Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
   If Not Ret Then
     Exit Function
   End If
+  'debug
+  PL.Debug = (True And IsDebug And plGlobalDebug)
 
   'params
   EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
@@ -135,6 +141,27 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   End If
   Q_in.Close
 
+  'struct_sick_err(ErrMessage)
+  P_err = "struct_sick_err"
+  Set Tv_err = Creator.GetObject(1, "TgsPLTermv", "")
+  Set Q_err = Creator.GetObject(nil, "TgsPLQuery", "")
+  '
+  Q_err.PredicateName = P_err
+  Q_err.Termv = Tv_err
+  '
+  Q_err.OpenQuery
+  If Not Q_err.EOF Then
+    Do Until Q_err.EOF
+      '
+      ErrMessage = Tv_err.ReadString(0)
+      Call MsgBox(ErrMessage, vbCritical + vbOKOnly, "Ошибка!")
+      '
+      Q_err.NextSolution
+    Loop
+    Exit Function
+  End If
+  Q_err.Close
+  
   'struct_sick_out(AccDate, IncludeDate, Percent, DOI, HOI, Summa, DateBegin, DateEnd)
   P_out = "struct_sick_out"
   Set Tv_out = Creator.GetObject(8, "TgsPLTermv", "")

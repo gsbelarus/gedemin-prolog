@@ -12,7 +12,7 @@
 wg_valid_sql([
             % section twg_avg_wage
             %  05. Начисление отпусков
-            -usr_wg_DbfSums/6, % 05, 06, 12
+            -usr_wg_DbfSums/7, % 05, 06, 12
             usr_wg_MovementLine/15, % 05, 06, 12
             usr_wg_FCRate/4,
             usr_wg_TblCalDay/9, % 05, 06, 12
@@ -52,12 +52,13 @@ is_valid_sql(Functor/Arity) :-
     !.
 
 %  05. Начисление отпусков
-gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_DbfSums, 6, [
+gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_DbfSums, 7, [
     fEmplKey-integer, fInSum-float, fInHoures-float,
-    fInYear-integer, fInMonth-integer, fDateBegin-date
+    fInYear-integer, fInMonth-integer, fDateBegin-date,
+    fSickProp-boolean
     ]).
-% usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin)
-get_sql(wg_avg_wage_vacation, kb, usr_wg_DbfSums/6,
+% usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin, SickProp)
+get_sql(wg_avg_wage_vacation, kb, usr_wg_DbfSums/7,
 "
 SELECT
   Z.USR$EMPLKEY,
@@ -65,7 +66,8 @@ SELECT
   COALESCE(Z.USR$MID_HOW, 0) AS INHOURES,
   EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear,
   EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth,
-  IDK.USR$DATEBEGIN
+  IDK.USR$DATEBEGIN,
+  USR$SICK_PROP AS SickProp
 FROM
   USR$GMK_SUMS Z
 JOIN
@@ -332,7 +334,10 @@ get_sql(Scope, kb, usr_wg_TblCal_FlexLine/68,
 SELECT
   CASE gd.DOCUMENTTYPEKEY
     WHEN
-      (SELECT id FROM GD_P_GETID(pTblCal_DocType_Plan_ruid))
+      (SELECT id FROM gd_ruid WHERE xid = pTblCal_DocType_Plan_xid1 AND dbid = pTblCal_DocType_Plan_dbid1)
+        THEN \'plan\'
+    WHEN
+      (SELECT id FROM gd_ruid WHERE xid = pTblCal_DocType_Plan_xid2 AND dbid = pTblCal_DocType_Plan_dbid2)
         THEN \'plan\'
     WHEN
       (SELECT id FROM GD_P_GETID(pTblCal_DocType_Fact_ruid))
@@ -388,7 +393,9 @@ WHERE
 ",
     [
     pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_,
-    pTblCal_DocType_Plan_ruid-_, pTblCal_DocType_Fact_ruid-_
+    pTblCal_DocType_Plan_xid1-_, pTblCal_DocType_Plan_dbid1-_,
+    pTblCal_DocType_Plan_xid2-_, pTblCal_DocType_Plan_dbid2-_,
+    pTblCal_DocType_Fact_ruid-_
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
@@ -589,8 +596,8 @@ JOIN
   USR$WG_FEETYPE ft_avg
     ON ft_avg.ID = ft.USR$WG_FEETYPEKEY
 WHERE
-  ft.USR$WG_FEEGROUPKEY IN
-(SELECT id FROM GD_P_GETID(pFeeGroupKeyNoCoef_ruid))
+  ft.USR$WG_FEEGROUPKEY =
+    (SELECT id FROM GD_P_GETID(pFeeGroupKeyNoCoef_ruid))
 ",
     [
     pEmplKey-_, pFirstMoveKey-_, pFeeGroupKeyNoCoef_ruid-_
@@ -622,6 +629,29 @@ gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_BadFeeType, 3, [
 get_sql(wg_avg_wage_vacation, kb, usr_wg_BadFeeType/3,
 "
 SELECT
+  pEmplKey AS EmplKey,
+  pFirstMoveKey AS FirstMoveKey,
+  ft.USR$WG_FEETYPEKEY AS id
+FROM
+  USR$CROSS179_256548741 ft
+JOIN
+  USR$WG_FEETYPE ft_avg
+    ON ft_avg.ID = ft.USR$WG_FEETYPEKEY
+WHERE
+  ft.USR$WG_FEEGROUPKEY =
+    (SELECT id FROM GD_P_GETID(pBadFeeGroupKey_ruid))
+",
+    [
+    pEmplKey-_, pFirstMoveKey-_, pBadFeeGroupKey_ruid-_
+    ]).
+
+gd_pl_ds(-wg_avg_wage_vacation, kb, usr_wg_BadFeeType, 3, [
+    fEmplKey-integer, fFirstMoveKey-integer, fID-integer
+    ]).
+% usr_wg_BadFeeType(EmplKey, FirstMoveKey, ID)
+get_sql(-wg_avg_wage_vacation, kb, usr_wg_BadFeeType/3,
+"
+SELECT
   pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id
 FROM USR$WG_FEETYPE
 WHERE id IN
@@ -650,15 +680,16 @@ FROM
     ]).
 
 %  06. Начисление больничных
-gd_pl_ds(Scope, kb, usr_wg_DbfSums, 6, [
+gd_pl_ds(Scope, kb, usr_wg_DbfSums, 7, [
     fEmplKey-integer, fInSum-float, fInHoures-float,
-    fInYear-integer, fInMonth-integer, fDateBegin-date
+    fInYear-integer, fInMonth-integer, fDateBegin-date,
+    fSickProp-boolean
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_sick, wg_avg_wage_avg
         ]).
-% usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin)
-get_sql(Scope, kb, usr_wg_DbfSums/6,
+% usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin, SickProp)
+get_sql(Scope, kb, usr_wg_DbfSums/7,
 "
 SELECT
   Z.USR$EMPLKEY,
@@ -666,7 +697,8 @@ SELECT
   COALESCE(Z.USR$MID_HOW, 0) AS INHOURES,
   EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear,
   EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth,
-  IDK.USR$DATEBEGIN
+  IDK.USR$DATEBEGIN,
+  USR$SICK_PROP AS SickProp
 FROM
   USR$GMK_SUMS Z
 JOIN
@@ -938,7 +970,8 @@ FROM
   USR$WG_VACATION
 WHERE
   DOCUMENTKEY = pDocKey
---UNION ALL
+/*
+UNION ALL
 SELECT
   2 AS VcType, COALESCE(USR$UNHEALTHY,0) AS Slice
 FROM
@@ -959,6 +992,7 @@ FROM
   USR$WG_VACATION
 WHERE
   DOCUMENTKEY = pDocKey
+*/
 ",
     [
     pDocKey-_

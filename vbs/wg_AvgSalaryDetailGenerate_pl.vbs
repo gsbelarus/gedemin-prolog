@@ -3,7 +3,10 @@ Option Explicit
 
 Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
 '
-  Dim Creator, gdcObject, gdcDetail
+  Dim Creator, IsDebug
+  IsDebug = True
+  '
+  Dim gdcObject, gdcDetail
   '
   Dim PL, Ret, Pred, Tv, Append
   'struct_vacation_sql
@@ -51,12 +54,14 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
     Exit Function
   End If
   'debug
-  PL.Debug = True
+  PL.Debug = (False And IsDebug And plGlobalDebug)
   'load
   Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
   If Not Ret Then
     Exit Function
   End If
+  'debug
+  PL.Debug = (True And IsDebug And plGlobalDebug)
 
   Set gdcDetail = Sender.gdcDetailObject
   '

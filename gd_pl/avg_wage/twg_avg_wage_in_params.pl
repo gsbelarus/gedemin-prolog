@@ -14,7 +14,11 @@ twg_avg_wage_in_params:-
     new_param_list(Scope, in, [
         pCommon-1,
         pPayFormSalary_ruid-'147009181,119619099',
-        pTblCal_DocType_Plan_ruid-'147567935,1514418708',
+        %pTblCal_DocType_Plan_ruid-'147567935,1514418708',
+        pTblCal_DocType_Plan_xid1-147567935,
+        pTblCal_DocType_Plan_dbid1-1514418708,
+        pTblCal_DocType_Plan_xid2-147117601,
+        pTblCal_DocType_Plan_dbid2-1481574092,
         pTblCal_DocType_Fact_ruid-'187613422,1596169984'
         ]),
     fail.
@@ -23,12 +27,14 @@ twg_avg_wage_in_params:-
         pMonthQty-12, pAvgDays-29.7,
         pFeeGroupKey_ruid-'147071456,274788016',
         pFeeGroupKeyNoCoef_ruid-'147757383,84733194',
+        % Постановление №31 (исключение пособий для среднего)
+        pBadFeeGroupKey_ruid-'147077036,222160651',
+        % Больничный (80%)
+        %pBadFeeType_xid_IN-'151000730',
+        %pBadFeeType_dbid-2109681374,
         % А, УБЗ, Т
         pBadHourType_xid_IN-'147650804, 147650786, 147650802',
         pBadHourType_dbid-119619099,
-        % Больничный (80%)
-        pBadFeeType_xid_IN-'151000730',
-        pBadFeeType_dbid-2109681374,
         % Ненормированный график
         pSpecDep_ruid-'156913837,131572570'
         ]),

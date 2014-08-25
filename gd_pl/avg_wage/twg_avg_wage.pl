@@ -874,6 +874,7 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, S
                 ; get_data(Scope, kb, usr_wg_FeeType, [
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                             fFeeTypeKey-FeeTypeKey ])
+                ; FeeTypeKey < 10
                 )
               ),
           % с коэффициентом осовременивания
@@ -1015,6 +1016,7 @@ cacl_month_wage_sick(Scope, PK, Y, M, Wage) :-
                 ; get_data(Scope, kb, usr_wg_FeeType, [
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                             fFeeTypeKey-FeeTypeKey ])
+                ; FeeTypeKey < 10
                 )
               )
           ),
@@ -1042,9 +1044,12 @@ sum_month_debit_sick(Scope, PK, Y, M, [Debit-FeeTypeKey | Debits], Wage, Wage0) 
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % тип начисления для пропорционального расчета
-    once( get_data(Scope, kb, usr_wg_FeeTypeProp, [
-                    fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                    fFeeTypeKeyProp-FeeTypeKey ]) ),
+    once( ( get_data(Scope, kb, usr_wg_FeeTypeProp, [
+                      fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                      fFeeTypeKeyProp-FeeTypeKey ])
+          ; FeeTypeKey = 1
+          )
+        ),
     % взять коэфициент для пропорционального начисления
     get_prop_coef(Scope, PK, Y, M, PropCoef),
     % пропорциональный расчет
@@ -1295,6 +1300,7 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage) :-
                 ; get_data(Scope, kb, usr_wg_FeeType, [
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                             fFeeTypeKey-FeeTypeKey ])
+                ; FeeTypeKey < 10
                 )
               )
           ),
@@ -1358,7 +1364,9 @@ is_month_paid(Scope, PK, Y-M) :-
     ( var(FeeTypeKey)
     ; once( get_data(Scope, kb, usr_wg_FeeType, [
                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                    fFeeTypeKey-FeeTypeKey ]) ) ),
+                    fFeeTypeKey-FeeTypeKey ]) )
+    ; FeeTypeKey < 10
+    ),
     % то в месяце есть оплата
     !.
 
@@ -2108,6 +2116,12 @@ struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity,
     new_param_list(Scope, NextType, Pairs1).
 
 %
+struct_sick_err(ErrMessage) :-
+    Scope = wg_struct_sick, Type = error,
+    get_param(Scope, Type, pError-ErrMessage),
+    true.
+
+%
 struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType0, BudgetOption, IsPregnancy, IllType) :-
     Scope = wg_struct_sick, Type = in, NextType = run,
     % шаблон первичного ключа
@@ -2334,7 +2348,9 @@ get_avg_wage_budget(Scope, Type, Y-M, AvgWageBudget) :-
     % среднедневной БПМ
     AvgWageBudget is MonthBudget * BudgetPart / MonthDays,
     !.
-get_avg_wage_budget(_, _, _, 0) :-
+get_avg_wage_budget(Scope, _, _, 0) :-
+    new_param_list(Scope, error, [
+                    pError-"Введите константу 'Бюджет прожиточного минимума'"]),
     !.
 
 % среднедневная зп для месяца по среднемесячной зп в РБ
@@ -2362,7 +2378,10 @@ avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
     % расчитать среднедневную зп для месяца
     MonthAvgWage is round(MonthAvgSalary * AvgSalaryRB_Coef / MonthDays),
     !.
-
+avg_wage_by_avg_salary(Scope, _, 0) :-
+    new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
+    !.
+    
 /**/
 
  %

@@ -7,7 +7,8 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
 '
   Dim T, T1, T2
   '
-  Dim Creator
+  Dim Creator, IsDebug
+  IsDebug = True
   '
   Dim PL, Ret, Pred, Tv, PredFile, Append
   Dim ScriptName, Scope
@@ -43,7 +44,7 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     Exit Function
   End If
   'debug
-  PL.Debug = False
+  PL.Debug = (False And IsDebug And plGlobalDebug)
   'load
   ScriptName = "twg_fee"
   Ret = PL.LoadScript(pl_GetScriptIDByName(ScriptName))
@@ -52,7 +53,7 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   End If
   Scope = "wg_fee_alimony"
   'debug
-  PL.Debug = True
+  PL.Debug = (True And IsDebug And plGlobalDebug)
 
   'params
   EmplKey = wg_EmployeeCharge.EmployeeKey

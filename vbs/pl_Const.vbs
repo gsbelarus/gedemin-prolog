@@ -17,3 +17,6 @@ Public wg_Prolog_
 Set wg_Prolog_ = Nothing
 '
 
+' global switch fo debug
+Public Const plGlobalDebug = True
+'

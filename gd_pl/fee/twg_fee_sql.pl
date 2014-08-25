@@ -2,7 +2,7 @@
 %  спецификации и sql-шаблоны для базы знаний twg_fee
 %
 
-:-
+:-  style_check(-atom),
     GetSQL = [gd_pl_ds/5, get_sql/5],
     %dynamic(GetSQL),
     multifile(GetSQL),
@@ -12,6 +12,7 @@
 wg_valid_sql(
             [
             usr_wg_MovementLine/15,
+            gd_contact/2,
             usr_wg_TblCharge/14,
             usr_wg_TblCharge_Prev/12,
             usr_wg_TblCharge_AlimonyDebt/9,
@@ -54,39 +55,73 @@ gd_pl_ds(Scope, kb, usr_wg_MovementLine, 15, [
 %   ScheduleKey, MovementType, Rate, ListNumber, MSalary,
 %   PayFormKey, SalaryKey, TSalary, AvgWageRate)
 get_sql(Scope, kb, usr_wg_MovementLine/15,
-"\n SELECT \n \c
-  ml.USR$EMPLKEY, \n \c
-  ml.DOCUMENTKEY, \n \c
-  ml.USR$FIRSTMOVE AS FirstMoveKey, \n \c
-  EXTRACT(YEAR FROM ml.USR$DATEBEGIN) AS MoveYear, \n \c
-  EXTRACT(MONTH FROM ml.USR$DATEBEGIN) AS MoveMonth, \n \c
-  ml.USR$DATEBEGIN, \n \c
-  ml.USR$SCHEDULEKEY, \n \c
-  ml.USR$MOVEMENTTYPE, \n \c
-  COALESCE(ml.USR$RATE, 0) AS Rate, \n \c
-  ml.USR$LISTNUMBER, \n \c
-  COALESCE(ml.USR$MSALARY, 0) AS MSalary, \n \c
-  COALESCE(ml.USR$PAYFORMKEY, 0) AS PayFormKey, \n \c
-  (SELECT id FROM GD_P_GETID(pPayFormSalary_ruid)) AS SalaryKey, \n \c
-  COALESCE(ml.USR$TSALARY, 0) AS TSalary, \n \c
-  8 * COALESCE(USR$THOURRATE, 0) AS AvgWageRate \n \c
-FROM \n \c
-  USR$WG_MOVEMENTLINE ml \n \c
-JOIN \n \c
-  USR$WG_KINDOFWORK kw \n \c
-    ON kw.ID = ml.USR$KINDOFWORKKEY \n \c
-WHERE \n \c
-  ml.USR$EMPLKEY = pEmplKey \n \c
-  AND \n \c
-  ml.USR$KINDOFWORKKEY = \n \c
-    (SELECT id FROM GD_P_GETID(pKindOfWork_Basic_ruid)) \n \c
-ORDER BY \n \c
-  ml.USR$EMPLKEY, \n \c
-  ml.USR$FIRSTMOVE, \n \c
-  ml.USR$DATEBEGIN \n \c
+"
+SELECT
+  ml.USR$EMPLKEY,
+  ml.DOCUMENTKEY,
+  ml.USR$FIRSTMOVE AS FirstMoveKey,
+  EXTRACT(YEAR FROM ml.USR$DATEBEGIN) AS MoveYear,
+  EXTRACT(MONTH FROM ml.USR$DATEBEGIN) AS MoveMonth,
+  ml.USR$DATEBEGIN,
+  ml.USR$SCHEDULEKEY,
+  ml.USR$MOVEMENTTYPE,
+  COALESCE(ml.USR$RATE, 0) AS Rate,
+  ml.USR$LISTNUMBER,
+  COALESCE(ml.USR$MSALARY, 0) AS MSalary,
+  COALESCE(ml.USR$PAYFORMKEY, 0) AS PayFormKey,
+  (SELECT id FROM GD_P_GETID(pPayFormSalary_ruid)) AS SalaryKey,
+  COALESCE(ml.USR$TSALARY, 0) AS TSalary,
+  8 * COALESCE(USR$THOURRATE, 0) AS AvgWageRate
+FROM
+  USR$WG_MOVEMENTLINE ml
+JOIN
+  USR$WG_KINDOFWORK kw
+    ON kw.ID = ml.USR$KINDOFWORKKEY
+WHERE
+  ml.USR$EMPLKEY = pEmplKey
+  AND
+  ml.USR$KINDOFWORKKEY =
+    (SELECT id FROM GD_P_GETID(pKindOfWork_Basic_ruid))
+ORDER BY
+  ml.USR$EMPLKEY,
+  ml.USR$FIRSTMOVE,
+  ml.USR$DATEBEGIN
 ",
     [
     pEmplKey-_, pPayFormSalary_ruid-_, pKindOfWork_Basic_ruid-_
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony
+        ]).
+
+gd_pl_ds(Scope, kb, gd_contact, 2, [
+    fID-integer, fName-string
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony
+        ]).
+% gd_contact(ID, Name)
+get_sql(Scope, kb, gd_contact/2,
+"
+SELECT
+  c.ID, c.NAME
+FROM
+  GD_CONTACT c
+WHERE
+  c.ID = pEmplKey
+UNION ALL
+SELECT
+  c.ID, c.NAME
+FROM
+  GD_CONTACT c
+JOIN
+  USR$WG_ALIMONY al
+    ON al.USR$RECIPIENT = c.ID
+WHERE
+  al.USR$EMPLKEY = pEmplKey
+",
+    [
+    pEmplKey-_
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony
@@ -104,30 +139,31 @@ gd_pl_ds(Scope, kb, usr_wg_TblCharge, 14, [
         ]).
 % usr_wg_TblCharge(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, DOW, HOW, TotalYear, TotalMonth, TotalDateBegin)
 get_sql(Scope, kb, usr_wg_TblCharge/14,
-"\n SELECT \n \c
-  tch.USR$DOCUMENTKEY, \n \c
-  tch.USR$EMPLKEY, \n \c
-  tch.USR$FIRSTMOVEKEY, \n \c
-  EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear, \n \c
-  EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth, \n \c
-  tch.USR$DATEBEGIN, \n \c
-  tch.USR$DEBIT, \n \c
-  tch.USR$CREDIT, \n \c
-  tch.USR$FEETYPEKEY, \n \c
-  tch.USR$DOW, \n \c
-  tch.USR$HOW, \n \c
-  EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS TotalYear, \n \c
-  EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS TotalMonth, \n \c
-  t.USR$DATEBEGIN AS TotalDateBegin \n \c
-FROM \n \c
-  USR$WG_TBLCHARGE tch \n \c
-JOIN \n \c
-  USR$WG_TOTAL t \n \c
-    ON t.DOCUMENTKEY = tch.USR$TOTALDOCKEY \n \c
-WHERE \n \c
-  tch.USR$EMPLKEY = pEmplKey \n \c
-  AND \n \c
-  tch.USR$TOTALDOCKEY = pTotalDocKey \n \c
+"
+SELECT
+  tch.USR$DOCUMENTKEY,
+  tch.USR$EMPLKEY,
+  tch.USR$FIRSTMOVEKEY,
+  EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear,
+  EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth,
+  tch.USR$DATEBEGIN,
+  tch.USR$DEBIT,
+  tch.USR$CREDIT,
+  tch.USR$FEETYPEKEY,
+  tch.USR$DOW,
+  tch.USR$HOW,
+  EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS TotalYear,
+  EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS TotalMonth,
+  t.USR$DATEBEGIN AS TotalDateBegin
+FROM
+  USR$WG_TBLCHARGE tch
+JOIN
+  USR$WG_TOTAL t
+    ON t.DOCUMENTKEY = tch.USR$TOTALDOCKEY
+WHERE
+  tch.USR$EMPLKEY = pEmplKey
+  AND
+  tch.USR$TOTALDOCKEY = pTotalDocKey
 ",
     [
     pEmplKey-_, pTotalDocKey-_
@@ -147,30 +183,31 @@ gd_pl_ds(Scope, kb, usr_wg_TblCharge_Prev, 12, [
         ]).
 % usr_wg_TblCharge_Prev(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, TotalYear, TotalMonth, TotalDateBegin)
 get_sql(Scope, kb, usr_wg_TblCharge_Prev/12,
-"\n SELECT \n \c
-  tch.USR$DOCUMENTKEY, \n \c
-  tch.USR$EMPLKEY, \n \c
-  tch.USR$FIRSTMOVEKEY, \n \c
-  EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear, \n \c
-  EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth, \n \c
-  tch.USR$DATEBEGIN, \n \c
-  tch.USR$DEBIT, \n \c
-  tch.USR$CREDIT, \n \c
-  tch.USR$FEETYPEKEY, \n \c
-  EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS TotalYear, \n \c
-  EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS TotalMonth, \n \c
-  t.USR$DATEBEGIN AS TotalDateBegin \n \c
-FROM \n \c
-  USR$WG_TBLCHARGE tch \n \c
-JOIN \n \c
-  USR$WG_TOTAL t \n \c
-    ON t.DOCUMENTKEY = tch.USR$TOTALDOCKEY \n \c
-WHERE \n \c
-  tch.USR$EMPLKEY = pEmplKey \n \c
-  AND \n \c
-  t.USR$DATEBEGIN >= 'pDatePrevCalcFrom' \n \c
-  AND \n \c
-  t.USR$DATEBEGIN < 'pDatePrevCalcTo' \n \c
+"
+SELECT
+  tch.USR$DOCUMENTKEY,
+  tch.USR$EMPLKEY,
+  tch.USR$FIRSTMOVEKEY,
+  EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear,
+  EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth,
+  tch.USR$DATEBEGIN,
+  tch.USR$DEBIT,
+  tch.USR$CREDIT,
+  tch.USR$FEETYPEKEY,
+  EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS TotalYear,
+  EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS TotalMonth,
+  t.USR$DATEBEGIN AS TotalDateBegin
+FROM
+  USR$WG_TBLCHARGE tch
+JOIN
+  USR$WG_TOTAL t
+    ON t.DOCUMENTKEY = tch.USR$TOTALDOCKEY
+WHERE
+  tch.USR$EMPLKEY = pEmplKey
+  AND
+  t.USR$DATEBEGIN >= 'pDatePrevCalcFrom'
+  AND
+  t.USR$DATEBEGIN < 'pDatePrevCalcTo'
 ",
     [
     pEmplKey-_,
@@ -190,25 +227,26 @@ gd_pl_ds(Scope, kb, usr_wg_TblCharge_AlimonyDebt, 9, [
         ]).
 % usr_wg_TblCharge_AlimonyDebt(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey)
 get_sql(Scope, kb, usr_wg_TblCharge_AlimonyDebt/9,
-"\n SELECT \n \c
-  tch.USR$DOCUMENTKEY, \n \c
-  tch.USR$EMPLKEY, \n \c
-  tch.USR$FIRSTMOVEKEY, \n \c
-  EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear, \n \c
-  EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth, \n \c
-  tch.USR$DATEBEGIN, \n \c
-  tch.USR$DEBIT, \n \c
-  tch.USR$CREDIT, \n \c
-  tch.USR$FEETYPEKEY \n \c
-FROM \n \c
-  USR$WG_TBLCHARGE tch \n \c
-WHERE \n \c
-  tch.USR$EMPLKEY = pEmplKey \n \c
-  AND \n \c
-  tch.USR$DATEBEGIN < 'pDateCalcFrom' \n \c
-  AND \n \c
-  tch.USR$FEETYPEKEY = \n \c
-    (SELECT id FROM GD_P_GETID(pFeeType_AlimonyDebt_ruid)) \n \c
+"
+SELECT
+  tch.USR$DOCUMENTKEY,
+  tch.USR$EMPLKEY,
+  tch.USR$FIRSTMOVEKEY,
+  EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear,
+  EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth,
+  tch.USR$DATEBEGIN,
+  tch.USR$DEBIT,
+  tch.USR$CREDIT,
+  tch.USR$FEETYPEKEY
+FROM
+  USR$WG_TBLCHARGE tch
+WHERE
+  tch.USR$EMPLKEY = pEmplKey
+  AND
+  tch.USR$DATEBEGIN < 'pDateCalcFrom'
+  AND
+  tch.USR$FEETYPEKEY =
+    (SELECT id FROM GD_P_GETID(pFeeType_AlimonyDebt_ruid))
 ",
     [
     pEmplKey-_, pDateCalcFrom-_, pFeeType_AlimonyDebt_ruid-_
@@ -226,19 +264,20 @@ gd_pl_ds(Scope, kb, usr_wg_FeeType, 4, [
         ]).
 % usr_wg_FeeType(EmplKey, FeeGroupKey, FeeTypeKey, AvgDayHOW)
 get_sql(Scope, kb, usr_wg_FeeType/4,
-"\n SELECT \n \c
-  pEmplKey AS EmplKey,  \n \c
-  ft.USR$WG_FEEGROUPKEY, \n \c
-  ft.USR$WG_FEETYPEKEY, \n \c
-  ft_avg.USR$AVGDAYHOW \n \c
-FROM \n \c
-  USR$CROSS179_256548741 ft \n \c
-JOIN \n \c
-  USR$WG_FEETYPE ft_avg \n \c
-    ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \n \c
-WHERE \n \c
-  ft.USR$WG_FEEGROUPKEY = \n \c
-    (SELECT id FROM GD_P_GETID(pFeeGroupKey_ruid)) \n \c
+"
+SELECT
+  pEmplKey AS EmplKey,
+  ft.USR$WG_FEEGROUPKEY,
+  ft.USR$WG_FEETYPEKEY,
+  ft_avg.USR$AVGDAYHOW
+FROM
+  USR$CROSS179_256548741 ft
+JOIN
+  USR$WG_FEETYPE ft_avg
+    ON ft_avg.ID = ft.USR$WG_FEETYPEKEY
+WHERE
+  ft.USR$WG_FEEGROUPKEY =
+    (SELECT id FROM GD_P_GETID(pFeeGroupKey_ruid))
 ",
     [
     pEmplKey-_, pFeeGroupKey_ruid-_
@@ -256,18 +295,19 @@ gd_pl_ds(Scope, kb, usr_wg_FeeType_Taxable, 3, [
         ]).
 % usr_wg_FeeType_Taxable(EmplKey, FeeGroupKey, FeeTypeKey)
 get_sql(Scope, kb, usr_wg_FeeType_Taxable/3,
-"\n SELECT \n \c
-  pEmplKey AS EmplKey,  \n \c
-  ft.USR$WG_FEEGROUPKEY, \n \c
-  ft.USR$WG_FEETYPEKEY \n \c
-FROM \n \c
-  USR$CROSS179_256548741 ft \n \c
-JOIN \n \c
-  USR$WG_FEETYPE ft_avg \n \c
-    ON ft_avg.ID = ft.USR$WG_FEETYPEKEY \n \c
-WHERE \n \c
-  ft.USR$WG_FEEGROUPKEY = \n \c
-    (SELECT id FROM GD_P_GETID(pFeeGroupKey_IncomeTax_ruid)) \n \c
+"
+SELECT
+  pEmplKey AS EmplKey,
+  ft.USR$WG_FEEGROUPKEY,
+  ft.USR$WG_FEETYPEKEY
+FROM
+  USR$CROSS179_256548741 ft
+JOIN
+  USR$WG_FEETYPE ft_avg
+    ON ft_avg.ID = ft.USR$WG_FEETYPEKEY
+WHERE
+  ft.USR$WG_FEEGROUPKEY =
+    (SELECT id FROM GD_P_GETID(pFeeGroupKey_IncomeTax_ruid))
 ",
     [
     pEmplKey-_, pFeeGroupKey_IncomeTax_ruid-_
@@ -285,34 +325,35 @@ gd_pl_ds(Scope, kb, usr_wg_FeeType_Dict, 6, [
         ]).
 % usr_wg_FeeType_Dict(ID, Alias, Name, RoundByFeeType, RoundType, RoundValue)
 get_sql(Scope, kb, usr_wg_FeeType_Dict/6,
-"\n SELECT \n \c
-  ft.ID, \n \c
-  CASE ft.ID \n \c
-    WHEN \n \c
-      (SELECT id FROM GD_P_GETID(pFeeType_Alimony_ruid)) \n \c
-        THEN 'ftAlimony' \n \c
-    WHEN \n \c
-      (SELECT id FROM GD_P_GETID(pFeeType_HolidayComp_ruid)) \n \c
-        THEN 'ftHolidayComp' \n \c
-    WHEN \n \c
-      (SELECT id FROM GD_P_GETID(pFeeType_IncomeTax_ruid)) \n \c
-        THEN 'ftIncomeTax' \n \c
-    WHEN \n \c
-      (SELECT id FROM GD_P_GETID(pFeeType_TransferDed_ruid)) \n \c
-        THEN 'ftTransferDed' \n \c
-    WHEN \n \c
-      (SELECT id FROM GD_P_GETID(pFeeType_AlimonyDebt_ruid)) \n \c
-        THEN 'ftAlimonyDebt' \n \c
-    ELSE \n \c
-        'unknown' \n \c
-  END \n \c
-    AS Alias, \n \c
-  USR$NAME, \n \c
-  USR$ROUNDBYFEETYPE, \n \c
-  USR$ROUNDTYPE, \n \c
-  USR$ROUNDVALUE \n \c
-FROM \n \c
-  USR$WG_FEETYPE ft \n \c
+"
+SELECT
+  ft.ID,
+  CASE ft.ID
+    WHEN
+      (SELECT id FROM GD_P_GETID(pFeeType_Alimony_ruid))
+        THEN 'ftAlimony'
+    WHEN
+      (SELECT id FROM GD_P_GETID(pFeeType_HolidayComp_ruid))
+        THEN 'ftHolidayComp'
+    WHEN
+      (SELECT id FROM GD_P_GETID(pFeeType_IncomeTax_ruid))
+        THEN 'ftIncomeTax'
+    WHEN
+      (SELECT id FROM GD_P_GETID(pFeeType_TransferDed_ruid))
+        THEN 'ftTransferDed'
+    WHEN
+      (SELECT id FROM GD_P_GETID(pFeeType_AlimonyDebt_ruid))
+        THEN 'ftAlimonyDebt'
+    ELSE
+        'unknown'
+  END
+    AS Alias,
+  USR$NAME,
+  USR$ROUNDBYFEETYPE,
+  USR$ROUNDTYPE,
+  USR$ROUNDVALUE
+FROM
+  USR$WG_FEETYPE ft
 ",
     [
     pFeeType_Alimony_ruid-_,
@@ -335,29 +376,30 @@ gd_pl_ds(Scope, kb, usr_wg_TblCalLine, 7, [
         ]).
 % usr_wg_TblCalLine(EmplKey, FirstMoveKey, CalYear, CalMonth, Date, Duration, HoureType)
 get_sql(Scope, kb, usr_wg_TblCalLine/7,
-"\n SELECT \n \c
-  tc.USR$EMPLKEY, \n \c
-  tc.USR$FIRSTMOVEKEY, \n \c
-  EXTRACT(YEAR FROM tcl.USR$DATE) AS CalYear, \n \c
-  EXTRACT(MONTH FROM tcl.USR$DATE) AS CalMonth, \n \c
-  tcl.USR$DATE, \n \c
-  tcl.USR$DURATION, \n \c
-  tcl.USR$HOURTYPE \n \c
-FROM \n \c
-  USR$WG_TBLCAL tc \n \c
-JOIN \n \c
-  USR$WG_TBLCALLINE tcl \n \c
-    ON tcl.MASTERKEY = tc.DOCUMENTKEY \n \c
-WHERE \n \c
-  tc.USR$EMPLKEY = pEmplKey \n \c
-  AND \n \c
-  tcl.USR$DATE >= 'pDateCalcFrom' \n \c
-  AND \n \c
-  tcl.USR$DATE < 'pDateCalcTo' \n \c
-ORDER BY \n \c
-  tc.USR$EMPLKEY, \n \c
-  tc.USR$FIRSTMOVEKEY, \n \c
-  tcl.USR$DATE \n \c
+"
+SELECT
+  tc.USR$EMPLKEY,
+  tc.USR$FIRSTMOVEKEY,
+  EXTRACT(YEAR FROM tcl.USR$DATE) AS CalYear,
+  EXTRACT(MONTH FROM tcl.USR$DATE) AS CalMonth,
+  tcl.USR$DATE,
+  tcl.USR$DURATION,
+  tcl.USR$HOURTYPE
+FROM
+  USR$WG_TBLCAL tc
+JOIN
+  USR$WG_TBLCALLINE tcl
+    ON tcl.MASTERKEY = tc.DOCUMENTKEY
+WHERE
+  tc.USR$EMPLKEY = pEmplKey
+  AND
+  tcl.USR$DATE >= 'pDateCalcFrom'
+  AND
+  tcl.USR$DATE < 'pDateCalcTo'
+ORDER BY
+  tc.USR$EMPLKEY,
+  tc.USR$FIRSTMOVEKEY,
+  tcl.USR$DATE
 ",
     [
     pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_
@@ -392,60 +434,61 @@ gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, [
         ]).
 % usr_wg_TblCal_FlexLine(FlexType, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
 get_sql(Scope, kb, usr_wg_TblCal_FlexLine/68,
-"\n SELECT \n \c
-  CASE gd.DOCUMENTTYPEKEY \n \c
-    WHEN \n \c
-      (SELECT id FROM GD_P_GETID(pTblCal_DocType_Plan_ruid)) \n \c
-        THEN 'plan' \n \c
-    WHEN \n \c
-      (SELECT id FROM GD_P_GETID(pTblCal_DocType_Fact_ruid)) \n \c
-        THEN 'fact' \n \c
-    ELSE \n \c
-        'unknown' \n \c
-  END \n \c
-    AS FlexType, \n \c
-  tcfl.USR$EMPLKEY, \n \c
-  tcfl.USR$FIRSTMOVEKEY, \n \c
-  EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear, \n \c
-  EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth, \n \c
-  t.USR$DATEBEGIN, \n \c
-  tcfl.USR$S1, tcfl.USR$H1, tcfl.USR$S2, tcfl.USR$H2, \n \c
-  tcfl.USR$S3, tcfl.USR$H3, tcfl.USR$S4, tcfl.USR$H4, \n \c
-  tcfl.USR$S5, tcfl.USR$H5, tcfl.USR$S6, tcfl.USR$H6, \n \c
-  tcfl.USR$S7, tcfl.USR$H7, tcfl.USR$S8, tcfl.USR$H8, \n \c
-  tcfl.USR$S9, tcfl.USR$H9, tcfl.USR$S10, tcfl.USR$H10, \n \c
-  tcfl.USR$S11, tcfl.USR$H11, tcfl.USR$S12, tcfl.USR$H12, \n \c
-  tcfl.USR$S13, tcfl.USR$H13, tcfl.USR$S14, tcfl.USR$H14, \n \c
-  tcfl.USR$S15, tcfl.USR$H15, tcfl.USR$S16, tcfl.USR$H16, \n \c
-  tcfl.USR$S17, tcfl.USR$H17, tcfl.USR$S18, tcfl.USR$H18, \n \c
-  tcfl.USR$S19, tcfl.USR$H19, tcfl.USR$S20, tcfl.USR$H20, \n \c
-  tcfl.USR$S21, tcfl.USR$H21, tcfl.USR$S22, tcfl.USR$H22, \n \c
-  tcfl.USR$S23, tcfl.USR$H23, tcfl.USR$S24, tcfl.USR$H24, \n \c
-  tcfl.USR$S25, tcfl.USR$H25, tcfl.USR$S26, tcfl.USR$H26, \n \c
-  tcfl.USR$S27, tcfl.USR$H27, tcfl.USR$S28, tcfl.USR$H28, \n \c
-  tcfl.USR$S29, tcfl.USR$H29, tcfl.USR$S30, tcfl.USR$H30, \n \c
-  tcfl.USR$S31, tcfl.USR$H31 \n \c
-FROM \n \c
-  GD_DOCUMENT gd \n \c
-JOIN \n \c
-  USR$WG_TBLCAL_FLEXLINE tcfl \n \c
-    ON gd.ID = tcfl.DOCUMENTKEY \n \c
-JOIN \n \c
-  USR$WG_TBLCAL_FLEX tcf \n \c
-    ON tcf.DOCUMENTKEY = tcfl.MASTERKEY \n \c
-JOIN \n \c
-  USR$WG_TOTAL t \n \c
-    ON t.DOCUMENTKEY = tcf.USR$TOTALDOCKEY \n \c
-WHERE \n \c
-  tcfl.USR$EMPLKEY = pEmplKey \n \c
-  AND \n \c
-  t.USR$DATEBEGIN >= 'pDateCalcFrom' \n \c
-  AND \n \c
-  t.USR$DATEBEGIN < 'pDateCalcTo' \n \c
- ORDER BY \n \c
-   tcfl.USR$EMPLKEY, \n \c
-   tcfl.USR$FIRSTMOVEKEY, \n \c
-   t.USR$DATEBEGIN \n \c
+"
+SELECT
+  CASE gd.DOCUMENTTYPEKEY
+    WHEN
+      (SELECT id FROM GD_P_GETID(pTblCal_DocType_Plan_ruid))
+        THEN 'plan'
+    WHEN
+      (SELECT id FROM GD_P_GETID(pTblCal_DocType_Fact_ruid))
+        THEN 'fact'
+    ELSE
+        'unknown'
+  END
+    AS FlexType,
+  tcfl.USR$EMPLKEY,
+  tcfl.USR$FIRSTMOVEKEY,
+  EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear,
+  EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth,
+  t.USR$DATEBEGIN,
+  tcfl.USR$S1, tcfl.USR$H1, tcfl.USR$S2, tcfl.USR$H2,
+  tcfl.USR$S3, tcfl.USR$H3, tcfl.USR$S4, tcfl.USR$H4,
+  tcfl.USR$S5, tcfl.USR$H5, tcfl.USR$S6, tcfl.USR$H6,
+  tcfl.USR$S7, tcfl.USR$H7, tcfl.USR$S8, tcfl.USR$H8,
+  tcfl.USR$S9, tcfl.USR$H9, tcfl.USR$S10, tcfl.USR$H10,
+  tcfl.USR$S11, tcfl.USR$H11, tcfl.USR$S12, tcfl.USR$H12,
+  tcfl.USR$S13, tcfl.USR$H13, tcfl.USR$S14, tcfl.USR$H14,
+  tcfl.USR$S15, tcfl.USR$H15, tcfl.USR$S16, tcfl.USR$H16,
+  tcfl.USR$S17, tcfl.USR$H17, tcfl.USR$S18, tcfl.USR$H18,
+  tcfl.USR$S19, tcfl.USR$H19, tcfl.USR$S20, tcfl.USR$H20,
+  tcfl.USR$S21, tcfl.USR$H21, tcfl.USR$S22, tcfl.USR$H22,
+  tcfl.USR$S23, tcfl.USR$H23, tcfl.USR$S24, tcfl.USR$H24,
+  tcfl.USR$S25, tcfl.USR$H25, tcfl.USR$S26, tcfl.USR$H26,
+  tcfl.USR$S27, tcfl.USR$H27, tcfl.USR$S28, tcfl.USR$H28,
+  tcfl.USR$S29, tcfl.USR$H29, tcfl.USR$S30, tcfl.USR$H30,
+  tcfl.USR$S31, tcfl.USR$H31
+FROM
+  GD_DOCUMENT gd
+JOIN
+  USR$WG_TBLCAL_FLEXLINE tcfl
+    ON gd.ID = tcfl.DOCUMENTKEY
+JOIN
+  USR$WG_TBLCAL_FLEX tcf
+    ON tcf.DOCUMENTKEY = tcfl.MASTERKEY
+JOIN
+  USR$WG_TOTAL t
+    ON t.DOCUMENTKEY = tcf.USR$TOTALDOCKEY
+WHERE
+  tcfl.USR$EMPLKEY = pEmplKey
+  AND
+  t.USR$DATEBEGIN >= 'pDateCalcFrom'
+  AND
+  t.USR$DATEBEGIN < 'pDateCalcTo'
+ ORDER BY
+   tcfl.USR$EMPLKEY,
+   tcfl.USR$FIRSTMOVEKEY,
+   t.USR$DATEBEGIN
 ",
     [
     pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_,
@@ -460,15 +503,16 @@ gd_pl_ds(wg_fee_alimony, kb, usr_wg_FCRate, 2, [
     ]).
 % usr_wg_FCRate(Date, MinWage)
 get_sql(wg_fee_alimony, kb, usr_wg_FCRate/2,
-"\n SELECT \n \c
-  fc.USR$WG_DATE, \n \c
-  fc.USR$WG_MINWAGE \n \c
-FROM \n \c
-  USR$WG_FCRATE fc \n \c
-WHERE \n \c
-  fc.USR$WG_DATE >= 'pStartDate' \n \c
-ORDER BY \n \c
-  fc.USR$WG_DATE \n \c
+"
+SELECT
+  fc.USR$WG_DATE,
+  fc.USR$WG_MINWAGE
+FROM
+  USR$WG_FCRATE fc
+WHERE
+  fc.USR$WG_DATE >= 'pStartDate'
+ORDER BY
+  fc.USR$WG_DATE
 ",
     [
     pStartDate-_
@@ -479,21 +523,22 @@ gd_pl_ds(wg_fee_alimony, kb, gd_const_budget, 2, [
     ]).
 % gd_const_budget(ConstDate, Budget)
 get_sql(wg_fee_alimony, kb, gd_const_budget/2,
-"\n SELECT \n \c
-  cv.CONSTDATE, \n \c
-  CAST(cv.CONSTVALUE AS DECIMAL(15,4)) AS Budget \n \c
-FROM \n \c
-  GD_CONSTVALUE cv \n \c
-JOIN \n \c
-  GD_CONST c \n \c
-    ON c.ID  =  cv.CONSTKEY \n \c
-WHERE \n \c
-  cv.CONSTDATE >= 'pStartDate' \n \c
-  AND \n \c
-  cv.CONSTKEY = \n \c
-    (SELECT id FROM GD_P_GETID(pBudget_ruid)) \n \c
-ORDER BY \n \c
-  cv.CONSTDATE \n \c
+"
+SELECT
+  cv.CONSTDATE,
+  CAST(cv.CONSTVALUE AS DECIMAL(15,4)) AS Budget
+FROM
+  GD_CONSTVALUE cv
+JOIN
+  GD_CONST c
+    ON c.ID  =  cv.CONSTKEY
+WHERE
+  cv.CONSTDATE >= 'pStartDate'
+  AND
+  cv.CONSTKEY =
+    (SELECT id FROM GD_P_GETID(pBudget_ruid))
+ORDER BY
+  cv.CONSTDATE
 ",
     [
     pStartDate-_, pBudget_ruid-_
@@ -504,21 +549,22 @@ gd_pl_ds(wg_fee_alimony, kb, usr_wg_Variables, 2, [
     ]).
 % usr_wg_Varuables(Alias, Name)
 get_sql(wg_fee_alimony, kb, usr_wg_Variables/2,
-"\n SELECT \n \c
-  'vBV' AS Alias, \n \c
-  USR$NAME \n \c
-FROM \n \c
-  USR$WG_VARIABLES \n \c
-WHERE \n \c
-  ID = (SELECT id FROM GD_P_GETID(pVar_BV_ruid)) \n \c
-UNION ALL \n \c
-SELECT \n \c
-  'vForAlimony' AS Alias, \n \c
-  USR$NAME \n \c
-FROM \n \c
-  USR$WG_VARIABLES \n \c
-WHERE \n \c
-  ID = (SELECT id FROM GD_P_GETID(pVar_ForAlimony_ruid)) \n \c
+"
+SELECT
+  'vBV' AS Alias,
+  USR$NAME
+FROM
+  USR$WG_VARIABLES
+WHERE
+  ID = (SELECT id FROM GD_P_GETID(pVar_BV_ruid))
+UNION ALL
+SELECT
+  'vForAlimony' AS Alias,
+  USR$NAME
+FROM
+  USR$WG_VARIABLES
+WHERE
+  ID = (SELECT id FROM GD_P_GETID(pVar_ForAlimony_ruid))
 ",
     [
     pVar_BV_ruid-_, pVar_ForAlimony_ruid-_
@@ -534,36 +580,37 @@ gd_pl_ds(wg_fee_alimony, kb, usr_wg_Alimony, 12, [
     ]).
 % usr_wg_Alimony(DocKey, EmplKey, DateBegin, DateEnd, DebtSum, Formula, TransferTypeKey, Recipient, RestPercent, ChildCount, Percent, LivingWagePerc)
 get_sql(wg_fee_alimony, kb, usr_wg_Alimony/12,
-"\n SELECT \n \c
-  calc.DOCUMENTKEY, \n \c
-  calc.USR$EMPLKEY, \n \c
-  calc.USR$DATEBEGIN, \n \c
-  COALESCE(calc.USR$DATEEND, CAST('pNullDate' AS DATE)) AS DateEnd, \n \c
-  calc.USR$DEBTSUM, \n \c
-  calc.USR$FORMULA, \n \c
-  calc.USR$TRANSFERTYPEKEY, \n \c
-  calc.USR$RECIPIENT, \n \c
-  calc.USR$RESTPERCENT, \n \c
-  calc.USR$CHILDCOUNT, \n \c
-  calc.USR$PERCENT, \n \c
-  calc.USR$LIVINGWAGEPERC \n \c
-FROM \n \c
-  USR$WG_ALIMONY calc \n \c
-JOIN \n \c
+"
+SELECT
+  calc.DOCUMENTKEY,
+  calc.USR$EMPLKEY,
+  calc.USR$DATEBEGIN,
+  COALESCE(calc.USR$DATEEND, CAST('pNullDate' AS DATE)) AS DateEnd,
+  calc.USR$DEBTSUM,
+  calc.USR$FORMULA,
+  calc.USR$TRANSFERTYPEKEY,
+  calc.USR$RECIPIENT,
+  calc.USR$RESTPERCENT,
+  calc.USR$CHILDCOUNT,
+  calc.USR$PERCENT,
+  calc.USR$LIVINGWAGEPERC
+FROM
+  USR$WG_ALIMONY calc
+JOIN
   GD_DOCUMENT d
-    ON calc.DOCUMENTKEY = d.ID \n \c
-WHERE \n \c
-  d.COMPANYKEY = <COMPANYKEY/> \n \c
-  AND \n \c
-  d.DOCUMENTTYPEKEY = (SELECT id FROM GD_P_GETID(pDocType_Alimony_ruid)) \n \c
-  AND \n \c
-  calc.USR$EMPLKEY = pEmplKey \n \c
-  AND \n \c
-  calc.USR$DATEBEGIN < 'pDateCalcTo' \n \c
-  AND \n \c
-  COALESCE(calc.USR$DATEEND, 'pNullDate') >= 'pDateCalcFrom' \n \c
-ORDER BY \n \c
-  calc.USR$DATEBEGIN \n \c
+    ON calc.DOCUMENTKEY = d.ID
+WHERE
+  d.COMPANYKEY = <COMPANYKEY/>
+  AND
+  d.DOCUMENTTYPEKEY = (SELECT id FROM GD_P_GETID(pDocType_Alimony_ruid))
+  AND
+  calc.USR$EMPLKEY = pEmplKey
+  AND
+  calc.USR$DATEBEGIN < 'pDateCalcTo'
+  AND
+  COALESCE(calc.USR$DATEEND, 'pNullDate') >= 'pDateCalcFrom'
+ORDER BY
+  calc.USR$DATEBEGIN
 ",
     [
     pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_, pDocType_Alimony_ruid-_,
@@ -576,15 +623,16 @@ gd_pl_ds(wg_fee_alimony, kb, usr_wg_TransferType, 4, [
     ]).
 % usr_wg_TransferType(ID, Parent, DateBegin, Name)
 get_sql(wg_fee_alimony, kb, usr_wg_TransferType/4,
-"\n SELECT \n \c
-  tt.ID, \n \c
-  COALESCE(tt.PARENT, 0) AS Parent, \n \c
-  COALESCE(tt.USR$DATE, current_date) AS DateBegin, \n \c
-  tt.USR$NAME \n \c
-FROM \n \c
-  USR$WG_TRANSFERTYPE tt \n \c
-ORDER BY \n \c
-  Parent, DateBegin, tt.ID \n \c
+"
+SELECT
+  tt.ID,
+  COALESCE(tt.PARENT, 0) AS Parent,
+  COALESCE(tt.USR$DATE, current_date) AS DateBegin,
+  tt.USR$NAME
+FROM
+  USR$WG_TRANSFERTYPE tt
+ORDER BY
+  Parent, DateBegin, tt.ID
 ",
     [
     ]).
@@ -595,14 +643,15 @@ gd_pl_ds(wg_fee_alimony, kb, usr_wg_TransferScale, 3, [
     ]).
 % usr_wg_TransferScale(TranferTypeKey, StartSum, Percent)
 get_sql(wg_fee_alimony, kb, usr_wg_TransferScale/3,
-"\n SELECT \n \c
-  ts.USR$TRANSFERTYPEKEY, \n \c
-  COALESCE(ts.USR$STARTSUM, 0) AS StartSum, \n \c
-  COALESCE(ts.USR$PERCENT, 0) AS Percent \n \c
-FROM \n \c
-  USR$WG_TRANSFERSCALE ts \n \c
-ORDER BY \n \c
-  ts.USR$TRANSFERTYPEKEY, StartSum \n \c
+"
+SELECT
+  ts.USR$TRANSFERTYPEKEY,
+  COALESCE(ts.USR$STARTSUM, 0) AS StartSum,
+  COALESCE(ts.USR$PERCENT, 0) AS Percent
+FROM
+  USR$WG_TRANSFERSCALE ts
+ORDER BY
+  ts.USR$TRANSFERTYPEKEY, StartSum
 ",
     [
     ]).
@@ -614,26 +663,27 @@ gd_pl_ds(wg_fee_alimony, kb, usr_wg_AlimonyDebt, 8, [
     ]).
 % usr_wg_AlimonyDebt(DocKey, EmplKey, CalYear, CalMonth, DateDebt, AlimonyKey, TotalDocKey, DebtSum)
 get_sql(wg_fee_alimony, kb, usr_wg_AlimonyDebt/8,
-"\n SELECT \n \c
-  aldebt.DOCUMENTKEY, \n \c
-  al.USR$EMPLKEY, \n \c
-  EXTRACT(YEAR FROM aldebt.USR$DATEDEBT) AS CalYear, \n \c
-  EXTRACT(MONTH FROM aldebt.USR$DATEDEBT) AS CalMonth, \n \c
-  aldebt.USR$DATEDEBT, \n \c
-  aldebt.USR$ALIMONYKEY, \n \c
-  aldebt.USR$TOTALDOCKEY, \n \c
-  aldebt.USR$DEBTSUM \n \c
-FROM \n \c
-  USR$WG_ALIMONYDEBT aldebt \n \c
-JOIN \n \c
-  USR$WG_ALIMONY al \n \c
-    ON al.DOCUMENTKEY = aldebt.USR$ALIMONYKEY \n \c
-WHERE \n \c
-  al.USR$EMPLKEY = pEmplKey \n \c
-  AND \n \c
-  aldebt.USR$DATEDEBT < 'pDateCalcFrom' \n \c
-ORDER BY \n \c
-  aldebt.USR$DATEDEBT \n \c
+"
+SELECT
+  aldebt.DOCUMENTKEY,
+  al.USR$EMPLKEY,
+  EXTRACT(YEAR FROM aldebt.USR$DATEDEBT) AS CalYear,
+  EXTRACT(MONTH FROM aldebt.USR$DATEDEBT) AS CalMonth,
+  aldebt.USR$DATEDEBT,
+  aldebt.USR$ALIMONYKEY,
+  aldebt.USR$TOTALDOCKEY,
+  aldebt.USR$DEBTSUM
+FROM
+  USR$WG_ALIMONYDEBT aldebt
+JOIN
+  USR$WG_ALIMONY al
+    ON al.DOCUMENTKEY = aldebt.USR$ALIMONYKEY
+WHERE
+  al.USR$EMPLKEY = pEmplKey
+  AND
+  aldebt.USR$DATEDEBT < 'pDateCalcFrom'
+ORDER BY
+  aldebt.USR$DATEDEBT
 ",
     [
     pEmplKey-_, pDateCalcFrom-_
@@ -644,16 +694,17 @@ ORDER BY \n \c
 gd_pl_ds(wg_fee_alimony, cmd, usr_wg_AlimonyDebt_delete, 0, []).
 % usr_wg_AlimonyDebt_delete
 get_sql(wg_fee_alimony, cmd, usr_wg_AlimonyDebt_delete/0,
-"\n DELETE \n \c
-FROM \n \c
-  USR$WG_ALIMONYDEBT aldebt \n \c
-WHERE \n \c
-  aldebt.USR$DATEDEBT >= 'pDateCalcFrom' \n \c
-  AND \n \c
-  aldebt.USR$DATEDEBT < 'pDateCalcTo' \n \c
-  AND \n \c
-  aldebt.USR$ALIMONYKEY IN \n \c
-    (SELECT al.DOCUMENTKEY FROM USR$WG_ALIMONY al WHERE al.USR$EMPLKEY = pEmplKey) \n \c
+"
+DELETE
+FROM
+  USR$WG_ALIMONYDEBT aldebt
+WHERE
+  aldebt.USR$DATEDEBT >= 'pDateCalcFrom'
+  AND
+  aldebt.USR$DATEDEBT < 'pDateCalcTo'
+  AND
+  aldebt.USR$ALIMONYKEY IN
+    (SELECT al.DOCUMENTKEY FROM USR$WG_ALIMONY al WHERE al.USR$EMPLKEY = pEmplKey)
 ",
     [
     pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_

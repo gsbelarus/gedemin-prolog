@@ -2,6 +2,56 @@
 
 %:- ['../gd_pl_state/date'].
 
+% atomic_list_to_string(+List, -String)
+atomic_list_to_string(List, String) :-
+    current_predicate( atomics_to_string/2 ),
+    atomics_to_string(List, String),
+    !.
+atomic_list_to_string(List, String) :-
+    atomic_list_concat(List, Atom),
+    atom_string(Atom, String),
+    !.
+% atomic_list_to_string(+List, +Separator, -String)
+atomic_list_to_string(List, Separator, String) :-
+    current_predicate( atomics_to_string/3 ),
+    atomics_to_string(List, Separator, String),
+    !.
+atomic_list_to_string(List, Separator, String) :-
+    atomic_list_concat(List, Separator, Atom),
+    atom_string(Atom, String),
+    !.
+
+% date_format(+DateIn, -DateOut)
+date_format(DateIn, DateOut) :-
+    date_format(DateIn, DateOut, ru),
+    !.
+% date_format(+DateIn, -DateOut, ?Locale)
+date_format(DateIn, DateOut, ru) :-
+    atom_date(DateIn, _),
+    atom_chars(DateIn, [Y1, Y2, Y3, Y4, '-', M1, M2, '-', D1, D2]),
+    atom_chars(DateOut, [D1, D2, '.', M1, M2, '.', Y1, Y2, Y3, Y4]).
+date_format(date(Y, M, D), DateOut, Locale) :-
+    atom_date(DateIn, date(Y, M, D)),
+    date_format(DateIn, DateOut, Locale).
+date_format(_, '', _).
+
+% month_name(?Month, ?Name)
+month_name(Month, Name) :-
+    month_name(Month, Name, ru).
+%
+month_name(1, "январь", ru).
+month_name(2, "февраль", ru).
+month_name(3, "март", ru).
+month_name(4, "апрель", ru).
+month_name(5, "май", ru).
+month_name(6, "июнь", ru).
+month_name(7, "июль", ru).
+month_name(8, "август", ru).
+month_name(9, "сентябрь", ru).
+month_name(10, "октябрь", ru).
+month_name(11, "ноябрь", ru).
+month_name(12, "декабрь", ru).
+
 % term_to_file(+Term, +FilePath, +Mode)
 term_to_file(Term, FilePath, Mode) :-
     memberchk(Mode, [write, append]),

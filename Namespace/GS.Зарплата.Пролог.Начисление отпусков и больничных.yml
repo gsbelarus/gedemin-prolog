@@ -5,7 +5,7 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.66"
+  Version: "1.0.0.72"
   Optional: False
   Internal: True
 Uses: 
@@ -183,7 +183,7 @@ Objects:
         wg_valid_sql([
                     % section twg_avg_wage
                     %  05. Начисление отпусков
-                    -usr_wg_DbfSums/6, % 05, 06, 12
+                    -usr_wg_DbfSums/7, % 05, 06, 12
                     usr_wg_MovementLine/15, % 05, 06, 12
                     usr_wg_FCRate/4,
                     usr_wg_TblCalDay/9, % 05, 06, 12
@@ -223,12 +223,13 @@ Objects:
             !.
         
         %  05. Начисление отпусков
-        gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_DbfSums, 6, [
+        gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_DbfSums, 7, [
             fEmplKey-integer, fInSum-float, fInHoures-float,
-            fInYear-integer, fInMonth-integer, fDateBegin-date
+            fInYear-integer, fInMonth-integer, fDateBegin-date,
+            fSickProp-boolean
             ]).
-        % usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin)
-        get_sql(wg_avg_wage_vacation, kb, usr_wg_DbfSums/6,
+        % usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin, SickProp)
+        get_sql(wg_avg_wage_vacation, kb, usr_wg_DbfSums/7,
         "
         SELECT
           Z.USR$EMPLKEY,
@@ -236,7 +237,8 @@ Objects:
           COALESCE(Z.USR$MID_HOW, 0) AS INHOURES,
           EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear,
           EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth,
-          IDK.USR$DATEBEGIN
+          IDK.USR$DATEBEGIN,
+          USR$SICK_PROP AS SickProp
         FROM
           USR$GMK_SUMS Z
         JOIN
@@ -503,7 +505,10 @@ Objects:
         SELECT
           CASE gd.DOCUMENTTYPEKEY
             WHEN
-              (SELECT id FROM GD_P_GETID(pTblCal_DocType_Plan_ruid))
+              (SELECT id FROM gd_ruid WHERE xid = pTblCal_DocType_Plan_xid1 AND dbid = pTblCal_DocType_Plan_dbid1)
+                THEN \'plan\'
+            WHEN
+              (SELECT id FROM gd_ruid WHERE xid = pTblCal_DocType_Plan_xid2 AND dbid = pTblCal_DocType_Plan_dbid2)
                 THEN \'plan\'
             WHEN
               (SELECT id FROM GD_P_GETID(pTblCal_DocType_Fact_ruid))
@@ -559,7 +564,9 @@ Objects:
         ",
             [
             pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_,
-            pTblCal_DocType_Plan_ruid-_, pTblCal_DocType_Fact_ruid-_
+            pTblCal_DocType_Plan_xid1-_, pTblCal_DocType_Plan_dbid1-_,
+            pTblCal_DocType_Plan_xid2-_, pTblCal_DocType_Plan_dbid2-_,
+            pTblCal_DocType_Fact_ruid-_
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
@@ -760,8 +767,8 @@ Objects:
           USR$WG_FEETYPE ft_avg
             ON ft_avg.ID = ft.USR$WG_FEETYPEKEY
         WHERE
-          ft.USR$WG_FEEGROUPKEY IN
-        (SELECT id FROM GD_P_GETID(pFeeGroupKeyNoCoef_ruid))
+          ft.USR$WG_FEEGROUPKEY =
+            (SELECT id FROM GD_P_GETID(pFeeGroupKeyNoCoef_ruid))
         ",
             [
             pEmplKey-_, pFirstMoveKey-_, pFeeGroupKeyNoCoef_ruid-_
@@ -793,6 +800,29 @@ Objects:
         get_sql(wg_avg_wage_vacation, kb, usr_wg_BadFeeType/3,
         "
         SELECT
+          pEmplKey AS EmplKey,
+          pFirstMoveKey AS FirstMoveKey,
+          ft.USR$WG_FEETYPEKEY AS id
+        FROM
+          USR$CROSS179_256548741 ft
+        JOIN
+          USR$WG_FEETYPE ft_avg
+            ON ft_avg.ID = ft.USR$WG_FEETYPEKEY
+        WHERE
+          ft.USR$WG_FEEGROUPKEY =
+            (SELECT id FROM GD_P_GETID(pBadFeeGroupKey_ruid))
+        ",
+            [
+            pEmplKey-_, pFirstMoveKey-_, pBadFeeGroupKey_ruid-_
+            ]).
+        
+        gd_pl_ds(-wg_avg_wage_vacation, kb, usr_wg_BadFeeType, 3, [
+            fEmplKey-integer, fFirstMoveKey-integer, fID-integer
+            ]).
+        % usr_wg_BadFeeType(EmplKey, FirstMoveKey, ID)
+        get_sql(-wg_avg_wage_vacation, kb, usr_wg_BadFeeType/3,
+        "
+        SELECT
           pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id
         FROM USR$WG_FEETYPE
         WHERE id IN
@@ -821,15 +851,16 @@ Objects:
             ]).
         
         %  06. Начисление больничных
-        gd_pl_ds(Scope, kb, usr_wg_DbfSums, 6, [
+        gd_pl_ds(Scope, kb, usr_wg_DbfSums, 7, [
             fEmplKey-integer, fInSum-float, fInHoures-float,
-            fInYear-integer, fInMonth-integer, fDateBegin-date
+            fInYear-integer, fInMonth-integer, fDateBegin-date,
+            fSickProp-boolean
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_sick, wg_avg_wage_avg
                 ]).
-        % usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin)
-        get_sql(Scope, kb, usr_wg_DbfSums/6,
+        % usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin, SickProp)
+        get_sql(Scope, kb, usr_wg_DbfSums/7,
         "
         SELECT
           Z.USR$EMPLKEY,
@@ -837,7 +868,8 @@ Objects:
           COALESCE(Z.USR$MID_HOW, 0) AS INHOURES,
           EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear,
           EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth,
-          IDK.USR$DATEBEGIN
+          IDK.USR$DATEBEGIN,
+          USR$SICK_PROP AS SickProp
         FROM
           USR$GMK_SUMS Z
         JOIN
@@ -1109,7 +1141,8 @@ Objects:
           USR$WG_VACATION
         WHERE
           DOCUMENTKEY = pDocKey
-        --UNION ALL
+        /*
+        UNION ALL
         SELECT
           2 AS VcType, COALESCE(USR$UNHEALTHY,0) AS Slice
         FROM
@@ -1130,6 +1163,7 @@ Objects:
           USR$WG_VACATION
         WHERE
           DOCUMENTKEY = pDocKey
+        */
         ",
             [
             pDocKey-_
@@ -1244,7 +1278,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-14T12:37:02+03:00
+      EDITIONDATE: 2014-08-25T12:37:39+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1276,7 +1310,11 @@ Objects:
             new_param_list(Scope, in, [
                 pCommon-1,
                 pPayFormSalary_ruid-'147009181,119619099',
-                pTblCal_DocType_Plan_ruid-'147567935,1514418708',
+                %pTblCal_DocType_Plan_ruid-'147567935,1514418708',
+                pTblCal_DocType_Plan_xid1-147567935,
+                pTblCal_DocType_Plan_dbid1-1514418708,
+                pTblCal_DocType_Plan_xid2-147117601,
+                pTblCal_DocType_Plan_dbid2-1481574092,
                 pTblCal_DocType_Fact_ruid-'187613422,1596169984'
                 ]),
             fail.
@@ -1285,12 +1323,14 @@ Objects:
                 pMonthQty-12, pAvgDays-29.7,
                 pFeeGroupKey_ruid-'147071456,274788016',
                 pFeeGroupKeyNoCoef_ruid-'147757383,84733194',
+                % Постановление №31 (исключение пособий для среднего)
+                pBadFeeGroupKey_ruid-'147077036,222160651',
+                % Больничный (80%)
+                %pBadFeeType_xid_IN-'151000730',
+                %pBadFeeType_dbid-2109681374,
                 % А, УБЗ, Т
                 pBadHourType_xid_IN-'147650804, 147650786, 147650802',
                 pBadHourType_dbid-119619099,
-                % Больничный (80%)
-                pBadFeeType_xid_IN-'151000730',
-                pBadFeeType_dbid-2109681374,
                 % Ненормированный график
                 pSpecDep_ruid-'156913837,131572570'
                 ]),
@@ -1352,7 +1392,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-14T12:36:49+03:00
+      EDITIONDATE: 2014-08-25T12:37:23+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2243,6 +2283,7 @@ Objects:
                         ; get_data(Scope, kb, usr_wg_FeeType, [
                                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                                     fFeeTypeKey-FeeTypeKey ])
+                        ; FeeTypeKey < 10
                         )
                       ),
                   % с коэффициентом осовременивания
@@ -2384,6 +2425,7 @@ Objects:
                         ; get_data(Scope, kb, usr_wg_FeeType, [
                                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                                     fFeeTypeKey-FeeTypeKey ])
+                        ; FeeTypeKey < 10
                         )
                       )
                   ),
@@ -2411,9 +2453,12 @@ Objects:
             % разложить первичный ключ
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             % тип начисления для пропорционального расчета
-            once( get_data(Scope, kb, usr_wg_FeeTypeProp, [
-                            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                            fFeeTypeKeyProp-FeeTypeKey ]) ),
+            once( ( get_data(Scope, kb, usr_wg_FeeTypeProp, [
+                              fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                              fFeeTypeKeyProp-FeeTypeKey ])
+                  ; FeeTypeKey = 1
+                  )
+                ),
             % взять коэфициент для пропорционального начисления
             get_prop_coef(Scope, PK, Y, M, PropCoef),
             % пропорциональный расчет
@@ -2664,6 +2709,7 @@ Objects:
                         ; get_data(Scope, kb, usr_wg_FeeType, [
                                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                                     fFeeTypeKey-FeeTypeKey ])
+                        ; FeeTypeKey < 10
                         )
                       )
                   ),
@@ -2727,7 +2773,9 @@ Objects:
             ( var(FeeTypeKey)
             ; once( get_data(Scope, kb, usr_wg_FeeType, [
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                            fFeeTypeKey-FeeTypeKey ]) ) ),
+                            fFeeTypeKey-FeeTypeKey ]) )
+            ; FeeTypeKey < 10
+            ),
             % то в месяце есть оплата
             !.
         
@@ -3477,6 +3525,12 @@ Objects:
             new_param_list(Scope, NextType, Pairs1).
         
         %
+        struct_sick_err(ErrMessage) :-
+            Scope = wg_struct_sick, Type = error,
+            get_param(Scope, Type, pError-ErrMessage),
+            true.
+        
+        %
         struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType0, BudgetOption, IsPregnancy, IllType) :-
             Scope = wg_struct_sick, Type = in, NextType = run,
             % шаблон первичного ключа
@@ -3703,7 +3757,9 @@ Objects:
             % среднедневной БПМ
             AvgWageBudget is MonthBudget * BudgetPart / MonthDays,
             !.
-        get_avg_wage_budget(_, _, _, 0) :-
+        get_avg_wage_budget(Scope, _, _, 0) :-
+            new_param_list(Scope, error, [
+                            pError-"Введите константу 'Бюджет прожиточного минимума'"]),
             !.
         
         % среднедневная зп для месяца по среднемесячной зп в РБ
@@ -3731,6 +3787,9 @@ Objects:
             % расчитать среднедневную зп для месяца
             MonthAvgWage is round(MonthAvgSalary * AvgSalaryRB_Coef / MonthDays),
             !.
+        avg_wage_by_avg_salary(Scope, _, 0) :-
+            new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
+            !.
         
         /**/
         
@@ -3751,7 +3810,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-14T12:36:35+03:00
+      EDITIONDATE: 2014-08-25T13:56:22+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -3984,7 +4043,10 @@ Objects:
         '
           Dim T, T1, T2
           
-          Dim Creator, gdcObject, gdcSalary
+          Dim Creator, IsDebug
+          IsDebug = True
+          '
+          Dim gdcObject, gdcSalary
           '
           Dim PL, Ret, Pred, Tv, Append
           Dim PredFile, Scope
@@ -4070,13 +4132,15 @@ Objects:
             Exit Function
           End If
           'debug
-          PL.Debug = True
+          PL.Debug = (False And IsDebug And plGlobalDebug)
           'load
           Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
           If Not Ret Then
             Exit Function
           End If
           Scope = "wg_avg_wage_vacation"
+          'debug
+          PL.Debug = (True And IsDebug And plGlobalDebug)
         
           Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
           '
@@ -4332,7 +4396,7 @@ Objects:
         RkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-07-14T16:17:37+03:00
+      EDITIONDATE: 2014-08-25T13:11:47+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -4364,7 +4428,10 @@ Objects:
         
         Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
         '
-          Dim Creator, gdcObject, gdcDetail
+          Dim Creator, IsDebug
+          IsDebug = True
+          '
+          Dim gdcObject, gdcDetail
           '
           Dim PL, Ret, Pred, Tv, Append
           'struct_vacation_sql
@@ -4412,12 +4479,14 @@ Objects:
             Exit Function
           End If
           'debug
-          PL.Debug = True
+          PL.Debug = (False And IsDebug And plGlobalDebug)
           'load
           Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
           If Not Ret Then
             Exit Function
           End If
+          'debug
+          PL.Debug = (True And IsDebug And plGlobalDebug)
         
           Set gdcDetail = Sender.gdcDetailObject
           '
@@ -4538,7 +4607,7 @@ Objects:
         RkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-05-30T17:51:45+03:00
+      EDITIONDATE: 2014-08-25T13:13:33+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -9333,7 +9402,8 @@ Objects:
         '
           Dim T, T1, T2
           '
-          Dim Creator
+          Dim Creator, IsDebug
+          IsDebug = True
           '
           Dim PL, Ret, Pred, Tv, Append
           Dim PredFile, Scope
@@ -9364,14 +9434,16 @@ Objects:
             Exit Function
           End If
           'debug
-          PL.Debug = True
+          PL.Debug = (False And IsDebug And plGlobalDebug)
           'load
           Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
           If Not Ret Then
             Exit Function
           End If
           Scope = "wg_avg_wage_sick"
-          
+          'debug
+          PL.Debug = (True And IsDebug And plGlobalDebug)
+        
           'params
           EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
           FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
@@ -9641,7 +9713,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-05T16:29:38+03:00
+      EDITIONDATE: 2014-08-25T13:12:26+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -10071,7 +10143,8 @@ Objects:
         
         Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
         '
-          Dim Creator
+          Dim Creator, IsDebug
+          IsDebug = True
           '
           Dim PL, Ret, Pred, Tv, Append
           Dim PredFile
@@ -10081,6 +10154,9 @@ Objects:
           'struct_sick_in
           Dim P_in, Tv_in, Q_in
           Dim DateCalc, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType
+          'struct_sick_err
+          Dim P_err, Tv_err, Q_err
+          Dim ErrMessage
           'struct_sick_out
           Dim P_out, Tv_out, Q_out
           Dim AccDate, IncludeDate, Percent, DOI, HOI, Summa
@@ -10095,12 +10171,14 @@ Objects:
             Exit Function
           End If
           'debug
-          PL.Debug = True
+          PL.Debug = (False And IsDebug And plGlobalDebug)
           'load
           Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
           If Not Ret Then
             Exit Function
           End If
+          'debug
+          PL.Debug = (True And IsDebug And plGlobalDebug)
         
           'params
           EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
@@ -10203,6 +10281,27 @@ Objects:
           End If
           Q_in.Close
         
+          'struct_sick_err(ErrMessage)
+          P_err = "struct_sick_err"
+          Set Tv_err = Creator.GetObject(1, "TgsPLTermv", "")
+          Set Q_err = Creator.GetObject(nil, "TgsPLQuery", "")
+          '
+          Q_err.PredicateName = P_err
+          Q_err.Termv = Tv_err
+          '
+          Q_err.OpenQuery
+          If Not Q_err.EOF Then
+            Do Until Q_err.EOF
+              '
+              ErrMessage = Tv_err.ReadString(0)
+              Call MsgBox(ErrMessage, vbCritical + vbOKOnly, "Ошибка!")
+              '
+              Q_err.NextSolution
+            Loop
+            Exit Function
+          End If
+          Q_err.Close
+          
           'struct_sick_out(AccDate, IncludeDate, Percent, DOI, HOI, Summa, DateBegin, DateEnd)
           P_out = "struct_sick_out"
           Set Tv_out = Creator.GetObject(8, "TgsPLTermv", "")
@@ -10264,7 +10363,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-05T11:04:14+03:00
+      EDITIONDATE: 2014-08-25T13:13:51+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -11236,8 +11335,6 @@ Objects:
           - 
             ADDFUNCTIONKEY: "147043669_974374174 wg_GetConstByIDAndDate"
           - 
-            ADDFUNCTIONKEY: "155074107_1698257362 wg_CalcSiclListCoeff"
-          - 
             ADDFUNCTIONKEY: "147025267_449804462 wg_SetWageDocLookupParams"
           - 
             ADDFUNCTIONKEY: "147019334_119619099 wg_MonthHour"
@@ -11493,11 +11590,11 @@ Objects:
       NAME: "Height"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 272
+      INT_DATA: 283
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-07-02T16:50:36+03:00
+      EDITIONDATE: 2014-08-20T15:26:30+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -11613,11 +11710,11 @@ Objects:
       NAME: "WS"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 2
+      INT_DATA: 0
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-02T17:27:06+03:00
+      EDITIONDATE: 2014-08-20T15:05:03+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11631,11 +11728,11 @@ Objects:
       NAME: "Width"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 1372
+      INT_DATA: 1366
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-20T10:55:01+03:00
+      EDITIONDATE: 2014-08-20T15:05:08+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11649,11 +11746,11 @@ Objects:
       NAME: "Left"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: -4
+      INT_DATA: 0
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-20T10:55:01+03:00
+      EDITIONDATE: 2014-08-20T15:05:03+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11667,11 +11764,11 @@ Objects:
       NAME: "Top"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: -4
+      INT_DATA: 40
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-20T10:55:01+03:00
+      EDITIONDATE: 2014-08-20T15:05:08+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11685,11 +11782,11 @@ Objects:
       NAME: "Height"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 746
+      INT_DATA: 688
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-20T10:55:01+03:00
+      EDITIONDATE: 2014-08-20T15:05:08+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -11867,7 +11964,7 @@ Objects:
         ZWQICUZpZWxkTmFtZQYKVVNSJFNBTEFSWQhSZWFkT25seQgNVGl0bGUuQ2FwdGlvbgYIx+Dw7+vg
         8uAFV2lkdGgCSAdWaXNpYmxlCQ1EaXNwbGF5Rm9ybWF0BgQjLiMjCVRvdGFsVHlwZQcFdHRTdW0A
         AQlBbGlnbm1lbnQHDnRhUmlnaHRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUGB1VTUiRET1cI
-        UmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GCsTt6CDw4OHu8vsFV2lkdGgCPAdWaXNpYmxlCQlUb3Rh
+        UmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GCsTt6CDw4OHu8vsFV2lkdGgCTgdWaXNpYmxlCQlUb3Rh
         bFR5cGUHBXR0U3VtAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5h
         bWUGEFVTUiRTQ0hFRFVMRVJET1cIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GD8Tt5ekg7+4g4/Dg
         9Ojq8wVXaWR0aAJUB1Zpc2libGUJAAEJQWxpZ25tZW50Bw50YVJpZ2h0SnVzdGlmeQhFeHBhbmRl
@@ -11895,10 +11992,8 @@ Objects:
         T0NVTUVOVEtFWV9OVU1CRVIIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GBc3u7OXwBVdpZHRoAv8H
         VmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYe
         Wl9VU1IkRE9DVU1FTlRLRVlfRE9DVU1FTlREQVRFCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgTE
-        4PLgBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQI
-        CUZpZWxkTmFtZQYfWl9VU1IkRE9DVU1FTlRLRVlfRE9DMjcxNTI2MDQ3OAhSZWFkT25seQgNVGl0
-        bGUuQ2FwdGlvbgYN0ujvIOTu6vPs5e3y4AVXaWR0aAL/B1Zpc2libGUIAAAICP0cCQg=
-      EDITIONDATE: 2014-04-23T15:29:08+03:00
+        4PLgBVdpZHRoAv8HVmlzaWJsZQgAAAgI/RwJCA==
+      EDITIONDATE: 2014-08-20T11:22:58+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -12119,7 +12214,6 @@ Objects:
       W8_START4: 1899-12-30T00:00:00+03:00
       W8_END4: 1899-12-30T00:00:00+03:00
       EDITIONDATE: 2014-03-14T15:54:21+03:00
-      USR$WAGE_OLDKEY: ~
       USR$DAYCICLECOUNT: 7
       USR$CALENDARTYPE: ~
       USR$FIRSTDAYDATE: ~

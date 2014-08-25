@@ -6,7 +6,8 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
 '
   Dim T, T1, T2
   '
-  Dim Creator
+  Dim Creator, IsDebug
+  IsDebug = True
   '
   Dim PL, Ret, Pred, Tv, Append
   Dim PredFile, Scope
@@ -37,14 +38,16 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
     Exit Function
   End If
   'debug
-  PL.Debug = True
+  PL.Debug = (False And IsDebug And plGlobalDebug)
   'load
   Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
   If Not Ret Then
     Exit Function
   End If
   Scope = "wg_avg_wage_sick"
-  
+  'debug
+  PL.Debug = (True And IsDebug And plGlobalDebug)
+
   'params
   EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
   FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
@@ -235,7 +238,7 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
               PeriodRule = ""
           End Select
           '
-          If IsSpecMonth = 1 Then
+          If Not IsFullMonth = 1 And IsSpecMonth = 1 Then
             PeriodRule = "условно полный"
           End If
           '

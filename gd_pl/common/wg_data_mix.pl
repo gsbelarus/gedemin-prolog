@@ -185,14 +185,14 @@ usr_wg_TblCharge_mix(Scope, ArgPairs, ChargeOption) :-
     ValuePairs = [
                 fEmplKey-EmplKey, fFirstMoveKey-_,
                 fCalYear-CalYear, fCalMonth-CalMonth, fDateBegin-DateBegin,
-                fDebit-Debit, fFeeTypeKey-_
+                fDebit-Debit, fFeeTypeKey-FeeTypeKey
                 ],
     member_list(ArgPairs, ValuePairs),
     % спецификация usr_wg_DbfSums
     DataPairs =  [
                 fEmplKey-EmplKey,
                 fInYear-CalYear, fInMonth-CalMonth, fDateBegin-DateBegin,
-                fInSum-Debit
+                fInSum-Debit, fSickProp-FeeTypeKey
                 ],
     get_data(Scope, kb, usr_wg_DbfSums, DataPairs).
 

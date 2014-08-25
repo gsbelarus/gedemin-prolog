@@ -8,7 +8,10 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
 '
   Dim T, T1, T2
   
-  Dim Creator, gdcObject, gdcSalary
+  Dim Creator, IsDebug
+  IsDebug = True
+  '
+  Dim gdcObject, gdcSalary
   '
   Dim PL, Ret, Pred, Tv, Append
   Dim PredFile, Scope
@@ -94,13 +97,15 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     Exit Function
   End If
   'debug
-  PL.Debug = True
+  PL.Debug = (False And IsDebug And plGlobalDebug)
   'load
   Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
   If Not Ret Then
     Exit Function
   End If
   Scope = "wg_avg_wage_vacation"
+  'debug
+  PL.Debug = (True And IsDebug And plGlobalDebug)
 
   Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
   '
