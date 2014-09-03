@@ -1185,11 +1185,12 @@ excl_month_days_sick(Scope, PK, Y, M, ExclDays, SpecExclDays, Rule) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % взять данные
-    findall( FromDate-ToDate-ExclType-ExclWeekDay,
+    findall( exlc_days([FromDate, ToDate, ExclType, OrderType, ExclWeekDay]),
              % из приказов по дням исключения
              get_data(Scope, kb, usr_wg_ExclDays, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                        fExclType-ExclType, fExclWeekDay-ExclWeekDay,
+                        fExclType-ExclType, fOrderType-OrderType,
+                        fExclWeekDay-ExclWeekDay,
                         fFromDate-FromDate, fToDate-ToDate] ),
     % в список периодов для исключения
     ExclPeriods),
@@ -1216,47 +1217,49 @@ collect_excl_days([ExclPeriod|ExclPeriods], Y, M, LogDays0, LogDays2, SpecList) 
     collect_excl_days(ExclPeriods, Y, M, LogDays1, LogDays2, SpecList).
 
 % сбор исключаемых дней за период
-collect_excl_days(FromDate-ToDate-_-_, _, _, LogDays, LogDays, _) :-
+collect_excl_days(exlc_days([FromDate, ToDate | _]), _, _, LogDays, LogDays, _) :-
     FromDate @> ToDate,
     !.
-collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList) :-
+collect_excl_days(exlc_days([FromDate0|ExclDays]), Y, M, LogDays0, LogDays2, SpecList) :-
     \+ atom_date(FromDate0, date(Y, M, _)),
     date_add(FromDate0, 1, day, FromDate1),
     !,
-    collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList).
-collect_excl_days(FromDate0-ToDate-ExclType-ExclWeekDay, Y, M, LogDays0, LogDays2, SpecList) :-
+    collect_excl_days(exlc_days([FromDate1|ExclDays]), Y, M, LogDays0, LogDays2, SpecList).
+collect_excl_days(exlc_days([FromDate0, ExclType | ExclDays]), Y, M, LogDays0, LogDays2, SpecList) :-
     % добавление дня для исключения в журнал
     ( ( SpecList = [] ; memberchk(ExclType, SpecList) )
-      -> add_excl_day(FromDate0-ExclType-ExclWeekDay, LogDays0, LogDays1)
+      -> add_excl_day(exlc_days([FromDate0, ExclType | ExclDays]), LogDays0, LogDays1)
     ; true ),
     date_add(FromDate0, 1, day, FromDate1),
     !,
-    collect_excl_days(FromDate1-ToDate-ExclType-ExclWeekDay, Y, M, LogDays1, LogDays2, SpecList).
+    collect_excl_days(exlc_days([FromDate1, ExclType | ExclDays]), Y, M, LogDays1, LogDays2, SpecList).
 
 % добавление дня для исключения в журнал
-add_excl_day(TheDate-_-_, LogDays, LogDays) :-
+add_excl_day(exlc_days([TheDate|_]), LogDays, LogDays) :-
     % при наличии даты в журнале
     memberchk(TheDate, LogDays),
     % журнал не изменять
     !.
-add_excl_day(TheDate-ExclType-_, LogDays, LogDays) :-
+add_excl_day(exlc_days([TheDate, ExclType, OrderType | _]), LogDays, LogDays) :-
     % праздник из отпуска
     ExclType = "LEAVEDOCLINE",
     catch( wg_holiday(TheDate), _, fail ),
+    % трудовой отпуск
+    OrderType = 1,
     % в журнал не заносить
     !.
-add_excl_day(TheDate-ExclType-ExclWeekDay, LogDays, [TheDate|LogDays]) :-
+add_excl_day(exlc_days([TheDate, ExclType, _, ExclWeekDay]), LogDays, [TheDate|LogDays]) :-
     % детский день согласно дню недели
     ExclType = "KINDDAYLINE",
     weekday(TheDate, ExclWeekDay),
     % занести в журнал
     !.
-add_excl_day(_-ExclType-_, LogDays, LogDays) :-
+add_excl_day(exlc_days([_, ExclType | _]), LogDays, LogDays) :-
     % прочие даты из приказа о детском дне
     ExclType = "KINDDAYLINE",
     % пропускать
     !.
-add_excl_day(TheDate-_-_, LogDays, [TheDate|LogDays]) :-
+add_excl_day(exlc_days([TheDate|_]), LogDays, [TheDate|LogDays]) :-
     % дату для прочих случаев занести в журнал
     !.
 

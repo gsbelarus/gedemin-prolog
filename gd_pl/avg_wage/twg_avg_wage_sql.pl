@@ -31,7 +31,7 @@ wg_valid_sql([
             usr_wg_AvgWage/6,
             usr_wg_FeeTypeProp/4, % 06, 12
             wg_holiday/1,
-            usr_wg_ExclDays/6,
+            usr_wg_ExclDays/7,
             % 12. Начисление по-среднему
             usr_wg_TblChargeBonus/8,
             % section twg_struct
@@ -848,21 +848,23 @@ WHERE
     pDateCalcFrom-_, pDateCalcTo-_
     ]).
 
-gd_pl_ds(wg_avg_wage_sick, kb, usr_wg_ExclDays, 6, [
+gd_pl_ds(wg_avg_wage_sick, kb, usr_wg_ExclDays, 7, [
     fEmplKey-integer, fFirstMoveKey-integer,
-    fExclType-string, fExclWeekDay-integer,
+    fExclType-string, fOrderType-integer,
+    fExclWeekDay-integer,
     fFromDate-date, fToDate-date
     ]).
-% usr_wg_ExclDays(EmplKey, FirstMoveKey, ExclType, ExclWeekDay, FromDate, ToDate)
-get_sql(wg_avg_wage_sick, kb, usr_wg_ExclDays/6,
+% usr_wg_ExclDays(EmplKey, FirstMoveKey, ExclType, OrderType, ExclWeekDay, FromDate, ToDate)
+get_sql(wg_avg_wage_sick, kb, usr_wg_ExclDays/7,
 "
 SELECT
-  EmplKey, FirstMoveKey, ExclType, ExclWeekDay, FromDate, ToDate
+  EmplKey, FirstMoveKey, ExclType, OrderType, ExclWeekDay, FromDate, ToDate
 FROM (
 SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
   \'LIGHTWORKLINE\' AS ExclType,
+  0 AS OrderType,
   0 AS ExclWeekDay,
   CAST( IIF(lw.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', lw.USR$DATEBEGIN) AS DATE) AS FromDate,
   CAST( IIF(lw.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(lw.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', lw.USR$DATEEND)) AS DATE) AS ToDate
@@ -876,11 +878,12 @@ SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
   \'LEAVEDOCLINE\' AS ExclType,
+  t.USR$TYPE AS OrderType,
   0 AS ExclWeekDay,
   CAST( IIF(ld.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ld.USR$DATEBEGIN) AS DATE) AS FromDate,
   CAST( IIF(ld.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ld.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ld.USR$DATEEND)) AS DATE) AS ToDate
 FROM USR$WG_LEAVEDOCLINE ld
-LEFT JOIN USR$WG_VACATIONTYPE t ON t.ID = ld.USR$VACATIONTYPEKEY
+JOIN USR$WG_VACATIONTYPE t ON t.ID = ld.USR$VACATIONTYPEKEY
 WHERE ld.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND ld.USR$EMPLKEY = pEmplKey
   AND ld.USR$DATEBEGIN <= \'pDateCalcTo\'
@@ -891,6 +894,7 @@ SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
   \'SICKLISTJOURNAL\' AS ExclType,
+  0 AS OrderType,
   0 AS ExclWeekDay,
   CAST( IIF(s.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', s.USR$DATEBEGIN) AS DATE) AS FromDate,
   CAST( IIF(s.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(s.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', s.USR$DATEEND)) AS DATE) AS ToDate
@@ -903,6 +907,7 @@ SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
   \'LEAVEEXTDOC\' AS ExclType,
+  0 AS OrderType,
   0 AS ExclWeekDay,
   CAST( IIF(ext.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ext.USR$DATEBEGIN) AS DATE) AS FromDate,
   CAST( IIF(ext.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ext.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ext.USR$DATEEND)) AS DATE) AS ToDate
@@ -915,6 +920,7 @@ SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
   \'KINDDAYLINE\' AS ExclType,
+  0 AS OrderType,
   kdl.USR$DAY AS ExclWeekDay,
   CAST( IIF(kdl.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', kdl.USR$DATEBEGIN) AS DATE) AS FromDate,
   CAST( IIF(kdl.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(kdl.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', kdl.USR$DATEEND)) AS DATE) AS ToDate
