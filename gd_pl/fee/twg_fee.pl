@@ -1338,11 +1338,11 @@ fee_calc_out(Scope, EmplKey, Result) :-
     true.
 
 % выгрузка выходных данных по начислениям по сотруднику
-fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) :-
+fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
     % - начисление алиментов
     Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 0,
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                fID-FeeTypeKey, fAlias-"ftAlimony" ]),
+                fID-FeeTypeID, fAlias-"ftAlimony" ]),
     % спецификация параметров алиментов
     AlimonyParams = [
                 pCalcFormula-1, pEmplKey-EmplKey,
@@ -1351,11 +1351,11 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) 
     get_param_list(Scope, Type, AlimonyParams),
     ChargeSum > 0,
     true.
-fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) :-
+fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
     % - списание долгов по алиментам
     Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 1,
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                fID-FeeTypeKey, fAlias-"ftAlimonyDebt" ]),
+                fID-FeeTypeID, fAlias-"ftAlimonyDebt" ]),
     % спецификация параметров списания долгов
     DropDebtParams = [
                 pDropDebt-5, pEmplKey-EmplKey,
@@ -1364,11 +1364,11 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) 
     get_param_list(Scope, Type, DropDebtParams),
     ChargeSum > 0,
     true.
-fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) :-
+fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
     % - пересылка алиментов
     Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 2,
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                fID-FeeTypeKey, fAlias-"ftTransferDed" ]),
+                fID-FeeTypeID, fAlias-"ftTransferDed" ]),
     % спецификация параметров перевода
     TransfParams = [
                 pCalcTransf-_, pEmplKey-EmplKey,
@@ -1390,9 +1390,6 @@ fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum) :-
     get_param_list(Scope, Type, DebtParams),
     DebtSum > 0,
     true.
-
-% печать протокола расчета по сотруднику
-p:- fee_calc_prot(_, _, ProtText), write(ProtText), !.
 
 fee_calc_prot(Scope, EmplKey, ProtText) :-
     % - протокол по алиментам
@@ -1787,14 +1784,24 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
                     Section1, pEmplKey-EmplKey,
                     pTransfCharge-TransfCharge, pRecipient-Recipient,
                     pForTransfAmount-ForTransfAmount, pTransfPercent-TransfPercent ]),
-    get_data(Scope, kb, gd_contact, [
-                fID-Recipient, fName-Name ]),
+    ( get_data(Scope, kb, gd_contact, [
+                fID-Recipient, fName-Name ])
+    ; Name = ""
+    ),
     format( string(ProtText),
             "~4|~w~10| ~0f~22| ~0f~34| ~2f~w~46| ~w~n",
             [ "", TransfCharge, ForTransfAmount, TransfPercent, "%", Name ] ),
     true.
 
 /**/
+
+% отладка
+p:-
+    fee_calc_prot(_, _, ProtText),
+    string_length(ProtText, Len),
+    writeln(ProtText),
+    writeln(Len),
+    !.
 
  %
 %%

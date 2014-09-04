@@ -1,0 +1,369 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 198476374_219712981
+  Name: "GS.Зарплата.Пролог.Метаданные"
+  Caption: "GS.Зарплата.Пролог.Метаданные"
+  Version: "1.0.0.6"
+  Optional: False
+  Internal: True
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcSimpleTable"
+      RUID: 198476331_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      RELATIONTYPE: "T"
+      LNAME: "Протокол начислений"
+      LSHORTNAME: "Протокол начислений"
+      DESCRIPTION: "Протокол начислений по табелю"
+      REFERENCEKEY: ~
+      BRANCHKEY: ~
+      LISTFIELD: ~
+      EXTENDEDFIELDS: ~
+      EDITIONDATE: 2014-08-18T13:19:37+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 198476332_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: 1
+      NULLFLAG: 1
+      RDB$FIELD_POSITION: 0
+      FIELDNAME: "ID"
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCE: "DINTKEY"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "198476331_219712981 Протокол начислений, USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCEKEY: "153002050_17 Идентификатор, DINTKEY"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Идентификатор"
+      LSHORTNAME: "Идентификатор"
+      DESCRIPTION: "Идентификатор"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 10
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: ~
+      EDITIONDATE: 2014-08-18T12:58:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 198476333_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 1
+      FIELDNAME: "DISABLED"
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCE: "DDISABLED"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "198476331_219712981 Протокол начислений, USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCEKEY: "147000136_486813904 DDISABLED, DDISABLED"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Не активно"
+      LSHORTNAME: "Не активно"
+      DESCRIPTION: "Не активно"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 10
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: ~
+      EDITIONDATE: 2014-08-18T12:58:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 198476334_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 2
+      FIELDNAME: "EDITIONDATE"
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCE: "DEDITIONDATE"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "198476331_219712981 Протокол начислений, USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCEKEY: "147000184_31587988 Дата редактирования, DEDITIONDATE"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Дата модификации"
+      LSHORTNAME: "Дата модификации"
+      DESCRIPTION: "Дата модификации"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: ~
+      EDITIONDATE: 2014-08-18T12:58:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 198476335_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: 1
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 3
+      FIELDNAME: "EDITORKEY"
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCE: "DINTKEY"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "198476331_219712981 Протокол начислений, USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCEKEY: "153002050_17 Идентификатор, DINTKEY"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Кто модифицировал"
+      LSHORTNAME: "Кто модифицировал"
+      DESCRIPTION: "Кто модифицировал"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: "RESTRICT   "
+      EDITIONDATE: 2014-08-18T12:58:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 198476349_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: "GD_CONTACT"
+      REFLISTFIELD: "NAME"
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 4
+      FIELDNAME: "USR$EMPLKEY"
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCE: "USR$WG_D_EMPLOYEE"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "198476331_219712981 Протокол начислений, USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCEKEY: "147016166_119619099 Сотрудник, USR$WG_D_EMPLOYEE"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Сотрудник"
+      LSHORTNAME: "Сотрудник"
+      DESCRIPTION: "Сотрудник"
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: "TgdcEmployee"
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: "RESTRICT"
+      EDITIONDATE: 2014-08-18T13:13:00+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 198476363_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: "GD_DOCUMENT"
+      REFLISTFIELD: "NUMBER"
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 5
+      FIELDNAME: "USR$TOTALDOCKEY"
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCE: "USR$GS_DDOCUMENT"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "198476331_219712981 Протокол начислений, USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCEKEY: "147035010_9802323 Документ, USR$GS_DDOCUMENT"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "99. Начисление"
+      LSHORTNAME: "99. Начисление"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: "TgdcDocument"
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: "CASCADE"
+      EDITIONDATE: 2014-08-18T13:40:17+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 198476912_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: "USR$WG_FEETYPE"
+      REFLISTFIELD: "USR$NAME"
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 7
+      FIELDNAME: "USR$FEETYPEKEY"
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCE: "USR$WG_DFEETYPE"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "198476331_219712981 Протокол начислений, USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCEKEY: "147567171_119619099 Вид начисления/удержания, USR$WG_DFEETYPE"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Вид начисления/удержания"
+      LSHORTNAME: "Вид начисления"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: "TgdcAttrUserDefinedLBRBTree"
+      GDSUBTYPE: "USR$WG_FEETYPE"
+      OBJECTS: ~
+      DELETERULE: "RESTRICT"
+      EDITIONDATE: 2014-08-26T10:57:36+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 198476372_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 8
+      FIELDNAME: "USR$DESCRIPTION"
+      RELATIONNAME: "USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCE: "DDESCRIPTION"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "198476331_219712981 Протокол начислений, USR$WG_TBLCHARGE_PROT"
+      FIELDSOURCEKEY: "147000201_31587988 Описание, DDESCRIPTION"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Описание"
+      LSHORTNAME: "Описание"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-08-18T15:04:55+03:00

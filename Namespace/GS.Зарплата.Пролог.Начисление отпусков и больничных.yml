@@ -5,7 +5,7 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.72"
+  Version: "1.0.0.74"
   Optional: False
   Internal: True
 Uses: 

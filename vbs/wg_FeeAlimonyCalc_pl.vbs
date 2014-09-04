@@ -3,7 +3,8 @@ Option Explicit
 '
 '#include pl_GetScriptIDByName
 
-Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal AccountKeyArr)
+Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal FeeTypeKey, _
+                              ByVal AccountKeyArr)
 '
   Dim T, T1, T2
   '
@@ -25,11 +26,15 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   Dim P_main, Tv_main, Q_main
   'fee_calc_out, fee_calc_charge
   Dim P_out, Tv_out, Q_out, P_charge, Tv_charge, Q_charge
-  Dim Result, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex
+  Dim Result, ChargeSum, FeeType, DocKey, AccountKeyIndex
   'fee_calc_debt
   Dim P_debt, Tv_debt, Q_debt
   Dim AlimonyKey, DebtSum
   Dim gdcAlimonyDebt
+  'fee_calc_prot
+  Dim P_prot, Tv_prot, Q_prot
+  Dim ProtText
+  Dim gdcTblChargeProt
 
   T1 = Timer
 
@@ -231,7 +236,7 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     Exit Function
   End If
 
-  'fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex)
+  'fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex)
   P_charge = "fee_calc_charge"
   Set Tv_charge = Creator.GetObject(6, "TgsPLTermv", "")
   Set Q_charge = Creator.GetObject(nil, "TgsPLQuery", "")
@@ -247,9 +252,27 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   'Журнал долгов по алиментам
   Set gdcAlimonyDebt = Creator.GetObject(nil, "TgdcUserDocument", "")
   gdcAlimonyDebt.SubType = "147072391_453357870"
+  gdcAlimonyDebt.SubSet = "ByID"
   gdcAlimonyDebt.Transaction = wg_EmployeeCharge.Transaction
-  gdcAlimonyDebt.Open
-    
+
+  'fee_calc_prot(Scope, EmplKey, ProtText)
+  P_prot = "fee_calc_prot"
+  Set Tv_prot = Creator.GetObject(3, "TgsPLTermv", "")
+  Set Q_prot = Creator.GetObject(nil, "TgsPLQuery", "")
+  Q_prot.PredicateName = P_prot
+  Q_prot.Termv = Tv_prot
+  'Протокол по начислениям
+  Set gdcTblChargeProt = Creator.GetObject(nil, "TgdcAttrUserDefined", "")
+  gdcTblChargeProt.SubType = "198476331_219712981"
+  gdcTblChargeProt.Transaction = wg_EmployeeCharge.Transaction
+  gdcTblChargeProt.ExtraConditions.Clear
+  gdcTblChargeProt.ExtraConditions.Add _
+    ( _
+        "USR$USREMPLKEY = " & EmplKey & _
+    " AND USR$TOTALDOCKEY = " & TotalDocKey & _
+    " AND USR$FEETYPEKY = " & FeeTypeKey _
+    )
+
   Do Until Q_out.EOF
     EmplKey = Tv_out.ReadInteger(1)
     Result = Tv_out.ReadFloat(2)
@@ -261,13 +284,13 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     '
     Do Until Q_charge.EOF
       ChargeSum = Tv_charge.ReadFloat(2)
-      FeeTypeKey = Tv_charge.ReadInteger(3)
+      FeeTypeID = Tv_charge.ReadInteger(3)
       DocKey = Tv_charge.ReadInteger(4)
       AccountKeyIndex = Tv_charge.ReadInteger(5)
       '
-      Call wg_EmployeeCharge.AddCharge(0, ChargeSum, Null, TotalDocKey, FeeTypeKey, _
+      Call wg_EmployeeCharge.AddCharge(0, ChargeSum, Null, TotalDocKey, FeeTypeID, _
           DocKey, wg_EmployeeCharge.BeginDate, 0, 0)
-      Call wg_EmployeeCharge.AddChargeRegNew(0, ChargeSum, TotalDocKey, FeeTypeKey, _
+      Call wg_EmployeeCharge.AddChargeRegNew(0, ChargeSum, TotalDocKey, FeeTypeID, _
           AccountKeyArr(AccountKeyIndex), wg_EmployeeCharge.BeginDate, DocKey)
       '
       Q_charge.NextSolution
@@ -278,6 +301,10 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     Tv_debt.PutAtom 0, Scope
     Tv_debt.PutInteger 1, EmplKey
     Q_debt.OpenQuery
+    '
+    If Not Q_debt.EOF Then
+      gdcAlimonyDebt.Open
+    End If
     '
     Do Until Q_debt.EOF
       AlimonyKey = Tv_debt.ReadInteger(2)
@@ -294,6 +321,29 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
       Q_debt.NextSolution
     Loop
     Q_debt.Close
+    '
+    Tv_prot.Reset
+    Tv_prot.PutAtom 0, Scope
+    Tv_prot.PutInteger 1, EmplKey
+    Q_prot.OpenQuery
+    '
+    If Not Q_prot.EOF Then
+      gdcTblChargeProt.Open
+    End If
+    '
+    Do Until Q_prot.EOF
+      ProtText = Tv_prot.ReadString(2)
+      '
+      gdcTblChargeProt.Edit
+      gdcTblChargeProt.FieldByName("USR$USREMPLKEY").AsInteger = EmplKey
+      gdcTblChargeProt.FieldByName("USR$TOTALDOCKEY").AsInteger = TotalDocKey
+      gdcTblChargeProt.FieldByName("USR$FEETYPEKY").AsInteger = FeeTypeKey
+      gdcTblChargeProt.FieldByName("USR$DESCRIPTION").AsString = ProtText
+      gdcTblChargeProt.Post
+      '
+      Q_debt.NextSolution
+    Loop
+    Q_prot.Close
     '
     Q_out.NextSolution
   Loop

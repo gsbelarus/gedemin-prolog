@@ -1225,14 +1225,14 @@ collect_excl_days(exlc_days([FromDate0|ExclDays]), Y, M, LogDays0, LogDays2, Spe
     date_add(FromDate0, 1, day, FromDate1),
     !,
     collect_excl_days(exlc_days([FromDate1|ExclDays]), Y, M, LogDays0, LogDays2, SpecList).
-collect_excl_days(exlc_days([FromDate0, ExclType | ExclDays]), Y, M, LogDays0, LogDays2, SpecList) :-
+collect_excl_days(exlc_days([FromDate0, ToDate, ExclType | ExclDays]), Y, M, LogDays0, LogDays2, SpecList) :-
     % добавление дня для исключения в журнал
     ( ( SpecList = [] ; memberchk(ExclType, SpecList) )
       -> add_excl_day(exlc_days([FromDate0, ExclType | ExclDays]), LogDays0, LogDays1)
     ; true ),
     date_add(FromDate0, 1, day, FromDate1),
     !,
-    collect_excl_days(exlc_days([FromDate1, ExclType | ExclDays]), Y, M, LogDays1, LogDays2, SpecList).
+    collect_excl_days(exlc_days([FromDate1, ToDate, ExclType | ExclDays]), Y, M, LogDays1, LogDays2, SpecList).
 
 % добавление дня для исключения в журнал
 add_excl_day(exlc_days([TheDate|_]), LogDays, LogDays) :-

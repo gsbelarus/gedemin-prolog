@@ -5,7 +5,7 @@ Properties:
   RUID: 195379689_166214404
   Name: "GS.Зарплата.Пролог.Алименты и штрафы"
   Caption: "Алименты и штрафы"
-  Version: "1.0.0.55"
+  Version: "1.0.0.56"
   Optional: False
   Internal: True
 Uses: 
@@ -1160,10 +1160,16 @@ Objects:
                         Section-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                         pAlimonyCharge-_,
                         pAlimonySum-_,  pByBudget-_,
-                        pFormula-Formula, pForAlimony-_, pBV-_,
+                        pFormula-Formula, pForAlimony-_, pBV-BV,
                         pResult-_, pEval-_, pTCoef-_,
                         pChildCount-_, pLivingWagePerc-_,
-                        pBudgetConst-_, pBudgetPart-_ ],
+                        pBudgetConst-BudgetConst, pBudgetPart-_ ],
+            % сумма БВ
+            get_param_list(Scope, run, [
+                            pEmplKey-EmplKey, pDateCalcTo-DateCalcTo ]),
+            get_min_wage(Scope, DateCalcTo, BV),
+            % БПМ
+            get_budget(Scope, DateCalcTo, BudgetConst),
             % для всех алиментов
             forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
                     ( % получить сумму по формуле
@@ -1178,8 +1184,6 @@ Objects:
         calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
             % - для алиментов
             Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
-            get_param_list(Scope, run, [
-                            pEmplKey-EmplKey, pDateCalcTo-DateCalcTo ]),
             % спецификация алиментов
             SpecAlimony = [
                         fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
@@ -1198,11 +1202,9 @@ Objects:
                         pResult-Result, pEval-Eval, pTCoef-TCoef,
                         pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc,
                         pBudgetConst-BudgetConst, pBudgetPart-BudgetPart ],
-            % сумма БВ
-            get_data(Scope, kb, usr_wg_Variables, [fAlias-"vBV", fName-Var_BV]),
-            get_min_wage(Scope, DateCalcTo, BV),
-            replace_all(Formula, Var_BV, BV, Formula1),
             % сумма Для алиментов
+            get_data(Scope, kb, usr_wg_Variables, [fAlias-"vBV", fName-Var_BV]),
+            replace_all(Formula, Var_BV, BV, Formula1),
             get_data(Scope, kb, usr_wg_Variables, [fAlias-"vForAlimony", fName-Var_ForAlimony]),
             get_param_list(Scope, Type, [
                             pCalcAmount-3, pEmplKey-EmplKey, pForAlimony-ForAlimony ]),
@@ -1218,7 +1220,6 @@ Objects:
             Result is round(Eval * TCoef) * 1.0,
             % Часть БПМ
             ( ChildCount > 0 ->
-              get_budget(Scope, DateCalcTo, BudgetConst),
               BudgetPart is round(BudgetConst * LivingWagePerc * TCoef) * 1.0
             ; BudgetPart = 0.0
             ),
@@ -1589,13 +1590,16 @@ Objects:
                         pYM-Y-M, pDateDebt-DateDebt ],
             DropDebtPairs = [
                         Section-2, pEmplKey-EmplKey,
-                        pAlimonyKey-AlimonyKey, pDropDebtAmount-DropDebtAmount,
-                        pRestDebtAmount-RestDebtAmount, pEvalDebtAmount-EvalDebtAmount,
+                        pAlimonyKey-AlimonyKey,
+                        pDropDebtAmount-DropDebtAmount, pRestDebtAmount-RestDebtAmount,
+                        pDebtAmount-DebtAmount, pPaidDebtAmount-PaidDebtAmount,
+                        pEvalDebtAmount-EvalDebtAmount,
                         pForAlimony-ForAlimony, pDebtPercent-DebtPercent ],
             TotalDebtPairs = [
                         Section-3, pEmplKey-EmplKey,
                         pDropDeptBalance-DropDeptBalance,
                         pDropDebtTotal-DropDebtTotal, pRestDebtTotal-RestDebtTotal,
+                        pDebtTotal-DebtTotal, pPaidDebtTotal-PaidDebtTotal,
                         pCalcDelta-CalcDelta, pChargeStep-0 ],
             CoefDebtPairs = [
                         Section-4, pEmplKey-EmplKey,
@@ -1633,13 +1637,33 @@ Objects:
             RestSumList ),
             sum_list(RestSumList, RestDebtTotal),
             RestDebtTotal > 0,
+            % Общая сумма Долгов
+            findall( DebtSum,
+                     get_param_list(Scope, Type, RestDebtPairs),
+            DebtSumList ),
+            sum_list(DebtSumList, DebtTotal),
+            % Общая сумма Оплаты по долгам
+            findall( PaidSum,
+                     get_param_list(Scope, Type, RestDebtPairs),
+            PaidSumList ),
+            sum_list(PaidSumList, PaidDebtTotal),
             % для всех Алиментов
             forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
-                    ( % суммировать Остатки по долгам
+                    ( % суммировать Долги
+                      findall( DebtSum,
+                               get_param_list(Scope, Type, RestDebtPairs),
+                      DebtList ),
+                      sum_list(DebtList, DebtAmount),
+                      % суммировать Оплату по долгам
+                      findall( PaidSum,
+                               get_param_list(Scope, Type, RestDebtPairs),
+                      PaidList ),
+                      sum_list(PaidList, PaidDebtAmount),
+                      % суммировать Остатки по долгам
                       findall( RestSum,
                                get_param_list(Scope, Type, RestDebtPairs),
-                      RestDebtList ),
-                      sum_list(RestDebtList, RestDebtAmount),
+                      RestList ),
+                      sum_list(RestList, RestDebtAmount),
                       % сумма Для алиментов
                       get_param_list(Scope, Type, [
                             pCalcAmount-3, pEmplKey-EmplKey, pForAlimony-ForAlimony ]),
@@ -2200,11 +2224,11 @@ Objects:
             true.
         
         % выгрузка выходных данных по начислениям по сотруднику
-        fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) :-
+        fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
             % - начисление алиментов
             Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 0,
             get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                        fID-FeeTypeKey, fAlias-"ftAlimony" ]),
+                        fID-FeeTypeID, fAlias-"ftAlimony" ]),
             % спецификация параметров алиментов
             AlimonyParams = [
                         pCalcFormula-1, pEmplKey-EmplKey,
@@ -2213,11 +2237,11 @@ Objects:
             get_param_list(Scope, Type, AlimonyParams),
             ChargeSum > 0,
             true.
-        fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) :-
+        fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
             % - списание долгов по алиментам
             Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 1,
             get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                        fID-FeeTypeKey, fAlias-"ftAlimonyDebt" ]),
+                        fID-FeeTypeID, fAlias-"ftAlimonyDebt" ]),
             % спецификация параметров списания долгов
             DropDebtParams = [
                         pDropDebt-5, pEmplKey-EmplKey,
@@ -2226,11 +2250,11 @@ Objects:
             get_param_list(Scope, Type, DropDebtParams),
             ChargeSum > 0,
             true.
-        fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex) :-
+        fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
             % - пересылка алиментов
             Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 2,
             get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                        fID-FeeTypeKey, fAlias-"ftTransferDed" ]),
+                        fID-FeeTypeID, fAlias-"ftTransferDed" ]),
             % спецификация параметров перевода
             TransfParams = [
                         pCalcTransf-_, pEmplKey-EmplKey,
@@ -2253,52 +2277,49 @@ Objects:
             DebtSum > 0,
             true.
         
-        % выгрузка протокола расчета по сотруднику
-        p:- fee_calc_prot(_, _, ProtText), write(ProtText), !.
-        
         fee_calc_prot(Scope, EmplKey, ProtText) :-
             % - протокол по алиментам
             Scope = wg_fee_alimony,
-            findall( Type, fee_prot(Scope, Type, _), TypeList0),
-            list_to_set(TypeList0, TypeList),
-            fee_calc_prot(Scope, TypeList, EmplKey, "", ProtText),
+            findall( Sections, fee_prot(Scope, _, Sections), SectionsList),
+            fee_calc_prot(Scope, SectionsList, EmplKey, "", ProtText),
             !.
         %
         fee_calc_prot(_, [], _, ProtText, ProtText) :-
             !.
-        fee_calc_prot(Scope, [Type|TypeList], EmplKey, ProtText0, ProtText) :-
-            findall( Section, fee_prot(Scope, Type, Section), SectionList0),
-            list_to_set(SectionList0, SectionList),
-            fee_calc_prot(Scope, Type, SectionList, EmplKey, ProtText0, ProtText1),
+        fee_calc_prot(Scope, [Sections|SectionsList], EmplKey, ProtText0, ProtText) :-
+            fee_prot(Scope, Types, Sections),
+            fee_prot(Scope, Types, Sections, EmplKey, ProtText1),
+            string_concat(ProtText0, ProtText1, ProtText2),
             !,
-            fee_calc_prot(Scope, TypeList, EmplKey, ProtText1, ProtText).
-        %
-        fee_calc_prot(_, _, [], _, ProtText, ProtText) :-
-            !.
-        fee_calc_prot(Scope, Type, [Section|SectionList], EmplKey, ProtText0, ProtText) :-
-            fee_prot(Scope, Type, Section, EmplKey, ProtText1),
-            catch( string_concat(ProtText0, ProtText1, ProtText2), _, ProtText = ProtText0 ),
-            !,
-            fee_calc_prot(Scope, Type, SectionList, EmplKey, ProtText2, ProtText).
+            fee_calc_prot(Scope, SectionsList, EmplKey, ProtText2, ProtText).
         
         /* реализация - протокол */
         
+        % Протокол удержания алиментов (общая информация)
         fee_prot(wg_fee_alimony, in, pEmplInfo-1).
-        fee_prot(wg_fee_alimony, in, pEmplInfo-2).
         fee_prot(wg_fee_alimony, temp, pCalcTab-1).
+        % Исполнительные листы (пропорция по отработанному времени)
         fee_prot(wg_fee_alimony, temp, pCalcTab-2).
+        % Суммы для расчета
         fee_prot(wg_fee_alimony, temp, pCalcAmount-3).
-        fee_prot(wg_fee_alimony, temp, pCalcFormula-1).
+        % Исполнительные листы (расчетная сумма алиментов)
+        fee_prot(wg_fee_alimony, [temp, temp], [pCalcFormula-1, pCheckRest-1]).
+        % Контрольная сумма
+        fee_prot(wg_fee_alimony, temp, pCheckRest-1).
+        % Удержания и долги
+        fee_prot(wg_fee_alimony, [temp, temp, out], [pCheckRest-3, pAddDebt-1, pCalcTotal-1]).
+        % Исполнительные листы (расчетная сумма списания долгов)
+        fee_prot(wg_fee_alimony, [temp, temp], [pDropDebt-2, pDropDebt-3]).
+        % Исполнительные листы (частичная сумма списания долга)
+        fee_prot(wg_fee_alimony, [temp, temp, out], [pDropDebt-3, pDropDebt-5, pCalcTotal-1]).
+        % расходы по Переводу
+        fee_prot(wg_fee_alimony, [temp, out], [pCalcTransf-_, pCalcTotal-1]).
+        % Итого удержано
         fee_prot(wg_fee_alimony, out, pCalcTotal-1).
         
-        fee_prot(Scope, Type, Section, _, ProtText) :-
-            Scope = wg_fee_alimony, Type = in, Section = pEmplInfo-1,
-            format( string(ProtText),
-                    "~w~n",
-                    [ "Протокол начисления алиментов" ] ),
-            !.
-        fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-            Scope = wg_fee_alimony, Type = in, Section = pEmplInfo-2,
+        % Протокол удержания алиментов (общая информация)
+        fee_prot(Scope, _, Section, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony, Section = pEmplInfo-1,
             % шаблон первичного ключа
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             % взять дополнительные данные из первого движения
@@ -2313,11 +2334,12 @@ Objects:
             get_data(Scope, kb, gd_contact, [
                         fID-EmplKey, fName-Name ]),
             format( string(ProtText),
-                    "~` t~w~9+ ~w~` t~w~32+ ~w~n",
-                    [ "Таб. №:", ListNumber, "Сотрудник:", Name ] ),
+                    "~w~n~` t~w~9+ ~w~` t~w~32+ ~w~n",
+                    [ "Протокол удержания алиментов",
+                      "Таб. №:", ListNumber, "Сотрудник:", Name ] ),
                 !.
         fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-            Scope = wg_fee_alimony, Type = temp, Section = pCalcTab-1,
+            Scope = wg_fee_alimony, Section = pCalcTab-1,
             get_param_list(Scope, Type, [
                             Section, pEmplKey-EmplKey,
                             pYM-Y-M, pTDays-TDays, pTHoures-THoures ]),
@@ -2327,8 +2349,9 @@ Objects:
                     [ "Период:", MonthName, Y, "г.",
                       "Отработано:", THoures, "ч. (", TDays, "дн.)" ] ),
             !.
+        % Исполнительные листы (пропорция по отработанному времени)
         fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-            Scope = wg_fee_alimony, Type = temp, Section = pCalcTab-2,
+            Scope = wg_fee_alimony, Section = pCalcTab-2,
             format( string(ProtText0),
                     "~n~2|~w~n~4|~w~15|~w~27|~w~39|~w~60|~w~n",
                     [ "Исполнительные листы (пропорция по отработанному времени):",
@@ -2338,51 +2361,238 @@ Objects:
             ProtDetTextList),
             atomic_list_to_string([ProtText0|ProtDetTextList], ProtText),
             !.
+        % Суммы для расчета
         fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-            Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount-3,
+            Scope = wg_fee_alimony, Section = pCalcAmount-3,
             get_param_list(Scope, Type, [
                             Section, pEmplKey-EmplKey, pForAlimony-ForAlimony,
                             pAmountAll-AmountAll, pIncomeTax-IncomeTax,
                             pAmountExcl-AmountExcl, pIncomeTaxExcl-IncomeTaxExcl ]),
             format( string(ProtText),
-                    "~n~2|~w~n~2|~0f~w~0f~w~0f~w~0f~w~0f~w~n",
-                    [ "Для алиментов = (Начисленная сумма - ПН) - (Исключаемая сумма - Исключаемый ПН)",
-                      ForAlimony, " = (", AmountAll - IncomeTax, " - ", -IncomeTax, ") - (",
-                      AmountExcl, " - ", -IncomeTaxExcl, ")"] ),
+                    "~n~2|~w~n~4|~0f~w~0f~w~0f~n~2|~w~n~4|~0f~w~0f~w~0f~n~2|~w~n~4|~0f~w~0f~w~0f~n",
+                    [ "Заработок = Начисленная сумма - ПН",
+                      AmountAll, " = ", AmountAll - IncomeTax, " - ", -IncomeTax,
+                      "Исключаемый заработок = Исключаемая сумма - Исключаемый ПН",
+                      AmountExcl + IncomeTaxExcl, " = ", AmountExcl," - ", -IncomeTaxExcl,
+                      "Для алиментов = Заработок - Исключаемый заработок",
+                      ForAlimony, " = ", AmountAll, " - ",  AmountExcl + IncomeTaxExcl ] ),
                 !.
-        fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-            Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula-1,
+        % Исполнительные листы (расчетная сумма алиментов)
+        fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [_, Type2],
+            Sections = [_, Section2],
+            Sections = [pCalcFormula-1, pCheckRest-1],
+            get_param_list(Scope, run, [
+                            pEmplKey-EmplKey, pDateCalcTo-DateCalcTo ]),
+            % сумма БВ
+            get_min_wage(Scope, DateCalcTo, BV),
+            % БПМ
+            get_budget(Scope, DateCalcTo, BudgetConst),
             format( string(ProtText0),
-                    "~n~2|~w~n~4|~w~15|~w~27|~w~55|~w~61|~w~n",
-                    [ "Исполнительные листы (расчетная сумма алиментов):",
+                    "~n~2|~w~0f~n~2|~w~0f~n~n~2|~w~n~4|~w~15|~w~27|~w~55|~w~61|~w~n",
+                    [ "Базовая величина (БВ) = ", BV,
+                      "Бюджет прожиточного минимума (БПМ) = ", BudgetConst,
+                      "Исполнительные листы (расчетная сумма алиментов):",
                       "Ключ", "Сумма", "Формула", "Дети", "Примечание"  ] ),
             findall( ProtDetText,
-                     fee_prot_det(Scope, Type, Section, EmplKey, ProtDetText),
+                     fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
             ProtDetTextList),
-            atomic_list_to_string([ProtText0|ProtDetTextList], ProtText),
+            atomic_list_to_string([ProtText0|ProtDetTextList], ProtText1),
+            get_param_list(Scope, Type2, [
+                            Section2, pEmplKey-EmplKey,
+                            pAlimonyAmount-AlimonyAmount ]),
+            format( string(ProtText2),
+                    "~` t~w~14+ ~0f~n",
+                    ["Итого:", AlimonyAmount] ),
+            string_concat(ProtText1, ProtText2, ProtText),
             !.
+        % Контрольная сумма
+        fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony, Section = pCheckRest-1,
+            get_param_list(Scope, Type, [
+                            Section, pEmplKey-EmplKey,
+                            pCheckAmount-CheckAmount,
+                            pAmountAll-AmountAll, pRestPercent-RestPercent ]),
+            format( string(ProtText),
+                    "~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~w~n",
+                    [ "Контрольная сумма = Заработок - Заработок * Процент остатка",
+                      CheckAmount, " = ", AmountAll, " - ",
+                      AmountAll, " * ", RestPercent * 100, "%" ] ),
+            !.
+        % Удержания и долги
+        fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [Type1, _, _],
+            Sections = [Section1, _, _],
+            Sections = [pCheckRest-3, pAddDebt-1, pCalcTotal-1],
+            get_param_list(Scope, Type1, [
+                            Section1, pEmplKey-EmplKey,
+                            pChargeStep-0 ]),
+            format( string(ProtText),
+                    "~n~2|~w~n",
+                    [ "Алименты к удержанию по расчетной сумме" ] ),
+            !.
+        fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [_, Type2, Type3],
+            Sections = [_, Section2, Section3],
+            Sections = [pCheckRest-3, pAddDebt-1, pCalcTotal-1],
+            format( string(ProtText0),
+                    "~n~2|~w~n~n~2|~w~n~4|~w~15|~w~27|~w~n",
+                    [ "Алименты к удержанию по частичной сумме",
+                      "Исполнительные листы (частичная сумма алиментов):",
+                      "Ключ", "Сумма", "Долг"  ] ),
+            findall( ProtDetText,
+                     fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
+            ProtDetTextList),
+            atomic_list_to_string([ProtText0|ProtDetTextList], ProtText1),
+            get_param_list(Scope, Type3, [
+                            Section3, pEmplKey-EmplKey,
+                            pAlimonyChargeTotal-AlimonyChargeTotal ]),
+            findall( AlimonyDebt,
+                     get_param_list(Scope, Type2, [
+                                     Section2, pEmplKey-EmplKey,
+                                     pAlimonyDebt-AlimonyDebt ]),
+            AlimonyDebtList ),
+            sum_list(AlimonyDebtList, AlimonyDebtTotal),
+            format( string(ProtText2),
+                    "~` t~w~14+ ~0f~26| ~0f~n",
+                    ["Итого:", AlimonyChargeTotal, AlimonyDebtTotal] ),
+            string_concat(ProtText1, ProtText2, ProtText),
+            !.
+        % Исполнительные листы (расчетная сумма списания долга)
+        fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [Type1, Type2],
+            Sections = [Section1, Section2],
+            Sections = [pDropDebt-2, pDropDebt-3],
+            get_param_list(Scope, Type1, [
+                            Section1, pEmplKey-EmplKey,
+                            pDropDebtAmount-DropDebtAmount ]),
+            DropDebtAmount > 0,
+            format( string(ProtText0),
+                    "~n~2|~w~n~4|~w~15|~w~27|~w~39|~w~51|~w~63|~w~n",
+                    [ "Исполнительные листы (расчетная сумма списания долга):",
+                      "Ключ", "Сумма", "Долг", "Оплачено", "Остаток", "Процент списания долга" ] ),
+            findall( ProtDetText,
+                     fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
+            ProtDetTextList),
+            atomic_list_to_string([ProtText0|ProtDetTextList], ProtText1),
+            get_param_list(Scope, Type2, [
+                            Section2, pEmplKey-EmplKey,
+                            pDropDebtTotal-DropDebtTotal, pRestDebtTotal-RestDebtTotal,
+                            pDebtTotal-DebtTotal, pPaidDebtTotal-PaidDebtTotal]),
+            format( string(ProtText2),
+                    "~` t~w~14+ ~0f~26| ~0f~38| ~0f~50| ~0f~n",
+                    ["Итого:", DropDebtTotal, DebtTotal, PaidDebtTotal, RestDebtTotal] ),
+            string_concat(ProtText1, ProtText2, ProtText),
+            !.
+        % Исполнительные листы (частичная сумма списания долга)
+        fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [Type1, _, _],
+            Sections = [Section1, _, _],
+            Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
+            get_param_list(Scope, Type1, [
+                            Section1, pEmplKey-EmplKey,
+                            pChargeStep-0 ]),
+            format( string(ProtText),
+                    "~n~2|~w~n",
+                    [ "Долг по алиментам к удержанию по расчетной сумме" ] ),
+            !.
+        fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [Type1, _, Type3],
+            Sections = [Section1, _, Section3],
+            Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
+            get_param_list(Scope, Type1, [
+                            Section1, pEmplKey-EmplKey ]),
+            format( string(ProtText0),
+                    "~n~2|~w~n~n~2|~w~n~4|~w~15|~w~n",
+                    [ "Долг по алиментам к удержанию по частичной сумме",
+                      "Исполнительные листы (частичная сумма списания долга):",
+                      "Ключ", "Сумма" ] ),
+            findall( ProtDetText,
+                     fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
+            ProtDetTextList),
+            atomic_list_to_string([ProtText0|ProtDetTextList], ProtText1),
+            get_param_list(Scope, Type3, [
+                            Section3, pEmplKey-EmplKey,
+                            pDropDebtChargeTotal-DropDebtChargeTotal ]),
+            format( string(ProtText2),
+                    "~` t~w~14+ ~0f~n",
+                    ["Итого:", DropDebtChargeTotal] ),
+            string_concat(ProtText1, ProtText2, ProtText),
+            !.
+        % расходы по Переводу
+        fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [_, Type2],
+            Sections = [_, Section2],
+            Sections = [pCalcTransf-_, pCalcTotal-1],
+            get_param_list(Scope, Type2, [
+                            Section2, pEmplKey-EmplKey,
+                            pTransfChargeTotal-TransfChargeTotal ]),
+            TransfChargeTotal > 0,
+            format( string(ProtText0),
+                    "~n~2|~w~n~4|~w~11|~w~23|~w~35|~w~47|~w~n",
+                    [ "Расходы по переводу:",
+                      "", "Сумма", "Перевод", "Расценка", "Получатель" ] ),
+            findall( ProtDetText,
+                     fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
+            ProtDetTextList),
+            atomic_list_to_string([ProtText0|ProtDetTextList], ProtText1),
+            format( string(ProtText2),
+                    "~` t~w~10+ ~0f~n",
+                    ["Итого:", TransfChargeTotal] ),
+            string_concat(ProtText1, ProtText2, ProtText),
+            !.
+        % Итого удержано
+        fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony, Section = pCalcTotal-1,
+            get_param_list(Scope, Type, [
+                            Section, pEmplKey-EmplKey,
+                            pAllChargeTotal-AllChargeTotal,
+                            pAlimonyChargeTotal-AlimonyChargeTotal,
+                            pDropDebtChargeTotal-DropDebtChargeTotal,
+                            pTransfChargeTotal-TransfChargeTotal ]),
+            format( string(ProtText),
+                    "~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~n",
+                    [ "Итого удержано = Алименты + Списание долгов + Расходы по переводу",
+                      AllChargeTotal, " = ",
+                      AlimonyChargeTotal, " + ", DropDebtChargeTotal, " + ", TransfChargeTotal] ),
+                !.
+        % возврат пустой строки при неудаче
         fee_prot(_, _, _, _, "") :-
             !.
         
+        % Исполнительные листы (пропорция по отработанному времени) - детали
         fee_prot_det(Scope, Type, Section, EmplKey, ProtDetText) :-
-            Scope = wg_fee_alimony, Type = temp, Section = pCalcTab-2,
+            Scope = wg_fee_alimony, Section = pCalcTab-2,
             get_param(Scope, in, pNullDate-NullDate),
             get_param_list(Scope, Type, [
                             Section, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                             pDateBegin-ADateBegin, pDateEnd-ADateEnd0,
-                            pADays-ADays, pAHoures-AHoures, pTCoef-TCoef ]),
-            once( ( ADateEnd0 = NullDate, ADateEnd = '' ; ADateEnd = ADateEnd0 ) ),
+                            pTCoef-TCoef, pADays-ADays,
+                            pAHoures-AHoures, pTHoures-THoures ]),
+            ( ADateEnd0 = NullDate -> ADateEnd = '' ; ADateEnd = ADateEnd0 ),
             date_format(ADateBegin, ADateBegin1),
             date_format(ADateEnd, ADateEnd1),
+            ( TCoef < 1 -> TCoef1 = AHoures / THoures ; TCoef1 = TCoef ),
             format( string(ProtDetText),
                     "~4|~w~14| ~w~26| ~w~38| ~1f ~w~1f ~w~59| ~w~n",
                     [ AlimonyKey, ADateBegin1, ADateEnd1,
-                      AHoures, "ч. (", ADays, "дн.)", TCoef ] ),
+                      AHoures, "ч. (", ADays, "дн.)", TCoef1 ] ),
             true.
-        fee_prot_det(Scope, Type, Section, EmplKey, ProtText) :-
-            Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula-1,
-            get_param_list(Scope, Type, [
-                            Section, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+        % Исполнительные листы (расчетная сумма алиментов) - детали
+        fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [Type1, _],
+            Sections = [Section1, _],
+            Sections = [pCalcFormula-1, pCheckRest-1],
+            get_param_list(Scope, Type1, [
+                            Section1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                             pAlimonySum-AlimonySum, pByBudget-ByBudget,
                             pFormula-Formula, pTCoef-TCoef,
                             pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc ]),
@@ -2391,7 +2601,9 @@ Objects:
             ; Desc1 = ""
             ),
             ( ByBudget = 1 ->
-              atomic_list_to_string([LivingWagePerc, "от БПМ"], " ", Desc2),
+              format( string(Desc2),
+                      "~w ~w",
+                      [ LivingWagePerc, "от БПМ" ]),
               ( \+ Desc1 = "" -> Delim1 = "; " ; Delim1 = "" )
             ; Desc2 = "", Delim1 = ""
             ),
@@ -2400,8 +2612,82 @@ Objects:
                     "~4|~w~14| ~0f~26| ~w~54| ~0f~60| ~w~n",
                     [ AlimonyKey, AlimonySum, Formula, ChildCount, Desc ] ),
             true.
+        % Удержания и долги - детали
+        fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [_, Type2, _],
+            Sections = [_, Section2, _],
+            Sections = [pCheckRest-3, pAddDebt-1, pCalcTotal-1],
+            get_param_list(Scope, Type2, [
+                            Section2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                            pAlimonyDebt-AlimonyDebt, pAlimonyCharge-AlimonyCharge ]),
+            format( string(ProtText),
+                    "~4|~w~14| ~0f~26| ~0f~n",
+                    [ AlimonyKey, AlimonyCharge, AlimonyDebt ] ),
+            true.
+        % Исполнительные листы (расчетная сумма списания долга) - детали
+        fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [Type1, _],
+            Sections = [Section1, _],
+            Sections = [pDropDebt-2, pDropDebt-3],
+            get_param_list(Scope, Type1, [
+                            Section1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                            pDropDebtAmount-DropDebtAmount, pRestDebtAmount-RestDebtAmount,
+                            pDebtAmount-DebtAmount, pPaidDebtAmount-PaidDebtAmount,
+                            pDebtPercent-DebtPercent
+                             ]),
+            format( string(ProtText),
+                    "~4|~w~14| ~0f~26| ~0f~38| ~0f~50| ~0f~62| ~0f~w~n",
+                    [ AlimonyKey,
+                      DropDebtAmount, DebtAmount, PaidDebtAmount, RestDebtAmount,
+                      DebtPercent * 100, "%" ] ),
+            true.
+        fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [_, Type2, _],
+            Sections = [_, Section2, _],
+            Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
+            get_param_list(Scope, Type2, [
+                            Section2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey ]),
+            findall( DropDebtCharge,
+                     get_param_list(Scope, Type2, [
+                                    Section2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                                    pDropDebtCharge-DropDebtCharge ]),
+            DropDebtChargeList ),
+            sum_list(DropDebtChargeList, DropDebtAmount),
+            format( string(ProtText),
+                    "~4|~w~14| ~0f~n",
+                    [ AlimonyKey, DropDebtAmount ] ),
+            true.
+        % расходы по Переводу - детали
+        fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
+            Scope = wg_fee_alimony,
+            Types = [Type1, _],
+            Sections = [Section1, _],
+            Sections = [pCalcTransf-_, pCalcTotal-1],
+            get_param_list(Scope, Type1, [
+                            Section1, pEmplKey-EmplKey,
+                            pTransfCharge-TransfCharge, pRecipient-Recipient,
+                            pForTransfAmount-ForTransfAmount, pTransfPercent-TransfPercent ]),
+            ( get_data(Scope, kb, gd_contact, [
+                        fID-Recipient, fName-Name ])
+            ; Name = ""
+            ),
+            format( string(ProtText),
+                    "~4|~w~10| ~0f~22| ~0f~34| ~2f~w~46| ~w~n",
+                    [ "", TransfCharge, ForTransfAmount, TransfPercent, "%", Name ] ),
+            true.
         
         /**/
+        
+        % отладка
+        p:-
+            fee_calc_prot(_, _, ProtText),
+            string_length(ProtText, Len),
+            writeln(ProtText),
+            writeln(Len),
+            !.
         
          %
         %%
@@ -2420,7 +2706,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-22T10:04:21+03:00
+      EDITIONDATE: 2014-09-04T16:27:06+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -2454,7 +2740,8 @@ Objects:
         '
         '#include pl_GetScriptIDByName
         
-        Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal AccountKeyArr)
+        Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal FeeTypeKey, _
+                                      ByVal AccountKeyArr)
         '
           Dim T, T1, T2
           '
@@ -2476,11 +2763,15 @@ Objects:
           Dim P_main, Tv_main, Q_main
           'fee_calc_out, fee_calc_charge
           Dim P_out, Tv_out, Q_out, P_charge, Tv_charge, Q_charge
-          Dim Result, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex
+          Dim Result, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex
           'fee_calc_debt
           Dim P_debt, Tv_debt, Q_debt
           Dim AlimonyKey, DebtSum
           Dim gdcAlimonyDebt
+          'fee_calc_prot
+          Dim P_prot, Tv_prot, Q_prot
+          Dim ProtText
+          Dim gdcTblChargeProt
         
           T1 = Timer
         
@@ -2682,7 +2973,7 @@ Objects:
             Exit Function
           End If
         
-          'fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeKey, DocKey, AccountKeyIndex)
+          'fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex)
           P_charge = "fee_calc_charge"
           Set Tv_charge = Creator.GetObject(6, "TgsPLTermv", "")
           Set Q_charge = Creator.GetObject(nil, "TgsPLQuery", "")
@@ -2698,9 +2989,26 @@ Objects:
           'Журнал долгов по алиментам
           Set gdcAlimonyDebt = Creator.GetObject(nil, "TgdcUserDocument", "")
           gdcAlimonyDebt.SubType = "147072391_453357870"
+          gdcAlimonyDebt.SubSet = "ByID"
           gdcAlimonyDebt.Transaction = wg_EmployeeCharge.Transaction
-          gdcAlimonyDebt.Open
-            
+        
+          'fee_calc_prot(Scope, EmplKey, ProtText)
+          P_prot = "fee_calc_prot"
+          Set Tv_prot = Creator.GetObject(3, "TgsPLTermv", "")
+          Set Q_prot = Creator.GetObject(nil, "TgsPLQuery", "")
+          Q_prot.PredicateName = P_prot
+          Q_prot.Termv = Tv_prot
+          'Протокол по начислениям
+          Set gdcTblChargeProt = Creator.GetObject(nil, "TgdcAttrUserDefined", "")
+          gdcTblChargeProt.SubType = "USR$WG_TBLCHARGE_PROT"
+          gdcTblChargeProt.Transaction = wg_EmployeeCharge.Transaction
+          gdcTblChargeProt.ExtraConditions.Add _
+            ( _
+                " Z.USR$EMPLKEY = " & EmplKey & _
+            " AND Z.USR$TOTALDOCKEY = " & TotalDocKey & _
+            " AND Z.USR$FEETYPEKEY = " & FeeTypeKey _
+            )
+        
           Do Until Q_out.EOF
             EmplKey = Tv_out.ReadInteger(1)
             Result = Tv_out.ReadFloat(2)
@@ -2712,13 +3020,13 @@ Objects:
             '
             Do Until Q_charge.EOF
               ChargeSum = Tv_charge.ReadFloat(2)
-              FeeTypeKey = Tv_charge.ReadInteger(3)
+              FeeTypeID = Tv_charge.ReadInteger(3)
               DocKey = Tv_charge.ReadInteger(4)
               AccountKeyIndex = Tv_charge.ReadInteger(5)
               '
-              Call wg_EmployeeCharge.AddCharge(0, ChargeSum, Null, TotalDocKey, FeeTypeKey, _
+              Call wg_EmployeeCharge.AddCharge(0, ChargeSum, Null, TotalDocKey, FeeTypeID, _
                   DocKey, wg_EmployeeCharge.BeginDate, 0, 0)
-              Call wg_EmployeeCharge.AddChargeRegNew(0, ChargeSum, TotalDocKey, FeeTypeKey, _
+              Call wg_EmployeeCharge.AddChargeRegNew(0, ChargeSum, TotalDocKey, FeeTypeID, _
                   AccountKeyArr(AccountKeyIndex), wg_EmployeeCharge.BeginDate, DocKey)
               '
               Q_charge.NextSolution
@@ -2729,6 +3037,10 @@ Objects:
             Tv_debt.PutAtom 0, Scope
             Tv_debt.PutInteger 1, EmplKey
             Q_debt.OpenQuery
+            '
+            If Not Q_debt.EOF Then
+              gdcAlimonyDebt.Open
+            End If
             '
             Do Until Q_debt.EOF
               AlimonyKey = Tv_debt.ReadInteger(2)
@@ -2745,6 +3057,29 @@ Objects:
               Q_debt.NextSolution
             Loop
             Q_debt.Close
+            '
+            Tv_prot.Reset
+            Tv_prot.PutAtom 0, Scope
+            Tv_prot.PutInteger 1, EmplKey
+            Q_prot.OpenQuery
+            '
+            If Not Q_prot.EOF Then
+              gdcTblChargeProt.Open
+            End If
+            '
+            Do Until Q_prot.EOF
+              ProtText = Tv_prot.ReadString(2)
+              '
+              gdcTblChargeProt.Edit
+              gdcTblChargeProt.FieldByName("USR$EMPLKEY").AsInteger = EmplKey
+              gdcTblChargeProt.FieldByName("USR$TOTALDOCKEY").AsInteger = TotalDocKey
+              gdcTblChargeProt.FieldByName("USR$FEETYPEKEY").AsInteger = FeeTypeKey
+              gdcTblChargeProt.FieldByName("USR$DESCRIPTION").AsString = ProtText
+              gdcTblChargeProt.Post
+              '
+              Q_prot.NextSolution
+            Loop
+            Q_prot.Close
             '
             Q_out.NextSolution
           Loop
@@ -2782,11 +3117,12 @@ Objects:
       ENTEREDPARAMS: !!binary > 
         U0xQUlBSU1QRAAAAV0dfRU1QTE9ZRUVDSEFSR0URAAAAV0dfRU1QTE9ZRUVDSEFSR0UAAAAAAAAA
         AAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QLAAAAVE9UQUxET0NLRVkLAAAAVE9UQUxET0NLRVkA
-        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QNAAAAQUNDT1VOVEtFWUFSUg0AAABBQ0NP
-        VU5US0VZQVJSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QKAAAARkVFVFlQRUtFWQoAAABGRUVUWVBF
+        S0VZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNUDQAAAEFDQ09VTlRLRVlBUlINAAAA
+        QUNDT1VOVEtFWUFSUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-25T13:13:02+03:00
+      EDITIONDATE: 2014-09-04T15:13:42+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -2852,7 +3188,7 @@ Objects:
             If Prolog_Alimony.Checked = True Then
               'Расчет через Пролог-скрипт
               wg_FeeAlimonyCalc = _
-                wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, AccountKeyArr)
+                wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr)
               Exit Function
             End If
           End If
@@ -3276,7 +3612,7 @@ Objects:
         Sl9GRUVEQVRBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: ~
-      EDITIONDATE: 2014-08-06T16:36:01+03:00
+      EDITIONDATE: 2014-09-03T13:17:09+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -3299,3 +3635,162 @@ Objects:
             ADDFUNCTIONKEY: "147269378_531940465 wg_GetAccountKey"
           - 
             ADDFUNCTIONKEY: "195361376_166214404 wg_FeeAlimonyCalc_pl"
+  - 
+    Properties: 
+      Class: "TgdcMacrosGroup"
+      RUID: 147014502_256548741
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 198477540_219712981
+    Fields: 
+      HASCHILDREN: ~
+      OBJECTNAME: "gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE"
+      OBJECTPARENT: ~
+      CLASSNAME: ""
+      SUBTYPE: ""
+      PARENT: ~
+      NAME: "Локальные макросы"
+      ISGLOBAL: 0
+      DESCRIPTION: ~
+      EDITIONDATE: 2004-10-20T15:07:58+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 147014287_256548741
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 198477540_219712981
+    Fields: 
+      NAME: "gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE"
+      DESCRIPTION: ~
+      PARENT: ~
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: "147014502_256548741 Локальные макросы"
+      REPORTGROUPKEY: "147014503_256548741 Отчеты(gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE)"
+      CLASSNAME: ""
+      OBJECTNAME: "gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE"
+      SUBTYPE: ""
+      EDITIONDATE: 2004-10-20T15:07:58+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 198477541_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 198477540_219712981
+    Fields: 
+      OBJECTNAME: "gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE"
+      MODULE: "REPORTMAIN"
+      LANGUAGE: "VBScript"
+      NAME: "rp_FeeCalc_Prot"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        Function rp_FeeCalc_Prot(OwnerForm)
+          BaseQueryList.Clear
+        
+          Dim qProt
+          Dim gdcObject, EmplKey, TotalDocKey, FeeTypeKey
+        
+          Set gdcObject = OwnerForm.gdcObject
+          EmplKey = gdcObject.FieldByName("USR$EMPLKEY").AsInteger
+          TotalDocKey = gdcObject.FieldByName("USR$TOTALDOCKEY").AsInteger
+          FeeTypeKey = gdcObject.FieldByName("USR$FEETYPEKEY").AsInteger
+          
+          BaseQueryList.Clear
+          Set qProt = BaseQueryList.Query(BaseQueryList.Add("Prot", 0))
+          qProt.SQL = _
+            " SELECT * FROM USR$WG_TBLCHARGE_PROT" & _
+            " WHERE" & _
+            "       USR$EMPLKEY = " & EmplKey & _
+            "   AND USR$TOTALDOCKEY = " & TotalDocKey & _
+            "   AND USR$FEETYPEKEY = " & FeeTypeKey
+          qProt.Open
+        
+          Set rp_FeeCalc_Prot = BaseQueryList
+        End Function
+        
+      DISPLAYSCRIPT: | 
+        RP_FEECALC_PROT
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147014287_256548741 gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QJAAAAT1dORVJGT1JNCQAAAE9XTkVSRk9STQAAAAAAAAAAAAAAAAsAAAAAAAAAAAAA
+        AABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-09-04T16:30:31+03:00
+  - 
+    Properties: 
+      Class: "TgdcTemplate"
+      RUID: 198479950_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 198477540_219712981
+    Fields: 
+      NAME: "Зарплата.Начисления.Протокол"
+      DESCRIPTION: ~
+      TEMPLATEDATA: !!binary > 
+        GQAAAAAZAFxcSW5kaWFcSFAgTGFzZXJKZXQgTTEwMDUA//////8JAAAANAgAAJoLAAAkAAAAJAAA
+        ACQAAAAkAAAAAP//AAAAAP//AAAAAAAAAAAAAAAAAwQARm9ybQAPAACA3AAAAHgAAAB8AQAALAEA
+        AAQAAAACAOcAAAALAE1hc3RlckRhdGExAAIBAAAAADAAAAD2AgAAFAAAADEABQABAAAAAAAAAAAA
+        ////HwAAAAAEAFBST1QAAAAAAAAA//8AAAAAAAIAAAABAAAAABYAAAABAAAAyAAAABQAAAABAAAA
+        AAAAAACEAQAABQBNZW1vMQACACQAAAAwAAAArAIAABQAAAADAAAAAQAAAAAAAAAAAP///x8sAgAA
+        AAAAAQAYAFtQUk9ULiJVU1IkREVTQ1JJUFRJT04iXQAAAAD//wAAAAAAAgAAAAEAAAAAFgsAQ291
+        cmllciBOZXcACQAAAAAAAAAAAAAAAADMAAIAAAAAAP///wAAAAACAAAAAAAAAP7+/wIAAAASACDC
+        9e7k7fvlIO/g8ODs5fLw+wAGACMkJgMAMAAGAFBBUkFNMAAFACMkJggAAAAAAAAAAAAA/AAAAAAA
+        AAAAAAAAAAAAAABYACQUvhDVc+RAmlD9AtZz5EA=
+      TEMPLATETYPE: "FR"
+      EDITIONDATE: 2014-09-04T16:30:31+03:00
+  - 
+    Properties: 
+      Class: "TgdcReportGroup"
+      RUID: 147014503_256548741
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 198477540_219712981
+    Fields: 
+      HASCHILDREN: 1
+      PARENT: ~
+      NAME: "Отчеты(gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE)"
+      DESCRIPTION: ~
+      USERGROUPNAME: "147014503_256548741"
+      EDITIONDATE: 2000-01-01T00:00:00+03:00
+  - 
+    Properties: 
+      Class: "TgdcReport"
+      RUID: 198477540_219712981
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      NAME: "Протокол начисления/удержания"
+      DESCRIPTION: ~
+      FRQREFRESH: 1
+      REPORTGROUPKEY: "147014503_256548741 Отчеты(gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE)"
+      PARAMFORMULAKEY: ~
+      MAINFORMULAKEY: "198477541_219712981 rp_FeeCalc_Prot"
+      EVENTFORMULAKEY: ~
+      TEMPLATEKEY: "198479950_219712981 Зарплата.Начисления.Протокол"
+      ISREBUILD: 1
+      SERVERKEY: ~
+      ISLOCALEXECUTE: 1
+      PREVIEW: 1
+      GLOBALREPORTKEY: ~
+      EDITIONDATE: 2014-09-04T16:30:31+03:00
+      DISPLAYINMENU: 1
+      FOLDERKEY: ~
+      MODALPREVIEW: 0
