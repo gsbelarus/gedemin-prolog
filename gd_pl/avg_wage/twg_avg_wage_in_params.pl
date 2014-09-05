@@ -41,7 +41,7 @@ twg_avg_wage_in_params:-
     fail.
 twg_avg_wage_in_params:-
     new_param_list(wg_avg_wage_sick, in, [
-        pMonthQty-6,
+        pMonthQty-6, pLimitDays-30,
         pFeeGroupKey_ruid-'147071457,274788016',
         % Группа Пропорциональных начислений
         pFeeGroupKeyProp_ruid-'147119175,1354510846',
@@ -64,6 +64,7 @@ twg_avg_wage_in_params:-
     new_param_list(wg_struct_sick, in, [
         pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
         pBugetCalcType-1, pBudgetPart-0.5,
+        % Травма производственная
         pJobIllType_ruid-'147036273,151520244',
         pBudget_ruid-'147073065,1224850260',
         pAvgSalaryRB_ruid-'147445419,274788016',

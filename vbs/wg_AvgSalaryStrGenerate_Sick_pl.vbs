@@ -226,7 +226,7 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
       NormHoures = Tv_det.ReadFloat(13)
       '
       Select Case AvgWageRule
-        Case "by_calc_days", "by_calc_days_doc"
+        Case "by_calc_days", "by_calc_days_doc", "by_calc_days_total"
           Select Case PeriodRule
             Case "by_cal_flex"
               PeriodRule = "по табелю мастера"

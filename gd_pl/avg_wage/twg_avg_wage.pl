@@ -112,6 +112,8 @@ wg_valid_rules([-by_month_no_bad_type]).
 
 %% варианты правил расчета
 %  - для больничных
+% [по расчетным дням итого за период]
+wg_valid_rules([by_calc_days_total]).
 % [по расчетным дням, по расчетным дням со справкой]
 wg_valid_rules([by_calc_days, by_calc_days_doc]).
 % [от БПМ, по среднему заработку]
@@ -314,13 +316,19 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (по расчетным дням / со справкой)
-    Scope = wg_avg_wage_sick, Rule1 = by_calc_days, Rule2 = by_calc_days_doc,
+    Scope = wg_avg_wage_sick,
+    Rule1 = by_calc_days,
+    Rule2 = by_calc_days_doc,
+    Rule3 = by_calc_days_total,
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
     % есть рабочие периоды
     \+ Periods = [],
     % если определяется вариант
-    ( % по расчетным дням
+    ( % по расчетным дням итого за период
+      Rule = Rule3,
+      rule_month_days_sick(Scope, PK, Periods, Rule)
+    ; % или по расчетным дням
       Rule = Rule1,
       % правило действительно
       is_valid_rule(Scope, PK, _, Rule1),
@@ -329,8 +337,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
       length(Periods, MonthQty),
       % и выполняется одно из правил по полноте месяца
       rule_month_days_sick(Scope, PK, Periods, _)
-    ;
-      % или по расчетным дням со справкой
+    ; % или по расчетным дням со справкой
       Rule = Rule2,
       % правило действительно
       is_valid_rule(Scope, PK, _, Rule2),
@@ -361,6 +368,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     CalcDaysList ),
     % всего расчетных дней
     sum_list(CalcDaysList, TotalCalcDays),
+    !,
     % среднедневной заработок
     catch( AvgWage0 is Amount / TotalCalcDays, _, fail ),
     AvgWage is round(AvgWage0),
@@ -392,6 +400,31 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     \+ length(Periods, MonthQty),
     % расчет от БПМ при формировании структуры
     AvgWage is 0,
+    !.
+calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+    % - для больничных (от ставки / по среднему заработку)
+    Scope = wg_avg_wage_sick, Rule1 = by_rate, Rule2 = by_avg_wage,
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    % расчет по разным вариантам
+    % от ставки
+    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage1, Rule1)
+          ; AvgWage1 = 0 )
+        ),
+    % по среднему заработку
+    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage2, Rule2)
+          ; AvgWage2 = 0 )
+        ),
+    \+ [AvgWage1, AvgWage2] = [0, 0],
+    % выбор варианта расчета
+    ( AvgWage1 >= AvgWage2,
+      % от ставки
+      Rule = Rule1,
+      AvgWage = AvgWage1
+    ;
+      % по среднему заработку
+      Rule = Rule2,
+      AvgWage = AvgWage2 ),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (по среднему заработку)
@@ -605,6 +638,19 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
 
 % правила для учета расчетных дней
 % - для больничных
+rule_month_days_sick(Scope, PK, Periods, Rule) :-
+    Rule = by_calc_days_total,
+    % правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    get_param(Scope, run, pLimitDays-LimitDays),
+    findall( CalcDays,
+             ( member(Y-M, Periods),
+               get_month_days_sick(Scope, PK, Y, M, _, CalcDays, _, _)
+             ),
+    CalcDaysList ),
+    sum_list(CalcDaysList, TotalDays),
+    \+ TotalDays < LimitDays,
+    !.
 rule_month_days_sick(Scope, PK, Periods, Rule) :-
     Rule = by_calc_days_any,
     % правило действительно
@@ -858,6 +904,8 @@ get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
 cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    findall( ChargeOption-Debits0,
+    (
     % параметры выбора начислений
     member(ChargeOption, [tbl_charge, dbf_sums]),
     % взять начисления
@@ -881,9 +929,15 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, S
           get_modern_coef(Scope, PK, TheDay, FeeTypeKey, ModernCoef, SalaryOld0, SalaryNew0)
           ),
     % в список начислений
-    Debits ),
-    % проверить список начислений
-    \+ Debits = [],
+    Debits0 )
+    ),
+    Debits0List ),
+    % сформировать список начислений
+    ( Debits0List = [tbl_charge-Debits1, dbf_sums-[]] ->
+      Debits = Debits1
+    ; Debits0List = [tbl_charge-Debits1, dbf_sums-Debits2],
+      append([Debits1, Debits2], Debits)
+    ),
     % всего за месяц
     sum_month_debit(Debits, Wage, ModernWage0),
     % средний за месяц коэффициент осовременивания
@@ -1000,6 +1054,8 @@ calc_modern_coef(TheDay, [ _ | Movements ], ModernCoef, Rate, RateLast) :-
 cacl_month_wage_sick(Scope, PK, Y, M, Wage) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    findall( ChargeOption-Debits0,
+    (
     % параметры выбора начислений
     member(ChargeOption, [tbl_charge, dbf_sums]),
     % взять начисления
@@ -1021,9 +1077,15 @@ cacl_month_wage_sick(Scope, PK, Y, M, Wage) :-
               )
           ),
     % в список начислений
-    Debits ),
-    % проверить список начислений
-    \+ Debits = [],
+    Debits0 )
+    ),
+    Debits0List ),
+    % сформировать список начислений
+    ( Debits0List = [tbl_charge-Debits1, dbf_sums-[]] ->
+      Debits = Debits1
+    ; Debits0List = [tbl_charge-Debits1, dbf_sums-Debits2],
+      append([Debits1, Debits2], Debits)
+    ),
     % всего за месяц
     sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage),
     !.
@@ -1287,6 +1349,8 @@ excl_first_month_days_sick(_, _, _, _, 0) :-
 cacl_month_wage_avg(Scope, PK, Y, M, Wage) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    findall( ChargeOption-Debits0,
+    (
     % параметры выбора начислений
     member(ChargeOption, [tbl_charge, dbf_sums]),
     % взять начисления
@@ -1308,9 +1372,15 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage) :-
               )
           ),
     % в список начислений
-    Debits ),
-    % проверить список начислений
-    \+ Debits = [],
+    Debits0 )
+    ),
+    Debits0List ),
+    % сформировать список начислений
+    ( Debits0List = [tbl_charge-Debits1, dbf_sums-[]] ->
+      Debits = Debits1
+    ; Debits0List = [tbl_charge-Debits1, dbf_sums-Debits2],
+      append([Debits1, Debits2], Debits)
+    ),
     % всего за месяц
     sum_list(Debits, Wage),
     !.

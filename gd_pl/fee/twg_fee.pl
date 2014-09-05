@@ -1757,6 +1757,7 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
               DropDebtAmount, DebtAmount, PaidDebtAmount, RestDebtAmount,
               DebtPercent * 100, "%" ] ),
     true.
+% Исполнительные листы (частичная сумма списания долга) - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     Scope = wg_fee_alimony,
     Types = [_, Type2, _],
@@ -1784,10 +1785,10 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
                     Section1, pEmplKey-EmplKey,
                     pTransfCharge-TransfCharge, pRecipient-Recipient,
                     pForTransfAmount-ForTransfAmount, pTransfPercent-TransfPercent ]),
-    ( get_data(Scope, kb, gd_contact, [
+    once( ( get_data(Scope, kb, gd_contact, [
                 fID-Recipient, fName-Name ])
-    ; Name = ""
-    ),
+          ; Name = ""
+        ) ),
     format( string(ProtText),
             "~4|~w~10| ~0f~22| ~0f~34| ~2f~w~46| ~w~n",
             [ "", TransfCharge, ForTransfAmount, TransfPercent, "%", Name ] ),
