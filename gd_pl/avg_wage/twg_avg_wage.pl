@@ -113,7 +113,7 @@ wg_valid_rules([-by_month_no_bad_type]).
 %% варианты правил расчета
 %  - для больничных
 % [по расчетным дням итого за период]
-wg_valid_rules([by_calc_days_total]).
+wg_valid_rules([-by_calc_days_total]).
 % [по расчетным дням, по расчетным дням со справкой]
 wg_valid_rules([by_calc_days, by_calc_days_doc]).
 % [от БПМ, по среднему заработку]
@@ -403,7 +403,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки / по среднему заработку)
-    Scope = wg_avg_wage_sick, Rule1 = by_rate, Rule2 = by_avg_wage,
+    Scope = -wg_avg_wage_sick, Rule1 = by_rate, Rule2 = by_avg_wage,
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
     % расчет по разным вариантам
@@ -479,9 +479,16 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
                Wage1 > 0 ),
     % в список заработков
     Wages ),
-    % есть требуемое количество месяцев
-    get_param(Scope, run, pMonthQty-MonthQty),
-    length(Wages, MonthQty),
+      % есть требуемое количество месяцев
+    ( get_param(Scope, run, pMonthQty-MonthQty),
+      length(Wages, MonthQty) -> true
+    ; % или первый период проверки
+      Periods = [Y-M|_],
+      % и период последнего приема на работу
+      get_last_hire(Scope, PK, DateIn),
+      % совпадают
+      atom_date(DateIn, date(Y, M, _))
+    ),
     % итоговый заработок
     sum_list(Wages, Amount),
     % признак расчета по часам
@@ -514,9 +521,9 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     get_periods(Scope, PK, [Y-M|_]),
     atom_date(FirstDate, date(Y, M, 1)),
     % для даты последнего приема на работу
-    get_last_hire(Scope, PK, DateBegin),
+    get_last_hire(Scope, PK, DateIn),
     % если дата последнего приема на работу меньше первой даты расчета
-    DateBegin @< FirstDate,
+    DateIn @< FirstDate,
     % и не превышен лимит
     get_param_list(Scope, run, [pMonthLimitQty-MonthLimitQty, pMonthBefore-MonthBefore]),
     \+ MonthBefore > MonthLimitQty,
@@ -530,9 +537,9 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     get_periods(Scope, PK, [Y-M|_]),
     atom_date(FirstDate, date(Y, M, 1)),
     % взять дату последнего приема на работу
-    get_last_hire(Scope, PK, DateBegin),
+    get_last_hire(Scope, PK, DateIn),
     % если дата последнего приема на работу не меньше первой даты расчета
-    \+ DateBegin @< FirstDate,
+    \+ DateIn @< FirstDate,
     % то для расчета нет требуемого количества месяцев
     AvgWage = 0, Variant = no_data,
     !.

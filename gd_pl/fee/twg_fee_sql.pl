@@ -681,7 +681,20 @@ JOIN
 WHERE
   al.USR$EMPLKEY = pEmplKey
   AND
-  aldebt.USR$DATEDEBT < 'pDateCalcFrom'
+  aldebt.USR$DATEDEBT >=
+    (SELECT FIRST 1
+       ml.USR$DATEBEGIN
+     FROM
+       USR$WG_MOVEMENTLINE ml
+     WHERE
+       ml.USR$EMPLKEY = pEmplKey
+       AND
+       ml.DOCUMENTKEY = ml.USR$FIRSTMOVE
+       AND
+       ml.USR$MOVEMENTTYPE = 1
+     ORDER BY
+       ml.USR$DATEBEGIN DESC
+    )
 ORDER BY
   aldebt.USR$DATEDEBT
 ",
@@ -699,12 +712,29 @@ DELETE
 FROM
   USR$WG_ALIMONYDEBT aldebt
 WHERE
+  aldebt.USR$MANUALDEBT = 0
+  AND
   aldebt.USR$DATEDEBT >= 'pDateCalcFrom'
   AND
   aldebt.USR$DATEDEBT < 'pDateCalcTo'
   AND
   aldebt.USR$ALIMONYKEY IN
     (SELECT al.DOCUMENTKEY FROM USR$WG_ALIMONY al WHERE al.USR$EMPLKEY = pEmplKey)
+  AND
+  aldebt.USR$DATEDEBT >
+    (SELECT FIRST 1
+       ml.USR$DATEBEGIN
+     FROM
+       USR$WG_MOVEMENTLINE ml
+     WHERE
+       ml.USR$EMPLKEY = pEmplKey
+       AND
+       ml.DOCUMENTKEY = ml.USR$FIRSTMOVE
+       AND
+       ml.USR$MOVEMENTTYPE = 1
+     ORDER BY
+       ml.USR$DATEBEGIN DESC
+    )
 ",
     [
     pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_

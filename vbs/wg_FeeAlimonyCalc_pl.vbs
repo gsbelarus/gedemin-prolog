@@ -26,10 +26,10 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   Dim P_main, Tv_main, Q_main
   'fee_calc_out, fee_calc_charge
   Dim P_out, Tv_out, Q_out, P_charge, Tv_charge, Q_charge
-  Dim Result, ChargeSum, FeeType, DocKey, AccountKeyIndex
+  Dim Result, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex
   'fee_calc_debt
   Dim P_debt, Tv_debt, Q_debt
-  Dim AlimonyKey, DebtSum
+  Dim AlimonyKey, DebtSum, DateDebt
   Dim gdcAlimonyDebt
   'fee_calc_prot
   Dim P_prot, Tv_prot, Q_prot
@@ -243,9 +243,9 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   Q_charge.PredicateName = P_charge
   Q_charge.Termv = Tv_charge
 
-  'fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum)
+  'fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum, DateDebt)
   P_debt = "fee_calc_debt"
-  Set Tv_debt = Creator.GetObject(4, "TgsPLTermv", "")
+  Set Tv_debt = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_debt = Creator.GetObject(nil, "TgsPLQuery", "")
   Q_debt.PredicateName = P_debt
   Q_debt.Termv = Tv_debt
@@ -263,14 +263,13 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   Q_prot.Termv = Tv_prot
   'Протокол по начислениям
   Set gdcTblChargeProt = Creator.GetObject(nil, "TgdcAttrUserDefined", "")
-  gdcTblChargeProt.SubType = "198476331_219712981"
+  gdcTblChargeProt.SubType = "USR$WG_TBLCHARGE_PROT"
   gdcTblChargeProt.Transaction = wg_EmployeeCharge.Transaction
-  gdcTblChargeProt.ExtraConditions.Clear
   gdcTblChargeProt.ExtraConditions.Add _
     ( _
-        "USR$USREMPLKEY = " & EmplKey & _
-    " AND USR$TOTALDOCKEY = " & TotalDocKey & _
-    " AND USR$FEETYPEKY = " & FeeTypeKey _
+        " Z.USR$EMPLKEY = " & EmplKey & _
+    " AND Z.USR$TOTALDOCKEY = " & TotalDocKey & _
+    " AND Z.USR$FEETYPEKEY = " & FeeTypeKey _
     )
 
   Do Until Q_out.EOF
@@ -309,13 +308,14 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     Do Until Q_debt.EOF
       AlimonyKey = Tv_debt.ReadInteger(2)
       DebtSum = Tv_debt.ReadFloat(3)
+      DateDebt = Tv_debt.ReadDate(4)
       '
       gdcAlimonyDebt.Insert
       gdcAlimonyDebt.FieldByName("usr$totaldockey").AsInteger = TotalDocKey
       gdcAlimonyDebt.FieldByName("usr$alimonykey").AsInteger = AlimonyKey
       gdcAlimonyDebt.FieldByName("usr$debtsum").AsCurrency = DebtSum
       gdcAlimonyDebt.FieldByName("usr$debtmonth").AsInteger = 0
-      gdcAlimonyDebt.FieldByName("usr$datedebt").AsDateTime = DateBegin
+      gdcAlimonyDebt.FieldByName("usr$datedebt").AsDateTime = DateDebt
       gdcAlimonyDebt.Post
       '
       Q_debt.NextSolution
@@ -335,13 +335,13 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
       ProtText = Tv_prot.ReadString(2)
       '
       gdcTblChargeProt.Edit
-      gdcTblChargeProt.FieldByName("USR$USREMPLKEY").AsInteger = EmplKey
+      gdcTblChargeProt.FieldByName("USR$EMPLKEY").AsInteger = EmplKey
       gdcTblChargeProt.FieldByName("USR$TOTALDOCKEY").AsInteger = TotalDocKey
-      gdcTblChargeProt.FieldByName("USR$FEETYPEKY").AsInteger = FeeTypeKey
+      gdcTblChargeProt.FieldByName("USR$FEETYPEKEY").AsInteger = FeeTypeKey
       gdcTblChargeProt.FieldByName("USR$DESCRIPTION").AsString = ProtText
       gdcTblChargeProt.Post
       '
-      Q_debt.NextSolution
+      Q_prot.NextSolution
     Loop
     Q_prot.Close
     '

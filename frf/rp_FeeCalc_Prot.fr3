@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Tgs_fr4SingleReport Version="4.12.6" DotMatrixReport="False" IniFile="\Software\Fast Reports" PreviewOptions.Buttons="4095" PreviewOptions.Zoom="1" PrintOptions.Printer="По умолчанию" PrintOptions.PrintOnSheet="0" ReportOptions.CreateDate="41891,5121925926" ReportOptions.Description.Text="" ReportOptions.LastChange="41891,518099456" ScriptLanguage="PascalScript" ScriptText.Text="begin&#13;&#10;&#13;&#10;end." PropData="08446174617365747301010C2200000020446174615365743D2250524F542220446174615365744E616D653D2250524F54220000095661726961626C657301010C1A000000204E616D653D2220C2F5EEE4EDFBE520EFE0F0E0ECE5F2F0FB2200010C19000000204E616D653D22504152414D30222056616C75653D2227272200010C24000000204E616D653D22504152414D317330222056616C75653D222731393333363434353527220000055374796C650100">
+  <TfrxDataPage Name="Data" Height="1000" Left="0" Top="0" Width="1000"/>
+  <TfrxReportPage Name="Page1" PaperWidth="210" PaperHeight="297" PaperSize="9" LeftMargin="10" RightMargin="10" TopMargin="10" BottomMargin="10" ColumnWidth="0" ColumnPositions.Text="" HGuides.Text="" VGuides.Text="">
+    <TfrxMasterData Name="MasterData1" Height="18,89765" Left="0" Top="18,89765" Width="718,1107" ColumnWidth="0" ColumnGap="0" DataSetName="PROT" RowCount="0" Stretched="True">
+      <TfrxMemoView Name="PROTUSRDESCRIPTION" Left="3,77953" Top="0" Width="185,19697" Height="18,89765" ShowHint="False" StretchMode="smActualHeight" AutoWidth="True" AllowExpressions="False" DataField="USR$DESCRIPTION" DataSetName="PROT" Font.Charset="1" Font.Color="0" Font.Height="-12" Font.Name="Courier New" Font.Style="0" ParentFont="False" Text="[PROT.&#34;USR$DESCRIPTION&#34;]"/>
+    </TfrxMasterData>
+  </TfrxReportPage>
+</Tgs_fr4SingleReport>

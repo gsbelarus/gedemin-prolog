@@ -126,7 +126,12 @@ calc_tab(Scope, EmplKey) :-
     get_last_hire(Scope, PK, DateIn),
     % начало итогового месяца
     get_param_list(Scope, in, [pEmplKey-EmplKey, pDateBegin-DateBegin]),
-    DateBegin @>= DateIn,
+    atom_date(DateBegin, date(YearBegin, MonthBegin, _)),
+    month_days(YearBegin, MonthBegin, DaysBegin),
+    % окончание итогового месяца
+    atom_date(DateEnd, date(YearBegin, MonthBegin, DaysBegin)),
+    % последний прием на работу до окончания итогового месяца
+    DateIn @=< DateEnd,
     % Общий табель за итоговый месяц
     atom_date(DateBegin, date(Y, M, _)),
     calc_month_tab(Scope, PK, Y-M, TabDays),
@@ -381,9 +386,9 @@ calc_transf(Scope, EmplKey, Stage) :-
                 pForTransfAmount-ForTransfAmount, pTransfPercent-TransfPercent ],
     % спецификации данных для расходов по переводу
     AlimonyData = [
-                AlimonyKey, TransferTypeKey0, Recipient0, AlimonyCharge ],
+                AlimonyKey, TransferTypeKey0, Recipient1, AlimonyCharge ],
     DropDebtData = [
-                AlimonyKey, TransferTypeKey0, Recipient0, DropDebtCharge ],
+                AlimonyKey, TransferTypeKey0, Recipient1, DropDebtCharge ],
     AggrTransfData = [
                 AlimonyKey1, TransfByGroup, TransferTypeKey, Recipient,
                 ForTransfAmount, TransfPercent, TransfCharge ],
@@ -391,12 +396,22 @@ calc_transf(Scope, EmplKey, Stage) :-
     findall( AlimonyData,
              ( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
                TransferTypeKey0 > 0,
+               %( Recipient0 > 0 ->
+               ( Recipient0 > -1 -> % проверка пока отключена
+                 Recipient1 = Recipient0
+               ; Recipient1 is -AlimonyKey
+               ),
                get_param_list(Scope, Type, AlimonyParams)
              ),
     AlimonyDataList ),
     findall( DropDebtData,
              ( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
                TransferTypeKey0 > 0,
+               %( Recipient0 > 0 ->
+               ( Recipient0 > -1 -> % проверка пока отключена
+                 Recipient1 = Recipient0
+               ; Recipient1 is -AlimonyKey
+               ),
                get_param_list(Scope, Type, DropDebtParams)
              ),
     DropDebtDataList ),
@@ -431,7 +446,7 @@ aggr_fransf(Scope, EmplKey, TransfData, TransfDataList, TransfDataList1, TransfA
                 ForTransfAmount, TransfPercent, TransfCharge ],
     % собрать суммы по Группе [Документ, Вид перевода, Получатель]
     findall( AlimonyCharge,
-             member([AlimonyKey, TransferTypeKey, Recipient, AlimonyCharge],
+             member([_, TransferTypeKey, Recipient, AlimonyCharge],
                      TransfDataList),
     AlimonyChargeList),
     % Итог по группе
@@ -745,22 +760,6 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
                   )
             )
           ),
-    % Общая сумма Остатков по долгам
-    findall( RestSum,
-             get_param_list(Scope, Type, RestDebtPairs),
-    RestSumList ),
-    sum_list(RestSumList, RestDebtTotal),
-    RestDebtTotal > 0,
-    % Общая сумма Долгов
-    findall( DebtSum,
-             get_param_list(Scope, Type, RestDebtPairs),
-    DebtSumList ),
-    sum_list(DebtSumList, DebtTotal),
-    % Общая сумма Оплаты по долгам
-    findall( PaidSum,
-             get_param_list(Scope, Type, RestDebtPairs),
-    PaidSumList ),
-    sum_list(PaidSumList, PaidDebtTotal),
     % для всех Алиментов
     forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
             ( % суммировать Долги
@@ -800,6 +799,22 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
                   )
             )
           ),
+    % Общая сумма Остатков по долгам
+    findall( RestDebtAmount,
+             get_param_list(Scope, Type, DropDebtPairs),
+    RestDebtAmountList ),
+    sum_list(RestDebtAmountList, RestDebtTotal),
+    RestDebtTotal > 0,
+    % Общая сумма Долгов
+    findall( DebtAmount,
+             get_param_list(Scope, Type, DropDebtPairs),
+    DebtAmountList ),
+    sum_list(DebtAmountList, DebtTotal),
+    % Общая сумма Оплаты по долгам
+    findall( PaidDebtAmount,
+             get_param_list(Scope, Type, DropDebtPairs),
+    PaidDebtAmountList ),
+    sum_list(PaidDebtAmountList, PaidDebtTotal),
     % Общая сумма Списания долга
     findall( DropDebtAmount,
              get_param_list(Scope, Type, DropDebtPairs),
@@ -1379,7 +1394,7 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :
     true.
 
 % выгрузка выходных данных по долгам по сотруднику
-fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum) :-
+fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum, DateDebt) :-
     % - долги по алиментам
     Scope = wg_fee_alimony, Type = temp,
     % спецификация параметров долга
@@ -1389,6 +1404,10 @@ fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum) :-
     % взять данные по списанию долгу
     get_param_list(Scope, Type, DebtParams),
     DebtSum > 0,
+    % дата долга
+    get_param_list(Scope, run, [
+                    pEmplKey-EmplKey, pDateCalcTo-DateCalcTo ]),
+    date_add(DateCalcTo, -1, day, DateDebt),
     true.
 
 fee_calc_prot(Scope, EmplKey, ProtText) :-
@@ -1421,7 +1440,7 @@ fee_prot(wg_fee_alimony, [temp, temp], [pCalcFormula-1, pCheckRest-1]).
 % Контрольная сумма
 fee_prot(wg_fee_alimony, temp, pCheckRest-1).
 % Удержания и долги
-fee_prot(wg_fee_alimony, [temp, temp, out], [pCheckRest-3, pAddDebt-1, pCalcTotal-1]).
+fee_prot(wg_fee_alimony, [temp, temp, temp, out], [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1]).
 % Исполнительные листы (расчетная сумма списания долгов)
 fee_prot(wg_fee_alimony, [temp, temp], [pDropDebt-2, pDropDebt-3]).
 % Исполнительные листы (частичная сумма списания долга)
@@ -1436,14 +1455,14 @@ fee_prot(Scope, _, Section, EmplKey, ProtText) :-
     Scope = wg_fee_alimony, Section = pEmplInfo-1,
     % шаблон первичного ключа
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % для даты последнего приема на работу
+    get_last_hire(Scope, PK, DateBegin),
     % взять дополнительные данные из первого движения
     get_data(Scope, kb, usr_wg_MovementLine, [
                 fEmplKey-EmplKey,
                 fDocumentKey-FirstMoveKey, fFirstMoveKey-FirstMoveKey,
                 fDateBegin-DateBegin, fMovementType-1,
                 fListNumber-ListNumber ]),
-    % для даты последнего приема на работу
-    get_last_hire(Scope, PK, DateBegin),
     % взять наименование сотрудника из контактов
     get_data(Scope, kb, gd_contact, [
                 fID-EmplKey, fName-Name ]),
@@ -1537,9 +1556,9 @@ fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
 % Удержания и долги
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     Scope = wg_fee_alimony,
-    Types = [Type1, _, _],
-    Sections = [Section1, _, _],
-    Sections = [pCheckRest-3, pAddDebt-1, pCalcTotal-1],
+    Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
+    Types = [Type1|_],
+    Sections = [Section1|_],
     get_param_list(Scope, Type1, [
                     Section1, pEmplKey-EmplKey,
                     pChargeStep-0 ]),
@@ -1549,9 +1568,9 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     !.
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     Scope = wg_fee_alimony,
-    Types = [_, Type2, Type3],
-    Sections = [_, Section2, Section3],
-    Sections = [pCheckRest-3, pAddDebt-1, pCalcTotal-1],
+    Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
+    Types = [_, _, Type3, Type4],
+    Sections = [_, _, Section3, Section4],
     format( string(ProtText0),
             "~n~2|~w~n~n~2|~w~n~4|~w~15|~w~27|~w~n",
             [ "Алименты к удержанию по частичной сумме",
@@ -1561,12 +1580,12 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
              fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
     ProtDetTextList),
     atomic_list_to_string([ProtText0|ProtDetTextList], ProtText1),
-    get_param_list(Scope, Type3, [
-                    Section3, pEmplKey-EmplKey,
+    get_param_list(Scope, Type4, [
+                    Section4, pEmplKey-EmplKey,
                     pAlimonyChargeTotal-AlimonyChargeTotal ]),
     findall( AlimonyDebt,
-             get_param_list(Scope, Type2, [
-                             Section2, pEmplKey-EmplKey,
+             get_param_list(Scope, Type3, [
+                             Section3, pEmplKey-EmplKey,
                              pAlimonyDebt-AlimonyDebt ]),
     AlimonyDebtList ),
     sum_list(AlimonyDebtList, AlimonyDebtTotal),
@@ -1605,12 +1624,15 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
 % Исполнительные листы (частичная сумма списания долга)
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     Scope = wg_fee_alimony,
-    Types = [Type1, _, _],
-    Sections = [Section1, _, _],
+    Types = [Type1, Type2, _],
+    Sections = [Section1, Section2, _],
     Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
     get_param_list(Scope, Type1, [
                     Section1, pEmplKey-EmplKey,
                     pChargeStep-0 ]),
+    get_param_list(Scope, Type2, [
+                    Section2, pEmplKey-EmplKey,
+                    pByDropDebtCoef-0 ]),
     format( string(ProtText),
             "~n~2|~w~n",
             [ "Долг по алиментам к удержанию по расчетной сумме" ] ),
@@ -1729,12 +1751,18 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
 % Удержания и долги - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     Scope = wg_fee_alimony,
-    Types = [_, Type2, _],
-    Sections = [_, Section2, _],
-    Sections = [pCheckRest-3, pAddDebt-1, pCalcTotal-1],
+    Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
+    Types = [_, Type2, Type3, _],
+    Sections = [_, Section2, Section3, _],
     get_param_list(Scope, Type2, [
                     Section2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
-                    pAlimonyDebt-AlimonyDebt, pAlimonyCharge-AlimonyCharge ]),
+                    pAlimonyCharge-AlimonyCharge ]),
+    once( ( get_param_list(Scope, Type3, [
+                    Section3, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                    pAlimonyDebt-AlimonyDebt ])
+          ; AlimonyDebt = 0
+          )
+        ),
     format( string(ProtText),
             "~4|~w~14| ~0f~26| ~0f~n",
             [ AlimonyKey, AlimonyCharge, AlimonyDebt ] ),
