@@ -5,7 +5,7 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.78"
+  Version: "1.0.0.79"
   Optional: False
   Internal: True
 Uses: 
@@ -1946,6 +1946,22 @@ Objects:
             AvgWage = 0, Variant = need_more,
             !.
         calc_avg_wage(Scope, PK, AvgWage, Variant) :-
+            % - для начисления по-среднему (по начислению за текущий месяц)
+            Scope = wg_avg_wage_avg,
+            % нет периодов для проверки
+            get_periods(Scope, PK, []),
+            % если следующий период
+            append(PK, [pDateCalcTo-DateTo], Pairs),
+            get_param_list(Scope, run, Pairs),
+            atom_date(DateTo, date(Y, M, _)),
+            % и период последнего приема на работу
+            get_last_hire(Scope, PK, DateIn),
+            % совпадают
+            atom_date(DateIn, date(Y, M, _)),
+            % то требуется итоговый расчет для текущего месяца
+            AvgWage = 0, Variant = by_current_month,
+            !.
+        calc_avg_wage(Scope, PK, AvgWage, Variant) :-
             % - для начисления по-среднему (нет требуемого количества месяцев)
             Scope = wg_avg_wage_avg,
             % периоды для проверки
@@ -3401,12 +3417,12 @@ Objects:
         %  12. Начисление по-среднему
         
         % загрузка входных данных по сотруднику
-        avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore) :-
+        avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, MonthOffset) :-
             Scope = wg_avg_wage_avg, Type = in,
             new_param_list(Scope, Type,
                 [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                  pDateCalc-DateCalc, pCalcByHoure-CalcByHoure,
-                 pMonthBefore-MonthBefore]),
+                 pMonthBefore-MonthBefore, pMonthOffset-MonthOffset]),
             !.
         
         % выгрузка детальных выходных данных по сотруднику
@@ -3896,7 +3912,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-09T14:44:17+03:00
+      EDITIONDATE: 2014-09-10T16:15:24+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -12336,7 +12352,8 @@ Objects:
         '#include pl_GetScriptIDByName
         Option Explicit
         
-        Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSalary, ByVal MonthBefore)
+        Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSalary, _
+                                     ByVal MonthBefore, ByVal MonthOffset)
         '
           Dim T, T1, T2
           '
@@ -12410,15 +12427,16 @@ Objects:
           '
           gdcSalary.OwnerForm.Repaint
         
-          'avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore)
+          'avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, MonthOffset)
           P_in = "avg_wage_avg_in"
-          Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
+          Set Tv_in = Creator.GetObject(6, "TgsPLTermv", "")
           Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
           Tv_in.PutInteger 0, EmplKey
           Tv_in.PutInteger 1, FirstMoveKey
           Tv_in.PutDate 2, DateCalc
           Tv_in.PutInteger 3, CalcByHoure
           Tv_in.PutInteger 4, MonthBefore
+          Tv_in.PutInteger 5, MonthOffset
           '
           Q_in.PredicateName = P_in
           Q_in.Termv = Tv_in
@@ -12623,10 +12641,11 @@ Objects:
         AABGTlNUUFJTVA8AAABHRENERVRBSUxPQkpFQ1QPAAAAR0RDREVUQUlMT0JKRUNUAAAAAAAAAAAA
         AAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNUCQAAAEdEQ1NBTEFSWQkAAABHRENTQUxBUlkAAAAAAAAA
         AAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QLAAAATU9OVEhCRUZPUkULAAAATU9OVEhCRUZPUkUA
-        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVEZMUFI=
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVFBSU1QLAAAATU9OVEhPRkZTRVQLAAAATU9OVEhP
+        RkZTRVQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVEZMUFI=
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-06-06T11:30:40+03:00
+      EDITIONDATE: 2014-09-10T16:17:36+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -12860,13 +12879,37 @@ Objects:
           Set gdcDetailObject = Sender.OwnerForm.gdcDetailObject
           Set gdcSalary = Sender.OwnerForm.GetComponent("usrg_gdcAvgSalaryStr")
         
-          Dim MonthBefore
+          Dim MonthBefore, MonthOffset
           MonthBefore = 0
+          MonthOffset = 0
           Do
-            Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore)
+            Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore, MonthOffset)
             Select Case Ret
               Case "need_more"
                 MonthBefore = MonthBefore + 1
+              Case "by_current_month"
+                '
+                If Not MonthOffset < 0 Then
+                  '
+                  Dim Msg
+                  Msg = "Сотрудник: " & _
+                        gdcDetailObject.FieldByName("U_USR$EMPLKEY_NAME").AsString & _
+                        vbCrLf & _
+                        "Требуется итоговый расчет для текущего месяца." & _
+                        vbCrLf & _
+                        "Продолжить?"
+                  '
+                  If MsgBox(Msg, vbExclamation + vbYesNoCancel, "Предупреждение") = vbYes Then
+                    MonthBefore = 0
+                    MonthOffset = -1
+                  Else
+                    Exit Do
+                  End If
+                  '
+                Else
+                  Exit Do
+                End If
+                '
               Case Else
                 Exit Do
             End Select
@@ -12893,7 +12936,7 @@ Objects:
         RkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: ~
-      EDITIONDATE: 2014-06-06T11:36:52+03:00
+      EDITIONDATE: 2014-09-10T16:20:07+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -12962,21 +13005,44 @@ Objects:
           Set gdcDetailObject = Sender.OwnerForm.gdcDetailObject
           Set gdcSalary = Sender.OwnerForm.GetComponent("usrg_gdcAvgSalaryStr")
         
-          Dim MonthBefore
+          Dim MonthBefore, MonthOffset
         
           gdcDetailObject.First
           While Not gdcDetailObject.EoF
             '
-            MonthBefore = 0
-            Do
-              Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore)
-              Select Case Ret
-                Case "need_more"
-                  MonthBefore = MonthBefore + 1
-                Case Else
+          MonthBefore = 0
+          Do
+            Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore, MonthOffset)
+            Select Case Ret
+              Case "need_more"
+                MonthBefore = MonthBefore + 1
+              Case "by_current_month"
+                '
+                If Not MonthOffset < 0 Then
+                  '
+                  Dim Msg
+                  Msg = "Сотрудник: " & _
+                        gdcDetailObject.FieldByName("U_USR$EMPLKEY_NAME").AsString & _
+                        vbCrLf & _
+                        "Требуется итоговый расчет для текущего месяца." & _
+                        vbCrLf & _
+                        "Продолжить?"
+                  '
+                  If MsgBox(Msg, vbExclamation + vbYesNoCancel, "Предупреждение") = vbYes Then
+                    MonthBefore = 0
+                    MonthOffset = -1
+                  Else
+                    Exit Do
+                  End If
+                  '
+                Else
                   Exit Do
-              End Select
-            Loop
+                End If
+                '
+              Case Else
+                Exit Do
+            End Select
+          Loop
             '
             gdcDetailObject.Next
           Wend
@@ -13001,7 +13067,7 @@ Objects:
         RkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: ~
-      EDITIONDATE: 2014-06-06T11:46:22+03:00
+      EDITIONDATE: 2014-09-10T16:18:33+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

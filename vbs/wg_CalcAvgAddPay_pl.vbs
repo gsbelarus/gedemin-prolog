@@ -1,7 +1,8 @@
 '#include pl_GetScriptIDByName
 Option Explicit
 
-Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSalary, ByVal MonthBefore)
+Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSalary, _
+                             ByVal MonthBefore, ByVal MonthOffset)
 '
   Dim T, T1, T2
   '
@@ -75,15 +76,16 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
   '
   gdcSalary.OwnerForm.Repaint
 
-  'avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore)
+  'avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, MonthOffset)
   P_in = "avg_wage_avg_in"
-  Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
+  Set Tv_in = Creator.GetObject(6, "TgsPLTermv", "")
   Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
   Tv_in.PutInteger 0, EmplKey
   Tv_in.PutInteger 1, FirstMoveKey
   Tv_in.PutDate 2, DateCalc
   Tv_in.PutInteger 3, CalcByHoure
   Tv_in.PutInteger 4, MonthBefore
+  Tv_in.PutInteger 5, MonthOffset
   '
   Q_in.PredicateName = P_in
   Q_in.Termv = Tv_in

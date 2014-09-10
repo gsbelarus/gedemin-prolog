@@ -531,6 +531,22 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     AvgWage = 0, Variant = need_more,
     !.
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
+    % - для начисления по-среднему (по начислению за текущий месяц)
+    Scope = wg_avg_wage_avg,
+    % нет периодов для проверки
+    get_periods(Scope, PK, []),
+    % если следующий период
+    append(PK, [pDateCalcTo-DateTo], Pairs),
+    get_param_list(Scope, run, Pairs),
+    atom_date(DateTo, date(Y, M, _)),
+    % и период последнего приема на работу
+    get_last_hire(Scope, PK, DateIn),
+    % совпадают
+    atom_date(DateIn, date(Y, M, _)),
+    % то требуется итоговый расчет для текущего месяца
+    AvgWage = 0, Variant = by_current_month,
+    !.
+calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     % - для начисления по-среднему (нет требуемого количества месяцев)
     Scope = wg_avg_wage_avg,
     % периоды для проверки
@@ -1986,12 +2002,12 @@ avg_wage_sick_det(EmplKey, FirstMoveKey,
 %  12. Начисление по-среднему
 
 % загрузка входных данных по сотруднику
-avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore) :-
+avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, MonthOffset) :-
     Scope = wg_avg_wage_avg, Type = in,
     new_param_list(Scope, Type,
         [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
          pDateCalc-DateCalc, pCalcByHoure-CalcByHoure,
-         pMonthBefore-MonthBefore]),
+         pMonthBefore-MonthBefore, pMonthOffset-MonthOffset]),
     !.
     
 % выгрузка детальных выходных данных по сотруднику
