@@ -5,9 +5,10 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.79"
+  Version: "1.0.0.83"
   Optional: False
   Internal: True
+  MD5: 232A58574A0070647F5B465204896E3A
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -213,6 +214,8 @@ Objects:
                     gd_const_AvgSalaryRB/2,
                     %usr_wg_TblDayNorm/8,
                     wg_job_ill_type/1,
+                    % section twg_rule
+                    usr_wg_pl_Rule/2,
                     -
                     ]).
         
@@ -1267,6 +1270,32 @@ Objects:
             pJobIllType_ruid-_
             ]).
         
+        gd_pl_ds(Scope, kb, usr_wg_pl_Rule, 2, [
+            fAtom-string, fEnabled-boolean
+            ]) :-
+            memberchk(Scope, [
+                wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+                ]).
+        % usr_wg_pl_Rule(Atom, Enabled)
+        get_sql(Scope, kb, usr_wg_pl_Rule/2,
+        "
+        SELECT
+          r.USR$ATOM,
+          r.USR$ENABLED
+        FROM
+          USR$WG_PL_RULE r
+        WHERE
+          NOT r.USR$ATOM IS NULL
+        ORDER BY
+          r.PARENT,
+          r.USR$ORDER
+        ",
+            [
+            ]) :-
+            memberchk(Scope, [
+                wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+                ]).
+        
          %
         %%
         
@@ -1284,7 +1313,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-05T10:36:48+03:00
+      EDITIONDATE: 2014-09-19T12:19:26+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1343,7 +1372,7 @@ Objects:
             fail.
         twg_avg_wage_in_params:-
             new_param_list(wg_avg_wage_sick, in, [
-                pMonthQty-6,
+                pMonthQty-6, pLimitDays-30,
                 pFeeGroupKey_ruid-'147071457,274788016',
                 % Группа Пропорциональных начислений
                 pFeeGroupKeyProp_ruid-'147119175,1354510846',
@@ -1366,9 +1395,10 @@ Objects:
             new_param_list(wg_struct_sick, in, [
                 pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
                 pBugetCalcType-1, pBudgetPart-0.5,
+                % Травма производственная
                 pJobIllType_ruid-'147036273,151520244',
                 pBudget_ruid-'147073065,1224850260',
-                pAvgSalaryRB_ruid-'147445419,274788016',
+                pAvgSalaryRB_ruid-'147105585,1224850260',
                 pAvgSalaryRB_Coef-3
                 ]),
             fail.
@@ -1398,7 +1428,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-25T12:37:23+03:00
+      EDITIONDATE: 2014-09-22T13:42:55+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1479,7 +1509,9 @@ Objects:
             gd_const_budget,
             gd_const_AvgSalaryRB,
             %usr_wg_TblDayNorm,
-            wg_job_ill_type
+            wg_job_ill_type,
+            % section twg_rule
+            usr_wg_pl_Rule
             ],
             working_directory(_, '..').
         %%
@@ -1507,6 +1539,8 @@ Objects:
         %
         
         /* реализация - секция правил */
+        
+        :- dynamic(wg_valid_rules/1).
         
         %% варианты правил расчета
         %  - для отпусков
@@ -1602,6 +1636,8 @@ Objects:
             get_param_list(Scope, in, PK),
             % запустить цикл механизма подготовки данных
             engine_loop(Scope, in, PK),
+            % настроить правила
+            wg_config_rules(Scope),
             % выполнить расчет
             eval_avg_wage(Scope, PK),
             % найти альтернативу
@@ -3893,6 +3929,34 @@ Objects:
             new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
             !.
         
+        % section twg_rule
+        % Правила расчета
+        %
+        
+        % настроить правила
+        wg_config_rules(Scope) :-
+            memberchk(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]),
+            findall( Rules, wg_valid_rules(Rules), RulesList),
+            append(RulesList, RulesSet),
+            wg_change_rules(Scope, RulesSet, RulesSet1),
+            retractall( wg_valid_rules(_) ),
+            assertz( wg_valid_rules(RulesSet1) ),
+            !.
+        wg_config_rules(_).
+        
+        wg_change_rules(_, [], []) :-
+            !.
+        wg_change_rules(Scope, [Rule0|Rules], [Rule1|Rules1]) :-
+            ( Rule0 = -Rule -> true ; Rule0 = Rule ),
+            atom_string(Rule, Atom),
+            get_data(Scope, kb, usr_wg_pl_Rule, [fAtom-Atom, fEnabled-Enabled]),
+            ( Enabled = 0 -> Rule1 = -Rule ; Rule1 = Rule ),
+            !,
+            wg_change_rules(Scope, Rules, Rules1).
+        wg_change_rules(Scope, [Rule|Rules], [Rule|Rules1]) :-
+            !,
+            wg_change_rules(Scope, Rules, Rules1).
+        
         /**/
         
          %
@@ -3912,7 +3976,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-10T16:15:24+03:00
+      EDITIONDATE: 2014-09-22T13:56:34+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -13011,6 +13075,7 @@ Objects:
           While Not gdcDetailObject.EoF
             '
           MonthBefore = 0
+          MonthOffset = 0
           Do
             Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore, MonthOffset)
             Select Case Ret
@@ -13067,7 +13132,7 @@ Objects:
         RkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: ~
-      EDITIONDATE: 2014-09-10T16:18:33+03:00
+      EDITIONDATE: 2014-09-10T17:51:25+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

@@ -67,7 +67,7 @@ twg_avg_wage_in_params:-
         % Травма производственная
         pJobIllType_ruid-'147036273,151520244',
         pBudget_ruid-'147073065,1224850260',
-        pAvgSalaryRB_ruid-'147445419,274788016',
+        pAvgSalaryRB_ruid-'147105585,1224850260',
         pAvgSalaryRB_Coef-3
         ]),
     fail.

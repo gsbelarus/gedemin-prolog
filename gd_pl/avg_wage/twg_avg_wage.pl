@@ -64,7 +64,9 @@
     gd_const_budget,
     gd_const_AvgSalaryRB,
     %usr_wg_TblDayNorm,
-    wg_job_ill_type
+    wg_job_ill_type,
+    % section twg_rule
+    usr_wg_pl_Rule
     ],
     working_directory(_, '..').
 %%
@@ -92,6 +94,8 @@
 %
 
 /* реализация - секция правил */
+
+:- dynamic(wg_valid_rules/1).
 
 %% варианты правил расчета
 %  - для отпусков
@@ -187,6 +191,8 @@ avg_wage(Scope) :-
     get_param_list(Scope, in, PK),
     % запустить цикл механизма подготовки данных
     engine_loop(Scope, in, PK),
+    % настроить правила
+    wg_config_rules(Scope),
     % выполнить расчет
     eval_avg_wage(Scope, PK),
     % найти альтернативу
@@ -2478,6 +2484,34 @@ avg_wage_by_avg_salary(Scope, _, 0) :-
     new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
     !.
     
+% section twg_rule
+% Правила расчета
+%
+
+% настроить правила
+wg_config_rules(Scope) :-
+    memberchk(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]),
+    findall( Rules, wg_valid_rules(Rules), RulesList),
+    append(RulesList, RulesSet),
+    wg_change_rules(Scope, RulesSet, RulesSet1),
+    retractall( wg_valid_rules(_) ),
+    assertz( wg_valid_rules(RulesSet1) ),
+    !.
+wg_config_rules(_).
+    
+wg_change_rules(_, [], []) :-
+    !.
+wg_change_rules(Scope, [Rule0|Rules], [Rule1|Rules1]) :-
+    ( Rule0 = -Rule -> true ; Rule0 = Rule ),
+    atom_string(Rule, Atom),
+    get_data(Scope, kb, usr_wg_pl_Rule, [fAtom-Atom, fEnabled-Enabled]),
+    ( Enabled = 0 -> Rule1 = -Rule ; Rule1 = Rule ),
+    !,
+    wg_change_rules(Scope, Rules, Rules1).
+wg_change_rules(Scope, [Rule|Rules], [Rule|Rules1]) :-
+    !,
+    wg_change_rules(Scope, Rules, Rules1).
+
 /**/
 
  %

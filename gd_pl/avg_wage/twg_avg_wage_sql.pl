@@ -42,6 +42,8 @@ wg_valid_sql([
             gd_const_AvgSalaryRB/2,
             %usr_wg_TblDayNorm/8,
             wg_job_ill_type/1,
+            % section twg_rule
+            usr_wg_pl_Rule/2,
             -
             ]).
 
@@ -1095,6 +1097,32 @@ SELECT id FROM GD_P_GETID(pJobIllType_ruid)
     [
     pJobIllType_ruid-_
     ]).
+
+gd_pl_ds(Scope, kb, usr_wg_pl_Rule, 2, [
+    fAtom-string, fEnabled-boolean
+    ]) :-
+    memberchk(Scope, [
+        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+        ]).
+% usr_wg_pl_Rule(Atom, Enabled)
+get_sql(Scope, kb, usr_wg_pl_Rule/2,
+"
+SELECT
+  r.USR$ATOM,
+  r.USR$ENABLED
+FROM
+  USR$WG_PL_RULE r
+WHERE
+  NOT r.USR$ATOM IS NULL
+ORDER BY
+  r.PARENT,
+  r.USR$ORDER
+",
+    [
+    ]) :-
+    memberchk(Scope, [
+        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+        ]).
 
  %
 %%
