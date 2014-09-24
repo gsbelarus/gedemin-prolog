@@ -1,0 +1,436 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 152151923_242785704
+  Name: "GS.Зарплата.Пролог.Данные"
+  Caption: "Данные"
+  Version: "1.0.0.3"
+  Optional: False
+  Internal: True
+  MD5: 13611DAD31BA5075460043AABD96B86A
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006493_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: ~
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:06:08+03:00
+      USR$NODETYPE: 0
+      USR$ENABLED: 1
+      USR$ATOM: ~
+      USR$NAME: "Начисление отпусков"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 1000
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006495_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006493_236240980 Начисление отпусков"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:05:06+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_calc_month"
+      USR$NAME: "по расчетным месяцам"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 1100
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006502_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006495_236240980 Начисление отпусков\\по расчетным месяцам"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:21:11+03:00
+      USR$NODETYPE: 1
+      USR$ENABLED: 1
+      USR$ATOM: ~
+      USR$NAME: "полный месяц"
+      USR$DESCRIPTION: | 
+        варианты правил включения месяца в расчет
+        (табель за месяц покрывает график)
+      USR$ORDER: 1110
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006503_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006502_236240980 Начисление отпусков\\по расчетным месяцам\\полный месяц"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:02:32+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_days_houres"
+      USR$NAME: "по дням и часам"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 1111
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006504_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006502_236240980 Начисление отпусков\\по расчетным месяцам\\полный месяц"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:02:37+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_houres"
+      USR$NAME: "по часам"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 1112
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006505_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006502_236240980 Начисление отпусков\\по расчетным месяцам\\полный месяц"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:02:43+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_days"
+      USR$NAME: "по дням"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 1113
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006526_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006495_236240980 Начисление отпусков\\по расчетным месяцам"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:05:20+03:00
+      USR$NODETYPE: 1
+      USR$ENABLED: 1
+      USR$ATOM: ~
+      USR$NAME: "по размеру заработка"
+      USR$DESCRIPTION: | 
+        включение месяца в расчет в зависимости от разиера заработка
+      USR$ORDER: 1120
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006527_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006526_236240980 Начисление отпусков\\по расчетным месяцам\\по размеру заработка"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:02:59+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_month_wage_any"
+      USR$NAME: "не меньше любого"
+      USR$DESCRIPTION: | 
+        заработок за месяц не меньше любого из полных месяцев
+        (для одинаковых коэфициентов осовременивания)
+      USR$ORDER: 1121
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006528_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006526_236240980 Начисление отпусков\\по расчетным месяцам\\по размеру заработка"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:03:05+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 0
+      USR$ATOM: "by_month_wage_all"
+      USR$NAME: "не меньше каждого"
+      USR$DESCRIPTION: | 
+        заработок за месяц не меньше каждого из полных месяцев
+        (для одинаковых коэфициентов осовременивания)
+      USR$ORDER: 1122
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006530_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006495_236240980 Начисление отпусков\\по расчетным месяцам"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-22T17:32:07+03:00
+      USR$NODETYPE: 1
+      USR$ENABLED: 0
+      USR$ATOM: "by_month_no_bad_type"
+      USR$NAME: "по видам начислений и типам часов"
+      USR$DESCRIPTION: | 
+        виды начислений и типы часов в норме
+        (отсутствие в месяце плохих типов начислений и часов)
+      USR$ORDER: 1130
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006496_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006493_236240980 Начисление отпусков"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:05:12+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_avg_houre"
+      USR$NAME: "по среднечасовому"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 1200
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006761_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: ~
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:06:17+03:00
+      USR$NODETYPE: ~
+      USR$ENABLED: 1
+      USR$ATOM: ~
+      USR$NAME: "Начисление больничных"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2000
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006762_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006761_236240980 Начисление больничных"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:06:36+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: ~
+      USR$NAME: "по расчетным дням"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2100
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006763_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006762_236240980 Начисление больничных\\по расчетным дням"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:07:33+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 0
+      USR$ATOM: "by_calc_days_total"
+      USR$NAME: "итого за период"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2110
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006765_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006762_236240980 Начисление больничных\\по расчетным дням"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-22T17:26:29+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_calc_days"
+      USR$NAME: "по количеству и полноте месяцев"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2120
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006771_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006765_236240980 Начисление больничных\\по расчетным дням\\по количеству и полноте месяцев"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-22T17:25:16+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_calc_days_any"
+      USR$NAME: "хотя бы один месяц полный"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2121
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006772_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006765_236240980 Начисление больничных\\по расчетным дням\\по количеству и полноте месяцев"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-22T17:25:14+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 0
+      USR$ATOM: "by_calc_days_all"
+      USR$NAME: "все месяцы полные"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2122
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006766_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006762_236240980 Начисление больничных\\по расчетным дням"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:08:06+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_calc_days_doc"
+      USR$NAME: "по полноте месяцев со справкой"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2130
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006767_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006761_236240980 Начисление больничных"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:06:45+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_rate"
+      USR$NAME: "от ставки"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2200
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006769_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006761_236240980 Начисление больничных"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:06:52+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_avg_wage"
+      USR$NAME: "по среднему заработку"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2300
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006768_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006761_236240980 Начисление больничных"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:06:58+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 1
+      USR$ATOM: "by_budget"
+      USR$NAME: "от БПМ"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2400
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 152006770_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006761_236240980 Начисление больничных"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-19T17:07:06+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 0
+      USR$ATOM: "by_not_full"
+      USR$NAME: "по не полным месяцам"
+      USR$DESCRIPTION: ~
+      USR$ORDER: 2500
+  - 
+    Properties: 
+      Class: "TgdcExplorer"
+      RUID: 152006497_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147488927_336327731 Исследователь\\Зарплата и Отдел кадров\\Справочники по Зарплате и ОК\\Расчет"
+      NAME: "Правила"
+      CMD: "152006351_236240980"
+      CMDTYPE: 0
+      HOTKEY: ~
+      IMGINDEX: 0
+      ORDR: ~
+      CLASSNAME: "TgdcAttrUserDefinedLBRBTree"
+      SUBTYPE: "USR$WG_PL_RULE"
+      DISABLED: 0
+      EDITIONDATE: 2014-09-22T18:04:50+03:00

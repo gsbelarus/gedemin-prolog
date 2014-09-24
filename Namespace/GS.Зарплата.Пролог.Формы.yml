@@ -1,0 +1,1226 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 152006534_236240980
+  Name: "GS.Зарплата.Пролог.Формы"
+  Caption: "Формы"
+  Version: "1.0.0.2"
+  Optional: False
+  Internal: True
+  MD5: E3AADB5A0E9B1C75D7EB9AEF3A5E1A6D
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152006584_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147045497_1439110857 GLOBAL\\DFM\\Tgdc_frmAttrUserDefinedLBRBTree"
+      NAME: "USR$WG_PL_RULE"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: | 
+        object gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE: Tgdc_frmAttrUserDefinedLBRBTree
+          PixelsPerInch = 96
+          TextHeight = 13
+          object sbMain: TStatusBar
+            Panels = <
+              item
+                Text = 'Фильтр: Порядок, Порядок'
+                Width = 918
+              end
+              item
+                Width = 160
+              end>
+          end
+          object TBDockTop: TTBDock
+            object tbMainToolbar: TTBToolbar
+              SavedAtRunTime = True
+              object tbiNew: TTBItem
+              end
+              object tbiEdit: TTBItem
+              end
+              object tbiDelete: TTBItem
+              end
+              object tbiDuplicate: TTBItem
+              end
+              object tbiReduction: TTBItem
+              end
+              object tbsiMainOne: TTBSeparatorItem
+              end
+              object tbiEditInGrid: TTBItem
+              end
+              object tbiCopy: TTBItem
+              end
+              object tbiCut: TTBItem
+              end
+              object tbiPaste: TTBItem
+              end
+              object tbsiMainOneAndHalf: TTBSeparatorItem
+              end
+              object tbiLoadFromFile: TTBItem
+              end
+              object tbiSaveToFile: TTBItem
+              end
+              object tbsiMainTwo: TTBSeparatorItem
+              end
+              object tbiFind: TTBItem
+              end
+              object tbiFilter: TTBItem
+              end
+              object tbiPrint: TTBItem
+              end
+              object tbiOnlySelected: TTBItem
+              end
+              object tbiLinkObject: TTBItem
+              end
+              object tbsiMainThreeAndAHalf: TTBSeparatorItem
+              end
+              object tbiHelp: TTBItem
+              end
+            end
+            object tbMainCustom: TTBToolbar
+              SavedAtRunTime = True
+            end
+            object tbMainMenu: TTBToolbar
+              SavedAtRunTime = True
+              object tbsiMainMenuObject: TTBSubmenuItem
+                object tbi_mm_New: TTBItem
+                end
+                object tbi_mm_Edit: TTBItem
+                end
+                object tbi_mm_Delete: TTBItem
+                end
+                object tbi_mm_Duplicate: TTBItem
+                end
+                object tbi_mm_Reduction: TTBItem
+                end
+                object tbi_mm_sep1_1: TTBSeparatorItem
+                end
+                object tbi_mm_Copy: TTBItem
+                end
+                object tbi_mm_Cut: TTBItem
+                end
+                object tbi_mm_Paste: TTBItem
+                end
+                object tbi_mm_sep2_2_: TTBSeparatorItem
+                end
+                object tbi_mm_AddToSelected: TTBItem
+                end
+                object tbi_mm_RemoveFromSelected: TTBItem
+                end
+                object tbi_mm_sep2_1: TTBSeparatorItem
+                end
+                object tbi_mm_Load: TTBItem
+                end
+                object tbi_mm_Save: TTBItem
+                end
+                object tbi_mm_sep3_1: TTBSeparatorItem
+                end
+                object tbi_mm_ShowSubGroups: TTBItem
+                end
+                object tbi_mm_AllowDragnDrop: TTBItem
+                end
+                object tbi_mm_sep5: TTBSeparatorItem
+                end
+                object tbi_mm_Commit: TTBItem
+                end
+                object tbi_mm_Rollback: TTBItem
+                end
+                object tbi_mm_sep4_1: TTBSeparatorItem
+                end
+                object tbi_mm_Find: TTBItem
+                end
+                object tbi_mm_Filter: TTBItem
+                end
+                object tbi_mm_Print: TTBItem
+                end
+                object tbi_mm_Macro: TTBItem
+                end
+                object tbi_mm_OnlySelected: TTBItem
+                end
+                object tbi_mm_LinkObject: TTBItem
+                end
+                object tbi_mm_sep5_1: TTBSeparatorItem
+                end
+                object tbi_mm_MainToSetting: TTBItem
+                end
+                object tbi_mm_sep5_2_: TTBSeparatorItem
+                end
+                object tbi_mm_CopySettings: TTBItem
+                end
+                object tbiDistributeSettings: TTBItem
+                end
+                object tbiDontSaveSettings: TTBItem
+                end
+              end
+              object tbsiMainMenuDetailObject: TTBSubmenuItem
+                object tbi_mm_DetailNew: TTBItem
+                end
+                object tbi_mm_DetailEdit: TTBItem
+                end
+                object tbi_mm_DetailDelete: TTBItem
+                end
+                object tbi_mm_DetailDuplicate: TTBItem
+                end
+                object tbi_mm_DetailReduction: TTBItem
+                end
+                object tbi_mm_DetailSep1: TTBSeparatorItem
+                end
+                object tbi_mm_DetailCopy: TTBItem
+                end
+                object tbi_mm_DetailCut: TTBItem
+                end
+                object tbi_mm_DetailPaste: TTBItem
+                end
+                object tbi_mm_DetailSep2: TTBSeparatorItem
+                end
+                object m_DetailLoadFromFile: TTBItem
+                end
+                object m_DetailSaveToFile: TTBItem
+                end
+                object TBSeparatorItem1: TTBSeparatorItem
+                end
+                object tbi_mm_DetailFind: TTBItem
+                end
+                object tbi_mm_DetailFilter: TTBItem
+                end
+                object tbi_mm_DetailPrint: TTBItem
+                end
+                object tbiDetailMenuAddToSelected: TTBItem
+                end
+              end
+              object tbsiMainMenuHelp: TTBSubmenuItem
+                object tbiMainMenuHelp: TTBItem
+                end
+              end
+            end
+            object tbMainInvariant: TTBToolbar
+              SavedAtRunTime = True
+              object tbiCommit: TTBItem
+              end
+              object tbiRollback: TTBItem
+              end
+              object tbsiMainThree: TTBSeparatorItem
+              end
+              object tbiMacros: TTBItem
+              end
+            end
+            object tbChooseMain: TTBToolbar
+              SavedAtRunTime = True
+              object tbiSelectAll: TTBItem
+              end
+              object tbiUnSelectAll: TTBItem
+              end
+              object tbiClearSelection: TTBItem
+              end
+            end
+          end
+          object TBDockLeft: TTBDock
+          end
+          object TBDockRight: TTBDock
+          end
+          object TBDockBottom: TTBDock
+          end
+          object pnlWorkArea: TPanel
+            object sMasterDetail: TSplitter
+            end
+            object spChoose: TSplitter
+              Top = 529
+              Width = 1078
+            end
+            object pnlMain: TPanel
+              object pnlSearchMain: TPanel
+                Height = 436
+                object sbSearchMain: TScrollBox
+                  Height = 409
+                end
+                object pnlSearchMainButton: TPanel
+                  Top = 0
+                  object btnSearchMain: TButton
+                  end
+                  object btnSearchMainClose: TButton
+                  end
+                  object chbxFuzzyMatch: TCheckBox
+                  end
+                end
+              end
+              object tvGroup: TgsDBTreeView
+                ImageValueList.Strings = (
+                  '')
+                SortType = stNone
+              end
+            end
+            object pnChoose: TPanel
+              Top = 436
+              Width = 1078
+              object pnButtonChoose: TPanel
+                Left = 973
+                object btnCancelChoose: TButton
+                end
+                object btnOkChoose: TButton
+                end
+                object btnDeleteChoose: TButton
+                end
+              end
+              object ibgrChoose: TgsIBGrid
+                Width = 973
+                Expands = <>
+                Conditions = <>
+                ColumnEditors = <>
+                Aliases = <>
+              end
+              object pnlChooseCaption: TPanel
+                Width = 1078
+              end
+            end
+            object pnlDetail: TPanel
+              object TBDockDetail: TTBDock
+                object tbDetailToolbar: TTBToolbar
+                  SavedAtRunTime = True
+                  object tbiDetailNew: TTBItem
+                  end
+                  object tbiDetailEdit: TTBItem
+                  end
+                  object tbiDetailDelete: TTBItem
+                  end
+                  object tbiDetailDublicate: TTBItem
+                  end
+                  object tbiDetailReduction: TTBItem
+                  end
+                  object tbsDetailOne: TTBSeparatorItem
+                  end
+                  object tbiDetailEditInGrid: TTBItem
+                  end
+                  object tbiDetailCopy: TTBItem
+                  end
+                  object tbiDetailCut: TTBItem
+                  end
+                  object tbiDetailPaste: TTBItem
+                  end
+                  object tbsDetailTwo: TTBSeparatorItem
+                  end
+                  object tbiDetailFind: TTBItem
+                  end
+                  object tbiDetailFilter: TTBItem
+                  end
+                  object tbiDetailPrint: TTBItem
+                  end
+                  object tbiDetailOnlySelected: TTBItem
+                  end
+                  object tbiDetailLinkObject: TTBItem
+                  end
+                end
+                object tbDetailCustom: TTBToolbar
+                  SavedAtRunTime = True
+                end
+              end
+              object pnlSearchDetail: TPanel
+                Height = 509
+                object sbSearchDetail: TScrollBox
+                  Height = 482
+                end
+                object pnlSearchDetailButton: TPanel
+                  Top = 0
+                  object btnSearchDetail: TButton
+                  end
+                  object btnSearchDetailClose: TButton
+                  end
+                  object chbxFuzzyMatchDetail: TCheckBox
+                  end
+                end
+              end
+              object ibgrDetail: TgsIBGrid
+                Expands = <>
+                Conditions = <>
+                ColumnEditors = <
+                  item
+                    Lookup.Distinct = False
+                    EditorStyle = cesValueList
+                    FieldName = 'USR$NODETYPE'
+                    DisplayField = 'USR$NODETYPE'
+                    ValueList.Strings = (
+                      'И=1'
+                      'ИЛИ=2'
+                      '=0')
+                    DropDownCount = 3
+                  end
+                  item
+                    Lookup.Distinct = False
+                    EditorStyle = cesValueList
+                    FieldName = 'USR$ENABLED'
+                    DisplayField = 'USR$ENABLED'
+                    ValueList.Strings = (
+                      'Да=1'
+                      'Нет=0'
+                      '=0')
+                    DropDownCount = 3
+                  end>
+                Aliases = <>
+                Columns = <
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ORDER'
+                    ReadOnly = False
+                    Title.Caption = 'Порядок'
+                    Width = 60
+                    Visible = True
+                  end
+                  item
+                    DropDownRows = 3
+                    Expanded = False
+                    FieldName = 'USR$NODETYPE'
+                    ReadOnly = False
+                    Title.Caption = 'Тип узла'
+                    Width = 64
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ENABLED'
+                    ReadOnly = False
+                    Title.Caption = 'Включено'
+                    Width = 66
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ATOM'
+                    ReadOnly = False
+                    Title.Caption = 'Атом'
+                    Width = 180
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Название'
+                    Width = 180
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DESCRIPTION'
+                    ReadOnly = False
+                    Title.Caption = 'Описание'
+                    Width = 240
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'PARENT'
+                    Title.Caption = 'Родитель'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ID'
+                    Title.Caption = 'Идентификатор'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'LB'
+                    Title.Caption = 'Левая граница'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'RB'
+                    Title.Caption = 'Правая граница'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DISABLED'
+                    Title.Caption = 'Не активно'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'EDITIONDATE'
+                    Title.Caption = 'Дата модификации'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'EDITORKEY'
+                    Title.Caption = 'Кто модифицировал'
+                    Width = -1
+                    Visible = False
+                  end>
+              end
+            end
+          end
+          object alMain: TActionList
+            Left = 260
+            Top = 145
+            object actNew: TAction
+            end
+            object actEdit: TAction
+            end
+            object actDelete: TAction
+            end
+            object actDuplicate: TAction
+            end
+            object actHlp: TAction
+            end
+            object actPrint: TAction
+            end
+            object actCut: TAction
+            end
+            object actCopy: TAction
+            end
+            object actPaste: TAction
+            end
+            object actCommit: TAction
+            end
+            object actRollback: TAction
+            end
+            object actMacros: TAction
+            end
+            object actDetailNew: TAction
+            end
+            object actDetailEdit: TAction
+            end
+            object actDetailDelete: TAction
+            end
+            object actDetailDuplicate: TAction
+            end
+            object actDetailPrint: TAction
+            end
+            object actDetailCut: TAction
+            end
+            object actDetailCopy: TAction
+            end
+            object actDetailPaste: TAction
+            end
+            object actFind: TAction
+            end
+            object actMainReduction: TAction
+            end
+            object actDetailFind: TAction
+            end
+            object actDetailReduction: TAction
+            end
+            object actFilter: TAction
+            end
+            object actProperties: TAction
+            end
+            object actLoadFromFile: TAction
+            end
+            object actSaveToFile: TAction
+            end
+            object actSearchMain: TAction
+            end
+            object actSearchMainClose: TAction
+            end
+            object actDetailFilter: TAction
+            end
+            object actDetailProperties: TAction
+            end
+            object actOnlySelected: TAction
+            end
+            object actAddToSelected: TAction
+            end
+            object actRemoveFromSelected: TAction
+            end
+            object actQExport: TAction
+            end
+            object actMainToSetting: TAction
+            end
+            object actChooseOk: TAction
+            end
+            object actDeleteChoose: TAction
+            end
+            object actCopySettingsFromUser: TAction
+            end
+            object actSearchDetail: TAction
+            end
+            object actSearchdetailClose: TAction
+            end
+            object actDetailAddToSelected: TAction
+            end
+            object actDetailRemoveFromSelected: TAction
+            end
+            object actDetailOnlySelected: TAction
+            end
+            object actDetailQExport: TAction
+            end
+            object actShowSubGroups: TAction
+            end
+            object actSelectAll: TAction
+            end
+            object actUnSelectAll: TAction
+            end
+            object actDetailToSetting: TAction
+            end
+            object actDetailSaveToFile: TAction
+            end
+            object actClearSelection: TAction
+            end
+            object actDetailLoadFromFile: TAction
+            end
+            object actEditInGrid: TAction
+            end
+            object actLinkObject: TAction
+            end
+            object actDistributeSettings: TAction
+            end
+            object actDontSaveSettings: TAction
+            end
+            object actDetailEditInGrid: TAction
+            end
+            object actDetailLinkObject: TAction
+            end
+            object actAllowDragnDrop: TAction
+            end
+          end
+          object pmMain: TPopupMenu
+            Left = 113
+            Top = 145
+            object nNew_OLD: TMenuItem
+            end
+            object nEdit_OLD: TMenuItem
+            end
+            object nDel_OLD: TMenuItem
+            end
+            object nDublicate_OLD: TMenuItem
+            end
+            object nProperties_OLD: TMenuItem
+            end
+            object nQExport_OLD: TMenuItem
+            end
+            object nSeparator1_OLD: TMenuItem
+            end
+            object actCopy1_OLD: TMenuItem
+            end
+            object actCut1_OLD: TMenuItem
+            end
+            object actPaste1_OLD: TMenuItem
+            end
+            object nSepartor2_OLD: TMenuItem
+            end
+            object nFind_OLD: TMenuItem
+            end
+            object nReduction_OLD: TMenuItem
+            end
+            object nSeparator3_OLD: TMenuItem
+            end
+            object actAddToSelected1: TMenuItem
+            end
+            object actRemoveFromSelected1: TMenuItem
+            end
+            object sprSetting: TMenuItem
+            end
+            object miMainToSetting: TMenuItem
+            end
+          end
+          object dsMain: TDataSource
+            Left = 260
+            Top = 174
+          end
+          object gdMacrosMenu: TgdMacrosMenu
+            Left = 249
+            Top = 95
+          end
+          object dsChoose: TDataSource
+            Left = 153
+            Top = 306
+          end
+          object dsDetail: TDataSource
+            Left = 436
+            Top = 240
+          end
+          object pmDetail: TPopupMenu
+            Left = 465
+            Top = 269
+            object nDetailNew: TMenuItem
+            end
+            object nDetailEdit: TMenuItem
+            end
+            object nDetailDel: TMenuItem
+            end
+            object nDetailDup: TMenuItem
+            end
+            object nDetailProperties: TMenuItem
+            end
+            object nDetailQExport: TMenuItem
+            end
+            object nSepartor5: TMenuItem
+            end
+            object nDetailFind: TMenuItem
+            end
+            object nDetailReduction: TMenuItem
+            end
+            object actDetailAddToSelected1: TMenuItem
+            end
+            object actDetailRemoveFromSelected1: TMenuItem
+            end
+            object sprDetailSetting: TMenuItem
+            end
+            object miDetailSetting: TMenuItem
+            end
+          end
+          object Master: TgdcAttrUserDefinedLBRBTree
+            Left = 113
+            Top = 174
+          end
+          object Detail: TgdcAttrUserDefinedLBRBTree
+            Left = 436
+            Top = 269
+          end
+        end
+        
+      EDITIONDATE: 2014-09-18T14:56:01+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152006506_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990010_17 USER - Administrator"
+      NAME: "gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-17T18:00:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152006511_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "pnlMain(TPanel)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-17T18:00:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152006509_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "tvGroup(TgsDBTreeView)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-17T18:00:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152006507_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "ibgrDetail(TgsIBGrid)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-17T18:00:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152006773_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147037361_1439110857 GLOBAL\\DFM\\Tgdc_dlgAttrUserDefinedTree"
+      NAME: "USR$WG_PL_RULE"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: | 
+        object gdc_dlgAttrUserDefinedTreeUSR_WG_PL_RULE: Tgdc_dlgAttrUserDefinedTree
+          ActiveControl = nil
+          PixelsPerInch = 96
+          TextHeight = 13
+          object btnAccess: TButton
+          end
+          object btnNew: TButton
+          end
+          object btnHelp: TButton
+          end
+          object btnOK: TButton
+          end
+          object btnCancel: TButton
+          end
+          object pnlMain: TPanel
+            object lblParent: TLabel
+            end
+            object atAttributes: TatContainer
+              object usrat_DBEdit_USR_NODETYPE_Label: TLabel
+              end
+              object usrat_DBEdit_USR_ATOM_Label: TLabel
+              end
+              object usrat_DBEdit_USR_NAME_Label: TLabel
+              end
+              object usrat_DBMemo_USR_DESCRIPTION_Label: TLabel
+              end
+              object usrat_DBEdit_USR_ORDER_Label: TLabel
+              end
+              object usrat_DBEdit_USR_NODETYPE: TxDBCalculatorEdit
+                Cursor = crIBeam
+              end
+              object usrat_DBCheckBox_USR_ENABLED: TDBCheckBox
+              end
+              object usrat_DBEdit_USR_ATOM: TDBEdit
+                Width = 236
+              end
+              object usrat_DBEdit_USR_NAME: TDBEdit
+                Width = 236
+              end
+              object usrat_DBMemo_USR_DESCRIPTION: TDBMemo
+                Width = 400
+              end
+              object usrat_DBEdit_USR_ORDER: TxDBCalculatorEdit
+                Width = 92
+                Cursor = crIBeam
+              end
+            end
+            object gsiblkupParent: TgsIBLookupComboBox
+              Width = 255
+            end
+          end
+          object alBase: TActionList
+            Left = 46
+            Top = 71
+            object actNew: TAction
+            end
+            object actHelp: TAction
+            end
+            object actSecurity: TAction
+            end
+            object actOk: TAction
+            end
+            object actCancel: TAction
+            end
+            object actNextRecord: TAction
+            end
+            object actPrevRecord: TAction
+            end
+            object actApply: TAction
+            end
+            object actFirstRecord: TAction
+            end
+            object actLastRecord: TAction
+            end
+            object actProperty: TAction
+            end
+            object actCopySettingsFromUser: TAction
+            end
+            object actAddToSetting: TAction
+            end
+            object actDocumentType: TAction
+            end
+            object actDistributeUserSettings: TAction
+            end
+            object actHistory: TAction
+            end
+          end
+          object dsgdcBase: TDataSource
+            Left = 16
+            Top = 63
+          end
+          object pm_dlgG: TPopupMenu
+            Left = 152
+            Top = 216
+            object actSecurity1: TMenuItem
+            end
+            object actHistory1: TMenuItem
+            end
+            object N1: TMenuItem
+            end
+            object sepFirst: TMenuItem
+            end
+            object actNextRecord1: TMenuItem
+            end
+            object actPrevRecord1: TMenuItem
+            end
+            object actFirstRecord1: TMenuItem
+            end
+            object actLastRecord1: TMenuItem
+            end
+            object sepSecond: TMenuItem
+            end
+            object actApply1: TMenuItem
+            end
+            object sepThird: TMenuItem
+            end
+            object actProperty1: TMenuItem
+            end
+            object actCopySettings1: TMenuItem
+            end
+            object nAddToSetting1: TMenuItem
+            end
+          end
+          object ibtrCommon: TIBTransaction
+            Params.Strings = (
+              'read_committed'
+              'rec_version'
+              'nowait')
+            Left = 440
+            Top = 216
+          end
+          object ibtrParent: TIBTransaction
+            Params.Strings = (
+              'read_committed'
+              'rec_version'
+              'nowait')
+            Left = 256
+            Top = 16
+          end
+        end
+        
+      EDITIONDATE: 2014-09-19T17:24:58+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152006642_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990010_17 USER - Administrator"
+      NAME: "gdc_dlgAttrUserDefinedTreeUSR_WG_PL_RULE(Tgdc_dlgAttrUserDefinedTree)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-18T15:04:35+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151553_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006507_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)\\ibgrDetail(TgsIBGrid)"
+      NAME: "data"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: !!binary > 
+        VFBGMAYNR1JJRF9TVFJFQU1fNAEGBlRhaG9tYQYMY2xXaW5kb3dUZXh0AvUAAggAAgEABghjbFdp
+        bmRvdwEGBlRhaG9tYQYPY2xIaWdobGlnaHRUZXh0AvUAAggAAgEABgtjbEhpZ2hsaWdodAEGBlRh
+        aG9tYQYMY2xXaW5kb3dUZXh0AvUAAggAAgEABgljbEJ0bkZhY2UJBgkkMDBFN0YzRjcGCSQwMEQ2
+        RTdFNw4ACAgOAAgOAQhFeHBhbmRlZAgJRmllbGROYW1lBglVU1IkT1JERVINVGl0bGUuQ2FwdGlv
+        bgYHz+7w/+Tu6gVXaWR0aAI8B1Zpc2libGUJAAEMRHJvcERvd25Sb3dzAgMIRXhwYW5kZWQICUZp
+        ZWxkTmFtZQYMVVNSJE5PREVUWVBFDVRpdGxlLkNhcHRpb24GCNLo7yDz5+vgBVdpZHRoAkEHVmlz
+        aWJsZQkAAQhFeHBhbmRlZAgJRmllbGROYW1lBgtVU1IkRU5BQkxFRA1UaXRsZS5DYXB0aW9uBgjC
+        6uv+9+Xt7gVXaWR0aAJCB1Zpc2libGUJAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYIVVNSJEFUT00F
+        V2lkdGgDtAAHVmlzaWJsZQkAAQhFeHBhbmRlZAgJRmllbGROYW1lBghVU1IkTkFNRQ1UaXRsZS5D
+        YXB0aW9uBgjN4Ofi4O3o5QVXaWR0aAO0AAdWaXNpYmxlCQABCEV4cGFuZGVkCAlGaWVsZE5hbWUG
+        D1VTUiRERVNDUklQVElPTg1UaXRsZS5DYXB0aW9uBgjO7+jx4O3o5QVXaWR0aAPwAAdWaXNpYmxl
+        CQABCEV4cGFuZGVkCAlGaWVsZE5hbWUGBlBBUkVOVAhSZWFkT25seQkNVGl0bGUuQ2FwdGlvbgYI
+        0O7k6PLl6/wFV2lkdGgC/wdWaXNpYmxlCAABCEV4cGFuZGVkCAlGaWVsZE5hbWUGAklECFJlYWRP
+        bmx5CQ1UaXRsZS5DYXB0aW9uBg3I5OXt8uj06Org8u7wBVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBh
+        bmRlZAgJRmllbGROYW1lBgJMQg1UaXRsZS5DYXB0aW9uBg3L5eLg/yDj8ODt6PbgBVdpZHRoAv8H
+        VmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBgJSQg1UaXRsZS5DYXB0aW9uBg7P8ODi4P8g
+        4/Dg7ej24AVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYIRElTQUJMRUQI
+        UmVhZE9ubHkJDVRpdGxlLkNhcHRpb24GCs3lIODq8uji7e4FV2lkdGgC/wdWaXNpYmxlCAABCEV4
+        cGFuZGVkCAlGaWVsZE5hbWUGC0VESVRJT05EQVRFCFJlYWRPbmx5CQ1UaXRsZS5DYXB0aW9uBhDE
+        4PLgIOzu5Oj06Org9ujoBVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBglF
+        RElUT1JLRVkIUmVhZE9ubHkJDVRpdGxlLkNhcHRpb24GEcry7iDs7uTo9Oj26PDu4uDrBVdpZHRo
+        Av8HVmlzaWJsZQgAAAgItB4ICA==
+      EDITIONDATE: 2014-09-24T14:21:32+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151555_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "AllowDD"
+      DATA_TYPE: "L"
+      STR_DATA: ~
+      INT_DATA: 0
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:28:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151556_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "Height"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 643
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:28:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151558_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "Left"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 316
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T18:06:37+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151554_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "ShSG"
+      DATA_TYPE: "L"
+      STR_DATA: ~
+      INT_DATA: 0
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:28:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151557_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "Top"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 85
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:28:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151559_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "Width"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 1051
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T18:06:37+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151560_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006506_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)"
+      NAME: "WS"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 0
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:28:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151550_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006511_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)\\pnlMain(TPanel)"
+      NAME: "Height"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 535
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:28:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151551_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006511_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)\\pnlMain(TPanel)"
+      NAME: "Width"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 253
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:30:28+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151552_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006509_236240980 USER - Administrator\\gdc_frmAttrUserDefinedLBRBTreeUSR_WG_PL_RULE(Tgdc_frmAttrUserDefinedLBRBTree)\\tvGroup(TgsDBTreeView)"
+      NAME: "TVState"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: !!binary > 
+        2XC3ADylEQkiM0RVBwAAADylEQk+pREJQKURCUilEQlSpREJVKURCVilEQkiM0RVAAAAAA==
+      EDITIONDATE: 2014-09-24T15:00:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151561_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006642_236240980 USER - Administrator\\gdc_dlgAttrUserDefinedTreeUSR_WG_PL_RULE(Tgdc_dlgAttrUserDefinedTree)"
+      NAME: "Height"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 346
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:16:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151563_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006642_236240980 USER - Administrator\\gdc_dlgAttrUserDefinedTreeUSR_WG_PL_RULE(Tgdc_dlgAttrUserDefinedTree)"
+      NAME: "Left"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 437
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:16:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151562_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006642_236240980 USER - Administrator\\gdc_dlgAttrUserDefinedTreeUSR_WG_PL_RULE(Tgdc_dlgAttrUserDefinedTree)"
+      NAME: "Top"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 211
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:16:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151564_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006642_236240980 USER - Administrator\\gdc_dlgAttrUserDefinedTreeUSR_WG_PL_RULE(Tgdc_dlgAttrUserDefinedTree)"
+      NAME: "Width"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 491
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:16:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152151565_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006642_236240980 USER - Administrator\\gdc_dlgAttrUserDefinedTreeUSR_WG_PL_RULE(Tgdc_dlgAttrUserDefinedTree)"
+      NAME: "WS"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 0
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-09-22T17:16:15+03:00

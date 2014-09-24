@@ -5,9 +5,10 @@ Properties:
   RUID: 195379689_166214404
   Name: "GS.Зарплата.Пролог.Алименты и штрафы"
   Caption: "Алименты и штрафы"
-  Version: "1.0.0.64"
+  Version: "1.0.0.65"
   Optional: False
   Internal: True
+  MD5: 0F4CB311EFC55BC04065106E8CDF968D
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -3235,22 +3236,31 @@ Objects:
           '
           AccountKeyArr = Array(AccountKey, AccountKeyDebt, AccountKeyTransf)
         
-          Dim frmAlimony, dlgAlimony, Prolog_Alimony
+          Dim frmAlimony, dlgAlimony
+          Dim Prolog_Alimony
           '
           Set frmAlimony = _
             Application.FindComponent("gdc_frmUserComplexDocument147567052_119619099")
-          Set dlgAlimony = _
-            frmAlimony.FindComponent("gdc_dlgUserComplexDocument147567052_119619099")
-          Set Prolog_Alimony = _
-            dlgAlimony.FindComponent("usrg_Prolog_Alimony")
-        
-          If Assigned(Prolog_Alimony) Then
-            If Prolog_Alimony.Checked = True Then
-              'Расчет через Пролог-скрипт
-              wg_FeeAlimonyCalc = _
-                wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr)
-              Exit Function
+          '
+          If Assigned(frmAlimony) Then
+            Set dlgAlimony = _
+              frmAlimony.FindComponent("gdc_dlgUserComplexDocument147567052_119619099")
+          End If
+          '
+          If Assigned(dlgAlimony) Then
+            Set Prolog_Alimony = dlgAlimony.FindComponent("usrg_Prolog_Alimony")
+            If Assigned(Prolog_Alimony) Then
+              If Prolog_Alimony.Checked = True Then
+                'Расчет через Пролог-скрипт
+                wg_FeeAlimonyCalc = _
+                  wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr)
+                Exit Function
+              End If
             End If
+          Else
+            'Расчет через Пролог-скрипт
+            wg_FeeAlimonyCalc = _
+              wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr)
           End If
           '</pl>
         
@@ -3672,7 +3682,7 @@ Objects:
         Sl9GRUVEQVRBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: ~
-      EDITIONDATE: 2014-09-03T13:17:09+03:00
+      EDITIONDATE: 2014-09-24T10:58:04+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -3704,7 +3714,7 @@ Objects:
       IncludeSiblings: False
       HeadObject: 198477540_219712981
     Fields: 
-      HASCHILDREN: 1
+      HASCHILDREN: ~
       OBJECTNAME: "gdc_frmAttrUserDefinedUSR_WG_TBLCHARGE"
       OBJECTPARENT: ~
       CLASSNAME: ""

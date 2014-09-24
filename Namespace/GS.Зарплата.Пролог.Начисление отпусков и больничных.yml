@@ -5,10 +5,10 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.83"
+  Version: "1.0.0.85"
   Optional: False
   Internal: True
-  MD5: 232A58574A0070647F5B465204896E3A
+  MD5: 769721A637B13E398E71767142FFA06B
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -13179,6 +13179,9 @@ Objects:
         end sub
         
         sub Tgdc_dlgUserComplexDocument147020774_119619099SyncField_(Self, Field, SyncList)
+          dim Creator
+          set Creator = New TCreator
+          
           if Assigned(Field) then
             ' шапка
             if Field.DataSet.Self = Self.gdcObject.Self then
@@ -13201,16 +13204,17 @@ Objects:
                   end if
                 case "USR$DATEEND"
                   Tgdc_dlgUserComplexDocument147020774_119619099SyncField_CalcDuration(Self)
-                case "USR$COMPENSATION"
-                  If Field.AsInteger = 0 Then
-                    Tgdc_dlgUserComplexDocument147020774_119619099SyncField_CalcDuration(Self)
-                  End If
         '        case "USR$DURATION"
         
+                'Вид отпуска
+                case "USR$VACATIONTYPE"
+                  Tgdc_dlgUserComplexDocument147020774_119619099SyncField_CalcDuration(Self)
+                  
                 ' ср. заработок - пересчитываем сумму отпускных
                 case "USR$AVGSUMMA"
                   Tgdc_dlgUserComplexDocument147020774_119619099SyncField_ReCalcStrSum(Self.gdcDetailObject)
               end select
+        
             else           ' позиция
               select case Field.FieldName
                 case "USR$DURATION"
@@ -13229,11 +13233,22 @@ Objects:
           if not gdcObject.FieldByName("USR$DATEEND").IsNull and _
              not gdcObject.FieldByName("USR$DATEBEGIN").IsNull then
         
-            set wg_Structure = Self.Objects("Structure")
-            gdcObject.FieldByName("USR$DURATION").AsInteger = _
-              wg_Structure.CalcHolidayDuration( _
-                gdcObject.FieldByName("usr$datebegin").AsVariant, _
-                gdcObject.FieldByName("usr$dateend").AsVariant)
+             set wg_Structure = Self.Objects("Structure")
+             
+        '     if Self.gdcObject.FieldByName("USR$VACATIONTYPE").asInteger = _
+        '        gdcBaseManager.GetIDByRUIDString("147480589_336327731") then
+        
+                gdcObject.FieldByName("USR$DURATION").AsInteger = _
+                  wg_Structure.CalcHolidayDuration( _
+                    gdcObject.FieldByName("usr$datebegin").AsVariant, _
+                    gdcObject.FieldByName("usr$dateend").AsVariant,_
+                    gdcObject.FieldByName("usr$vacationtype").asInteger)
+        '     else
+        '       gdcObject.FieldByName("USR$DURATION").AsInteger = _
+        '         gdcObject.FieldByName("usr$dateend").AsVariant - _
+        '         gdcObject.FieldByName("usr$datebegin").AsVariant + 1
+        '     end if
+             
           else
             gdcObject.FieldByName("USR$DURATION").AsInteger = 0
           end if
@@ -13275,7 +13290,7 @@ Objects:
         TkNMSVNUCAAAAFNZTkNMSVNUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: ~
-      EDITIONDATE: 2014-06-09T18:04:12+03:00
+      EDITIONDATE: 2014-09-22T16:55:27+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -13298,4 +13313,4 @@ Objects:
       EVENTNAME: "SYNCFIELD"
       FUNCTIONKEY: "147021956_119619099 Tgdc_dlgUserComplexDocument147020774_119619099SyncField"
       DISABLE: ~
-      EDITIONDATE: 2014-06-09T18:04:12+03:00
+      EDITIONDATE: 2014-09-22T16:55:27+03:00

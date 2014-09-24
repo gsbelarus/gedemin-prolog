@@ -4,10 +4,11 @@ StructureVersion: "1.0"
 Properties: 
   RUID: 198476374_219712981
   Name: "GS.Зарплата.Пролог.Метаданные"
-  Caption: "GS.Зарплата.Пролог.Метаданные"
-  Version: "1.0.0.6"
+  Caption: "Метаданные"
+  Version: "1.0.0.8"
   Optional: False
   Internal: True
+  MD5: 97F065AD8B8A4EEDA1137D10E894C14A
 Objects: 
   - 
     Properties: 
@@ -367,3 +368,576 @@ Objects:
       OBJECTS: ~
       DELETERULE: ~
       EDITIONDATE: 2014-08-18T15:04:55+03:00
+  - 
+    Properties: 
+      Class: "TgdcLBRBTreeTable"
+      RUID: 152006351_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: True
+    Fields: 
+      RELATIONNAME: "USR$WG_PL_RULE"
+      RELATIONTYPE: "T"
+      LNAME: "Зарплата. Правила расчета"
+      LSHORTNAME: "Правила расчета"
+      DESCRIPTION: "Зарплата. Пролог. Правила расчета"
+      REFERENCEKEY: ~
+      BRANCHKEY: "152006497_236240980 Исследователь\\Зарплата и Отдел кадров\\Справочники по Зарплате и ОК\\Расчет\\Правила"
+      LISTFIELD: ~
+      EXTENDEDFIELDS: ~
+      EDITIONDATE: 2014-09-22T17:54:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006352_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: 1
+      NULLFLAG: 1
+      RDB$FIELD_POSITION: 0
+      FIELDNAME: "ID"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DINTKEY"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "153002050_17 Идентификатор, DINTKEY"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Идентификатор"
+      LSHORTNAME: "Идентификатор"
+      DESCRIPTION: "Идентификатор"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 10
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:18:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006353_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 1
+      FIELDNAME: "PARENT"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DPARENT"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000095_31587988 Ссылка на главную запись, DPARENT"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Родитель"
+      LSHORTNAME: "Родитель"
+      DESCRIPTION: "Родитель"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 10
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: "CASCADE    "
+      EDITIONDATE: 2014-09-17T17:18:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006354_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: 1
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 2
+      FIELDNAME: "LB"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DLB"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000093_31587988 Левая граница, DLB"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Левая граница"
+      LSHORTNAME: "Левая граница"
+      DESCRIPTION: "Левая граница"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 10
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:18:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006355_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: 1
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 3
+      FIELDNAME: "RB"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DRB"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000094_31587988 Правая граница, DRB"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Правая граница"
+      LSHORTNAME: "Правая граница"
+      DESCRIPTION: "Правая граница"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 10
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:18:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006356_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 4
+      FIELDNAME: "DISABLED"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DDISABLED"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000136_486813904 DDISABLED, DDISABLED"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Не активно"
+      LSHORTNAME: "Не активно"
+      DESCRIPTION: "Не активно"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 10
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:18:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006357_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 5
+      FIELDNAME: "EDITIONDATE"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DEDITIONDATE"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000184_31587988 Дата редактирования, DEDITIONDATE"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Дата модификации"
+      LSHORTNAME: "Дата модификации"
+      DESCRIPTION: "Дата модификации"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:18:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006358_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: 1
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 6
+      FIELDNAME: "EDITORKEY"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DINTKEY"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "153002050_17 Идентификатор, DINTKEY"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Кто модифицировал"
+      LSHORTNAME: "Кто модифицировал"
+      DESCRIPTION: "Кто модифицировал"
+      VISIBLE: 0
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 1
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: | 
+        TgdcBase
+      DELETERULE: "RESTRICT   "
+      EDITIONDATE: 2014-09-17T17:18:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006360_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 7
+      FIELDNAME: "USR$NODETYPE"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DSMALLINT"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000168_31587988 Целое число, DSMALLINT"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Тип узла"
+      LSHORTNAME: "Тип узла"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 10
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:21:23+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006361_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: 1
+      RDB$FIELD_POSITION: 8
+      FIELDNAME: "USR$ENABLED"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DBOOLEAN"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000135_486813904 Логическое, DBOOLEAN"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Включено"
+      LSHORTNAME: "Включено"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:24:43+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006363_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: 40
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 9
+      FIELDNAME: "USR$ATOM"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DTEXT40"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000109_486813904 Текст (40), DTEXT40"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Атом"
+      LSHORTNAME: "Атом"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-24T13:58:00+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006490_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: 60
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: 1
+      RDB$FIELD_POSITION: 11
+      FIELDNAME: "USR$NAME"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DTEXT60"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000112_486813904 Текст (60), DTEXT60"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Название"
+      LSHORTNAME: "Название"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:40:29+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006492_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: ~
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: ~
+      RDB$FIELD_POSITION: 12
+      FIELDNAME: "USR$DESCRIPTION"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DDESCRIPTION"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000201_31587988 Описание, DDESCRIPTION"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Описание"
+      LSHORTNAME: "Описание"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-17T17:43:44+03:00
+  - 
+    Properties: 
+      Class: "TgdcTableField"
+      RUID: 152006523_236240980
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      REFRELATIONNAME: ~
+      REFLISTFIELD: ~
+      REFCROSSRELATION: ~
+      SETLISTFIELD: ~
+      SETLISTFIELDKEY: ~
+      RELATIONTYPE: "T"
+      STRINGLENGTH: ~
+      DEFSOURCE: | 
+        DEFAULT '0'
+      COMPUTED_VALUE: ~
+      SOURCENULLFLAG: ~
+      NULLFLAG: 1
+      RDB$FIELD_POSITION: 13
+      FIELDNAME: "USR$ORDER"
+      RELATIONNAME: "USR$WG_PL_RULE"
+      FIELDSOURCE: "DSMALLINT"
+      CROSSTABLE: ~
+      CROSSFIELD: ~
+      RELATIONKEY: "152006351_236240980 Зарплата. Правила расчета, USR$WG_PL_RULE"
+      FIELDSOURCEKEY: "147000168_31587988 Целое число, DSMALLINT"
+      CROSSTABLEKEY: ~
+      CROSSFIELDKEY: ~
+      LNAME: "Порядок"
+      LSHORTNAME: "Порядок"
+      DESCRIPTION: ~
+      VISIBLE: 1
+      FORMAT: ~
+      ALIGNMENT: "L"
+      COLWIDTH: 20
+      READONLY: 0
+      GDCLASSNAME: ~
+      GDSUBTYPE: ~
+      OBJECTS: ~
+      DELETERULE: ~
+      EDITIONDATE: 2014-09-18T11:39:38+03:00
