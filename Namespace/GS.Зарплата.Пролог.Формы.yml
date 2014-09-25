@@ -5,10 +5,10 @@ Properties:
   RUID: 152006534_236240980
   Name: "GS.Зарплата.Пролог.Формы"
   Caption: "Формы"
-  Version: "1.0.0.2"
+  Version: "1.0.0.7"
   Optional: False
   Internal: True
-  MD5: E3AADB5A0E9B1C75D7EB9AEF3A5E1A6D
+  MD5: 113684BF3F81A952089031AE082C5EDE
 Objects: 
   - 
     Properties: 
@@ -788,6 +788,8 @@ Objects:
             object lblParent: TLabel
             end
             object atAttributes: TatContainer
+              Width = 596
+              Height = 305
               object usrat_DBEdit_USR_NODETYPE_Label: TLabel
               end
               object usrat_DBEdit_USR_ATOM_Label: TLabel
@@ -797,6 +799,7 @@ Objects:
               object usrat_DBMemo_USR_DESCRIPTION_Label: TLabel
               end
               object usrat_DBEdit_USR_ORDER_Label: TLabel
+                Top = 274
               end
               object usrat_DBEdit_USR_NODETYPE: TxDBCalculatorEdit
                 Cursor = crIBeam
@@ -810,9 +813,15 @@ Objects:
                 Width = 236
               end
               object usrat_DBMemo_USR_DESCRIPTION: TDBMemo
-                Width = 400
+                Width = 520
+                Height = 172
+                Font.Height = -13
+                Font.Name = 'Arial'
+                ParentFont = False
+                ScrollBars = ssVertical
               end
               object usrat_DBEdit_USR_ORDER: TxDBCalculatorEdit
+                Top = 270
                 Width = 92
                 Cursor = crIBeam
               end
@@ -822,8 +831,8 @@ Objects:
             end
           end
           object alBase: TActionList
-            Left = 46
-            Top = 71
+            Left = 262
+            Top = 31
             object actNew: TAction
             end
             object actHelp: TAction
@@ -858,12 +867,12 @@ Objects:
             end
           end
           object dsgdcBase: TDataSource
-            Left = 16
-            Top = 63
+            Left = 216
+            Top = 31
           end
           object pm_dlgG: TPopupMenu
-            Left = 152
-            Top = 216
+            Left = 360
+            Top = 40
             object actSecurity1: TMenuItem
             end
             object actHistory1: TMenuItem
@@ -898,20 +907,20 @@ Objects:
               'read_committed'
               'rec_version'
               'nowait')
-            Left = 440
-            Top = 216
+            Left = 408
+            Top = 56
           end
           object ibtrParent: TIBTransaction
             Params.Strings = (
               'read_committed'
               'rec_version'
               'nowait')
-            Left = 256
-            Top = 16
+            Left = 304
+            Top = 32
           end
         end
         
-      EDITIONDATE: 2014-09-19T17:24:58+03:00
+      EDITIONDATE: 2014-09-25T14:17:51+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -948,26 +957,26 @@ Objects:
         VFBGMAYNR1JJRF9TVFJFQU1fNAEGBlRhaG9tYQYMY2xXaW5kb3dUZXh0AvUAAggAAgEABghjbFdp
         bmRvdwEGBlRhaG9tYQYPY2xIaWdobGlnaHRUZXh0AvUAAggAAgEABgtjbEhpZ2hsaWdodAEGBlRh
         aG9tYQYMY2xXaW5kb3dUZXh0AvUAAggAAgEABgljbEJ0bkZhY2UJBgkkMDBFN0YzRjcGCSQwMEQ2
-        RTdFNw4ACAgOAAgOAQhFeHBhbmRlZAgJRmllbGROYW1lBglVU1IkT1JERVINVGl0bGUuQ2FwdGlv
-        bgYHz+7w/+Tu6gVXaWR0aAI8B1Zpc2libGUJAAEMRHJvcERvd25Sb3dzAgMIRXhwYW5kZWQICUZp
-        ZWxkTmFtZQYMVVNSJE5PREVUWVBFDVRpdGxlLkNhcHRpb24GCNLo7yDz5+vgBVdpZHRoAkEHVmlz
-        aWJsZQkAAQhFeHBhbmRlZAgJRmllbGROYW1lBgtVU1IkRU5BQkxFRA1UaXRsZS5DYXB0aW9uBgjC
-        6uv+9+Xt7gVXaWR0aAJCB1Zpc2libGUJAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYIVVNSJEFUT00F
-        V2lkdGgDtAAHVmlzaWJsZQkAAQhFeHBhbmRlZAgJRmllbGROYW1lBghVU1IkTkFNRQ1UaXRsZS5D
-        YXB0aW9uBgjN4Ofi4O3o5QVXaWR0aAO0AAdWaXNpYmxlCQABCEV4cGFuZGVkCAlGaWVsZE5hbWUG
-        D1VTUiRERVNDUklQVElPTg1UaXRsZS5DYXB0aW9uBgjO7+jx4O3o5QVXaWR0aAPwAAdWaXNpYmxl
-        CQABCEV4cGFuZGVkCAlGaWVsZE5hbWUGBlBBUkVOVAhSZWFkT25seQkNVGl0bGUuQ2FwdGlvbgYI
-        0O7k6PLl6/wFV2lkdGgC/wdWaXNpYmxlCAABCEV4cGFuZGVkCAlGaWVsZE5hbWUGAklECFJlYWRP
-        bmx5CQ1UaXRsZS5DYXB0aW9uBg3I5OXt8uj06Org8u7wBVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBh
-        bmRlZAgJRmllbGROYW1lBgJMQg1UaXRsZS5DYXB0aW9uBg3L5eLg/yDj8ODt6PbgBVdpZHRoAv8H
-        VmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBgJSQg1UaXRsZS5DYXB0aW9uBg7P8ODi4P8g
-        4/Dg7ej24AVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYIRElTQUJMRUQI
-        UmVhZE9ubHkJDVRpdGxlLkNhcHRpb24GCs3lIODq8uji7e4FV2lkdGgC/wdWaXNpYmxlCAABCEV4
-        cGFuZGVkCAlGaWVsZE5hbWUGC0VESVRJT05EQVRFCFJlYWRPbmx5CQ1UaXRsZS5DYXB0aW9uBhDE
-        4PLgIOzu5Oj06Org9ujoBVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBglF
-        RElUT1JLRVkIUmVhZE9ubHkJDVRpdGxlLkNhcHRpb24GEcry7iDs7uTo9Oj26PDu4uDrBVdpZHRo
-        Av8HVmlzaWJsZQgAAAgItB4ICA==
-      EDITIONDATE: 2014-09-24T14:21:32+03:00
+        RTdFNw4ACAgOAAgOAQhFeHBhbmRlZAgJRmllbGROYW1lBglVU1IkT1JERVIIUmVhZE9ubHkIDVRp
+        dGxlLkNhcHRpb24GB8/u8P/k7uoFV2lkdGgCPAdWaXNpYmxlCQABDERyb3BEb3duUm93cwIDCEV4
+        cGFuZGVkCAlGaWVsZE5hbWUGDFVTUiROT0RFVFlQRQhSZWFkT25seQgNVGl0bGUuQ2FwdGlvbgYI
+        0ujvIPPn6+AFV2lkdGgCQQdWaXNpYmxlCQABCEV4cGFuZGVkCAlGaWVsZE5hbWUGC1VTUiRFTkFC
+        TEVECFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgjC6uv+9+Xt7gVXaWR0aAJCB1Zpc2libGUJAAEI
+        RXhwYW5kZWQICUZpZWxkTmFtZQYIVVNSJEFUT00IUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GBMDy
+        7uwFV2lkdGgDtAAHVmlzaWJsZQkAAQhFeHBhbmRlZAgJRmllbGROYW1lBghVU1IkTkFNRQhSZWFk
+        T25seQgNVGl0bGUuQ2FwdGlvbgYIzeDn4uDt6OUFV2lkdGgDtAAHVmlzaWJsZQkAAQhFeHBhbmRl
+        ZAgJRmllbGROYW1lBg9VU1IkREVTQ1JJUFRJT04IUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GCM7v
+        6PHg7ejlBVdpZHRoA/AAB1Zpc2libGUJAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYGUEFSRU5UDVRp
+        dGxlLkNhcHRpb24GCNDu5Ojy5ev8BVdpZHRoAv8HVmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGRO
+        YW1lBgJJRA1UaXRsZS5DYXB0aW9uBg3I5OXt8uj06Org8u7wBVdpZHRoAv8HVmlzaWJsZQgAAQhF
+        eHBhbmRlZAgJRmllbGROYW1lBgJMQg1UaXRsZS5DYXB0aW9uBg3L5eLg/yDj8ODt6PbgBVdpZHRo
+        Av8HVmlzaWJsZQgAAQhFeHBhbmRlZAgJRmllbGROYW1lBgJSQg1UaXRsZS5DYXB0aW9uBg7P8ODi
+        4P8g4/Dg7ej24AVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYIRElTQUJM
+        RUQNVGl0bGUuQ2FwdGlvbgYKzeUg4Ory6OLt7gVXaWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQI
+        CUZpZWxkTmFtZQYLRURJVElPTkRBVEUNVGl0bGUuQ2FwdGlvbgYQxODy4CDs7uTo9Ojq4Pbo6AVX
+        aWR0aAL/B1Zpc2libGUIAAEIRXhwYW5kZWQICUZpZWxkTmFtZQYJRURJVE9SS0VZDVRpdGxlLkNh
+        cHRpb24GEcry7iDs7uTo9Oj26PDu4uDrBVdpZHRoAv8HVmlzaWJsZQgAAAgItB4ICA==
+      EDITIONDATE: 2014-09-25T15:06:08+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -980,11 +989,11 @@ Objects:
       NAME: "AllowDD"
       DATA_TYPE: "L"
       STR_DATA: ~
-      INT_DATA: 0
+      INT_DATA: 1
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T17:28:11+03:00
+      EDITIONDATE: 2014-09-25T16:30:45+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1014,11 +1023,11 @@ Objects:
       NAME: "Left"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 316
+      INT_DATA: 269
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T18:06:37+03:00
+      EDITIONDATE: 2014-09-25T16:30:45+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1065,11 +1074,11 @@ Objects:
       NAME: "Width"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 1051
+      INT_DATA: 1098
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T18:06:37+03:00
+      EDITIONDATE: 2014-09-25T16:30:45+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1137,8 +1146,8 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: !!binary > 
-        2XC3ADylEQkiM0RVBwAAADylEQk+pREJQKURCUilEQlSpREJVKURCVilEQkiM0RVAAAAAA==
-      EDITIONDATE: 2014-09-24T15:00:10+03:00
+        2XC3AFKlEQkiM0RVCAAAADylEQk+pREJQKURCUilEQlSpREJVKURCVilEQngpxEJIjNEVQAAAAA=
+      EDITIONDATE: 2014-09-25T16:30:45+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1151,11 +1160,11 @@ Objects:
       NAME: "Height"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 346
+      INT_DATA: 453
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T17:16:15+03:00
+      EDITIONDATE: 2014-09-25T14:14:59+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1168,11 +1177,11 @@ Objects:
       NAME: "Left"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 437
+      INT_DATA: 524
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T17:16:15+03:00
+      EDITIONDATE: 2014-09-25T16:13:40+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1185,11 +1194,11 @@ Objects:
       NAME: "Top"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 211
+      INT_DATA: 165
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T17:16:15+03:00
+      EDITIONDATE: 2014-09-25T16:13:40+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1202,11 +1211,11 @@ Objects:
       NAME: "Width"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 491
+      INT_DATA: 617
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T17:16:15+03:00
+      EDITIONDATE: 2014-09-25T14:14:59+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1224,3 +1233,119 @@ Objects:
       CURR_DATA: ~
       BLOB_DATA: ~
       EDITIONDATE: 2014-09-22T17:16:15+03:00
+  - 
+    Properties: 
+      Class: "TgdcFolder"
+      RUID: 151821044_630959
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152152057_242785704
+    Fields: 
+      PARENT: ~
+      CONTACTTYPE: 0
+      NAME: "Все организации"
+      ADDRESS: ~
+      DISTRICT: ~
+      CITY: ~
+      REGION: ~
+      ZIP: ~
+      COUNTRY: ~
+      PLACEKEY: ~
+      NOTE: ~
+      EXTERNALKEY: ~
+      EMAIL: ~
+      URL: ~
+      POBOX: ~
+      PHONE: ~
+      FAX: ~
+      EDITIONDATE: 2014-08-21T16:03:21+03:00
+      DISABLED: 0
+      CREATIONDATE: 2014-08-21T16:03:21+03:00
+      USR$INV_ACCOUNTKEY: ~
+      Z_USR$INV_ACCOUNTKEY_ALIAS: ~
+      Z_USR$INV_ACCOUNTKEY_NAME: ~
+      USR$WG_LISTNUM: ~
+      USR$WAGE_OLDEMPLKEY: ~
+      USR$MN_USEPORTION: 0
+      USR$WB_PERCFORCLASS: ~
+      USR$WAGE_OLDDEPTKEY: ~
+      USR$WB_TABELNUM: ~
+      USR$IMNSKEY: ~
+      Z_USR$IMNSKEY_USR$NAME: ~
+      Z_USR$IMNSKEY_USR$ALIAS: ~
+      USR$MN_EXTRACATEGORYKEY: ~
+      Z_USR$MN_EXTRACATEGORY896179691: ~
+      USR$ACCOUNTKEY: ~
+      Z_USR$ACCOUNTKEY_ALIAS: ~
+      Z_USR$ACCOUNTKEY_NAME: ~
+      USR$TRANSACTIONKEY: ~
+      Z_USR$TRANSACTIONKEY_NAME: ~
+      USR$RESPKEY: ~
+      Z_USR$RESPKEY_NAME: ~
+  - 
+    Properties: 
+      Class: "TgdcComponentFilter"
+      RUID: 152151400_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152152057_242785704
+    Fields: 
+      FILTERNAME: "flt_USR_WG_PL_RULEgd"
+      FORMNAME: "Master"
+      APPLICATIONNAME: "GEDEMIN"
+      CRC: 2066435191
+      FULLNAME: "1V\\GEDEMIN\\TGDCATTRUSERDEFINEDLBRBTREE\\FLT_USR_WG_PL_RULEGDCATTRUSERDEFINEDLBRBTREE"
+      EDITIONDATE: 2014-09-22T17:16:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcSavedFilter"
+      RUID: 152152057_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      NAME: "Порядок"
+      USERKEY: ~
+      COMPONENTKEY: "152151400_242785704 1V\\GEDEMIN\\TGDCATTRUSERDEFINEDLBRBTREE\\FLT_USR_WG_PL_RULEGDCATTRUSERDEFINEDLBRBTREE"
+      DESCRIPTION: ~
+      DATA: !!binary > 
+        XkJGRF5CQ0xeTUNOAV5FQ0xeQk9MXklJRgBeT0xJXkJPRF5UTk0PAAAADlVTUiRXR19QTF9SVUxF
+        XlRBTAMAAAACWi5eRk5NCgAAAAlVU1IkT1JERVJeTEZMCAAAAAfP7vD/5O7qXklTUgEAAAABXkVP
+        RF5FT0xeRUZE
+      DISABLED: ~
+      EDITIONDATE: 2014-09-25T16:02:23+03:00
+  - 
+    Properties: 
+      Class: "TgdcComponentFilter"
+      RUID: 152151402_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152152058_242785704
+    Fields: 
+      FILTERNAME: "flt_USR_WG_PL_RULEgd"
+      FORMNAME: "Detail"
+      APPLICATIONNAME: "GEDEMIN"
+      CRC: 2066435191
+      FULLNAME: "1V\\GEDEMIN\\TGDCATTRUSERDEFINEDLBRBTREE\\FLT_USR_WG_PL_RULEGDCATTRUSERDEFINEDLBRBTREE"
+      EDITIONDATE: 2014-09-22T17:16:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcSavedFilter"
+      RUID: 152152058_242785704
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      NAME: "Порядок"
+      USERKEY: ~
+      COMPONENTKEY: "152151402_242785704 1V\\GEDEMIN\\TGDCATTRUSERDEFINEDLBRBTREE\\FLT_USR_WG_PL_RULEGDCATTRUSERDEFINEDLBRBTREE"
+      DESCRIPTION: ~
+      DATA: !!binary > 
+        XkJGRF5CQ0xeTUNOAV5FQ0xeQk9MXklJRgBeT0xJXkJPRF5UTk0PAAAADlVTUiRXR19QTF9SVUxF
+        XlRBTAMAAAACWi5eRk5NCgAAAAlVU1IkT1JERVJeTEZMCAAAAAfP7vD/5O7qXklTUgEAAAABXkVP
+        RF5FT0xeRUZE
+      DISABLED: ~
+      EDITIONDATE: 2014-09-25T16:02:43+03:00

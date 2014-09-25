@@ -117,13 +117,13 @@ wg_valid_rules([-by_month_no_bad_type]).
 %% варианты правил расчета
 %  - для больничных
 % [по расчетным дням итого за период]
-wg_valid_rules([-by_calc_days_total]).
+wg_valid_rules([by_calc_days_total]).
 % [по расчетным дням, по расчетным дням со справкой]
-wg_valid_rules([by_calc_days, by_calc_days_doc]).
-% [от БПМ, по среднему заработку]
-wg_valid_rules([by_budget, by_avg_wage]).
-% [от ставки, по не полным месяцам]
-wg_valid_rules([by_rate, -by_not_full]).
+wg_valid_rules([-by_calc_days, -by_calc_days_doc]).
+% [от ставки, по среднему заработку, по не полным месяцам]
+wg_valid_rules([by_rate, by_avg_wage, -by_not_full]).
+% [от БПМ]
+wg_valid_rules([by_budget]).
 %% варианты правил для исключения дней
 % [по табелю мастера, по табелю, по приказам]
 wg_valid_rules([by_cal_flex, by_cal, by_orders]).
@@ -323,9 +323,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (по расчетным дням / со справкой)
     Scope = wg_avg_wage_sick,
-    Rule1 = by_calc_days,
-    Rule2 = by_calc_days_doc,
-    Rule3 = by_calc_days_total,
+    Rule1 = by_calc_days, Rule2 = by_calc_days_doc, Rule3 = by_calc_days_total,
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
     % есть рабочие периоды
@@ -380,13 +378,54 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     AvgWage is round(AvgWage0),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+    % - для больничных (от ставки / по среднему заработку / по не полным месяцам)
+    Scope = wg_avg_wage_sick,
+    Rule1 = by_rate, Rule2 = by_avg_wage, Rule3 = by_not_full,
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    % есть требуемое количество месяцев
+    get_param(Scope, run, pMonthQty-MonthQty),
+    length(Periods, MonthQty),
+    % расчет по разным вариантам
+    % от ставки
+    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage1, Rule1)
+          ; AvgWage1 = 0 )
+        ),
+    % по среднему заработку
+    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage2, Rule2)
+          ; AvgWage2 = 0 )
+        ),
+    % по не полным месяцам
+    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage3, Rule3)
+          ; AvgWage3 = 0 )
+        ),
+    \+ [AvgWage1, AvgWage2, AvgWage3] = [0, 0, 0],
+    % выбор варианта расчета
+    ( AvgWage1 >= AvgWage2, AvgWage1 >= AvgWage3,
+      % от ставки
+      Rule = Rule1,
+      AvgWage = AvgWage1
+    ;
+      AvgWage2 >= AvgWage3,
+      % по среднему заработку
+      Rule = Rule2,
+      AvgWage = AvgWage2
+    ;
+      % по не полным месяцам
+      Rule = Rule3,
+      AvgWage = AvgWage3
+    ),
+    AvgWage > 0,
+    !.
+calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки без периодов со справкой)
     Scope = wg_avg_wage_sick, Rule = by_rate,
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
-    % не выполняется одно из правил по полноте месяца
+    % не выполняется ни одно из правил
+    % по количеству расчетных дней или полноте месяца
     \+ rule_month_days_sick(Scope, PK, Periods, _),
     % есть признак Справка
     append(PK, [pIsAvgWageDoc-1], Pairs),
@@ -406,69 +445,6 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     \+ length(Periods, MonthQty),
     % расчет от БПМ при формировании структуры
     AvgWage is 0,
-    !.
-calc_avg_wage(Scope, PK, AvgWage, Rule) :-
-    % - для больничных (от ставки / по среднему заработку)
-    Scope = -wg_avg_wage_sick, Rule1 = by_rate, Rule2 = by_avg_wage,
-    % подготовка временных данных для расчета
-    prep_avg_wage(Scope, PK, Periods),
-    % расчет по разным вариантам
-    % от ставки
-    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage1, Rule1)
-          ; AvgWage1 = 0 )
-        ),
-    % по среднему заработку
-    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage2, Rule2)
-          ; AvgWage2 = 0 )
-        ),
-    \+ [AvgWage1, AvgWage2] = [0, 0],
-    % выбор варианта расчета
-    ( AvgWage1 >= AvgWage2,
-      % от ставки
-      Rule = Rule1,
-      AvgWage = AvgWage1
-    ;
-      % по среднему заработку
-      Rule = Rule2,
-      AvgWage = AvgWage2 ),
-    !.
-calc_avg_wage(Scope, PK, AvgWage, Rule) :-
-    % - для больничных (по среднему заработку)
-    Scope = wg_avg_wage_sick, Rule = by_avg_wage,
-    % правило действительно
-    is_valid_rule(Scope, PK, _, Rule),
-    % подготовка временных данных для расчета
-    prep_avg_wage(Scope, PK, Periods),
-    % есть требуемое количество месяцев
-    get_param(Scope, run, pMonthQty-MonthQty),
-    length(Periods, MonthQty),
-    % расчет по среднему заработку
-    calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule),
-    !.
-calc_avg_wage(Scope, PK, AvgWage, Rule) :-
-    % - для больничных (от ставки / по не полным месяцам)
-    Scope = wg_avg_wage_sick, Rule1 = by_rate, Rule2 = by_not_full,
-    % подготовка временных данных для расчета
-    prep_avg_wage(Scope, PK, Periods),
-    % расчет по разным вариантам
-    % от ставки
-    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage1, Rule1)
-          ; AvgWage1 = 0 )
-        ),
-    % по не полным месяцам
-    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage2, Rule2)
-          ; AvgWage2 = 0 )
-        ),
-    \+ [AvgWage1, AvgWage2] = [0, 0],
-    % выбор варианта расчета
-    ( AvgWage1 >= AvgWage2,
-      % от ставки
-      Rule = Rule1,
-      AvgWage = AvgWage1
-    ;
-      % по не полным месяцам
-      Rule = Rule2,
-      AvgWage = AvgWage2 ),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     % - для начисления по-среднему (по часам или дням)
@@ -569,26 +545,6 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
 % выбор варианта расчета среднедневного заработка
 % - для больничных
 calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
-    % по среднему заработку
-    Rule = by_avg_wage,
-    % правило действительно
-    is_valid_rule(Scope, PK, _, Rule),
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    % взять данные по среднедневному заработку
-    findall( AvgSumma,
-             ( member(Y-M, Periods),
-               get_data(Scope, kb, usr_wg_AvgWage, [
-                           fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                           fCalYear-Y, fCalMonth-M, fAvgSumma-AvgSumma])
-             ),
-    % в список среднедневных заработков
-    AvgSummaList),
-    % максимальный среднедневной заработок
-    max_list(AvgSummaList, MaxAvgSumma),
-    AvgWage is round(MaxAvgSumma),
-    !.
-calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     % от ставки
     Rule = by_rate,
     % правило действительно
@@ -629,7 +585,28 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
       AvgWage is round(AvgWage0)
     ;
       % иначе, расчет от часовой тарифной ставки
-      AvgWage is round(AvgWageRate) ),
+      AvgWage is round(AvgWageRate)
+    ),
+    !.
+calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
+    % по среднему заработку
+    Rule = by_avg_wage,
+    % правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % взять данные по среднедневному заработку
+    findall( AvgSumma,
+             ( member(Y-M, Periods),
+               get_data(Scope, kb, usr_wg_AvgWage, [
+                           fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                           fCalYear-Y, fCalMonth-M, fAvgSumma-AvgSumma])
+             ),
+    % в список среднедневных заработков
+    AvgSummaList),
+    % максимальный среднедневной заработок
+    max_list(AvgSummaList, MaxAvgSumma),
+    AvgWage is round(MaxAvgSumma),
     !.
 calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     % по не полным месяцам
@@ -660,6 +637,7 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     CalcDaysList ),
     % всего расчетных дней
     sum_list(CalcDaysList, TotalCalcDays),
+    !,
     % среднедневной заработок
     catch( AvgWage0 is Amount / TotalCalcDays, _, fail ),
     AvgWage is round(AvgWage0),
@@ -678,6 +656,7 @@ rule_month_days_sick(Scope, PK, Periods, Rule) :-
              ),
     CalcDaysList ),
     sum_list(CalcDaysList, TotalDays),
+    % есть требуемое количество дней
     \+ TotalDays < LimitDays,
     !.
 rule_month_days_sick(Scope, PK, Periods, Rule) :-
