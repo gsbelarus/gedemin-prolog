@@ -5,10 +5,10 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.88"
+  Version: "1.0.0.90"
   Optional: False
   Internal: True
-  MD5: 9DE9C2062915F02CA11896E990662DA2
+  MD5: 7B19DBA06CB583A41F1C411BA8B07B44
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -1313,7 +1313,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-19T12:19:26+03:00
+      EDITIONDATE: 2014-09-29T11:52:20+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -9770,7 +9770,7 @@ Objects:
               NormHoures = Tv_det.ReadFloat(13)
               '
               Select Case AvgWageRule
-                Case "by_calc_days", "by_calc_days_doc"
+                Case "by_calc_days_total", "by_calc_days", "by_calc_days_doc"
                   Select Case PeriodRule
                     Case "by_cal_flex"
                       PeriodRule = "по табелю мастера"
@@ -9861,7 +9861,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-08-25T13:12:26+03:00
+      EDITIONDATE: 2014-09-29T11:52:52+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -11483,8 +11483,6 @@ Objects:
           - 
             ADDFUNCTIONKEY: "147043669_974374174 wg_GetConstByIDAndDate"
           - 
-            ADDFUNCTIONKEY: "155074107_1698257362 wg_CalcSiclListCoeff"
-          - 
             ADDFUNCTIONKEY: "147025267_449804462 wg_SetWageDocLookupParams"
           - 
             ADDFUNCTIONKEY: "147019334_119619099 wg_MonthHour"
@@ -12291,7 +12289,6 @@ Objects:
       SAT: 0
       SUN: 0
       HOLIDAYISWORK: 0
-      W1_OFFSET: 0
       W1_START1: 1899-12-30T00:00:00+03:00
       W1_END1: 1899-12-30T00:00:00+03:00
       W1_START2: 1899-12-30T00:00:00+03:00
@@ -12300,7 +12297,6 @@ Objects:
       W1_END3: 1899-12-30T00:00:00+03:00
       W1_START4: 1899-12-30T00:00:00+03:00
       W1_END4: 1899-12-30T00:00:00+03:00
-      W2_OFFSET: 0
       W2_START1: 1899-12-30T00:00:00+03:00
       W2_END1: 1899-12-30T00:00:00+03:00
       W2_START2: 1899-12-30T00:00:00+03:00
@@ -12309,7 +12305,6 @@ Objects:
       W2_END3: 1899-12-30T00:00:00+03:00
       W2_START4: 1899-12-30T00:00:00+03:00
       W2_END4: 1899-12-30T00:00:00+03:00
-      W3_OFFSET: 0
       W3_START1: 1899-12-30T00:00:00+03:00
       W3_END1: 1899-12-30T00:00:00+03:00
       W3_START2: 1899-12-30T00:00:00+03:00
@@ -12318,7 +12313,6 @@ Objects:
       W3_END3: 1899-12-30T00:00:00+03:00
       W3_START4: 1899-12-30T00:00:00+03:00
       W3_END4: 1899-12-30T00:00:00+03:00
-      W4_OFFSET: 0
       W4_START1: 1899-12-30T00:00:00+03:00
       W4_END1: 1899-12-30T00:00:00+03:00
       W4_START2: 1899-12-30T00:00:00+03:00
@@ -12327,7 +12321,6 @@ Objects:
       W4_END3: 1899-12-30T00:00:00+03:00
       W4_START4: 1899-12-30T00:00:00+03:00
       W4_END4: 1899-12-30T00:00:00+03:00
-      W5_OFFSET: 0
       W5_START1: 1899-12-30T00:00:00+03:00
       W5_END1: 1899-12-30T00:00:00+03:00
       W5_START2: 1899-12-30T00:00:00+03:00
@@ -12336,7 +12329,6 @@ Objects:
       W5_END3: 1899-12-30T00:00:00+03:00
       W5_START4: 1899-12-30T00:00:00+03:00
       W5_END4: 1899-12-30T00:00:00+03:00
-      W6_OFFSET: 0
       W6_START1: 1899-12-30T00:00:00+03:00
       W6_END1: 1899-12-30T00:00:00+03:00
       W6_START2: 1899-12-30T00:00:00+03:00
@@ -12345,7 +12337,6 @@ Objects:
       W6_END3: 1899-12-30T00:00:00+03:00
       W6_START4: 1899-12-30T00:00:00+03:00
       W6_END4: 1899-12-30T00:00:00+03:00
-      W7_OFFSET: 0
       W7_START1: 1899-12-30T00:00:00+03:00
       W7_END1: 1899-12-30T00:00:00+03:00
       W7_START2: 1899-12-30T00:00:00+03:00
@@ -12354,7 +12345,6 @@ Objects:
       W7_END3: 1899-12-30T00:00:00+03:00
       W7_START4: 1899-12-30T00:00:00+03:00
       W7_END4: 1899-12-30T00:00:00+03:00
-      W8_OFFSET: 0
       W8_START1: 1899-12-30T00:00:00+03:00
       W8_END1: 1899-12-30T00:00:00+03:00
       W8_START2: 1899-12-30T00:00:00+03:00
@@ -12363,9 +12353,17 @@ Objects:
       W8_END3: 1899-12-30T00:00:00+03:00
       W8_START4: 1899-12-30T00:00:00+03:00
       W8_END4: 1899-12-30T00:00:00+03:00
+      W1_OFFSET: 0
+      W2_OFFSET: 0
+      W3_OFFSET: 0
+      W4_OFFSET: 0
+      W5_OFFSET: 0
+      W6_OFFSET: 0
+      W7_OFFSET: 0
+      W8_OFFSET: 0
       EDITIONDATE: 2014-03-14T15:54:21+03:00
-      USR$WAGE_OLDKEY: ~
       USR$DAYCICLECOUNT: 7
+      USR$WAGE_OLDKEY: ~
       USR$CALENDARTYPE: ~
       USR$FIRSTDAYDATE: ~
       USR$HOLIDAYISWORK: 0
