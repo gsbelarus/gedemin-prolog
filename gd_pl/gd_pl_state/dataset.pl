@@ -120,7 +120,7 @@ del_data(_, _, _, _) :-
 check_fields([], _) :-
     !.
 check_fields([Field-_|FieldValuePairs], FieldTypePairs) :-
-    member(Field-_, FieldTypePairs),
+    memberchk(Field-_, FieldTypePairs),
     !,
     check_fields(FieldValuePairs, FieldTypePairs).
 
@@ -135,7 +135,7 @@ prepare_args([Field-_|TailPairs], [Field-Arg|RestPairs], [Arg|RestArgs]) :-
 unify_args([], _) :-
     !.
 unify_args([FieldValue|FieldValuePairs], FieldArgPairs) :-
-    member(FieldValue, FieldArgPairs),
+    memberchk(FieldValue, FieldArgPairs),
     !,
     unify_args(FieldValuePairs, FieldArgPairs).
 

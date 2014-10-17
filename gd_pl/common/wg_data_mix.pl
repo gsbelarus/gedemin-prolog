@@ -250,7 +250,7 @@ usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, 0, InHoures, 0, TabelOption) :-
 get_Flex_by_type(Scope, PK, Y-M, Date, Days, Duration, HoureType, FlexType) :-
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, _),
-    make_list(62, TeilArgs),
+    length(TeilArgs, 62),
     Term =..[ usr_wg_TblCal_FlexLine, FlexType, EmplKey, FirstMoveKey, Y, M, _ | TeilArgs ],
     catch( call( Term ), _, fail),
     member(D, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,

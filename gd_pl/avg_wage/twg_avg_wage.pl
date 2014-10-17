@@ -7,12 +7,13 @@
 
 :- style_check([-atom]).
 
-:- retractall(debug_mode).
-
+:- dynamic(debug_mode/0).
 % ! при использовании в ТП Гедымин
-% ! для begin & end debug mode section
-% ! убрать символ процента из первой позиции
-%/* %%% begin debug mode section
+% ! комментировать следующую строку
+%:- assertz(debug_mode).
+
+%%% begin debug mode section
+:- if(debug_mode).
 
 %% saved state
 :- ['../gd_pl_state/load_atom', '../gd_pl_state/date', '../gd_pl_state/dataset'].
@@ -75,16 +76,10 @@
 :- ['kb/param_list'].
 %%
 
-%% flag
-:- assertz(debug_mode).
-%%
-
-% ! при использовании в ТП Гедымин
-% ! для begin & end debug mode section
-% ! убрать символ процента из первой позиции
-%*/ %%% end debug mode section
-
 :- ps32k_lgt(64, 128, 64).
+
+:- endif.
+%%% end debug mode section
 
 % section twg_avg_wage
 % среднедневной заработок
@@ -155,7 +150,7 @@ is_deny_rule(Scope, PK, Y-M, Rule) :-
     wg_deny_flag_rules(Flag, FlagRules),
     member(Rule, FlagRules),
     !.
-    
+
 % получить признак
 get_flag_rule(Scope, PK, _, Flag) :-
     Flag = flag_spec_dep,
@@ -250,13 +245,13 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     prep_avg_wage(Scope, PK, Periods),
     % проверка по табелю
     check_month_tab(Scope, PK, Periods),
-            % если есть хотя бы один расчетный месяц
-    once( ( once( get_month_incl(Scope, PK, _, _, _) ),
-            % то проверка по заработку
-            check_month_wage(Scope, PK, Periods)
-            % иначе далее
-          ; true )
-        ),
+    % если есть хотя бы один расчетный месяц
+    ( once( get_month_incl(Scope, PK, _, _, _) )
+    ->
+      % то проверка по заработку
+      check_month_wage(Scope, PK, Periods)
+      % иначе далее
+    ; true ),
     % проверка на отсутствие плохих типов начислений и часов
     check_month_no_bad_type(Scope, PK, Periods),
     % есть хотя бы один расчетный месяц
@@ -380,42 +375,23 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки / по среднему заработку / по не полным месяцам)
     Scope = wg_avg_wage_sick,
-    Rule1 = by_rate, Rule2 = by_avg_wage, Rule3 = by_not_full,
+    Rules = [by_not_full, by_avg_wage, by_rate],
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
     % есть требуемое количество месяцев
     get_param(Scope, run, pMonthQty-MonthQty),
     length(Periods, MonthQty),
-    % расчет по разным вариантам
-    % от ставки
-    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage1, Rule1)
-          ; AvgWage1 = 0 )
-        ),
-    % по среднему заработку
-    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage2, Rule2)
-          ; AvgWage2 = 0 )
-        ),
-    % по не полным месяцам
-    once( ( calc_avg_wage_sick(Scope, PK, Periods, AvgWage3, Rule3)
-          ; AvgWage3 = 0 )
-        ),
-    \+ [AvgWage1, AvgWage2, AvgWage3] = [0, 0, 0],
-    % выбор варианта расчета
-    ( AvgWage1 >= AvgWage2, AvgWage1 >= AvgWage3,
-      % от ставки
-      Rule = Rule1,
-      AvgWage = AvgWage1
-    ;
-      AvgWage2 >= AvgWage3,
-      % по среднему заработку
-      Rule = Rule2,
-      AvgWage = AvgWage2
-    ;
-      % по не полным месяцам
-      Rule = Rule3,
-      AvgWage = AvgWage3
-    ),
-    AvgWage > 0,
+    % собрать расчет по разным вариантам
+    findall( AvgWage0-Rule0,
+             ( member(Rule0, Rules),
+               calc_avg_wage_sick(Scope, PK, Periods, AvgWage0, Rule0),
+               AvgWage > 0
+             ),
+    % в список расчетов
+    AvgWageList),
+    % выбор по более выгодному варианту
+    sort(AvgWageList, AvgWageList1),
+    last(AvgWageList1, AvgWage-Rule),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки без периодов со справкой)
@@ -463,7 +439,8 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     Wages ),
       % есть требуемое количество месяцев
     ( get_param(Scope, run, pMonthQty-MonthQty),
-      length(Wages, MonthQty) -> true
+      length(Wages, MonthQty)
+    -> true
     ; % или первый период проверки
       Periods = [Y-M|_],
       % и период последнего приема на работу
@@ -637,7 +614,6 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     CalcDaysList ),
     % всего расчетных дней
     sum_list(CalcDaysList, TotalCalcDays),
-    !,
     % среднедневной заработок
     catch( AvgWage0 is Amount / TotalCalcDays, _, fail ),
     AvgWage is round(AvgWage0),
@@ -1099,7 +1075,7 @@ cacl_month_wage_sick(Scope, PK, Y, M, Wage) :-
     !.
 cacl_month_wage_sick(_, _, _, _, 0.0) :-
     !.
-    
+
 % итого зарплата за месяц
 % - для больничных
 sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage) :-
@@ -1114,12 +1090,11 @@ sum_month_debit_sick(Scope, PK, Y, M, [Debit-FeeTypeKey | Debits], Wage, Wage0) 
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % тип начисления для пропорционального расчета
-    once( ( get_data(Scope, kb, usr_wg_FeeTypeProp, [
-                      fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                      fFeeTypeKeyProp-FeeTypeKey ])
-          ; FeeTypeKey = 1
-          )
-        ),
+    ( get_data(Scope, kb, usr_wg_FeeTypeProp, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fFeeTypeKeyProp-FeeTypeKey ])
+    -> true
+    ; FeeTypeKey = 1 ),
     % взять коэфициент для пропорционального начисления
     get_prop_coef(Scope, PK, Y, M, PropCoef),
     % пропорциональный расчет
@@ -1298,7 +1273,7 @@ collect_excl_days(exlc_days([FromDate0|ExclDays]), Y, M, LogDays0, LogDays2, Spe
 collect_excl_days(exlc_days([FromDate0, ToDate, ExclType | ExclDays]), Y, M, LogDays0, LogDays2, SpecList) :-
     % добавление дня для исключения в журнал
     ( ( SpecList = [] ; memberchk(ExclType, SpecList) )
-      -> add_excl_day(exlc_days([FromDate0, ExclType | ExclDays]), LogDays0, LogDays1)
+    -> add_excl_day(exlc_days([FromDate0, ExclType | ExclDays]), LogDays0, LogDays1)
     ; true ),
     date_add(FromDate0, 1, day, FromDate1),
     !,
@@ -1737,7 +1712,7 @@ month_bad_type(Scope, PK, Y-M) :-
     !.
 
 /* реализация - механизм подготовки данных */
-    
+
 %% engine_loop(+Scope, +Type, +PK)
 %
 
@@ -1994,7 +1969,7 @@ avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, Month
          pDateCalc-DateCalc, pCalcByHoure-CalcByHoure,
          pMonthBefore-MonthBefore, pMonthOffset-MonthOffset]),
     !.
-    
+
 % выгрузка детальных выходных данных по сотруднику
 avg_wage_avg_det(EmplKey, FirstMoveKey,
                     Period, Wage,
@@ -2274,7 +2249,7 @@ sick_slice_excl(Part-Duration, Part-Duration1, DurationBefore, DurationBefore1) 
     Duration0 is Duration - DurationBefore,
     ( Duration0 > 0 -> Duration1 = Duration0 ; Duration1 = 0),
     DurationBefore0 is DurationBefore - Duration,
-    ( DurationBefore0 > 0 -> DurationBefore1 = DurationBefore0 ; DurationBefore1 = 0),
+    ( DurationBefore0 > 0, DurationBefore1 = DurationBefore0 ; DurationBefore1 = 0),
     !.
 
 %
@@ -2462,7 +2437,7 @@ avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
 avg_wage_by_avg_salary(Scope, _, 0) :-
     new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
     !.
-    
+
 % section twg_rule
 % Правила расчета
 %
@@ -2477,14 +2452,14 @@ wg_config_rules(Scope) :-
     assertz( wg_valid_rules(RulesSet1) ),
     !.
 wg_config_rules(_).
-    
+
 wg_change_rules(_, [], []) :-
     !.
 wg_change_rules(Scope, [Rule0|Rules], [Rule1|Rules1]) :-
     ( Rule0 = -Rule -> true ; Rule0 = Rule ),
     atom_string(Rule, Atom),
     get_data(Scope, kb, usr_wg_pl_Rule, [fAtom-Atom, fEnabled-Enabled]),
-    ( Enabled = 0 -> Rule1 = -Rule ; Rule1 = Rule ),
+    ( Enabled = 0, Rule1 = -Rule ; Rule1 = Rule ),
     !,
     wg_change_rules(Scope, Rules, Rules1).
 wg_change_rules(Scope, [Rule|Rules], [Rule|Rules1]) :-

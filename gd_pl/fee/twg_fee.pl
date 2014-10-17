@@ -6,12 +6,13 @@
 
 :- style_check([-atom]).
 
-:- retractall(debug_mode).
-
+:- dynamic(debug_mode/0).
 % ! при использовании в ТП Гедымин
-% ! для begin & end debug mode section
-% ! убрать символ процента из первой позиции
-%/* %%% begin debug mode section
+% ! комментировать следующую строку
+%:- assertz(debug_mode).
+
+%%% begin debug mode section
+:- if(debug_mode).
 
 %% saved state
 :- ['../gd_pl_state/load_atom', '../gd_pl_state/date', '../gd_pl_state/dataset'].
@@ -57,16 +58,10 @@
 :- ['kb/param_list'].
 %%
 
-%% flag
-:- assertz(debug_mode).
-%%
-
-% ! при использовании в ТП Гедымин
-% ! для begin & end debug mode section
-% ! убрать символ процента из первой позиции
-%*/ %%% end debug mode section
-
 :- ps32k_lgt(64, 128, 64).
+
+:- endif.
+%%% end debug mode section
 
 /* реализация - расчет */
 
