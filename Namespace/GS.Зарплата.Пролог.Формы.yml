@@ -5,10 +5,10 @@ Properties:
   RUID: 152006534_236240980
   Name: "GS.Зарплата.Пролог.Формы"
   Caption: "Формы"
-  Version: "1.0.0.8"
+  Version: "1.0.0.10"
   Optional: False
   Internal: True
-  MD5: 0E4B63CAED8940261A5598CF64BDFD46
+  MD5: F5F96F235D2768F4EC6990E3A9E47671
 Objects: 
   - 
     Properties: 
@@ -1006,11 +1006,11 @@ Objects:
       NAME: "Height"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 643
+      INT_DATA: 651
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T17:28:11+03:00
+      EDITIONDATE: 2014-10-06T15:27:22+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1023,11 +1023,11 @@ Objects:
       NAME: "Left"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 274
+      INT_DATA: 237
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-25T17:55:25+03:00
+      EDITIONDATE: 2014-10-06T15:27:22+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1057,11 +1057,11 @@ Objects:
       NAME: "Top"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 85
+      INT_DATA: 77
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T17:28:11+03:00
+      EDITIONDATE: 2014-10-06T15:27:22+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1074,11 +1074,11 @@ Objects:
       NAME: "Width"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 1093
+      INT_DATA: 1130
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-25T17:55:25+03:00
+      EDITIONDATE: 2014-10-06T15:27:22+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1108,11 +1108,11 @@ Objects:
       NAME: "Height"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 535
+      INT_DATA: 543
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-09-22T17:28:11+03:00
+      EDITIONDATE: 2014-10-06T15:27:22+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1146,8 +1146,8 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: !!binary > 
-        2XC3AFKlEQkiM0RVCAAAADylEQk+pREJQKURCUilEQlSpREJVKURCVilEQngpxEJIjNEVQAAAAA=
-      EDITIONDATE: 2014-09-25T17:55:25+03:00
+        2XC3AByT1AsiM0RVCAAAAByT1Asek9QLIJPUCyiT1Asyk9QLNJPUCzaT1AsHlNQLIjNEVQAAAAA=
+      EDITIONDATE: 2014-10-06T15:43:04+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -1264,25 +1264,32 @@ Objects:
       CREATIONDATE: 2014-08-21T16:03:21+03:00
       USR$INV_ACCOUNTKEY: ~
       Z_USR$INV_ACCOUNTKEY_ALIAS: ~
-      Z_USR$INV_ACCOUNTKEY_NAME: ~
       USR$WG_LISTNUM: ~
       USR$WAGE_OLDEMPLKEY: ~
       USR$MN_USEPORTION: 0
       USR$WB_PERCFORCLASS: ~
       USR$WAGE_OLDDEPTKEY: ~
+      USR$COD: ~
+      USR$MN_EXTRACATEGORYKEY: ~
+      Z_USR$MN_EXTRACATEGORY896179691: ~
       USR$WB_TABELNUM: ~
       USR$IMNSKEY: ~
       Z_USR$IMNSKEY_USR$NAME: ~
       Z_USR$IMNSKEY_USR$ALIAS: ~
-      USR$MN_EXTRACATEGORYKEY: ~
-      Z_USR$MN_EXTRACATEGORY896179691: ~
+      USR$VMK_GLOBALDEPOT: ~
+      Z_USR$VMK_GLOBALDEPOT_USR$NAME: ~
       USR$ACCOUNTKEY: ~
       Z_USR$ACCOUNTKEY_ALIAS: ~
-      Z_USR$ACCOUNTKEY_NAME: ~
+      USR$INSKOD: ~
+      Z_USR$INSKOD_ID: ~
       USR$TRANSACTIONKEY: ~
       Z_USR$TRANSACTIONKEY_NAME: ~
-      USR$RESPKEY: ~
-      Z_USR$RESPKEY_NAME: ~
+      USR$VBPF_EXPENSES: ~
+      Z_USR$VBPF_EXPENSES_USR$NAME: ~
+      USR$WAGE_CODE: ~
+      USR$PRODUCTION: 1
+      USR$GMK_HASVIRTUALSUBDEPS: 0
+      USR$FULLNAME: ~
   - 
     Properties: 
       Class: "TgdcComponentFilter"

@@ -5,10 +5,10 @@ Properties:
   RUID: 195379689_166214404
   Name: "GS.Зарплата.Пролог.Алименты и штрафы"
   Caption: "Алименты и штрафы"
-  Version: "1.0.0.66"
+  Version: "1.0.0.72"
   Optional: False
   Internal: True
-  MD5: 6A097336CB816D9CC8C79861E34EE9D4
+  MD5: 76EC447D44D614BD31ADB9978B9B1186
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -822,6 +822,8 @@ Objects:
         WHERE
           al.USR$EMPLKEY = pEmplKey
           AND
+          aldebt.USR$DATEDEBT < 'pDateCalcTo'
+          AND
           aldebt.USR$DATEDEBT >=
             (SELECT FIRST 1
                ml.USR$DATEBEGIN
@@ -840,7 +842,7 @@ Objects:
           aldebt.USR$DATEDEBT
         ",
             [
-            pEmplKey-_, pDateCalcFrom-_
+            pEmplKey-_, pDateCalcTo-_
             ]).
         
         /* удаление данных */
@@ -900,7 +902,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-09T15:51:44+03:00
+      EDITIONDATE: 2014-10-27T15:47:47+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -923,12 +925,13 @@ Objects:
         
         :- style_check([-atom]).
         
-        :- retractall(debug_mode).
-        
+        :- dynamic(debug_mode/0).
         % ! при использовании в ТП Гедымин
-        % ! для begin & end debug mode section
-        % ! убрать символ процента из первой позиции
-        /* %%% begin debug mode section
+        % ! комментировать следующую строку
+        %:- assertz(debug_mode).
+        
+        %%% begin debug mode section
+        :- if(debug_mode).
         
         %% saved state
         :- ['../gd_pl_state/load_atom', '../gd_pl_state/date', '../gd_pl_state/dataset'].
@@ -974,16 +977,10 @@ Objects:
         :- ['kb/param_list'].
         %%
         
-        %% flag
-        :- assertz(debug_mode).
-        %%
-        
-        % ! при использовании в ТП Гедымин
-        % ! для begin & end debug mode section
-        % ! убрать символ процента из первой позиции
-        */ %%% end debug mode section
-        
         :- ps32k_lgt(64, 128, 64).
+        
+        :- endif.
+        %%% end debug mode section
         
         /* реализация - расчет */
         
@@ -2766,7 +2763,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-17T09:58:37+03:00
+      EDITIONDATE: 2014-10-14T14:29:53+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -3183,7 +3180,7 @@ Objects:
         QUNDT1VOVEtFWUFSUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-09T16:02:50+03:00
+      EDITIONDATE: 2014-10-08T14:37:34+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -3228,8 +3225,8 @@ Objects:
           wg_FeeType_AlimonyDebt_ID = gdcBaseManager.GetIDByRUIDString(wg_FeeType_AlimonyDebt_RUID)
         
           AccountKey = wg_GetAccountKey(FeeTypeKey, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
-          AccountKeyDebt = wg_GetAccountKey(wg_FeeType_AlimonyDebt_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
-          AccountKeyTransf = wg_GetAccountKey(wg_FeeType_TransferDed_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
+          AccountKeyDebt = wg_GetAccountKey(wg_FeeType_AlimonyDebt_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
+          AccountKeyTransf = wg_GetAccountKey(wg_FeeType_TransferDed_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
         
           '<pl>
           Dim AccountKeyArr
@@ -3682,7 +3679,7 @@ Objects:
         Sl9GRUVEQVRBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: ~
-      EDITIONDATE: 2014-09-24T10:58:04+03:00
+      EDITIONDATE: 2014-10-15T14:22:08+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

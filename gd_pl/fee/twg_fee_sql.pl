@@ -681,6 +681,8 @@ JOIN
 WHERE
   al.USR$EMPLKEY = pEmplKey
   AND
+  aldebt.USR$DATEDEBT < 'pDateCalcTo'
+  AND
   aldebt.USR$DATEDEBT >=
     (SELECT FIRST 1
        ml.USR$DATEBEGIN
@@ -699,7 +701,7 @@ ORDER BY
   aldebt.USR$DATEDEBT
 ",
     [
-    pEmplKey-_, pDateCalcFrom-_
+    pEmplKey-_, pDateCalcTo-_
     ]).
 
 /* удаление данных */
@@ -712,7 +714,7 @@ DELETE
 FROM
   USR$WG_ALIMONYDEBT aldebt
 WHERE
-  aldebt.USR$MANUALDEBT = 0
+  COALESCE(aldebt.USR$MANUALDEBT, 0) = 0
   AND
   aldebt.USR$DATEDEBT >= 'pDateCalcFrom'
   AND
@@ -721,7 +723,7 @@ WHERE
   aldebt.USR$ALIMONYKEY IN
     (SELECT al.DOCUMENTKEY FROM USR$WG_ALIMONY al WHERE al.USR$EMPLKEY = pEmplKey)
   AND
-  aldebt.USR$DATEDEBT >
+  aldebt.USR$DATEDEBT >=
     (SELECT FIRST 1
        ml.USR$DATEBEGIN
      FROM

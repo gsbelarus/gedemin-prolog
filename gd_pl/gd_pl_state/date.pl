@@ -68,45 +68,45 @@ date_diff(Date, Add, _, Date, _, Add) :-
     !.
 date_diff(Date, Add, Part, Date1, Shift, Add0) :-
     date_shift_one(Date, Part, Date2, Shift),
-    Add1 is Add0 + Shift,
+    plus(Add0, Shift, Add1),
     !,
     date_diff(Date2, Add, Part, Date1, Shift, Add1).
 
 %
 date_shift_one(date(Y, M, D), day, date(Y, M, D1), Shift) :-
-    D1 is D + Shift,
+    plus(D, Shift, D1),
     is_date(date(Y, M, D1)),
     !.
 date_shift_one(date(Y, M, _), day, date(Y, M1, D1), Shift) :-
-    M1 is M + Shift,
-    ( 1 is Shift,  D1 is 1 ; month_days(Y, M1, D1) ),
+    plus(M, Shift, M1),
+    ( Shift == 1 ->  D1 = 1 ; month_days(Y, M1, D1) ),
     is_date(date(Y, M1, D1)),
     !.
 date_shift_one(date(Y, _, _), day, date(Y1, M1, D1), Shift) :-
-    Y1 is Y + Shift,
-    ( 1 is Shift -> M1 is 1, D1 is 1 ; M1 is 12, D1 is 31 ),
+    plus(Y, Shift, Y1),
+    ( Shift == 1 -> M1 is 1, D1 = 1 ; M1 = 12, D1 = 31 ),
     is_date(date(Y1, M1, D1)),
     !.
 date_shift_one(date(Y, M, D), month, date(Y, M1, D), Shift) :-
-    M1 is M + Shift,
+    plus(M, Shift, M1),
     is_date(date(Y, M1, D)),
     !.
 date_shift_one(date(Y, M, _), month, date(Y, M1, D1), Shift) :-
-    M1 is M + Shift,
+    plus(M, Shift, M1),
     month_days(Y, M1, D1),
     is_date(date(Y, M1, D1)),
     !.
 date_shift_one(date(Y, _, D), month, date(Y1, M1, D), Shift) :-
-    Y1 is Y + Shift,
-    ( 1 is Shift -> M1 is 1 ; M1 is 12 ),
+    plus(Y, Shift, Y1),
+    ( Shift == 1 -> M1 = 1 ; M1 = 12 ),
     is_date(date(Y1, M1, D)),
     !.
 date_shift_one(date(Y, M, D), year, date(Y1, M, D), Shift) :-
-    Y1 is Y + Shift,
+    plus(Y, Shift, Y1),
     is_date(date(Y1, M, D)),
     !.
 date_shift_one(date(Y, M, _), year, date(Y1, M, D1), Shift) :-
-    Y1 is Y + Shift,
+    plus(Y, Shift, Y1),
     month_days(Y1, M, D1),
     is_date(date(Y1, M, D1)),
     !.
@@ -155,10 +155,9 @@ chars_nn([N2], ['0', N2]).
 %
 is_date(date(Y, M, D)) :-
     integer(Y), integer(M), integer(D),
-    !,
-    Y >= 0, Y =< 9999,
+    between(1994, 2024, Y),
     month_days(Y, M, LastDay),
-    D > 0, D =< LastDay,
+    between(1, LastDay, D),
     !.
 %
 is_date(YYYYMMDD) :-
