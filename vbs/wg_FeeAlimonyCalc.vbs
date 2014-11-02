@@ -28,22 +28,31 @@ function wg_FeeAlimonyCalc(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal Fee
   '
   AccountKeyArr = Array(AccountKey, AccountKeyDebt, AccountKeyTransf)
 
-  Dim frmAlimony, dlgAlimony, Prolog_Alimony
+  Dim frmAlimony, dlgAlimony
+  Dim Prolog_Alimony
   '
   Set frmAlimony = _
     Application.FindComponent("gdc_frmUserComplexDocument147567052_119619099")
-  Set dlgAlimony = _
-    frmAlimony.FindComponent("gdc_dlgUserComplexDocument147567052_119619099")
-  Set Prolog_Alimony = _
-    dlgAlimony.FindComponent("usrg_Prolog_Alimony")
-
-  If Assigned(Prolog_Alimony) Then
-    If Prolog_Alimony.Checked = True Then
-      'Расчет через Пролог-скрипт
-      wg_FeeAlimonyCalc = _
-        wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, AccountKeyArr)
-      Exit Function
+  '
+  If Assigned(frmAlimony) Then
+    Set dlgAlimony = _
+      frmAlimony.FindComponent("gdc_dlgUserComplexDocument147567052_119619099")
+  End If
+  '
+  If Assigned(dlgAlimony) Then
+    Set Prolog_Alimony = dlgAlimony.FindComponent("usrg_Prolog_Alimony")
+    If Assigned(Prolog_Alimony) Then
+      If Prolog_Alimony.Checked = True Then
+        'Расчет через Пролог-скрипт
+        wg_FeeAlimonyCalc = _
+          wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr)
+        Exit Function
+      End If
     End If
+  Else
+    'Расчет через Пролог-скрипт
+    wg_FeeAlimonyCalc = _
+      wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr)
   End If
   '</pl>
 

@@ -375,7 +375,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки / по среднему заработку / по не полным месяцам)
     Scope = wg_avg_wage_sick,
-    Rules = [by_not_full, by_avg_wage, by_rate],
+    Rules = [by_rate, by_avg_wage, by_not_full],
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
     % есть требуемое количество месяцев
@@ -385,13 +385,12 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     findall( AvgWage0-Rule0,
              ( member(Rule0, Rules),
                calc_avg_wage_sick(Scope, PK, Periods, AvgWage0, Rule0),
-               AvgWage > 0
+               AvgWage0 > 0
              ),
     % в список расчетов
     AvgWageList),
     % выбор по более выгодному варианту
-    sort(AvgWageList, AvgWageList1),
-    last(AvgWageList1, AvgWage-Rule),
+    max_member(AvgWage-Rule, AvgWageList),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки без периодов со справкой)

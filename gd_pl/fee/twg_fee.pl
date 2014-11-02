@@ -9,7 +9,7 @@
 :- dynamic(debug_mode/0).
 % ! при использовании в ТП Гедымин
 % ! комментировать следующую строку
-%:- assertz(debug_mode).
+:- assertz(debug_mode).
 
 %%% begin debug mode section
 :- if(debug_mode).
@@ -181,12 +181,12 @@ calc_amount(Scope, EmplKey) :-
                 pAlimonySumPaid-AlimonySumPaid,
                 pAlimonySum-AlimonySum, pAlimonyCoef-AlimonyCoef ],
     % сумма по Предыдущему периоду
+    % где дата Зачисления соответствует Текущему периоду
     calc_amount(Scope, EmplKey, 1),
     get_param_list(Scope, Type, [
                     Section-1, pEmplKey-EmplKey,
                     pForAlimony-ForAlimony1 ]),
     % сумма по Предыдущему периоду
-    % где дата Зачисления соответствует Текущему периоду
     calc_amount(Scope, EmplKey, 2),
     get_param_list(Scope, Type, [
                     Section-2, pEmplKey-EmplKey,
@@ -248,7 +248,9 @@ calc_amount(Scope, EmplKey, Shape) :-
     % Исключаемый ПН
     IncomeTaxExcl is round(AmountTaxableExcl * IncomeTaxCoef) * 1.0,
     % Расчетная сумма = Общая сумма - Исключаемая сумма - Исключаемый ПН
-    ForAlimony is round(AmountAll - AmountExcl - IncomeTaxExcl) * 1.0,
+    ForAlimony0 is round(AmountAll - AmountExcl - IncomeTaxExcl) * 1.0,
+    % + Переходящая сумма
+    calc_amount_add_prev(Scope, Type, Shape, EmplKey, ForAlimony0, ForAlimony),
     % спецификация временных данных
     AmountPairs = [
                 Section-Shape, pEmplKey-EmplKey, pForAlimony-ForAlimony,
@@ -257,6 +259,37 @@ calc_amount(Scope, EmplKey, Shape) :-
                 pIncomeTax-IncomeTax, pAmountTaxable-AmountTaxable ],
     % добавить временные данные
     new_param_list(Scope, Type, AmountPairs),
+    !.
+
+% добавить Переходящую сумму
+calc_amount_add_prev(Scope, Type, Shape, EmplKey, ForAlimony0, ForAlimony) :-
+    Shape = 3,
+    % спецификация Начислений по Предыдущему периоду
+    SpecTblChargePrev = [
+                %fDocKey-AlimonyKey,
+                fEmplKey-EmplKey,
+                fDebit-Debit, fCredit-Credit,
+                fFeeTypeKey-FeeTypeKey ],
+    % начислено Алиментов по Предыдущему периоду
+    get_data(Scope, kb, usr_wg_FeeType_Dict, [
+                fID-FeeTypeKey, fAlias-"ftAlimony" ]),
+    findall( AlimonySum,
+             ( get_data(Scope, kb, usr_wg_TblCharge_Prev, SpecTblChargePrev),
+               AlimonySum is Credit - Debit
+             ),
+    AlimonySumList),
+    sum_list(AlimonySumList, AlimonyAmount),
+    % если Не было Удержания в Предыдущем периоде
+    AlimonyAmount =:= 0,
+    % сумма по Предыдущему периоду
+    % где дата Зачисления соответствует Текущему периоду
+    get_param_list(Scope, Type, [
+                    pCalcAmount-1, pEmplKey-EmplKey,
+                    pForAlimony-ForAlimony1 ]),
+    % то Добавить к Текущему периоду
+    ForAlimony is ForAlimony0 + ForAlimony1,
+    !.
+calc_amount_add_prev(_, _, _, _, ForAlimony, ForAlimony) :-
     !.
 
 % расчет формулы
@@ -1107,9 +1140,9 @@ fee_group_charges(Scope, EmplKey, Charges, Shape) :-
               % соответствующего типа
               get_data(Scope, kb, usr_wg_FeeType, SpecFeeType),
               % с фильтром для вида расчета
-              ( Shape = 1, Y-M = Y0-M0 ; \+ Shape = 1 ),
+              ( Shape = 1, Y-M = Y0-M0 -> true ; \+ Shape = 1 ),
               % и контролем суммы
-              ( \+ Debit =:= 0 ; \+ Credit =:= 0 )
+              ( \+ Debit =:= 0 -> true ; \+ Credit =:= 0 )
             ),
     % в список
     Charges ),
@@ -1153,7 +1186,7 @@ charge_acc(ChargeData, Options, ValidFeeTypes, Amount0, Amount1) :-
     % спецификация данных
     ChargeData = [
         _-_, _, Debit, Credit, FeeTypeKey ],
-    % если тип начисления дейсвителен
+    % если тип начисления действителен
     ( ValidFeeTypes = [] ; memberchk(FeeTypeKey, ValidFeeTypes) ),
     % установить опции
     ( memberchk(debit(InclDebit), Options) ; InclDebit = 1 ),
@@ -1197,7 +1230,7 @@ fit_data(Scope, [Name-Value0], [Name-Value]) :-
     !.
 % сопоставить с данными по умолчанию
 fit_data(Scope, [Name-Value0], [Name-Value]) :-
-    % - для алиментов ( Процент списания долга)
+    % - для алиментов (Процент списания долга)
     Scope = wg_fee_alimony, Type = fit,
     Name = pPercent,
     ( Value0 > 0, Value = Value0
@@ -1216,8 +1249,8 @@ fit_data(Scope, Pairs0, Pairs) :-
     catch( term_to_atom(Term, Atom), _, fail),
     catch( Term, _, fail),
     %
-    ( LivingWagePerc0 < LivingWagePerc1, LivingWagePerc = LivingWagePerc1
-    ; LivingWagePerc = LivingWagePerc0
+    ( LivingWagePerc0 > 0, LivingWagePerc = LivingWagePerc0
+    ; LivingWagePerc = LivingWagePerc1
     ),
     !.
 fit_data(_, Pairs, Pairs) :-
@@ -1497,13 +1530,14 @@ fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
                     pAmountAll-AmountAll, pIncomeTax-IncomeTax,
                     pAmountExcl-AmountExcl, pIncomeTaxExcl-IncomeTaxExcl ]),
     format( string(ProtText),
-            "~n~2|~w~n~4|~0f~w~0f~w~0f~n~2|~w~n~4|~0f~w~0f~w~0f~n~2|~w~n~4|~0f~w~0f~w~0f~n",
+            "~n~2|~w~n~4|~0f~w~0f~w~0f~n~2|~w~n~4|~0f~w~0f~w~0f~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~n",
             [ "Заработок = Начисленная сумма - ПН",
               AmountAll, " = ", AmountAll - IncomeTax, " - ", -IncomeTax,
               "Исключаемый заработок = Исключаемая сумма - Исключаемый ПН",
               AmountExcl + IncomeTaxExcl, " = ", AmountExcl," - ", -IncomeTaxExcl,
-              "Для алиментов = Заработок - Исключаемый заработок",
-              ForAlimony, " = ", AmountAll, " - ",  AmountExcl + IncomeTaxExcl ] ),
+              "Для алиментов = Заработок - Исключаемый заработок + Переходящая сумма",
+              ForAlimony, " = ", AmountAll, " - ",  AmountExcl + IncomeTaxExcl,
+               " + ", ForAlimony - AmountAll ] ),
         !.
 % Исполнительные листы (расчетная сумма алиментов)
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-

@@ -78,9 +78,9 @@ JOIN
 WHERE
   Z.USR$EMPLKEY = pEmplKey
   AND
-  IDK.USR$DATEBEGIN >= \'pDateCalcFrom\'
+  IDK.USR$DATEBEGIN >= 'pDateCalcFrom'
   AND
-  IDK.USR$DATEBEGIN < \'pDateCalcTo\'
+  IDK.USR$DATEBEGIN < 'pDateCalcTo'
 ORDER BY
   Z.USR$EMPLKEY,
   IDK.USR$DATEBEGIN
@@ -207,9 +207,9 @@ JOIN
 WHERE
   COALESCE(tcd.WDURATION, 0) > 0
   AND
-  (tcd.THEDAY >= \'pDateCalcFrom\' OR tcd.THEDAY >= \'pDateNormFrom\')
+  (tcd.THEDAY >= 'pDateCalcFrom' OR tcd.THEDAY >= 'pDateNormFrom')
   AND
-  (tcd.THEDAY < \'pDateCalcTo\' OR tcd.THEDAY < \'pDateNormTo\')
+  (tcd.THEDAY < 'pDateCalcTo' OR tcd.THEDAY < 'pDateNormTo')
 ORDER BY
   tcd.THEDAY
 ",
@@ -235,7 +235,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblDayNorm, 8, [
 get_sql(Scope, kb, usr_wg_TblDayNorm/8,
 "
 SELECT EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay
-FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\')
+FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, 'pDateCalcFrom', 'pDateCalcTo')
 ",
     [
     pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
@@ -254,7 +254,7 @@ gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_TblYearNorm, 5,
 get_sql(wg_avg_wage_vacation, kb, usr_wg_TblYearNorm/5,
 "
 SELECT EmplKey, FirstMoveKey, WYear, SUM(WDuration) AS WHoures, SUM(WorkDay) AS WDays
-FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateNormFrom\', \'pDateNormTo\')
+FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, 'pDateNormFrom', 'pDateNormTo')
 GROUP BY EmplKey, FirstMoveKey, WYear
 ",
     [
@@ -290,9 +290,9 @@ WHERE
   AND
   tc.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND
-  tcl.USR$DATE >= \'pDateCalcFrom\'
+  tcl.USR$DATE >= 'pDateCalcFrom'
   AND
-  tcl.USR$DATE < \'pDateCalcTo\'
+  tcl.USR$DATE < 'pDateCalcTo'
 ORDER BY
   tc.USR$EMPLKEY,
   tc.USR$FIRSTMOVEKEY,
@@ -337,15 +337,15 @@ SELECT
   CASE gd.DOCUMENTTYPEKEY
     WHEN
       (SELECT id FROM gd_ruid WHERE xid = pTblCal_DocType_Plan_xid1 AND dbid = pTblCal_DocType_Plan_dbid1)
-        THEN \'plan\'
+        THEN 'plan'
     WHEN
       (SELECT id FROM gd_ruid WHERE xid = pTblCal_DocType_Plan_xid2 AND dbid = pTblCal_DocType_Plan_dbid2)
-        THEN \'plan\'
+        THEN 'plan'
     WHEN
       (SELECT id FROM GD_P_GETID(pTblCal_DocType_Fact_ruid))
-        THEN \'fact\'
+        THEN 'fact'
     ELSE
-        \'unknown\'
+        'unknown'
   END
     AS FlexType,
   tcfl.USR$EMPLKEY,
@@ -385,9 +385,9 @@ WHERE
   AND
   tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND
-  t.USR$DATEBEGIN >= \'pDateCalcFrom\'
+  t.USR$DATEBEGIN >= 'pDateCalcFrom'
   AND
-  t.USR$DATEBEGIN < \'pDateCalcTo\'
+  t.USR$DATEBEGIN < 'pDateCalcTo'
  ORDER BY
    tcfl.USR$EMPLKEY,
    tcfl.USR$FIRSTMOVEKEY,
@@ -435,9 +435,9 @@ SELECT
   CASE ht.ID
     WHEN
       (SELECT id FROM GD_P_GETID(pKindDayHourType_ruid))
-        THEN \'kind_day\'
+        THEN 'kind_day'
     ELSE
-        \'unknown\'
+        'unknown'
   END
     AS ExclType
 FROM
@@ -483,9 +483,9 @@ WHERE
   AND
   NOT tch.USR$DEBIT = 0
   AND
-  tch.USR$DATEBEGIN >= \'pDateCalcFrom\'
+  tch.USR$DATEBEGIN >= 'pDateCalcFrom'
   AND
-  tch.USR$DATEBEGIN < \'pDateCalcTo\'
+  tch.USR$DATEBEGIN < 'pDateCalcTo'
   AND
   COALESCE(ft.USR$PAYPERIOD, 0) >= 0
 ORDER BY
@@ -531,9 +531,9 @@ WHERE
   AND
   NOT tch.USR$DEBIT = 0
   AND
-  tch.USR$DATEBEGIN >= \'pDateBonusFrom\'
+  tch.USR$DATEBEGIN >= 'pDateBonusFrom'
   AND
-  tch.USR$DATEBEGIN < \'pDateBonusTo\'
+  tch.USR$DATEBEGIN < 'pDateBonusTo'
   AND
   COALESCE(ft.USR$PAYPERIOD, 0) > 1
 ORDER BY
@@ -709,9 +709,9 @@ JOIN
 WHERE
   Z.USR$EMPLKEY = pEmplKey
   AND
-  IDK.USR$DATEBEGIN >= \'pDateCalcFrom\'
+  IDK.USR$DATEBEGIN >= 'pDateCalcFrom'
   AND
-  IDK.USR$DATEBEGIN < \'pDateCalcTo\'
+  IDK.USR$DATEBEGIN < 'pDateCalcTo'
 ORDER BY
   Z.USR$EMPLKEY,
   IDK.USR$DATEBEGIN
@@ -733,7 +733,7 @@ gd_pl_ds(wg_avg_wage_sick, kb, usr_wg_AvgWage, 6, [
 get_sql(wg_avg_wage_sick, kb, usr_wg_AvgWage/6,
 "
 SELECT
-  \'vacation\' AS AvgType,
+  'vacation' AS AvgType,
   v.USR$EMPLKEY,
   v.USR$FIRSTMOVEKEY,
   EXTRACT(YEAR FROM vl.USR$DATEBEGIN) AS CalYear,
@@ -749,12 +749,12 @@ WHERE
   AND
   v.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND
-  vl.USR$DATEBEGIN >= \'pDateCalcFrom\'
+  vl.USR$DATEBEGIN >= 'pDateCalcFrom'
   AND
-  vl.USR$DATEBEGIN < \'pDateCalcTo\'
+  vl.USR$DATEBEGIN < 'pDateCalcTo'
 UNION ALL
 SELECT
-  \'sick\' AS AvgType,
+  'sick' AS AvgType,
   s.USR$EMPLKEY,
   s.USR$FIRSTMOVEKEY,
   EXTRACT(YEAR FROM sl.USR$DATEBEGIN) AS CalYear,
@@ -770,12 +770,12 @@ WHERE
   AND
   s.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND
-  sl.USR$DATEBEGIN >= \'pDateCalcFrom\'
+  sl.USR$DATEBEGIN >= 'pDateCalcFrom'
   AND
-  sl.USR$DATEBEGIN < \'pDateCalcTo\'
+  sl.USR$DATEBEGIN < 'pDateCalcTo'
 UNION ALL
 SELECT
-  \'avg\' AS AvgType,
+  'avg' AS AvgType,
   al.USR$EMPLKEY,
   al.USR$FIRSTMOVEKEY,
   EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear,
@@ -794,9 +794,9 @@ WHERE
   AND
   al.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND
-  t.USR$DATEBEGIN >= \'pDateCalcFrom\'
+  t.USR$DATEBEGIN >= 'pDateCalcFrom'
   AND
-  t.USR$DATEBEGIN < \'pDateCalcTo\'
+  t.USR$DATEBEGIN < 'pDateCalcTo'
 ",
     [
     pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
@@ -843,7 +843,7 @@ SELECT
 FROM
   wg_holiday h
 WHERE
-  h.holidaydate BETWEEN \'pDateCalcFrom\' AND \'pDateCalcTo\'
+  h.holidaydate BETWEEN 'pDateCalcFrom' AND 'pDateCalcTo'
   AND COALESCE(h.disabled, 0) = 0
 ",
     [
@@ -865,71 +865,71 @@ FROM (
 SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
-  \'LIGHTWORKLINE\' AS ExclType,
+  'LIGHTWORKLINE' AS ExclType,
   0 AS OrderType,
   0 AS ExclWeekDay,
-  CAST( IIF(lw.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', lw.USR$DATEBEGIN) AS DATE) AS FromDate,
-  CAST( IIF(lw.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(lw.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', lw.USR$DATEEND)) AS DATE) AS ToDate
+  CAST( IIF(lw.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', lw.USR$DATEBEGIN) AS DATE) AS FromDate,
+  CAST( IIF(lw.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(lw.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', lw.USR$DATEEND)) AS DATE) AS ToDate
 FROM USR$WG_LIGHTWORKLINE lw
 WHERE lw.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND lw.USR$EMPLKEY = pEmplKey
-  AND lw.USR$DATEBEGIN <= \'pDateCalcTo\'
-  AND COALESCE(lw.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+  AND lw.USR$DATEBEGIN <= 'pDateCalcTo'
+  AND COALESCE(lw.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
 UNION ALL
 SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
-  \'LEAVEDOCLINE\' AS ExclType,
+  'LEAVEDOCLINE' AS ExclType,
   t.USR$TYPE AS OrderType,
   0 AS ExclWeekDay,
-  CAST( IIF(ld.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ld.USR$DATEBEGIN) AS DATE) AS FromDate,
-  CAST( IIF(ld.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ld.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ld.USR$DATEEND)) AS DATE) AS ToDate
+  CAST( IIF(ld.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', ld.USR$DATEBEGIN) AS DATE) AS FromDate,
+  CAST( IIF(ld.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(ld.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', ld.USR$DATEEND)) AS DATE) AS ToDate
 FROM USR$WG_LEAVEDOCLINE ld
 JOIN USR$WG_VACATIONTYPE t ON t.ID = ld.USR$VACATIONTYPEKEY
 WHERE ld.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND ld.USR$EMPLKEY = pEmplKey
-  AND ld.USR$DATEBEGIN <= \'pDateCalcTo\'
-  AND COALESCE(ld.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+  AND ld.USR$DATEBEGIN <= 'pDateCalcTo'
+  AND COALESCE(ld.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
   AND COALESCE(t.USR$EXCLUDEFORSICKLIST, 0) = 1
 UNION ALL
 SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
-  \'SICKLISTJOURNAL\' AS ExclType,
+  'SICKLISTJOURNAL' AS ExclType,
   0 AS OrderType,
   0 AS ExclWeekDay,
-  CAST( IIF(s.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', s.USR$DATEBEGIN) AS DATE) AS FromDate,
-  CAST( IIF(s.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(s.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', s.USR$DATEEND)) AS DATE) AS ToDate
+  CAST( IIF(s.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', s.USR$DATEBEGIN) AS DATE) AS FromDate,
+  CAST( IIF(s.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(s.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', s.USR$DATEEND)) AS DATE) AS ToDate
 FROM USR$WG_SICKLISTJOURNAL s
 WHERE s.USR$EMPLKEY = pEmplKey
-  AND s.USR$DATEBEGIN <= \'pDateCalcTo\'
-  AND COALESCE(s.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+  AND s.USR$DATEBEGIN <= 'pDateCalcTo'
+  AND COALESCE(s.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
 UNION ALL
 SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
-  \'LEAVEEXTDOC\' AS ExclType,
+  'LEAVEEXTDOC' AS ExclType,
   0 AS OrderType,
   0 AS ExclWeekDay,
-  CAST( IIF(ext.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ext.USR$DATEBEGIN) AS DATE) AS FromDate,
-  CAST( IIF(ext.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ext.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ext.USR$DATEEND)) AS DATE) AS ToDate
+  CAST( IIF(ext.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', ext.USR$DATEBEGIN) AS DATE) AS FromDate,
+  CAST( IIF(ext.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(ext.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', ext.USR$DATEEND)) AS DATE) AS ToDate
 FROM USR$WG_LEAVEEXTDOC ext
 WHERE ext.USR$EMPLKEY = pEmplKey
-  AND ext.USR$DATEBEGIN <= \'pDateCalcTo\'
-  AND COALESCE(ext.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+  AND ext.USR$DATEBEGIN <= 'pDateCalcTo'
+  AND COALESCE(ext.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
 UNION ALL
 SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
-  \'KINDDAYLINE\' AS ExclType,
+  'KINDDAYLINE' AS ExclType,
   0 AS OrderType,
   kdl.USR$DAY AS ExclWeekDay,
-  CAST( IIF(kdl.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', kdl.USR$DATEBEGIN) AS DATE) AS FromDate,
-  CAST( IIF(kdl.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(kdl.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', kdl.USR$DATEEND)) AS DATE) AS ToDate
+  CAST( IIF(kdl.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', kdl.USR$DATEBEGIN) AS DATE) AS FromDate,
+  CAST( IIF(kdl.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(kdl.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', kdl.USR$DATEEND)) AS DATE) AS ToDate
 FROM USR$WG_KINDDAYLINE kdl
 WHERE kdl.USR$EMPLKEY = pEmplKey
-  AND kdl.USR$DATEBEGIN <= \'pDateCalcTo\'
-  AND COALESCE(kdl.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+  AND kdl.USR$DATEBEGIN <= 'pDateCalcTo'
+  AND COALESCE(kdl.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
 )
 ORDER BY
   ExclWeekDay,
@@ -952,7 +952,7 @@ SELECT
 FROM
   wg_holiday h
 WHERE
-  h.holidaydate BETWEEN \'pDateBegin\' AND \'pDateEnd\'
+  h.holidaydate BETWEEN 'pDateBegin' AND 'pDateEnd'
   AND COALESCE(h.disabled, 0) = 0
 ",
     [
@@ -1080,7 +1080,7 @@ gd_pl_ds(wg_struct_sick, kb, usr_wg_TblDayNorm, 8, [
 get_sql(wg_struct_sick, kb, usr_wg_TblDayNorm/8,
 "
 SELECT EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay
-FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\')
+FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, 'pDateCalcFrom', 'pDateCalcTo')
 ",
     [
     pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
