@@ -39,7 +39,7 @@ wg_valid_sql([
             wg_vacation_slice/2,
             wg_vacation_compensation/3,
             gd_const_budget/2,
-            gd_const_AvgSalaryRB/2,
+            gd_const_AvgSalaryRB/2, % 06, 12
             %usr_wg_TblDayNorm/8,
             wg_job_ill_type/1,
             % section twg_rule
@@ -1048,11 +1048,14 @@ ORDER BY
     pBudget_ruid-_
     ]).
 
-gd_pl_ds(wg_struct_sick, kb, gd_const_AvgSalaryRB, 2, [
+gd_pl_ds(Scope, kb, gd_const_AvgSalaryRB, 2, [
     fConstDate-date, fAvgSalaryRB-float
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_struct_sick, wg_avg_wage_sick
+        ]).
 % gd_const_AvgSalaryRB(ConstDate, AvgSalaryRB)
-get_sql(wg_struct_sick, kb, gd_const_AvgSalaryRB/2,
+get_sql(Scope, kb, gd_const_AvgSalaryRB/2,
 "
 SELECT
   cv.CONSTDATE,
@@ -1069,7 +1072,10 @@ ORDER BY
 ",
     [
     pAvgSalaryRB_ruid-_
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_struct_sick, wg_avg_wage_sick
+        ]).
 
 gd_pl_ds(wg_struct_sick, kb, usr_wg_TblDayNorm, 8, [
     fEmplKey-integer, fFirstMoveKey-integer,

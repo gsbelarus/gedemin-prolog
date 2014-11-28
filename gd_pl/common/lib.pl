@@ -2,6 +2,15 @@
 
 %:- ['../gd_pl_state/date'].
 
+% desc for predsort
+desc(Order, Term1, Term2) :-
+    compare(Order0, Term1, Term2),
+    ( Order0 = '>', Order = '<'
+    ; Order0 = '<', Order = '>'
+    ; Order = Order0
+    ),
+    !.
+
 % atomic_list_to_string(+List, -String)
 atomic_list_to_string(List, String) :-
     current_predicate( atomics_to_string/2 ),

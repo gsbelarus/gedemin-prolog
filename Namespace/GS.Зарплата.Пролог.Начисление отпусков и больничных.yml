@@ -5,10 +5,10 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.93"
+  Version: "1.0.0.97"
   Optional: False
   Internal: True
-  MD5: 80F2013CB49041AE27B0E8F47DEB8D3B
+  MD5: 25503DC00715E9B8DF83E275AB7DA818
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -250,9 +250,9 @@ Objects:
         WHERE
           Z.USR$EMPLKEY = pEmplKey
           AND
-          IDK.USR$DATEBEGIN >= \'pDateCalcFrom\'
+          IDK.USR$DATEBEGIN >= 'pDateCalcFrom'
           AND
-          IDK.USR$DATEBEGIN < \'pDateCalcTo\'
+          IDK.USR$DATEBEGIN < 'pDateCalcTo'
         ORDER BY
           Z.USR$EMPLKEY,
           IDK.USR$DATEBEGIN
@@ -379,9 +379,9 @@ Objects:
         WHERE
           COALESCE(tcd.WDURATION, 0) > 0
           AND
-          (tcd.THEDAY >= \'pDateCalcFrom\' OR tcd.THEDAY >= \'pDateNormFrom\')
+          (tcd.THEDAY >= 'pDateCalcFrom' OR tcd.THEDAY >= 'pDateNormFrom')
           AND
-          (tcd.THEDAY < \'pDateCalcTo\' OR tcd.THEDAY < \'pDateNormTo\')
+          (tcd.THEDAY < 'pDateCalcTo' OR tcd.THEDAY < 'pDateNormTo')
         ORDER BY
           tcd.THEDAY
         ",
@@ -407,7 +407,7 @@ Objects:
         get_sql(Scope, kb, usr_wg_TblDayNorm/8,
         "
         SELECT EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay
-        FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\')
+        FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, 'pDateCalcFrom', 'pDateCalcTo')
         ",
             [
             pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
@@ -426,7 +426,7 @@ Objects:
         get_sql(wg_avg_wage_vacation, kb, usr_wg_TblYearNorm/5,
         "
         SELECT EmplKey, FirstMoveKey, WYear, SUM(WDuration) AS WHoures, SUM(WorkDay) AS WDays
-        FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateNormFrom\', \'pDateNormTo\')
+        FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, 'pDateNormFrom', 'pDateNormTo')
         GROUP BY EmplKey, FirstMoveKey, WYear
         ",
             [
@@ -462,9 +462,9 @@ Objects:
           AND
           tc.USR$FIRSTMOVEKEY = pFirstMoveKey
           AND
-          tcl.USR$DATE >= \'pDateCalcFrom\'
+          tcl.USR$DATE >= 'pDateCalcFrom'
           AND
-          tcl.USR$DATE < \'pDateCalcTo\'
+          tcl.USR$DATE < 'pDateCalcTo'
         ORDER BY
           tc.USR$EMPLKEY,
           tc.USR$FIRSTMOVEKEY,
@@ -509,15 +509,15 @@ Objects:
           CASE gd.DOCUMENTTYPEKEY
             WHEN
               (SELECT id FROM gd_ruid WHERE xid = pTblCal_DocType_Plan_xid1 AND dbid = pTblCal_DocType_Plan_dbid1)
-                THEN \'plan\'
+                THEN 'plan'
             WHEN
               (SELECT id FROM gd_ruid WHERE xid = pTblCal_DocType_Plan_xid2 AND dbid = pTblCal_DocType_Plan_dbid2)
-                THEN \'plan\'
+                THEN 'plan'
             WHEN
               (SELECT id FROM GD_P_GETID(pTblCal_DocType_Fact_ruid))
-                THEN \'fact\'
+                THEN 'fact'
             ELSE
-                \'unknown\'
+                'unknown'
           END
             AS FlexType,
           tcfl.USR$EMPLKEY,
@@ -557,9 +557,9 @@ Objects:
           AND
           tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey
           AND
-          t.USR$DATEBEGIN >= \'pDateCalcFrom\'
+          t.USR$DATEBEGIN >= 'pDateCalcFrom'
           AND
-          t.USR$DATEBEGIN < \'pDateCalcTo\'
+          t.USR$DATEBEGIN < 'pDateCalcTo'
          ORDER BY
            tcfl.USR$EMPLKEY,
            tcfl.USR$FIRSTMOVEKEY,
@@ -607,9 +607,9 @@ Objects:
           CASE ht.ID
             WHEN
               (SELECT id FROM GD_P_GETID(pKindDayHourType_ruid))
-                THEN \'kind_day\'
+                THEN 'kind_day'
             ELSE
-                \'unknown\'
+                'unknown'
           END
             AS ExclType
         FROM
@@ -655,9 +655,9 @@ Objects:
           AND
           NOT tch.USR$DEBIT = 0
           AND
-          tch.USR$DATEBEGIN >= \'pDateCalcFrom\'
+          tch.USR$DATEBEGIN >= 'pDateCalcFrom'
           AND
-          tch.USR$DATEBEGIN < \'pDateCalcTo\'
+          tch.USR$DATEBEGIN < 'pDateCalcTo'
           AND
           COALESCE(ft.USR$PAYPERIOD, 0) >= 0
         ORDER BY
@@ -703,9 +703,9 @@ Objects:
           AND
           NOT tch.USR$DEBIT = 0
           AND
-          tch.USR$DATEBEGIN >= \'pDateBonusFrom\'
+          tch.USR$DATEBEGIN >= 'pDateBonusFrom'
           AND
-          tch.USR$DATEBEGIN < \'pDateBonusTo\'
+          tch.USR$DATEBEGIN < 'pDateBonusTo'
           AND
           COALESCE(ft.USR$PAYPERIOD, 0) > 1
         ORDER BY
@@ -881,9 +881,9 @@ Objects:
         WHERE
           Z.USR$EMPLKEY = pEmplKey
           AND
-          IDK.USR$DATEBEGIN >= \'pDateCalcFrom\'
+          IDK.USR$DATEBEGIN >= 'pDateCalcFrom'
           AND
-          IDK.USR$DATEBEGIN < \'pDateCalcTo\'
+          IDK.USR$DATEBEGIN < 'pDateCalcTo'
         ORDER BY
           Z.USR$EMPLKEY,
           IDK.USR$DATEBEGIN
@@ -905,7 +905,7 @@ Objects:
         get_sql(wg_avg_wage_sick, kb, usr_wg_AvgWage/6,
         "
         SELECT
-          \'vacation\' AS AvgType,
+          'vacation' AS AvgType,
           v.USR$EMPLKEY,
           v.USR$FIRSTMOVEKEY,
           EXTRACT(YEAR FROM vl.USR$DATEBEGIN) AS CalYear,
@@ -921,12 +921,12 @@ Objects:
           AND
           v.USR$FIRSTMOVEKEY = pFirstMoveKey
           AND
-          vl.USR$DATEBEGIN >= \'pDateCalcFrom\'
+          vl.USR$DATEBEGIN >= 'pDateCalcFrom'
           AND
-          vl.USR$DATEBEGIN < \'pDateCalcTo\'
+          vl.USR$DATEBEGIN < 'pDateCalcTo'
         UNION ALL
         SELECT
-          \'sick\' AS AvgType,
+          'sick' AS AvgType,
           s.USR$EMPLKEY,
           s.USR$FIRSTMOVEKEY,
           EXTRACT(YEAR FROM sl.USR$DATEBEGIN) AS CalYear,
@@ -942,12 +942,12 @@ Objects:
           AND
           s.USR$FIRSTMOVEKEY = pFirstMoveKey
           AND
-          sl.USR$DATEBEGIN >= \'pDateCalcFrom\'
+          sl.USR$DATEBEGIN >= 'pDateCalcFrom'
           AND
-          sl.USR$DATEBEGIN < \'pDateCalcTo\'
+          sl.USR$DATEBEGIN < 'pDateCalcTo'
         UNION ALL
         SELECT
-          \'avg\' AS AvgType,
+          'avg' AS AvgType,
           al.USR$EMPLKEY,
           al.USR$FIRSTMOVEKEY,
           EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear,
@@ -966,9 +966,9 @@ Objects:
           AND
           al.USR$FIRSTMOVEKEY = pFirstMoveKey
           AND
-          t.USR$DATEBEGIN >= \'pDateCalcFrom\'
+          t.USR$DATEBEGIN >= 'pDateCalcFrom'
           AND
-          t.USR$DATEBEGIN < \'pDateCalcTo\'
+          t.USR$DATEBEGIN < 'pDateCalcTo'
         ",
             [
             pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
@@ -1015,7 +1015,7 @@ Objects:
         FROM
           wg_holiday h
         WHERE
-          h.holidaydate BETWEEN \'pDateCalcFrom\' AND \'pDateCalcTo\'
+          h.holidaydate BETWEEN 'pDateCalcFrom' AND 'pDateCalcTo'
           AND COALESCE(h.disabled, 0) = 0
         ",
             [
@@ -1037,71 +1037,71 @@ Objects:
         SELECT
           pEmplKey AS EmplKey,
           pFirstMoveKey AS FirstMoveKey,
-          \'LIGHTWORKLINE\' AS ExclType,
+          'LIGHTWORKLINE' AS ExclType,
           0 AS OrderType,
           0 AS ExclWeekDay,
-          CAST( IIF(lw.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', lw.USR$DATEBEGIN) AS DATE) AS FromDate,
-          CAST( IIF(lw.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(lw.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', lw.USR$DATEEND)) AS DATE) AS ToDate
+          CAST( IIF(lw.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', lw.USR$DATEBEGIN) AS DATE) AS FromDate,
+          CAST( IIF(lw.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(lw.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', lw.USR$DATEEND)) AS DATE) AS ToDate
         FROM USR$WG_LIGHTWORKLINE lw
         WHERE lw.USR$FIRSTMOVEKEY = pFirstMoveKey
           AND lw.USR$EMPLKEY = pEmplKey
-          AND lw.USR$DATEBEGIN <= \'pDateCalcTo\'
-          AND COALESCE(lw.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+          AND lw.USR$DATEBEGIN <= 'pDateCalcTo'
+          AND COALESCE(lw.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
         UNION ALL
         SELECT
           pEmplKey AS EmplKey,
           pFirstMoveKey AS FirstMoveKey,
-          \'LEAVEDOCLINE\' AS ExclType,
+          'LEAVEDOCLINE' AS ExclType,
           t.USR$TYPE AS OrderType,
           0 AS ExclWeekDay,
-          CAST( IIF(ld.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ld.USR$DATEBEGIN) AS DATE) AS FromDate,
-          CAST( IIF(ld.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ld.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ld.USR$DATEEND)) AS DATE) AS ToDate
+          CAST( IIF(ld.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', ld.USR$DATEBEGIN) AS DATE) AS FromDate,
+          CAST( IIF(ld.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(ld.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', ld.USR$DATEEND)) AS DATE) AS ToDate
         FROM USR$WG_LEAVEDOCLINE ld
         JOIN USR$WG_VACATIONTYPE t ON t.ID = ld.USR$VACATIONTYPEKEY
         WHERE ld.USR$FIRSTMOVEKEY = pFirstMoveKey
           AND ld.USR$EMPLKEY = pEmplKey
-          AND ld.USR$DATEBEGIN <= \'pDateCalcTo\'
-          AND COALESCE(ld.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+          AND ld.USR$DATEBEGIN <= 'pDateCalcTo'
+          AND COALESCE(ld.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
           AND COALESCE(t.USR$EXCLUDEFORSICKLIST, 0) = 1
         UNION ALL
         SELECT
           pEmplKey AS EmplKey,
           pFirstMoveKey AS FirstMoveKey,
-          \'SICKLISTJOURNAL\' AS ExclType,
+          'SICKLISTJOURNAL' AS ExclType,
           0 AS OrderType,
           0 AS ExclWeekDay,
-          CAST( IIF(s.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', s.USR$DATEBEGIN) AS DATE) AS FromDate,
-          CAST( IIF(s.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(s.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', s.USR$DATEEND)) AS DATE) AS ToDate
+          CAST( IIF(s.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', s.USR$DATEBEGIN) AS DATE) AS FromDate,
+          CAST( IIF(s.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(s.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', s.USR$DATEEND)) AS DATE) AS ToDate
         FROM USR$WG_SICKLISTJOURNAL s
         WHERE s.USR$EMPLKEY = pEmplKey
-          AND s.USR$DATEBEGIN <= \'pDateCalcTo\'
-          AND COALESCE(s.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+          AND s.USR$DATEBEGIN <= 'pDateCalcTo'
+          AND COALESCE(s.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
         UNION ALL
         SELECT
           pEmplKey AS EmplKey,
           pFirstMoveKey AS FirstMoveKey,
-          \'LEAVEEXTDOC\' AS ExclType,
+          'LEAVEEXTDOC' AS ExclType,
           0 AS OrderType,
           0 AS ExclWeekDay,
-          CAST( IIF(ext.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', ext.USR$DATEBEGIN) AS DATE) AS FromDate,
-          CAST( IIF(ext.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(ext.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', ext.USR$DATEEND)) AS DATE) AS ToDate
+          CAST( IIF(ext.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', ext.USR$DATEBEGIN) AS DATE) AS FromDate,
+          CAST( IIF(ext.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(ext.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', ext.USR$DATEEND)) AS DATE) AS ToDate
         FROM USR$WG_LEAVEEXTDOC ext
         WHERE ext.USR$EMPLKEY = pEmplKey
-          AND ext.USR$DATEBEGIN <= \'pDateCalcTo\'
-          AND COALESCE(ext.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+          AND ext.USR$DATEBEGIN <= 'pDateCalcTo'
+          AND COALESCE(ext.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
         UNION ALL
         SELECT
           pEmplKey AS EmplKey,
           pFirstMoveKey AS FirstMoveKey,
-          \'KINDDAYLINE\' AS ExclType,
+          'KINDDAYLINE' AS ExclType,
           0 AS OrderType,
           kdl.USR$DAY AS ExclWeekDay,
-          CAST( IIF(kdl.USR$DATEBEGIN < \'pDateCalcFrom\', \'pDateCalcFrom\', kdl.USR$DATEBEGIN) AS DATE) AS FromDate,
-          CAST( IIF(kdl.USR$DATEEND IS NULL, \'pDateCalcTo\', IIF(kdl.USR$DATEEND > \'pDateCalcTo\', \'pDateCalcTo\', kdl.USR$DATEEND)) AS DATE) AS ToDate
+          CAST( IIF(kdl.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', kdl.USR$DATEBEGIN) AS DATE) AS FromDate,
+          CAST( IIF(kdl.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(kdl.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', kdl.USR$DATEEND)) AS DATE) AS ToDate
         FROM USR$WG_KINDDAYLINE kdl
         WHERE kdl.USR$EMPLKEY = pEmplKey
-          AND kdl.USR$DATEBEGIN <= \'pDateCalcTo\'
-          AND COALESCE(kdl.USR$DATEEND, \'pDateCalcTo\') >= \'pDateCalcFrom\'
+          AND kdl.USR$DATEBEGIN <= 'pDateCalcTo'
+          AND COALESCE(kdl.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
         )
         ORDER BY
           ExclWeekDay,
@@ -1124,7 +1124,7 @@ Objects:
         FROM
           wg_holiday h
         WHERE
-          h.holidaydate BETWEEN \'pDateBegin\' AND \'pDateEnd\'
+          h.holidaydate BETWEEN 'pDateBegin' AND 'pDateEnd'
           AND COALESCE(h.disabled, 0) = 0
         ",
             [
@@ -1220,11 +1220,14 @@ Objects:
             pBudget_ruid-_
             ]).
         
-        gd_pl_ds(wg_struct_sick, kb, gd_const_AvgSalaryRB, 2, [
+        gd_pl_ds(Scope, kb, gd_const_AvgSalaryRB, 2, [
             fConstDate-date, fAvgSalaryRB-float
-            ]).
+            ]) :-
+            memberchk(Scope, [
+                wg_struct_sick, wg_avg_wage_sick
+                ]).
         % gd_const_AvgSalaryRB(ConstDate, AvgSalaryRB)
-        get_sql(wg_struct_sick, kb, gd_const_AvgSalaryRB/2,
+        get_sql(Scope, kb, gd_const_AvgSalaryRB/2,
         "
         SELECT
           cv.CONSTDATE,
@@ -1241,7 +1244,10 @@ Objects:
         ",
             [
             pAvgSalaryRB_ruid-_
-            ]).
+            ]) :-
+            memberchk(Scope, [
+                wg_struct_sick, wg_avg_wage_sick
+                ]).
         
         gd_pl_ds(wg_struct_sick, kb, usr_wg_TblDayNorm, 8, [
             fEmplKey-integer, fFirstMoveKey-integer,
@@ -1252,7 +1258,7 @@ Objects:
         get_sql(wg_struct_sick, kb, usr_wg_TblDayNorm/8,
         "
         SELECT EmplKey, FirstMoveKey, WYear, WMonth, TheDay, WDay, WDuration, WorkDay
-        FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, \'pDateCalcFrom\', \'pDateCalcTo\')
+        FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, 'pDateCalcFrom', 'pDateCalcTo')
         ",
             [
             pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
@@ -1313,7 +1319,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-10-10T18:23:16+03:00
+      EDITIONDATE: 2014-11-27T12:59:35+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1376,7 +1382,8 @@ Objects:
                 pFeeGroupKey_ruid-'147071457,274788016',
                 % Группа Пропорциональных начислений
                 pFeeGroupKeyProp_ruid-'147119175,1354510846',
-                pKindDayHourType_ruid-'147650798,119619099'
+                pKindDayHourType_ruid-'147650798,119619099',
+                pAvgSalaryRB_ruid-'147105585,1224850260'
                 ]),
             fail.
         twg_avg_wage_in_params:-
@@ -1428,7 +1435,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-22T13:42:55+03:00
+      EDITIONDATE: 2014-11-27T13:25:08+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1731,10 +1738,13 @@ Objects:
                        % за каждый период проверки
                      ( member(Y1-M1, Periods),
                        % взять данные по заработку
-                       get_month_wage(Scope, PK, Y1, M1, _, Wage) ),
+                       get_month_wage(Scope, PK, Y1, M1, _, Wage),
+                       Wage > 0 ),
             % в список заработков
             Wages ),
-            % итоговый заработок
+            % есть заработок
+            \+ Wages = [],
+            % всего за период
             sum_list(Wages, Amount),
             % взять часы
             findall( THoures,
@@ -1820,7 +1830,7 @@ Objects:
         calc_avg_wage(Scope, PK, AvgWage, Rule) :-
             % - для больничных (от ставки / по среднему заработку / по не полным месяцам)
             Scope = wg_avg_wage_sick,
-            Rules = [by_not_full, by_avg_wage, by_rate],
+            Rules = [by_rate, by_avg_wage, by_not_full],
             % подготовка временных данных для расчета
             prep_avg_wage(Scope, PK, Periods),
             % есть требуемое количество месяцев
@@ -1830,13 +1840,12 @@ Objects:
             findall( AvgWage0-Rule0,
                      ( member(Rule0, Rules),
                        calc_avg_wage_sick(Scope, PK, Periods, AvgWage0, Rule0),
-                       AvgWage > 0
+                       AvgWage0 > 0
                      ),
             % в список расчетов
             AvgWageList),
             % выбор по более выгодному варианту
-            sort(AvgWageList, AvgWageList1),
-            last(AvgWageList1, AvgWage-Rule),
+            max_member(AvgWage-Rule, AvgWageList),
             !.
         calc_avg_wage(Scope, PK, AvgWage, Rule) :-
             % - для больничных (от ставки без периодов со справкой)
@@ -2303,7 +2312,9 @@ Objects:
             % - для больничных
             Scope = wg_avg_wage_sick,
             % расчитать заработок за месяц
-            cacl_month_wage_sick(Scope, PK, Y, M, Wage),
+            cacl_month_wage_sick(Scope, PK, Y, M, Wage0),
+            % контроль заработка за месяц
+            check_month_wage_sick(Scope, PK, Y, M, Wage0, Wage),
             % записать во временные параметры данные по заработку
             append(PK, [pYM-Y-M, pWage-Wage], Pairs),
             new_param_list(Scope, temp, Pairs),
@@ -2326,6 +2337,34 @@ Objects:
             % записать во временные параметры данные по заработку
             append(PK, [pYM-Y-M, pWage-Wage], Pairs),
             new_param_list(Scope, temp, Pairs),
+            !.
+        
+        % контроль заработка за месяц
+        check_month_wage_sick(Scope, PK, Y, M, Wage, MonthAvgSalary) :-
+            % для декрета
+            get_param_list(Scope, run, [pIsPregnancy-1 | PK]),
+            % если в периодах
+            get_periods(Scope, PK, Periods),
+            % есть хоть один месяц
+            Periods = [_|_],
+            % но нет требуемого количества месяцев
+            get_param(Scope, run, pMonthQty-MonthQty),
+            \+ length(Periods, MonthQty),
+            % взять среднюю зп по РБ
+            atom_date(FirstMonthDate, date(Y, M, 1)),
+            date_add(FirstMonthDate, 1, month, FirstMonthDate1),
+            atom_date(FirstMonthDate1, date(Y1, M1, 1)),
+            get_avg_salary_rb(Scope, Y1-M1, MonthAvgSalary0),
+            % взять данные по расчетным дням
+            get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, _),
+            % сделать контроль превышения
+            ( IsFullMonth =:= 1
+             -> MonthAvgSalary is round(MonthAvgSalary0)
+            ; MonthAvgSalary is round(MonthAvgSalary0 / MonthDays * CalcDays)
+            ),
+            Wage > MonthAvgSalary,
+            !.
+        check_month_wage_sick(_, _, _, _, Wage, Wage) :-
             !.
         
         % расчитать заработок за месяц
@@ -2408,7 +2447,7 @@ Objects:
             !.
         get_modern_coef(Scope, PK, TheDay, _, ModernCoef, SalaryOld, SalaryNew) :-
             % взять параметр коэфициента и дату ограничения расчета
-            append(PK, [pDateCalcTo-DateTo, pCoefOption-CoefOption], Pairs),
+            append(PK, [pDateCalc-DateTo, pCoefOption-CoefOption], Pairs),
             get_param_list(Scope, run, Pairs),
             % сформировать дату ограничения выплаты
             date_add(DateTo, 1, month, DateTo1),
@@ -3354,11 +3393,12 @@ Objects:
         %  06. Начисление больничных
         
         % загрузка входных данных по сотруднику
-        avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc) :-
+        avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy) :-
             Scope = wg_avg_wage_sick, Type = in,
-            new_param_list(Scope, Type,
-                [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
-                 pDateCalc-DateCalc, pIsAvgWageDoc-IsAvgWageDoc]),
+            new_param_list(Scope, Type, [
+                            pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+                            pDateCalc-DateCalc, pIsAvgWageDoc-IsAvgWageDoc,
+                            pIsPregnancy-IsPregnancy ]),
             !.
         
         % выгрузка детальных выходных данных по сотруднику
@@ -3499,6 +3539,11 @@ Objects:
             fail.
         avg_wage_clean(_, _, _) :-
             !.
+        
+        avg_wage_err(Scope, ErrMessage) :-
+            Type = error,
+            get_param(Scope, Type, pError-ErrMessage),
+            true.
         
         /**/
         
@@ -3854,8 +3899,8 @@ Objects:
                             pError-"Введите константу 'Бюджет прожиточного минимума'"]),
             !.
         
-        % среднедневная зп для месяца по среднемесячной зп в РБ
-        avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
+        % взять среднюю зп по РБ
+        get_avg_salary_rb(Scope, Y-M, MonthAvgSalary) :-
             % первая дата месяца
             atom_date(FirstMonthDate, date(Y, M, 1)),
             % взять среднюю зп
@@ -3872,15 +3917,21 @@ Objects:
             \+ AvgSalaryList = [],
             % последние данные средней зп за месяц
             last(AvgSalaryList, MonthAvgSalary),
+            !.
+        get_avg_salary_rb(Scope, _, 0) :-
+            new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
+            !.
+        
+        % среднедневная зп для месяца по среднемесячной зп в РБ
+        avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
+            % взять среднюю зп по РБ
+            get_avg_salary_rb(Scope, Y-M, MonthAvgSalary),
             % взять расчетный коэфициент
             get_param(Scope, in, pAvgSalaryRB_Coef-AvgSalaryRB_Coef),
             % календарных дней в месяце
             month_days(Y, M, MonthDays),
             % расчитать среднедневную зп для месяца
             MonthAvgWage is round(MonthAvgSalary * AvgSalaryRB_Coef / MonthDays),
-            !.
-        avg_wage_by_avg_salary(Scope, _, 0) :-
-            new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
             !.
         
         % section twg_rule
@@ -3930,7 +3981,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-10-11T17:36:36+03:00
+      EDITIONDATE: 2014-11-27T17:10:41+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -7588,10 +7639,10 @@ Objects:
       CURR_DATA: ~
       BLOB_DATA: | 
         object gdc_dlgUserComplexDocument147022845_119619099: Tgdc_dlgUserComplexDocument
-          Left = -8
-          Top = -8
+          Left = 43
+          Top = 40
           ActiveControl = nil
-          WindowState = wsMaximized
+          WindowState = wsNormal
           PixelsPerInch = 96
           TextHeight = 13
           object btnAccess: TButton
@@ -7618,7 +7669,7 @@ Objects:
               Left = 541
               Top = 291
               Width = 6
-              Height = 388
+              Height = 332
               Cursor = crHSplit
               Hint = ''
               Align = alLeft
@@ -7641,7 +7692,7 @@ Objects:
               object ibgrDetail: TgsIBGrid
                 Left = 0
                 Width = 541
-                Height = 362
+                Height = 306
                 ReadOnly = True
                 Expands = <>
                 Conditions = <>
@@ -7653,7 +7704,7 @@ Objects:
                     FieldName = 'USR$INCLUDEDATE'
                     ReadOnly = False
                     Title.Caption = 'Месяц зачисления'
-                    Width = 94
+                    Width = 108
                     Visible = True
                   end
                   item
@@ -7662,7 +7713,7 @@ Objects:
                     FieldName = 'USR$PERCENT'
                     ReadOnly = False
                     Title.Caption = '%'
-                    Width = 46
+                    Width = 36
                     Visible = True
                   end
                   item
@@ -7671,7 +7722,7 @@ Objects:
                     FieldName = 'USR$DOI'
                     ReadOnly = False
                     Title.Caption = 'Дни'
-                    Width = 76
+                    Width = 48
                     Visible = True
                     TotalType = ttSum
                   end
@@ -7681,7 +7732,7 @@ Objects:
                     FieldName = 'USR$HOI'
                     ReadOnly = False
                     Title.Caption = 'Часы'
-                    Width = 60
+                    Width = 48
                     Visible = True
                     TotalType = ttSum
                   end
@@ -7691,7 +7742,7 @@ Objects:
                     FieldName = 'USR$SUMMA'
                     ReadOnly = False
                     Title.Caption = 'Сумма'
-                    Width = 67
+                    Width = 72
                     Visible = True
                     TotalType = ttSum
                   end
@@ -7700,7 +7751,7 @@ Objects:
                     FieldName = 'USR$DATEBEGIN'
                     ReadOnly = False
                     Title.Caption = 'Дата начала'
-                    Width = 91
+                    Width = 84
                     Visible = True
                   end
                   item
@@ -7708,7 +7759,7 @@ Objects:
                     FieldName = 'USR$DATEEND'
                     ReadOnly = False
                     Title.Caption = 'Дата окончания'
-                    Width = 75
+                    Width = 108
                     Visible = True
                   end
                   item
@@ -7918,6 +7969,14 @@ Objects:
                     Visible = False
                   end
                   item
+                    Expanded = False
+                    FieldName = 'USR$EQRATE'
+                    ReadOnly = False
+                    Title.Caption = 'Курс экв.'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
                     Alignment = taRightJustify
                     Expanded = False
                     FieldName = 'AFULL'
@@ -7941,14 +8000,6 @@ Objects:
                     FieldName = 'AVIEW'
                     ReadOnly = False
                     Title.Caption = 'Только просмотр'
-                    Width = -1
-                    Visible = False
-                  end
-                  item
-                    Expanded = False
-                    FieldName = 'USR$EQRATE'
-                    ReadOnly = False
-                    Title.Caption = 'Курс экв.'
                     Width = -1
                     Visible = False
                   end>
@@ -8034,15 +8085,15 @@ Objects:
               end
               object tbdLeft: TTBDock
                 Width = 0
-                Height = 362
+                Height = 306
               end
               object tbdRight: TTBDock
                 Left = 541
                 Width = 0
-                Height = 362
+                Height = 306
               end
               object tbdBottom: TTBDock
-                Top = 388
+                Top = 332
                 Width = 541
                 Height = 0
               end
@@ -8051,7 +8102,7 @@ Objects:
               Constraints.MinHeight = 215
               TabOrder = 0
               object pnlHolding: TPanel
-                Width = 1366
+                Width = 1264
                 TabOrder = 1
                 object lblCompany: TLabel
                 end
@@ -8062,7 +8113,7 @@ Objects:
                 Tag = 0
                 Left = 0
                 Top = 0
-                Width = 1366
+                Width = 1264
                 Height = 287
                 Cursor = crDefault
                 Hint = ''
@@ -8119,7 +8170,7 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 128
-                    Width = 1358
+                    Width = 1256
                     Height = 131
                     Cursor = crDefault
                     Hint = ''
@@ -8232,7 +8283,7 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 0
-                    Width = 1358
+                    Width = 1256
                     Height = 128
                     Cursor = crDefault
                     Hint = ''
@@ -8372,11 +8423,13 @@ Objects:
                       PopupMenu = nil
                       Sorted = False
                       TabOrder = 3
-                      Text = 'Все дни 100%'
+                      Text = ''
                       Visible = True
                       Items.Strings = (
                         '12 дн. 80%, ост. 100%'
-                        'Все дни 100%')
+                        'Все дни 100%'
+                        '12 дн. 40% (6 дн. не оплач), ост. 50%'
+                        '12 дн. 40%, ост. 50%')
                     end
                     object usrat_gsIBLookupComboBox_USR_EMPLKEY: TgsIBLookupComboBox
                       Left = 133
@@ -8472,74 +8525,74 @@ Objects:
                   TabVisible = True
                   object atContainer: TatContainer
                     Top = 0
-                    Width = 1358
+                    Width = 1256
                     Height = 234
-                    VertScrollBar.Position = 0
+                    VertScrollBar.Position = 103
                     TabOrder = 0
                     Visible = False
                     object usrat_DBEdit_USR_DURATION_Label: TLabel
-                      Top = 216
+                      Top = 113
                       Visible = False
                     end
                     object usrat_DBEdit_USR_CALCTYPE_Label: TLabel
                       Left = 29
-                      Top = 105
+                      Top = 2
                       Visible = False
                     end
                     object usrat_DBEdit_NUMBER_Label: TLabel
                       Left = 5
-                      Top = 32
+                      Top = -71
                       Visible = False
                     end
                     object usrat_xDateDBEdit_DOCUMENTDATE_Label: TLabel
-                      Top = 8
+                      Top = -95
                       Visible = False
                     end
                     object usrat_DBEdit_USR_SORTNUMBER_Label: TLabel
                       Left = 5
-                      Top = 61
+                      Top = -42
                       Visible = False
                     end
                     object usrat_DBEdit_USR_EQRATE_Label: TLabel
+                      Top = 388
                     end
                     object usrat_DBEdit_USR_DURATION: TxDBCalculatorEdit
-                      Top = 212
+                      Top = 109
                       Cursor = crIBeam
                       TabOrder = 4
                       Visible = False
                     end
                     object usrat_DBEdit_USR_CALCTYPE: TxDBCalculatorEdit
                       Left = 157
-                      Top = 101
+                      Top = -2
                       Width = 156
                       Cursor = crIBeam
                       TabOrder = 3
                       Visible = False
                     end
-                    object usrat_DBCheckBox_USR_CALCBYAVGDAILYWAGE: TDBCheckBox
-                    end
                     object usrat_DBEdit_NUMBER: TDBEdit
                       Left = 163
-                      Top = 28
+                      Top = -75
                       Width = 101
                       TabOrder = 2
                       Visible = False
                     end
                     object usrat_xDateDBEdit_DOCUMENTDATE: TxDateDBEdit
                       Left = 163
-                      Top = 4
+                      Top = -99
                       Width = 102
                       TabOrder = 1
                       Visible = False
                     end
                     object usrat_DBEdit_USR_SORTNUMBER: TxDBCalculatorEdit
                       Left = 163
-                      Top = 61
+                      Top = -42
                       Cursor = crIBeam
                       TabOrder = 0
                       Visible = False
                     end
                     object usrat_DBEdit_USR_EQRATE: TxDBCalculatorEdit
+                      Top = 384
                     end
                   end
                 end
@@ -8549,8 +8602,8 @@ Objects:
               Tag = 0
               Left = 547
               Top = 291
-              Width = 819
-              Height = 388
+              Width = 717
+              Height = 332
               Cursor = crDefault
               Hint = ''
               HelpContext = 0
@@ -8590,8 +8643,8 @@ Objects:
                 Tag = 0
                 Left = 0
                 Top = 0
-                Width = 819
-                Height = 388
+                Width = 717
+                Height = 332
                 Cursor = crDefault
                 Hint = ''
                 HelpContext = 0
@@ -8647,8 +8700,8 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 26
-                    Width = 811
-                    Height = 334
+                    Width = 709
+                    Height = 278
                     Cursor = crDefault
                     Hint = ''
                     HelpContext = 0
@@ -8729,28 +8782,18 @@ Objects:
                     Columns = <
                       item
                         Expanded = False
-                        FieldName = 'USR$ISCHECK'
+                        FieldName = 'USR$ISFULL'
                         ReadOnly = False
-                        Title.Caption = 'Вкл.'
-                        Width = 40
-                        Visible = True
-                      end
-                      item
-                        Expanded = False
-                        FieldName = 'USR$SALARY'
-                        ReadOnly = False
-                        Title.Caption = 'Зарплата'
-                        Width = 68
-                        Visible = True
-                        DisplayFormat = '#.##'
-                        TotalType = ttSum
+                        Title.Caption = 'Полный месяц'
+                        Width = -1
+                        Visible = False
                       end
                       item
                         Expanded = False
                         FieldName = 'USR$DATE'
                         ReadOnly = False
-                        Title.Caption = 'Месяц'
-                        Width = 88
+                        Title.Caption = 'Дата'
+                        Width = 72
                         Visible = True
                       end
                       item
@@ -8758,35 +8801,28 @@ Objects:
                         FieldName = 'USR$CALCDAYS'
                         ReadOnly = False
                         Title.Caption = 'Дни расчет.'
-                        Width = 118
+                        Width = 78
                         Visible = True
+                        TotalType = ttSum
                       end
                       item
-                        Color = clWhite
+                        Alignment = taRightJustify
                         Expanded = False
-                        FieldName = 'USR$MODERNSALARY'
+                        FieldName = 'USR$SALARY'
                         ReadOnly = False
-                        Title.Caption = 'Современная зарплата'
-                        Width = 49
+                        Title.Caption = 'Зарплата'
+                        Width = 72
                         Visible = True
                         DisplayFormat = '#.##'
                         TotalType = ttSum
                       end
                       item
+                        Alignment = taRightJustify
                         Expanded = False
                         FieldName = 'USR$DOW'
                         ReadOnly = False
                         Title.Caption = 'Дни работы'
-                        Width = 40
-                        Visible = True
-                        TotalType = ttSum
-                      end
-                      item
-                        Expanded = False
-                        FieldName = 'USR$HOW'
-                        ReadOnly = False
-                        Title.Caption = 'Часы работы'
-                        Width = 40
+                        Width = 78
                         Visible = True
                         TotalType = ttSum
                       end
@@ -8795,24 +8831,44 @@ Objects:
                         FieldName = 'USR$SCHEDULERDOW'
                         ReadOnly = False
                         Title.Caption = 'Дней по графику'
-                        Width = 53
+                        Width = 84
                         Visible = True
+                      end
+                      item
+                        Alignment = taRightJustify
+                        Expanded = False
+                        FieldName = 'USR$HOW'
+                        ReadOnly = False
+                        Title.Caption = 'Часы работы'
+                        Width = 66
+                        Visible = True
+                        TotalType = ttSum
                       end
                       item
                         Expanded = False
                         FieldName = 'USR$SCHEDULERHOW'
                         ReadOnly = False
                         Title.Caption = 'Часов по графику'
-                        Width = 60
+                        Width = 90
                         Visible = True
                       end
                       item
                         Expanded = False
                         FieldName = 'USR$DESCRIPTION'
                         ReadOnly = False
-                        Title.Caption = 'Изменения'
-                        Width = 96
+                        Title.Caption = 'Описание'
+                        Width = 121
                         Visible = True
+                      end
+                      item
+                        Color = clWhite
+                        Expanded = False
+                        FieldName = 'USR$MODERNSALARY'
+                        ReadOnly = False
+                        Title.Caption = 'Современная зарплата'
+                        Width = -1
+                        Visible = False
+                        DisplayFormat = '#.##'
                       end
                       item
                         Expanded = False
@@ -8824,9 +8880,9 @@ Objects:
                       end
                       item
                         Expanded = False
-                        FieldName = 'USR$ISFULL'
+                        FieldName = 'USR$ISCHECK'
                         ReadOnly = False
-                        Title.Caption = 'Полный месяц'
+                        Title.Caption = 'Вкл.'
                         Width = -1
                         Visible = False
                       end
@@ -8876,13 +8932,21 @@ Objects:
                         Title.Caption = 'Дата'
                         Width = -1
                         Visible = False
+                      end
+                      item
+                        Expanded = False
+                        FieldName = 'Z_USR$DOCUMENTKEY_DOC2715260478'
+                        ReadOnly = False
+                        Title.Caption = 'Тип документа'
+                        Width = -1
+                        Visible = False
                       end>
                   end
                   object usrg_TBDock1: TTBDock
                     Tag = 0
                     Left = 0
                     Top = 0
-                    Width = 811
+                    Width = 709
                     Height = 26
                     Cursor = crDefault
                     Hint = ''
@@ -9044,7 +9108,7 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 0
-                    Width = 811
+                    Width = 709
                     Height = 26
                     Cursor = crDefault
                     Hint = ''
@@ -9124,8 +9188,8 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 26
-                    Width = 811
-                    Height = 334
+                    Width = 709
+                    Height = 278
                     Cursor = crDefault
                     Hint = ''
                     HelpContext = 0
@@ -9186,25 +9250,25 @@ Objects:
                       item
                         Expanded = False
                         FieldName = 'Дата'
-                        Width = 95
+                        Width = 83
                         Visible = True
                       end
                       item
                         Expanded = False
                         FieldName = 'Рабочий день'
-                        Width = 86
+                        Width = 75
                         Visible = True
                       end
                       item
                         Expanded = False
                         FieldName = 'Часы'
-                        Width = 76
+                        Width = 66
                         Visible = True
                       end
                       item
                         Expanded = False
                         FieldName = 'Процент'
-                        Width = 534
+                        Width = 467
                         Visible = True
                       end>
                   end
@@ -9441,7 +9505,7 @@ Objects:
           end
         end
         
-      EDITIONDATE: 2014-09-09T10:32:46+03:00
+      EDITIONDATE: 2014-11-18T11:04:13+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -9534,11 +9598,14 @@ Objects:
           Dim P_main, Tv_main, Q_main
           'avg_wage_sick_in
           Dim P_in, Tv_in, Q_in
-          Dim EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc
+          Dim EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy
           'avg_wage_run, avg_wage_sql
           Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
           Dim DateCalcFrom, DateCalcTo
           Dim PredicateName, Arity, SQL
+          'avg_wage_err
+          Dim P_err, Tv_err, Q_err
+          Dim ErrMessage
           'avg_wage_out, avg_wage_sick_det
           Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
           Dim AvgWage, AvgWageRule
@@ -9572,6 +9639,8 @@ Objects:
           FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
           DateCalc = gdcObject.FieldByName("USR$FROM").AsDateTime
           IsAvgWageDoc = gdcObject.FieldByName("USR$REFERENCE").AsInteger
+          IsPregnancy = abs(gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
+                 gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
         
           'clean
           gdcSalary.First
@@ -9581,14 +9650,15 @@ Objects:
           '
           gdcSalary.OwnerForm.Repaint
         
-          'avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc)
+          'avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy)
           P_in = "avg_wage_sick_in"
-          Set Tv_in = Creator.GetObject(4, "TgsPLTermv", "")
+          Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
           Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
           Tv_in.PutInteger 0, EmplKey
           Tv_in.PutInteger 1, FirstMoveKey
           Tv_in.PutDate 2, DateCalc
           Tv_in.PutInteger 3, IsAvgWageDoc
+          Tv_in.PutInteger 4, IsPregnancy
           '
           Q_in.PredicateName = P_in
           Q_in.Termv = Tv_in
@@ -9694,6 +9764,29 @@ Objects:
             Exit Function
           End If
           Q_main.Close
+        
+          'avg_wage_err(Scope, ErrMessage)
+          P_err = "avg_wage_err"
+          Set Tv_err = Creator.GetObject(2, "TgsPLTermv", "")
+          Set Q_err = Creator.GetObject(nil, "TgsPLQuery", "")
+          '
+          Q_err.PredicateName = P_err
+          Q_err.Termv = Tv_err
+          '
+          Tv_err.PutAtom 0, Scope
+          '
+          Q_err.OpenQuery
+          If Not Q_err.EOF Then
+            Do Until Q_err.EOF
+              '
+              ErrMessage = Tv_err.ReadString(1)
+              Call MsgBox(ErrMessage, vbCritical + vbOKOnly, "Ошибка!")
+              '
+              Q_err.NextSolution
+            Loop
+            Exit Function
+          End If
+          Q_err.Close
         
           'avg_wage_out(Scope, EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
           P_out = "avg_wage_out"
@@ -9812,11 +9905,11 @@ Objects:
           gdcObject.Post
         
           wg_AvgSalaryStrGenerate_Sick_pl = True
-          
+        
           T2 = Timer
           T = T2 - T1
         '
-        End function
+        End Function
         
       DISPLAYSCRIPT: | 
         WG_AVGSALARYSTRGENERATE_SICK_PL
@@ -9836,7 +9929,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-09-29T11:52:52+03:00
+      EDITIONDATE: 2014-11-27T14:46:21+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -11538,7 +11631,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-07-21T16:32:06+03:00
+      EDITIONDATE: 2014-10-28T10:19:34+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11592,7 +11685,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-07-21T16:32:06+03:00
+      EDITIONDATE: 2014-10-28T10:19:34+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -11788,9 +11881,9 @@ Objects:
         aWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRlZAgJRmllbGROYW1lBg9VU1IkREVTQ1JJUFRJ
         T04IUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GCM7v6PHg7ejlBVdpZHRoA94AB1Zpc2libGUJAAEJ
         QWxpZ25tZW50Bw50YVJpZ2h0SnVzdGlmeQhFeHBhbmRlZAgJRmllbGROYW1lBg1VU1IkT0xEU0FM
-        QVJZCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgXO6uvg5AVXaWR0aAI8B1Zpc2libGUJAAEJQWxp
+        QVJZCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgXO6uvg5AVXaWR0aAL/B1Zpc2libGUIAAEJQWxp
         Z25tZW50Bw50YVJpZ2h0SnVzdGlmeQhFeHBhbmRlZAgJRmllbGROYW1lBg1VU1IkTkVXU0FMQVJZ
-        CFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBg3S5erz+ejpIO7q6+DkBVdpZHRoAmAHVmlzaWJsZQkA
+        CFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBg3S5erz+ejpIO7q6+DkBVdpZHRoAv8HVmlzaWJsZQgA
         AQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYCSUQNVGl0bGUu
         Q2FwdGlvbgYNyOTl7fLo9Ojq4PLu8AVXaWR0aAL/B1Zpc2libGUIAAEJQWxpZ25tZW50Bw10YUxl
         ZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUGD1VTUiRET0NVTUVOVEtFWQhSZWFkT25seQgN
@@ -11804,7 +11897,7 @@ Objects:
         6vPs5e3y4AVXaWR0aAL/B1Zpc2libGUIAAEJQWxpZ25tZW50Bw10YUxlZnRKdXN0aWZ5CEV4cGFu
         ZGVkCAlGaWVsZE5hbWUGDFVTUiRDQUxDREFZUwhSZWFkT25seQgNVGl0bGUuQ2FwdGlvbgYLxO3o
         IPDg8ffl8i4FV2lkdGgC/wdWaXNpYmxlCAAACAj9DAkI
-      EDITIONDATE: 2014-04-23T11:07:04+03:00
+      EDITIONDATE: 2014-10-28T09:48:51+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -11853,11 +11946,11 @@ Objects:
       NAME: "Width"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 1366
+      INT_DATA: 1280
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-08-20T15:05:08+03:00
+      EDITIONDATE: 2014-10-27T15:40:39+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11871,11 +11964,11 @@ Objects:
       NAME: "Left"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 0
+      INT_DATA: 43
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-08-20T15:05:03+03:00
+      EDITIONDATE: 2014-11-18T11:03:33+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11893,7 +11986,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-08-20T15:05:08+03:00
+      EDITIONDATE: 2014-11-18T11:03:33+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12081,7 +12174,7 @@ Objects:
         VGFob21hBgxjbFdpbmRvd1RleHQC9QACCAADzAAABgljbEJ0bkZhY2UJBgkkMDBFN0YzRjcGCSQw
         MEQ2RTdFNw4ACAgOAAgOAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxk
         TmFtZQYKVVNSJElTRlVMTAhSZWFkT25seQgNVGl0bGUuQ2FwdGlvbgYMz+7r7fvpIOzl8f/2BVdp
-        ZHRoAjYHVmlzaWJsZQkAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxk
+        ZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxk
         TmFtZQYIVVNSJERBVEUIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GBMTg8uAFV2lkdGgCSAdWaXNp
         YmxlCQABCUFsaWdubWVudAcNdGFMZWZ0SnVzdGlmeQhFeHBhbmRlZAgJRmllbGROYW1lBgxVU1Ik
         Q0FMQ0RBWVMIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GC8Tt6CDw4PH35fIuBVdpZHRoAk4HVmlz
@@ -12098,7 +12191,7 @@ Objects:
         c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYQVVNSJFNDSEVEVUxFUkhPVwhSZWFkT25seQgNVGl0
         bGUuQ2FwdGlvbgYQ1+Dx7uIg7+4g4/Dg9Ojq8wVXaWR0aAJaB1Zpc2libGUJAAEJQWxpZ25tZW50
         Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUGD1VTUiRERVNDUklQVElPTghSZWFk
-        T25seQgNVGl0bGUuQ2FwdGlvbgYIzu/o8eDt6OUFV2lkdGgCUwdWaXNpYmxlCQABCUFsaWdubWVu
+        T25seQgNVGl0bGUuQ2FwdGlvbgYIzu/o8eDt6OUFV2lkdGgCeQdWaXNpYmxlCQABCUFsaWdubWVu
         dAcNdGFMZWZ0SnVzdGlmeQVDb2xvcgcHY2xXaGl0ZQhFeHBhbmRlZAgJRmllbGROYW1lBhBVU1Ik
         TU9ERVJOU0FMQVJZCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBhTR7uLw5ezl7e3g/yDn4PDv6+Dy
         4AVXaWR0aAL/B1Zpc2libGUIDURpc3BsYXlGb3JtYXQGBCMuIyMAAQlBbGlnbm1lbnQHDXRhTGVm
@@ -12117,8 +12210,10 @@ Objects:
         T0NVTUVOVEtFWV9OVU1CRVIIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GBc3u7OXwBVdpZHRoAv8H
         VmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYe
         Wl9VU1IkRE9DVU1FTlRLRVlfRE9DVU1FTlREQVRFCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgTE
-        4PLgBVdpZHRoAv8HVmlzaWJsZQgAAAgI/RwJCA==
-      EDITIONDATE: 2014-08-20T11:22:58+03:00
+        4PLgBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQI
+        CUZpZWxkTmFtZQYfWl9VU1IkRE9DVU1FTlRLRVlfRE9DMjcxNTI2MDQ3OAhSZWFkT25seQgNVGl0
+        bGUuQ2FwdGlvbgYN0ujvIOTu6vPs5e3y4AVXaWR0aAL/B1Zpc2libGUIAAAICP0cCQg=
+      EDITIONDATE: 2014-10-28T09:51:16+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -12339,7 +12434,6 @@ Objects:
       W8_START4: 1899-12-30T00:00:00+03:00
       W8_END4: 1899-12-30T00:00:00+03:00
       EDITIONDATE: 2014-03-14T15:54:21+03:00
-      USR$WAGE_OLDKEY: ~
       USR$DAYCICLECOUNT: 7
       USR$CALENDARTYPE: ~
       USR$FIRSTDAYDATE: ~

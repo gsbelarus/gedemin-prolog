@@ -15,11 +15,14 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   Dim P_main, Tv_main, Q_main
   'avg_wage_sick_in
   Dim P_in, Tv_in, Q_in
-  Dim EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc
+  Dim EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy
   'avg_wage_run, avg_wage_sql
   Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
   Dim DateCalcFrom, DateCalcTo
   Dim PredicateName, Arity, SQL
+  'avg_wage_err
+  Dim P_err, Tv_err, Q_err
+  Dim ErrMessage
   'avg_wage_out, avg_wage_sick_det
   Dim P_out, Tv_out, Q_out, P_det, Tv_det, Q_det
   Dim AvgWage, AvgWageRule
@@ -53,6 +56,8 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   FirstMoveKey = gdcObject.FieldByName("USR$FIRSTMOVEKEY").AsInteger
   DateCalc = gdcObject.FieldByName("USR$FROM").AsDateTime
   IsAvgWageDoc = gdcObject.FieldByName("USR$REFERENCE").AsInteger
+  IsPregnancy = abs(gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
+         gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
 
   'clean
   gdcSalary.First
@@ -62,14 +67,15 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   '
   gdcSalary.OwnerForm.Repaint
 
-  'avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc)
+  'avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy)
   P_in = "avg_wage_sick_in"
-  Set Tv_in = Creator.GetObject(4, "TgsPLTermv", "")
+  Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
   Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
   Tv_in.PutInteger 0, EmplKey
   Tv_in.PutInteger 1, FirstMoveKey
   Tv_in.PutDate 2, DateCalc
   Tv_in.PutInteger 3, IsAvgWageDoc
+  Tv_in.PutInteger 4, IsPregnancy
   '
   Q_in.PredicateName = P_in
   Q_in.Termv = Tv_in
@@ -176,6 +182,29 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   End If
   Q_main.Close
 
+  'avg_wage_err(Scope, ErrMessage)
+  P_err = "avg_wage_err"
+  Set Tv_err = Creator.GetObject(2, "TgsPLTermv", "")
+  Set Q_err = Creator.GetObject(nil, "TgsPLQuery", "")
+  '
+  Q_err.PredicateName = P_err
+  Q_err.Termv = Tv_err
+  '
+  Tv_err.PutAtom 0, Scope
+  '
+  Q_err.OpenQuery
+  If Not Q_err.EOF Then
+    Do Until Q_err.EOF
+      '
+      ErrMessage = Tv_err.ReadString(1)
+      Call MsgBox(ErrMessage, vbCritical + vbOKOnly, "Ошибка!")
+      '
+      Q_err.NextSolution
+    Loop
+    Exit Function
+  End If
+  Q_err.Close
+
   'avg_wage_out(Scope, EmplKey, FirstMoveKey, AvgWage, AvgWageVariant)
   P_out = "avg_wage_out"
   Set Tv_out = Creator.GetObject(5, "TgsPLTermv", "")
@@ -226,7 +255,7 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
       NormHoures = Tv_det.ReadFloat(13)
       '
       Select Case AvgWageRule
-        Case "by_calc_days", "by_calc_days_doc", "by_calc_days_total"
+        Case "by_calc_days_total", "by_calc_days", "by_calc_days_doc"
           Select Case PeriodRule
             Case "by_cal_flex"
               PeriodRule = "по табелю мастера"
@@ -293,8 +322,8 @@ Function wg_AvgSalaryStrGenerate_Sick_pl(ByRef gdcObject, ByRef gdcSalary)
   gdcObject.Post
 
   wg_AvgSalaryStrGenerate_Sick_pl = True
-  
+
   T2 = Timer
   T = T2 - T1
 '
-End function
+End Function

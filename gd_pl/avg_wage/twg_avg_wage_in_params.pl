@@ -45,7 +45,8 @@ twg_avg_wage_in_params:-
         pFeeGroupKey_ruid-'147071457,274788016',
         % Группа Пропорциональных начислений
         pFeeGroupKeyProp_ruid-'147119175,1354510846',
-        pKindDayHourType_ruid-'147650798,119619099'
+        pKindDayHourType_ruid-'147650798,119619099',
+        pAvgSalaryRB_ruid-'147105585,1224850260'
         ]),
     fail.
 twg_avg_wage_in_params:-

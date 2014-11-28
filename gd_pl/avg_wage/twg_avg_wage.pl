@@ -286,10 +286,13 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
                % за каждый период проверки
              ( member(Y1-M1, Periods),
                % взять данные по заработку
-               get_month_wage(Scope, PK, Y1, M1, _, Wage) ),
+               get_month_wage(Scope, PK, Y1, M1, _, Wage),
+               Wage > 0 ),
     % в список заработков
     Wages ),
-    % итоговый заработок
+    % есть заработок
+    \+ Wages = [],
+    % всего за период
     sum_list(Wages, Amount),
     % взять часы
     findall( THoures,
@@ -857,7 +860,9 @@ get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
     % - для больничных
     Scope = wg_avg_wage_sick,
     % расчитать заработок за месяц
-    cacl_month_wage_sick(Scope, PK, Y, M, Wage),
+    cacl_month_wage_sick(Scope, PK, Y, M, Wage0),
+    % контроль заработка за месяц
+    check_month_wage_sick(Scope, PK, Y, M, Wage0, Wage),
     % записать во временные параметры данные по заработку
     append(PK, [pYM-Y-M, pWage-Wage], Pairs),
     new_param_list(Scope, temp, Pairs),
@@ -882,6 +887,34 @@ get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
     new_param_list(Scope, temp, Pairs),
     !.
 
+% контроль заработка за месяц
+check_month_wage_sick(Scope, PK, Y, M, Wage, MonthAvgSalary) :-
+    % для декрета
+    get_param_list(Scope, run, [pIsPregnancy-1 | PK]),
+    % если в периодах
+    get_periods(Scope, PK, Periods),
+    % есть хоть один месяц
+    Periods = [_|_],
+    % но нет требуемого количества месяцев
+    get_param(Scope, run, pMonthQty-MonthQty),
+    \+ length(Periods, MonthQty),
+    % взять среднюю зп по РБ
+    atom_date(FirstMonthDate, date(Y, M, 1)),
+    date_add(FirstMonthDate, 1, month, FirstMonthDate1),
+    atom_date(FirstMonthDate1, date(Y1, M1, 1)),
+    get_avg_salary_rb(Scope, Y1-M1, MonthAvgSalary0),
+    % взять данные по расчетным дням
+    get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, _),
+    % сделать контроль превышения
+    ( IsFullMonth =:= 1
+     -> MonthAvgSalary is round(MonthAvgSalary0)
+    ; MonthAvgSalary is round(MonthAvgSalary0 / MonthDays * CalcDays)
+    ),
+    Wage > MonthAvgSalary,
+    !.
+check_month_wage_sick(_, _, _, _, Wage, Wage) :-
+    !.
+    
 % расчитать заработок за месяц
 % - для отпусков
 cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew) :-
@@ -962,7 +995,7 @@ get_modern_coef(Scope, PK, _, FeeTypeKey, 1.0, 0, 0) :-
     !.
 get_modern_coef(Scope, PK, TheDay, _, ModernCoef, SalaryOld, SalaryNew) :-
     % взять параметр коэфициента и дату ограничения расчета
-    append(PK, [pDateCalcTo-DateTo, pCoefOption-CoefOption], Pairs),
+    append(PK, [pDateCalc-DateTo, pCoefOption-CoefOption], Pairs),
     get_param_list(Scope, run, Pairs),
     % сформировать дату ограничения выплаты
     date_add(DateTo, 1, month, DateTo1),
@@ -1908,11 +1941,12 @@ avg_wage_det(EmplKey, FirstMoveKey,
 %  06. Начисление больничных
 
 % загрузка входных данных по сотруднику
-avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc) :-
+avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy) :-
     Scope = wg_avg_wage_sick, Type = in,
-    new_param_list(Scope, Type,
-        [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
-         pDateCalc-DateCalc, pIsAvgWageDoc-IsAvgWageDoc]),
+    new_param_list(Scope, Type, [
+                    pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+                    pDateCalc-DateCalc, pIsAvgWageDoc-IsAvgWageDoc,
+                    pIsPregnancy-IsPregnancy ]),
     !.
 
 % выгрузка детальных выходных данных по сотруднику
@@ -2053,6 +2087,11 @@ avg_wage_clean(Scope, EmplKey, FirstMoveKey) :-
     fail.
 avg_wage_clean(_, _, _) :-
     !.
+
+avg_wage_err(Scope, ErrMessage) :-
+    Type = error,
+    get_param(Scope, Type, pError-ErrMessage),
+    true.
 
 /**/
 
@@ -2195,7 +2234,8 @@ struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType0, BudgetOption, I
     date_diff(DateBegin, Duration0, DateEnd),
     Duration is Duration0 + 1,
     %
-    ( BudgetOption = 1 -> get_param(Scope, Type, pBugetCalcType-CalcType)
+    ( BudgetOption = 1
+     -> get_param(Scope, Type, pBugetCalcType-CalcType)
     ; CalcType = CalcType0
     ),
     sick_slice_list(Scope, Type, CalcType, Duration, SliceList0),
@@ -2408,8 +2448,8 @@ get_avg_wage_budget(Scope, _, _, 0) :-
                     pError-"Введите константу 'Бюджет прожиточного минимума'"]),
     !.
 
-% среднедневная зп для месяца по среднемесячной зп в РБ
-avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
+% взять среднюю зп по РБ
+get_avg_salary_rb(Scope, Y-M, MonthAvgSalary) :-
     % первая дата месяца
     atom_date(FirstMonthDate, date(Y, M, 1)),
     % взять среднюю зп
@@ -2426,15 +2466,21 @@ avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
     \+ AvgSalaryList = [],
     % последние данные средней зп за месяц
     last(AvgSalaryList, MonthAvgSalary),
+    !.
+get_avg_salary_rb(Scope, _, 0) :-
+    new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
+    !.
+
+% среднедневная зп для месяца по среднемесячной зп в РБ
+avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
+    % взять среднюю зп по РБ
+    get_avg_salary_rb(Scope, Y-M, MonthAvgSalary),
     % взять расчетный коэфициент
     get_param(Scope, in, pAvgSalaryRB_Coef-AvgSalaryRB_Coef),
     % календарных дней в месяце
     month_days(Y, M, MonthDays),
     % расчитать среднедневную зп для месяца
     MonthAvgWage is round(MonthAvgSalary * AvgSalaryRB_Coef / MonthDays),
-    !.
-avg_wage_by_avg_salary(Scope, _, 0) :-
-    new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
     !.
 
 % section twg_rule
