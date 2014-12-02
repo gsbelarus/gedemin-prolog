@@ -321,34 +321,23 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (по расчетным дням / со справкой)
     Scope = wg_avg_wage_sick,
-    Rule1 = by_calc_days, Rule2 = by_calc_days_doc, Rule3 = by_calc_days_total,
+    Rules = [by_calc_days_total-1, by_calc_days-2, by_calc_days_doc-1] ,
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
     % есть рабочие периоды
     \+ Periods = [],
-    % если определяется вариант
-    ( % по расчетным дням итого за период
-      Rule = Rule3,
-      rule_month_days_sick(Scope, PK, Periods, Rule)
-    ; % или по расчетным дням
-      Rule = Rule1,
-      % правило действительно
-      is_valid_rule(Scope, PK, _, Rule1),
+    % для правила из списка
+    member(Rule-IsAvgWageDoc, Rules),
+    % где правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    get_param(Scope, run, pMonthQty-MonthQty),
       % если есть требуемое количество месяцев
-      get_param(Scope, run, pMonthQty-MonthQty),
-      length(Periods, MonthQty),
-      % и выполняется одно из правил по полноте месяца
-      rule_month_days_sick(Scope, PK, Periods, _)
-    ; % или по расчетным дням со справкой
-      Rule = Rule2,
-      % правило действительно
-      is_valid_rule(Scope, PK, _, Rule2),
-      % если есть признак Справка
-      append(PK, [pIsAvgWageDoc-1], Pairs),
-      get_param_list(Scope, run, Pairs),
-      % и выполняется одно из правил по полноте месяца
-      rule_month_days_sick(Scope, PK, Periods, _)
+    ( length(Periods, MonthQty) -> true
+    ; % или соспоставление с признаком Справка
+      get_param_list(Scope, run, [pIsAvgWageDoc-IsAvgWageDoc | PK])
     ),
+    % и выполняется одно из правил по расчетным дням
+    rule_month_days_sick(Scope, PK, Periods, _),
     % то выполнить расчет
     % взять заработок
     findall( Wage,
@@ -381,9 +370,14 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     Rules = [by_rate, by_avg_wage, by_not_full],
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
-    % есть требуемое количество месяцев
+    % есть рабочие периоды
+    \+ Periods = [],
     get_param(Scope, run, pMonthQty-MonthQty),
-    length(Periods, MonthQty),
+    % есть требуемое количество месяцев
+    ( length(Periods, MonthQty) -> true
+    % или признак Справка
+    ; get_param_list(Scope, run, [pIsAvgWageDoc-1 | PK])
+    ),
     % собрать расчет по разным вариантам
     findall( AvgWage0-Rule0,
              ( member(Rule0, Rules),
@@ -402,13 +396,11 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     is_valid_rule(Scope, PK, _, Rule),
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
-    % не выполняется ни одно из правил
-    % по количеству расчетных дней или полноте месяца
-    \+ rule_month_days_sick(Scope, PK, Periods, _),
-    % есть признак Справка
-    append(PK, [pIsAvgWageDoc-1], Pairs),
-    get_param_list(Scope, run, Pairs),
-    % расчет от ставки
+    % если нет рабочих периодов
+    Periods = [],
+    % но есть признак Справка
+    get_param_list(Scope, run, [pIsAvgWageDoc-1 | PK]),
+    % то расчет от ставки
     calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
@@ -2189,14 +2181,18 @@ struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity,
     % формирование параметров выполнения
     DateCalcFrom = DateBegin,
     date_add(DateEnd, 1, day, DateCalcTo),
-    once( ( get_param_list(Scope, Type, [pCommon-1], Pairs01) ; Pairs01 = [] ) ),
-    get_param_list(Scope, Type, [pBudgetPart-_], Pairs02),
-    append(Pairs01, Pairs02, Pairs0),
-    append(Pairs0,
-                [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
-                 pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
-                 pDateNormFrom-DateCalcFrom, pDateNormTo-DateCalcTo],
-            Pairs),
+    ParamPairs = [
+                  pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+                  pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
+                  pDateNormFrom-DateCalcFrom, pDateNormTo-DateCalcTo
+                 ],
+    ( get_param_list(Scope, Type, [pCommon-1], CommonPairs) -> true
+    ; CommonPairs = []
+    ),
+    ( get_param_list(Scope, Type, [pBudgetPart-_], InPairs) -> true
+    ; InPairs = []
+    ),
+    append([ParamPairs, CommonPairs, InPairs], Pairs),
     new_param_list(Scope, NextType, Pairs),
     % формирование SQL-запроса
     get_sql(Scope, kb, Query, SQL0, Params),
@@ -2205,9 +2201,12 @@ struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity,
     member_list(Params, Pairs),
     prepare_sql(SQL0, Params, SQL),
     % добавление SQL-запроса к параметрам выполнения
-    Pairs1 = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
-              pQuery-Query, pSQL-SQL],
-    new_param_list(Scope, NextType, Pairs1).
+    SQLPairs = [
+                pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
+                pQuery-Query, pSQL-SQL
+               ],
+    new_param_list(Scope, NextType, SQLPairs),
+    true.
 
 %
 struct_sick_err(ErrMessage) :-
@@ -2216,37 +2215,48 @@ struct_sick_err(ErrMessage) :-
     true.
 
 %
-struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType0, BudgetOption, IsPregnancy, IllType) :-
+struct_sick_in(
+    DateCalc, DateBegin, DateEnd, AvgWage, CalcType0,
+    BudgetOption, IsPregnancy, IllType,
+    ViolatDB, ViolatDE
+) :-
     Scope = wg_struct_sick, Type = in, NextType = run,
     % шаблон первичного ключа
     PK = [pEmplKey-_, pFirstMoveKey-_],
-    % формирование временных данных по графику работы
+    % по сотруднику из параметров выполнения
     get_param_list(Scope, NextType, PK),
+    % формирование временных данных по графику работы
     make_schedule(Scope, PK),
     % формирование временных данных параметров расчета
-    Pairs0 = [pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType],
+    Pairs0 = [
+              pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType,
+              pViolatDB-ViolatDB, pViolatDE-ViolatDE
+             ],
     append(PK, Pairs0, Pairs),
     new_param_list(Scope, temp, Pairs),
-    %
+    % дата начисления
     atom_date(DateCalc, date(Year, Month, _)),
     month_days(Year, Month, Days),
     atom_date(AccDate, date(Year, Month, Days)),
+    % количество дней
     date_diff(DateBegin, Duration0, DateEnd),
     Duration is Duration0 + 1,
-    %
+    % тип расчета
     ( BudgetOption = 1
      -> get_param(Scope, Type, pBugetCalcType-CalcType)
     ; CalcType = CalcType0
     ),
+    % формирование списка отрезков
     sick_slice_list(Scope, Type, CalcType, Duration, SliceList0),
-    %
+    % переходящие дни
     date_diff(DateCalc, DurationBefore, DateBegin),
+    % исключение из списка отрезков
     sick_slice_list_excl(SliceList0, SliceList, DurationBefore),
-    %
+    % расчет структуры
     struct_sick_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK),
     !.
 
-%
+% формирование списка отрезков
 sick_slice_list(Scope, Type, CalcType, Duration, SliceList) :-
     Params = [
               pFirstCalcType-FirstCalcType,
@@ -2273,7 +2283,7 @@ sick_slice_list(Scope, Type, [_-Duration], CalcType, _, FirstPart-FirstDuration,
 sick_slice_list(_, _, SliceList, _, _, _, SliceList) :-
     !.
 
-%
+% исключение из списка отрезков
 sick_slice_list_excl(SliceList, SliceList, 0) :-
     !.
 sick_slice_list_excl([LastSlice|[]], [LastSlice], _) :-
@@ -2283,15 +2293,21 @@ sick_slice_list_excl([Slice|SliceList], [Slice1|SliceList1], DurationBefore) :-
     !,
     sick_slice_list_excl(SliceList, SliceList1, DurationBefore1).
 
-%
+% исключение отрезка
 sick_slice_excl(Part-Duration, Part-Duration1, DurationBefore, DurationBefore1) :-
     Duration0 is Duration - DurationBefore,
-    ( Duration0 > 0 -> Duration1 = Duration0 ; Duration1 = 0),
+    ( Duration0 > 0
+     -> Duration1 = Duration0
+    ; Duration1 = 0
+    ),
     DurationBefore0 is DurationBefore - Duration,
-    ( DurationBefore0 > 0, DurationBefore1 = DurationBefore0 ; DurationBefore1 = 0),
+    ( DurationBefore0 > 0
+     -> DurationBefore1 = DurationBefore0
+    ; DurationBefore1 = 0
+    ),
     !.
 
-%
+% расчет структуры
 struct_sick_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK) :-
     Slice0 =:= 0,
     !,
@@ -2302,17 +2318,28 @@ struct_sick_calc([], _-Slice, _, _, _, _, _, _) :-
     Slice =:= 0,
     !.
 struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWage0, Scope, PK) :-
-    make_period(DateBegin, DateEnd, DateBegin1, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2),
+    % сформировать период
+    make_period(
+        DateBegin, DateEnd,
+        DateBegin1, DateEnd1,
+        DateBegin2, DateEnd2,
+        Slice, Slice2,
+        Scope, PK, SickPart1
+    ),
+    % дата начисления
     atom_date(DateBegin1, date(Y, M, _)),
     atom_date(IncludeDate, date(Y, M, 1)),
-    Scope = wg_struct_sick,
     % взять временные данные параметров расчета
-    Pairs0 = [pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType],
+    Pairs0 = [
+              pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType
+             ],
     append(PK, Pairs0, Pairs),
     get_param_list(Scope, temp, Pairs),
-    SickPart is SickPart0 * 1.0,
+    % расчет части периода с учетом нарушения режима
+    SickPart is SickPart0 * 1.0 * SickPart1,
     Percent is SickPart * 100,
     date_add(DateEnd1, 1, day, DateEnd11),
+    % сумма дней и часов периода
     sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType, Scope, PK),
       % если расчет от БПМ
     ( BudgetOption = 1,
@@ -2337,28 +2364,84 @@ struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWag
                 ],
     new_param_list(Scope, out, OutPairs),
     !,
-    struct_sick_calc(SliceList, SickPart-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage0, Scope, PK).
+    struct_sick_calc(SliceList, SickPart0-Slice2, AccDate, DateBegin2, DateEnd2, AvgWage0, Scope, PK).
 
 %
-make_period(DateBegin, DateEnd, DateBegin, DateEnd1, DateBegin2, DateEnd2, Slice, Slice2) :-
-    head_period(DateBegin, DateEnd, DateEnd1, Slice, Slice2),
+make_period(
+    DateBegin, DateEnd,
+    DateBegin1, DateEnd1,
+    DateBegin2, DateEnd2,
+    Slice, Slice2
+) :-
+    make_period(
+        DateBegin, DateEnd,
+        DateBegin1, DateEnd1,
+        DateBegin2, DateEnd2,
+        Slice, Slice2,
+        '', [], _
+    ),
+    !.
+%
+make_period(
+    DateBegin, DateEnd,
+    DateBegin, DateEnd1,
+    DateBegin2, DateEnd2,
+    Slice, Slice2,
+    Scope, PK, SickPart1
+) :-
+    head_period(DateBegin, DateEnd, DateEnd1, Slice, Slice2, Scope, PK, SickPart1),
     teil_period(DateEnd, DateEnd1, DateBegin2, DateEnd2),
     !.
 
 %
-head_period(DateBegin, DateEnd, DateBegin, Slice, Slice2) :-
+head_period(DateBegin, DateEnd, DateBegin, Slice, Slice2, Scope, PK, SickPart1) :-
+   % следующий день
    date_add(DateBegin, 1, day, DateBegin1),
    atom_date(DateBegin, date(Y, M, _)),
-   ( \+ atom_date(DateBegin1, date(Y, M, _)), next_slice(DateBegin, Slice, Slice2)
-   ; DateBegin1 @> DateEnd, Slice2 = 0
-   ; Slice =:= 1, next_slice(DateBegin, Slice, Slice2)
+     % является днем следующего месяца
+   ( \+ atom_date(DateBegin1, date(Y, M, _)),
+     next_slice(DateBegin, Slice, Slice2)
+     % больше даты окончания
+   ; DateBegin1 @> DateEnd,
+     Slice2 = 0
+     % достигнут конец отрезка
+   ; Slice =:= 1,
+     next_slice(DateBegin, Slice, Slice2)
+     % является днем начала нарушения режима
+   ; violat_date(begin, DateBegin1, Scope, PK, _),
+     next_slice(DateBegin, Slice, Slice2)
+     % или текущий день является днем окончания нарушения режима
+   ; violat_date(end, DateBegin, Scope, PK, _),
+     next_slice(DateBegin, Slice, Slice2)
    ),
+   % проверка на вхождение в период нарушения режима
+   violat_date(period, DateBegin, Scope, PK, SickPart1),
    !.
-head_period(DateBegin, DateEnd, DateEnd1, Slice0, Slice2) :-
+head_period(DateBegin, DateEnd, DateEnd1, Slice0, Slice2, Scope, PK, SickPart1) :-
    date_add(DateBegin, 1, day, DateBegin1),
    next_slice(DateBegin, Slice0, Slice1),
    !,
-   head_period(DateBegin1, DateEnd, DateEnd1, Slice1, Slice2).
+   head_period(DateBegin1, DateEnd, DateEnd1, Slice1, Slice2, Scope, PK, SickPart1).
+
+%
+violat_date(period, _, '', [], 1.0) :-
+    !.
+violat_date(CheckType, InDate, Scope, PK, ViolatPart) :-
+    get_param(Scope, in, pViolatPart-ViolatPart),
+    get_param_list(Scope, temp, [pViolatDB-ViolatDB, pViolatDE-ViolatDE | PK]),
+    is_date(ViolatDB), ViolatDB @> '1994-01-01',
+    is_date(ViolatDE), ViolatDE @> '1994-01-01',
+    ( CheckType = begin,
+      InDate =@= ViolatDB
+    ; CheckType = end,
+      InDate =@= ViolatDE
+    ; CheckType = period,
+      InDate @>= ViolatDB,
+      InDate @=< ViolatDE
+    ),
+    !.
+violat_date(period, _, _, _, 1.0) :-
+    !.
 
 %
 next_slice(DateBegin, Slice, Slice) :-
@@ -2375,7 +2458,7 @@ teil_period(DateEnd, DateEnd1, DateBegin2, DateEnd) :-
     date_add(DateEnd1, 1, day, DateBegin2),
     !.
 
-%
+% сумма дней и часов периода
 sum_sick_days(DateBegin, DateBegin, DOI, DOI, HOI, HOI, _, _, _) :-
     !.
 sum_sick_days(DateBegin, DateEnd, DOI0, DOI, HOI0, HOI, IllType, Scope, PK) :-
@@ -2405,7 +2488,7 @@ struct_vacation_out(AccDate, IncludeDate, Duration, Summa, DateBegin, DateEnd, V
                 pDuration-Duration, pSumma-Summa,
                 pDateBegin-DateBegin, pDateEnd-DateEnd,
                 pVcType-VcType
-                ],
+               ],
     get_param_list(struct_vacation, out, OutPairs).
 
 %
@@ -2415,7 +2498,7 @@ struct_sick_out(AccDate, IncludeDate, Percent, DOI, HOI, Summa, DateBegin, DateE
                 pAccDate-AccDate, pIncludeDate-IncludeDate,
                 pPercent-Percent, pDOI-DOI, pHOI-HOI, pSumma-Summa,
                 pDateBegin-DateBegin, pDateEnd-DateEnd
-                ],
+               ],
     get_param_list(Scope, out, OutPairs).
 
 % взять среднедневной БПМ на текущий месяц
