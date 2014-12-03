@@ -365,6 +365,30 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     AvgWage is round(AvgWage0),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+    % - для больничных (от ставки при отсутствии заработка)
+    Scope = wg_avg_wage_sick,
+    Rule = by_rate,
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    % есть требуемое количество месяцев
+    get_param(Scope, run, pMonthQty-MonthQty),
+    length(Periods, MonthQty),
+    % взять заработок
+    findall( Wage,
+               % за каждый период проверки
+             ( member(Y-M, Periods),
+               % взять данные по заработку
+               get_month_wage(Scope, PK, Y, M, _, Wage),
+               Wage > 0
+             ),
+    % в список заработков
+    Wages ),
+    % если нет заработка
+    Wages = [],
+    % то расчет от ставки при формировании структуры
+    AvgWage is 0,
+    !.
+calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки / по среднему заработку / по не полным месяцам)
     Scope = wg_avg_wage_sick,
     Rules = [by_rate, by_avg_wage, by_not_full],
@@ -2217,7 +2241,7 @@ struct_sick_err(ErrMessage) :-
 %
 struct_sick_in(
     DateCalc, DateBegin, DateEnd, AvgWage, CalcType0,
-    BudgetOption, IsPregnancy, IllType,
+    BudgetOption, ByRateOption, IsPregnancy, IllType,
     ViolatDB, ViolatDE
 ) :-
     Scope = wg_struct_sick, Type = in, NextType = run,
@@ -2229,7 +2253,8 @@ struct_sick_in(
     make_schedule(Scope, PK),
     % формирование временных данных параметров расчета
     Pairs0 = [
-              pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType,
+              pBudgetOption-BudgetOption, pByRateOption-ByRateOption,
+              pIsPregnancy-IsPregnancy, pIllType-IllType,
               pViolatDB-ViolatDB, pViolatDE-ViolatDE
              ],
     append(PK, Pairs0, Pairs),
@@ -2331,7 +2356,8 @@ struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWag
     atom_date(IncludeDate, date(Y, M, 1)),
     % взять временные данные параметров расчета
     Pairs0 = [
-              pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType
+              pBudgetOption-BudgetOption, pByRateOption-ByRateOption,
+              pIsPregnancy-IsPregnancy, pIllType-IllType
              ],
     append(PK, Pairs0, Pairs),
     get_param_list(Scope, temp, Pairs),
@@ -2344,6 +2370,11 @@ struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWag
       % если расчет от БПМ
     ( BudgetOption = 1,
       get_avg_wage_budget(Scope, in, Y-M, AvgWage),
+      Summa is round(DOI * AvgWage * SickPart)
+    ; % или расчет от Ставки при отсутствии заработка
+      ByRateOption = 1,
+      AvgWage0 =:= 0,
+      get_avg_wage_rate(Scope, PK, IncludeDate, AvgWage),
       Summa is round(DOI * AvgWage * SickPart)
       % или есть признак Декретный
     ; IsPregnancy = 1,
@@ -2501,6 +2532,37 @@ struct_sick_out(AccDate, IncludeDate, Percent, DOI, HOI, Summa, DateBegin, DateE
                ],
     get_param_list(Scope, out, OutPairs).
 
+% взять среднедневную ставку на текущий месяц
+get_avg_wage_rate(Scope, PK, TheDate, AvgWage) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % взять данные по ставке
+    findall( PayFormKey0-SalaryKey0-TSalary0-AvgWageRate0,
+               % из данных по движению
+             ( get_data(Scope, kb, usr_wg_MovementLine, [
+                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                         fDateBegin-DateBegin,
+                         fPayFormKey-PayFormKey0, fSalaryKey-SalaryKey0,
+                         fTSalary-TSalary0, fAvgWageRate-AvgWageRate0 ]),
+               % где дата меньше или равна расчетной
+               DateBegin @=< TheDate ),
+    % в список ставок
+    RateList ),
+    % взять последние данные по ставке
+    last(RateList, PayFormKey-SalaryKey-TSalary-AvgWageRate),
+      % если форма оплаты оклад, то расчет по тарифному окладу
+    ( PayFormKey = SalaryKey,
+      % календарных дней в месяце
+      atom_date(TheDate, date(Y, M, _)),
+      month_days(Y, M, MonthDays),
+      % среднедневная ставка
+      AvgWage is TSalary / MonthDays
+    ;
+      % иначе, расчет от часовой тарифной ставки
+      AvgWage is AvgWageRate
+    ),
+    !.
+
 % взять среднедневной БПМ на текущий месяц
 get_avg_wage_budget(Scope, Type, Y-M, AvgWageBudget) :-
     % первая дата месяца
@@ -2510,7 +2572,7 @@ get_avg_wage_budget(Scope, Type, Y-M, AvgWageBudget) :-
                   % взять данные по БПМ
                 ( get_data(Scope, kb, gd_const_budget, [
                             fConstDate-ConstDate, fBudget-Budget0]),
-                  % где дата константы меньше первой даты месяца
+                  % где дата константы меньше или равна первой дате месяца
                   ConstDate @=< FirstMonthDate
                 ),
     % в список БПМ

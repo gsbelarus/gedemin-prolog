@@ -5,10 +5,10 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.99"
+  Version: "1.0.0.101"
   Optional: False
   Internal: True
-  MD5: 7BC80342E23FA05496BFF00976F784D8
+  MD5: 19BEAE893F706EDDDB0733143B185D55
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -1815,6 +1815,30 @@ Objects:
             % среднедневной заработок
             catch( AvgWage0 is Amount / TotalCalcDays, _, fail ),
             AvgWage is round(AvgWage0),
+            !.
+        calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+            % - для больничных (от ставки при отсутствии заработка)
+            Scope = wg_avg_wage_sick,
+            Rule = by_rate,
+            % подготовка временных данных для расчета
+            prep_avg_wage(Scope, PK, Periods),
+            % есть требуемое количество месяцев
+            get_param(Scope, run, pMonthQty-MonthQty),
+            length(Periods, MonthQty),
+            % взять заработок
+            findall( Wage,
+                       % за каждый период проверки
+                     ( member(Y-M, Periods),
+                       % взять данные по заработку
+                       get_month_wage(Scope, PK, Y, M, _, Wage),
+                       Wage > 0
+                     ),
+            % в список заработков
+            Wages ),
+            % если нет заработка
+            Wages = [],
+            % то расчет от ставки при формировании структуры
+            AvgWage is 0,
             !.
         calc_avg_wage(Scope, PK, AvgWage, Rule) :-
             % - для больничных (от ставки / по среднему заработку / по не полным месяцам)
@@ -3669,7 +3693,7 @@ Objects:
         %
         struct_sick_in(
             DateCalc, DateBegin, DateEnd, AvgWage, CalcType0,
-            BudgetOption, IsPregnancy, IllType,
+            BudgetOption, ByRateOption, IsPregnancy, IllType,
             ViolatDB, ViolatDE
         ) :-
             Scope = wg_struct_sick, Type = in, NextType = run,
@@ -3681,7 +3705,8 @@ Objects:
             make_schedule(Scope, PK),
             % формирование временных данных параметров расчета
             Pairs0 = [
-                      pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType,
+                      pBudgetOption-BudgetOption, pByRateOption-ByRateOption,
+                      pIsPregnancy-IsPregnancy, pIllType-IllType,
                       pViolatDB-ViolatDB, pViolatDE-ViolatDE
                      ],
             append(PK, Pairs0, Pairs),
@@ -3783,7 +3808,8 @@ Objects:
             atom_date(IncludeDate, date(Y, M, 1)),
             % взять временные данные параметров расчета
             Pairs0 = [
-                      pBudgetOption-BudgetOption, pIsPregnancy-IsPregnancy, pIllType-IllType
+                      pBudgetOption-BudgetOption, pByRateOption-ByRateOption,
+                      pIsPregnancy-IsPregnancy, pIllType-IllType
                      ],
             append(PK, Pairs0, Pairs),
             get_param_list(Scope, temp, Pairs),
@@ -3796,6 +3822,11 @@ Objects:
               % если расчет от БПМ
             ( BudgetOption = 1,
               get_avg_wage_budget(Scope, in, Y-M, AvgWage),
+              Summa is round(DOI * AvgWage * SickPart)
+            ; % или расчет от Ставки при отсутствии заработка
+              ByRateOption = 1,
+              AvgWage0 =:= 0,
+              get_avg_wage_rate(Scope, PK, IncludeDate, AvgWage),
               Summa is round(DOI * AvgWage * SickPart)
               % или есть признак Декретный
             ; IsPregnancy = 1,
@@ -3953,6 +3984,37 @@ Objects:
                        ],
             get_param_list(Scope, out, OutPairs).
         
+        % взять среднедневную ставку на текущий месяц
+        get_avg_wage_rate(Scope, PK, TheDate, AvgWage) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % взять данные по ставке
+            findall( PayFormKey0-SalaryKey0-TSalary0-AvgWageRate0,
+                       % из данных по движению
+                     ( get_data(Scope, kb, usr_wg_MovementLine, [
+                                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                                 fDateBegin-DateBegin,
+                                 fPayFormKey-PayFormKey0, fSalaryKey-SalaryKey0,
+                                 fTSalary-TSalary0, fAvgWageRate-AvgWageRate0 ]),
+                       % где дата меньше или равна расчетной
+                       DateBegin @=< TheDate ),
+            % в список ставок
+            RateList ),
+            % взять последние данные по ставке
+            last(RateList, PayFormKey-SalaryKey-TSalary-AvgWageRate),
+              % если форма оплаты оклад, то расчет по тарифному окладу
+            ( PayFormKey = SalaryKey,
+              % календарных дней в месяце
+              atom_date(TheDate, date(Y, M, _)),
+              month_days(Y, M, MonthDays),
+              % среднедневная ставка
+              AvgWage is TSalary / MonthDays
+            ;
+              % иначе, расчет от часовой тарифной ставки
+              AvgWage is AvgWageRate
+            ),
+            !.
+        
         % взять среднедневной БПМ на текущий месяц
         get_avg_wage_budget(Scope, Type, Y-M, AvgWageBudget) :-
             % первая дата месяца
@@ -3962,7 +4024,7 @@ Objects:
                           % взять данные по БПМ
                         ( get_data(Scope, kb, gd_const_budget, [
                                     fConstDate-ConstDate, fBudget-Budget0]),
-                          % где дата константы меньше первой даты месяца
+                          % где дата константы меньше или равна первой дате месяца
                           ConstDate @=< FirstMonthDate
                         ),
             % в список БПМ
@@ -4065,7 +4127,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-12-02T09:56:05+03:00
+      EDITIONDATE: 2014-12-03T11:23:42+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -9965,7 +10027,7 @@ Objects:
                 Case "by_avg_wage"
                   PeriodRule = "по среднему заработку"
                 Case "by_rate", "by_rate_doc"
-                  PeriodRule = "от ставки"
+                  PeriodRule = "от ставки (оклада)"
                 Case "by_not_full"
                   PeriodRule = "по не полным месяцам"
                 Case Else
@@ -10035,7 +10097,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-11-27T14:46:21+03:00
+      EDITIONDATE: 2014-12-03T09:19:53+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -10475,7 +10537,8 @@ Objects:
           Dim EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL
           'struct_sick_in
           Dim P_in, Tv_in, Q_in
-          Dim DateCalc, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType
+          Dim DateCalc, AvgWage, CalcType
+          Dim BudgetOption, ByRateOption, IsPregnancy, IllType
           Dim ViolatDB, ViolatDE
           'struct_sick_err
           Dim P_err, Tv_err, Q_err
@@ -10511,6 +10574,7 @@ Objects:
           DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
           AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
           BudgetOption = gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger
+          ByRateOption = gdcObject.FieldByName("USR$THIRDMETHOD").AsInteger
           IsPregnancy = abs(gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
                  gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
           IllType = gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger
@@ -10584,9 +10648,9 @@ Objects:
             PL.SavePredicatesToFile Pred, Tv, PredFile
           End If
         
-          'struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType,BudgetOption, IsPregnancy, IllType, ViolatDB, ViolatDE)
+          'struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, ByRateOption, IsPregnancy, IllType, ViolatDB, ViolatDE)
           P_in = "struct_sick_in"
-          Set Tv_in = Creator.GetObject(10, "TgsPLTermv", "")
+          Set Tv_in = Creator.GetObject(11, "TgsPLTermv", "")
           Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
           Tv_in.PutDate 0, DateCalc
           Tv_in.PutDate 1, DateBegin
@@ -10594,10 +10658,11 @@ Objects:
           Tv_in.PutFloat 3, AvgWage
           Tv_in.PutInteger 4, CalcType
           Tv_in.PutInteger 5, BudgetOption
-          Tv_in.PutInteger 6, IsPregnancy
-          Tv_in.PutInteger 7, IllType
-          Tv_in.PutDate 8, ViolatDB
-          Tv_in.PutDate 9, ViolatDE
+          Tv_in.PutInteger 6, ByRateOption
+          Tv_in.PutInteger 7, IsPregnancy
+          Tv_in.PutInteger 8, IllType
+          Tv_in.PutDate 9, ViolatDB
+          Tv_in.PutDate 10, ViolatDE
           '
           Q_in.PredicateName = P_in
           Q_in.Termv = Tv_in
@@ -10607,6 +10672,14 @@ Objects:
             Exit Function
           End If
           Q_in.Close
+        
+          'save param_list
+          If PL.Debug Then
+            Pred = "param_list"
+            PredFile = "param_list"
+            Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+            PL.SavePredicatesToFile Pred, Tv, PredFile
+          End If
         
           'struct_sick_err(ErrMessage)
           P_err = "struct_sick_err"
@@ -10690,7 +10763,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-11-28T17:35:05+03:00
+      EDITIONDATE: 2014-12-03T10:52:12+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
