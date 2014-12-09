@@ -5,10 +5,10 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.101"
+  Version: "1.0.0.103"
   Optional: False
   Internal: True
-  MD5: 19BEAE893F706EDDDB0733143B185D55
+  MD5: E30324ADBF42F89EFA120B8ABFB6F022
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -211,7 +211,7 @@ Objects:
                     wg_vacation_slice/2,
                     wg_vacation_compensation/3,
                     gd_const_budget/2,
-                    gd_const_AvgSalaryRB/2,
+                    gd_const_AvgSalaryRB/2, % 06, 12
                     %usr_wg_TblDayNorm/8,
                     wg_job_ill_type/1,
                     % section twg_rule
@@ -266,7 +266,8 @@ Objects:
             fMoveYear-integer, fMoveMonth-integer, fDateBegin-date,
             fScheduleKey-integer, fMovementType-integer,
             fRate-float, fListNumber-string, fMSalary-float,
-            fPayFormKey-integer, fSalaryKey-integer, fTSalary-float, fAvgWageRate-float
+            fPayFormKey-integer, fSalaryKey-integer,
+            fTSalary-float, fTHoureRate-float
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
@@ -275,7 +276,7 @@ Objects:
         % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
         %   MoveYear, MoveMonth, DateBegin,
         %   ScheduleKey, MovementType, Rate, ListNumber, MSalary,
-        %   PayFormKey, SalaryKey, TSalary, AvgWageRate)
+        %   PayFormKey, SalaryKey, TSalary, THoureRate)
         get_sql(Scope, kb, usr_wg_MovementLine/15,
         "
         SELECT
@@ -293,7 +294,7 @@ Objects:
           COALESCE(ml.USR$PAYFORMKEY, 0) AS PayFormKey,
           (SELECT id FROM GD_P_GETID(pPayFormSalary_ruid)) AS SalaryKey,
           COALESCE(ml.USR$TSALARY, 0) AS TSalary,
-          8 * COALESCE(USR$THOURRATE, 0) AS AvgWageRate
+          COALESCE(USR$THOURRATE, 0) AS THoureRate
         FROM
           USR$WG_MOVEMENTLINE ml
         WHERE
@@ -439,7 +440,8 @@ Objects:
             fDuration-float, fHoureType-integer
             ]) :-
             memberchk(Scope, [
-                wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+                wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
+                wg_struct_sick
                 ]).
         % usr_wg_TblCalLine(EmplKey, FirstMoveKey, CalYear, CalMonth, Date, Duration, HoureType)
         get_sql(Scope, kb, usr_wg_TblCalLine/7,
@@ -474,7 +476,8 @@ Objects:
             pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
             ]) :-
             memberchk(Scope, [
-                wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+                wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
+                wg_struct_sick
                 ]).
         
         gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, [
@@ -952,7 +955,13 @@ Objects:
           al.USR$FIRSTMOVEKEY,
           EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear,
           EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth,
-          8 * COALESCE(al.USR$AVGSUM, 0) AS AvgSumma
+          CASE COALESCE(a.USR$CALCBYHOUR, 0)
+            WHEN 1 THEN
+              8 * COALESCE(al.USR$AVGSUM, 0)
+            ELSE
+              COALESCE(al.USR$AVGSUM, 0)
+          END
+            AS AvgSumma
         FROM
           USR$WG_AVGADDPAYLINE al
         JOIN
@@ -1319,7 +1328,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-11-27T12:59:35+03:00
+      EDITIONDATE: 2014-12-09T14:52:15+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1863,7 +1872,13 @@ Objects:
             % в список расчетов
             AvgWageList),
             % выбор по более выгодному варианту
-            max_member(AvgWage-Rule, AvgWageList),
+            max_member(AvgWage1-Rule, AvgWageList),
+              % от ставки - расчет при формировании структуры
+            ( memberchk(Rule, [by_rate])
+             -> AvgWage = 0
+            ; % иначе - по выбранному варианту
+              AvgWage = AvgWage1
+            ),
             !.
         calc_avg_wage(Scope, PK, AvgWage, Rule) :-
             % - для больничных (от ставки без периодов со справкой)
@@ -1996,44 +2011,19 @@ Objects:
             Rule = by_rate,
             % правило действительно
             is_valid_rule(Scope, PK, _, Rule),
-            % взять расчетную дату
-            append(PK, [pDateCalc-DateCalc], Pairs),
-            get_param_list(Scope, run, Pairs),
-            % разложить первичный ключ
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-            % взять данные по ставке
-            findall( PayFormKey0-SalaryKey0-TSalary0-AvgWageRate0,
-                       % из данных по движению
-                     ( get_data(Scope, kb, usr_wg_MovementLine, [
-                                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                                 fDateBegin-DateBegin,
-                                 fPayFormKey-PayFormKey0, fSalaryKey-SalaryKey0,
-                                 fTSalary-TSalary0, fAvgWageRate-AvgWageRate0 ]),
-                       % где дата меньше или равна расчетной
-                       DateBegin @=< DateCalc ),
-            % в список ставок
-            RateList ),
-            % взять последние данные по ставке
-            last(RateList, PayFormKey-SalaryKey-TSalary-AvgWageRate),
-              % если форма оплаты оклад, то расчет по тарифному окладу
-            ( PayFormKey = SalaryKey,
-              % сформировать список заработков по тарифному окладу
-              findall( TSalary, member(_-_, Periods), Wages ),
-              % итоговый заработок
-              sum_list(Wages, Amount),
-              % сформировать список расчетных дней по календарным дням месяца
-              findall( CalcDays,
-                       ( member(Y-M, Periods), month_days(Y, M, CalcDays) ),
-              CalcDaysList ),
-              % всего расчетных дней
-              sum_list(CalcDaysList, TotalCalcDays),
-              % среднедневной заработок
-              catch( AvgWage0 is Amount / TotalCalcDays, _, fail ),
-              AvgWage is round(AvgWage0)
-            ;
-              % иначе, расчет от часовой тарифной ставки
-              AvgWage is round(AvgWageRate)
-            ),
+            % взять данные по среднедневной ставке (окладу)
+            findall( AvgWage0,
+                     ( member(Y-M, Periods),
+                       atom_date(TheDate, date(Y, M, 1)),
+                       get_avg_wage_rate(Scope, PK, TheDate, AvgWage0)
+                     ),
+            % в список среднедневных заработков
+            AvgWageList),
+            % среднедневной заработок
+            sum_list(AvgWageList, AvgWageAmount),
+            length(Periods, MonthQty),
+            catch( AvgWage0 is AvgWageAmount / MonthQty, _, AvgWage0 = 0 ),
+            AvgWage is round(AvgWage0),
             !.
         calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
             % по среднему заработку
@@ -3657,10 +3647,15 @@ Objects:
             % формирование параметров выполнения
             DateCalcFrom = DateBegin,
             date_add(DateEnd, 1, day, DateCalcTo),
+            atom_date(DateBegin, date(Y, M, _)),
+            atom_date(DateNormFrom, date(Y, M, 1)),
+            date_add(DateEnd, 1, month, DateEnd1),
+            atom_date(DateEnd1, date(Y1, M1, _)),
+            atom_date(DateNormTo, date(Y1, M1, 1)),
             ParamPairs = [
                           pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                           pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
-                          pDateNormFrom-DateCalcFrom, pDateNormTo-DateCalcTo
+                          pDateNormFrom-DateNormFrom, pDateNormTo-DateNormTo
                          ],
             ( get_param_list(Scope, Type, [pCommon-1], CommonPairs) -> true
             ; CommonPairs = []
@@ -3988,30 +3983,36 @@ Objects:
         get_avg_wage_rate(Scope, PK, TheDate, AvgWage) :-
             % разложить первичный ключ
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % текущий месяц
+            atom_date(TheDate, date(Y, M, _)),
+            % календарных дней в текущем месяце
+            month_days(Y, M, MonthDays),
+            atom_date(LastDate, date(Y, M, MonthDays)),
             % взять данные по ставке
-            findall( PayFormKey0-SalaryKey0-TSalary0-AvgWageRate0,
+            findall( PayFormKey0-SalaryKey0-TSalary0-THoureRate0,
                        % из данных по движению
                      ( get_data(Scope, kb, usr_wg_MovementLine, [
                                  fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                                  fDateBegin-DateBegin,
                                  fPayFormKey-PayFormKey0, fSalaryKey-SalaryKey0,
-                                 fTSalary-TSalary0, fAvgWageRate-AvgWageRate0 ]),
-                       % где дата меньше или равна расчетной
-                       DateBegin @=< TheDate ),
+                                 fTSalary-TSalary0, fTHoureRate-THoureRate0 ]),
+                       % где дата меньше или равна последней дате месяца
+                       DateBegin @=< LastDate ),
             % в список ставок
             RateList ),
             % взять последние данные по ставке
-            last(RateList, PayFormKey-SalaryKey-TSalary-AvgWageRate),
-              % если форма оплаты оклад, то расчет по тарифному окладу
+            last(RateList, PayFormKey-SalaryKey-TSalary-THoureRate),
+              % если форма оплаты оклад
             ( PayFormKey = SalaryKey,
-              % календарных дней в месяце
-              atom_date(TheDate, date(Y, M, _)),
-              month_days(Y, M, MonthDays),
-              % среднедневная ставка
+              % то расчет по тарифному окладу
               AvgWage is TSalary / MonthDays
-            ;
-              % иначе, расчет от часовой тарифной ставки
-              AvgWage is AvgWageRate
+            ; % иначе
+              % расчитать график за месяц
+              calc_month_norm(Scope, PK, Y-M, NormDays),
+              % сумма дней и часов по графику
+              sum_days_houres(NormDays, _, NHoures),
+              % расчет от часовой тарифной ставки
+              AvgWage is NHoures * THoureRate / MonthDays
             ),
             !.
         
@@ -4127,7 +4128,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-12-03T11:23:42+03:00
+      EDITIONDATE: 2014-12-09T16:21:33+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -4948,50 +4949,50 @@ Objects:
       CURR_DATA: ~
       BLOB_DATA: | 
         object gdc_dlgUserComplexDocument147020774_119619099: Tgdc_dlgUserComplexDocument
-          Left = -8
-          Top = -8
-          Width = 1382
-          Height = 744
+          Left = -4
+          Top = -4
+          Width = 1288
+          Height = 988
           ActiveControl = nil
           PixelsPerInch = 96
           TextHeight = 13
           object btnAccess: TButton
-            Top = 682
+            Top = 926
             TabOrder = 3
           end
           object btnNew: TButton
-            Top = 682
+            Top = 926
             TabOrder = 4
           end
           object btnHelp: TButton
-            Top = 682
+            Top = 926
             TabOrder = 5
           end
           object btnOK: TButton
-            Left = 1188
-            Top = 682
+            Left = 1184
+            Top = 926
             Anchors = [akRight, akBottom]
             TabOrder = 1
           end
           object btnCancel: TButton
-            Left = 1280
-            Top = 682
+            Left = 1276
+            Top = 926
             Anchors = [akRight, akBottom]
             TabOrder = 2
           end
           object pnlMain: TPanel
-            Width = 1366
-            Height = 679
+            Width = 1280
+            Height = 923
             TabOrder = 0
             object splMain: TSplitter
-              Width = 1366
+              Width = 1280
             end
             object usrg_Splitter1: TSplitter
               Tag = 0
               Left = 575
-              Top = 277
+              Top = 287
               Width = 6
-              Height = 402
+              Height = 636
               Cursor = crHSplit
               Hint = ''
               Align = alLeft
@@ -5008,9 +5009,9 @@ Objects:
             end
             object pnlDetail: TPanel
               Left = 0
-              Top = 277
+              Top = 287
               Width = 575
-              Height = 402
+              Height = 636
               Align = alLeft
               Alignment = taLeftJustify
               Anchors = [akLeft, akTop, akBottom]
@@ -5019,7 +5020,7 @@ Objects:
               object ibgrDetail: TgsIBGrid
                 Left = 0
                 Width = 575
-                Height = 376
+                Height = 610
                 Align = alClient
                 Anchors = [akLeft, akTop, akRight, akBottom]
                 ReadOnly = True
@@ -5401,24 +5402,24 @@ Objects:
               object tbdLeft: TTBDock
                 Left = 0
                 Width = 0
-                Height = 376
+                Height = 610
               end
               object tbdRight: TTBDock
                 Left = 575
                 Width = 0
-                Height = 376
+                Height = 610
               end
               object tbdBottom: TTBDock
-                Top = 402
+                Top = 636
                 Width = 575
                 Height = 0
               end
             end
             object pnlMaster: TPanel
-              Width = 1366
+              Width = 1280
               TabOrder = 0
               object pnlHolding: TPanel
-                Width = 1366
+                Width = 1280
                 TabOrder = 1
                 object lblCompany: TLabel
                   Width = 64
@@ -5431,8 +5432,8 @@ Objects:
                 Tag = 0
                 Left = 0
                 Top = 0
-                Width = 1366
-                Height = 273
+                Width = 1280
+                Height = 283
                 Cursor = crDefault
                 Hint = ''
                 HelpContext = 0
@@ -5488,8 +5489,8 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 121
-                    Width = 1358
-                    Height = 124
+                    Width = 1272
+                    Height = 134
                     Cursor = crDefault
                     Hint = ''
                     HelpContext = 0
@@ -5742,38 +5743,6 @@ Objects:
                         Alignment = taRightJustify
                         Anchors = [akLeft, akTop]
                         Caption = 'справочника'
-                        Checked = False
-                        Constraints.MaxHeight = 0
-                        Constraints.MaxWidth = 0
-                        Constraints.MinHeight = 0
-                        Constraints.MinWidth = 0
-                        DragCursor = crDrag
-                        DragKind = dkDrag
-                        DragMode = dmManual
-                        Enabled = True
-                        ParentBiDiMode = True
-                        ParentColor = True
-                        ParentCtl3D = True
-                        ParentFont = True
-                        ParentShowHint = True
-                        PopupMenu = nil
-                        TabOrder = 0
-                        TabStop = False
-                        Visible = True
-                      end
-                      object usrg_rbMovementRate: TRadioButton
-                        Tag = 0
-                        Left = 6
-                        Top = 27
-                        Width = 161
-                        Height = 17
-                        Cursor = crDefault
-                        Hint = ''
-                        HelpContext = 0
-                        Action = nil
-                        Alignment = taRightJustify
-                        Anchors = [akLeft, akTop]
-                        Caption = 'кадрового движения'
                         Checked = True
                         Constraints.MaxHeight = 0
                         Constraints.MaxWidth = 0
@@ -5789,8 +5758,40 @@ Objects:
                         ParentFont = True
                         ParentShowHint = True
                         PopupMenu = nil
-                        TabOrder = 1
+                        TabOrder = 0
                         TabStop = True
+                        Visible = True
+                      end
+                      object usrg_rbMovementRate: TRadioButton
+                        Tag = 0
+                        Left = 6
+                        Top = 27
+                        Width = 161
+                        Height = 17
+                        Cursor = crDefault
+                        Hint = ''
+                        HelpContext = 0
+                        Action = nil
+                        Alignment = taRightJustify
+                        Anchors = [akLeft, akTop]
+                        Caption = 'кадрового движения'
+                        Checked = False
+                        Constraints.MaxHeight = 0
+                        Constraints.MaxWidth = 0
+                        Constraints.MinHeight = 0
+                        Constraints.MinWidth = 0
+                        DragCursor = crDrag
+                        DragKind = dkDrag
+                        DragMode = dmManual
+                        Enabled = True
+                        ParentBiDiMode = True
+                        ParentColor = True
+                        ParentCtl3D = True
+                        ParentFont = True
+                        ParentShowHint = True
+                        PopupMenu = nil
+                        TabOrder = 1
+                        TabStop = False
                         Visible = True
                       end
                     end
@@ -5831,7 +5832,7 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 0
-                    Width = 1358
+                    Width = 1272
                     Height = 121
                     Cursor = crDefault
                     Hint = ''
@@ -6017,51 +6018,51 @@ Objects:
                   TabVisible = True
                   object atContainer: TatContainer
                     Top = 0
-                    Width = 1358
-                    Height = 245
-                    VertScrollBar.Position = 187
+                    Width = 1272
+                    Height = 255
+                    VertScrollBar.Position = 177
                     TabOrder = 0
                     object usrat_DBEdit_NUMBER_Label: TLabel
                       Left = 5
-                      Top = -156
+                      Top = -146
                       Visible = False
                     end
                     object usrat_xDateDBEdit_DOCUMENTDATE_Label: TLabel
-                      Top = -179
+                      Top = -169
                       Visible = False
                     end
                     object usrat_DBEdit_USR_SORTNUMBER_Label: TLabel
                       Left = 5
-                      Top = -134
+                      Top = -124
                       Visible = False
                     end
                     object usrat_DBEdit_USR_EQRATE_Label: TLabel
-                      Top = 228
+                      Top = 238
                     end
                     object usrat_DBEdit_NUMBER: TDBEdit
                       Left = 131
-                      Top = -159
+                      Top = -149
                       Width = 100
                       TabOrder = 2
                       Visible = False
                     end
                     object usrat_xDateDBEdit_DOCUMENTDATE: TxDateDBEdit
                       Left = 131
-                      Top = -182
+                      Top = -172
                       Width = 100
                       TabOrder = 1
                       Visible = False
                     end
                     object usrat_DBEdit_USR_SORTNUMBER: TxDBCalculatorEdit
                       Left = 131
-                      Top = -136
+                      Top = -126
                       Width = 100
                       Cursor = crIBeam
                       TabOrder = 0
                       Visible = False
                     end
                     object usrat_DBEdit_USR_EQRATE: TxDBCalculatorEdit
-                      Top = 224
+                      Top = 234
                       Cursor = crIBeam
                       TabOrder = 3
                     end
@@ -6072,9 +6073,9 @@ Objects:
             object usrg_pAvgSalary: TPanel
               Tag = 0
               Left = 581
-              Top = 277
-              Width = 785
-              Height = 402
+              Top = 287
+              Width = 699
+              Height = 636
               Cursor = crDefault
               Hint = ''
               HelpContext = 0
@@ -6114,8 +6115,8 @@ Objects:
                 Tag = 0
                 Left = 0
                 Top = 0
-                Width = 785
-                Height = 402
+                Width = 699
+                Height = 636
                 Cursor = crDefault
                 Hint = ''
                 HelpContext = 0
@@ -6171,8 +6172,8 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 26
-                    Width = 777
-                    Height = 348
+                    Width = 691
+                    Height = 582
                     Cursor = crDefault
                     Hint = ''
                     HelpContext = 0
@@ -6382,8 +6383,8 @@ Objects:
                         FieldName = 'USR$OLDSALARY'
                         ReadOnly = False
                         Title.Caption = 'Оклад'
-                        Width = 60
-                        Visible = True
+                        Width = -1
+                        Visible = False
                       end
                       item
                         Alignment = taRightJustify
@@ -6391,8 +6392,8 @@ Objects:
                         FieldName = 'USR$NEWSALARY'
                         ReadOnly = False
                         Title.Caption = 'Текущий оклад'
-                        Width = 96
-                        Visible = True
+                        Width = -1
+                        Visible = False
                       end
                       item
                         Expanded = False
@@ -6446,7 +6447,7 @@ Objects:
                     Tag = 0
                     Left = 0
                     Top = 0
-                    Width = 777
+                    Width = 691
                     Height = 26
                     Cursor = crDefault
                     Hint = ''
@@ -6801,7 +6802,7 @@ Objects:
           end
         end
         
-      EDITIONDATE: 2014-06-09T15:20:04+03:00
+      EDITIONDATE: 2014-12-08T13:04:40+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -11815,7 +11816,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-10-28T10:19:34+03:00
+      EDITIONDATE: 2014-12-09T14:06:53+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11833,7 +11834,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-07-21T16:32:06+03:00
+      EDITIONDATE: 2014-12-09T14:06:53+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11851,7 +11852,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-07-21T16:32:06+03:00
+      EDITIONDATE: 2014-12-09T14:06:53+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -11869,7 +11870,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-10-28T10:19:34+03:00
+      EDITIONDATE: 2014-12-09T14:06:53+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -12134,7 +12135,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-11-28T10:08:54+03:00
+      EDITIONDATE: 2014-12-08T17:59:50+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12152,7 +12153,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-11-28T10:08:54+03:00
+      EDITIONDATE: 2014-12-08T17:59:50+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12170,7 +12171,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-11-28T10:08:54+03:00
+      EDITIONDATE: 2014-12-08T17:59:50+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -12188,7 +12189,7 @@ Objects:
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-11-28T10:08:54+03:00
+      EDITIONDATE: 2014-12-08T17:59:50+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -12314,11 +12315,11 @@ Objects:
       NAME: "Height"
       DATA_TYPE: "I"
       STR_DATA: ~
-      INT_DATA: 287
+      INT_DATA: 304
       DATETIME_DATA: ~
       CURR_DATA: ~
       BLOB_DATA: ~
-      EDITIONDATE: 2014-06-03T11:58:45+03:00
+      EDITIONDATE: 2014-12-09T10:54:27+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -12371,9 +12372,9 @@ Objects:
         bWUGEFVTUiRTQ0hFRFVMRVJET1cIUmVhZE9ubHkIDVRpdGxlLkNhcHRpb24GD8Tt5ekg7+4g4/Dg
         9Ojq8wVXaWR0aAJUB1Zpc2libGUJAAEJQWxpZ25tZW50Bw50YVJpZ2h0SnVzdGlmeQhFeHBhbmRl
         ZAgJRmllbGROYW1lBgdVU1IkSE9XCFJlYWRPbmx5CA1UaXRsZS5DYXB0aW9uBgvX4PH7IPDg4e7y
-        +wVXaWR0aAJCB1Zpc2libGUJCVRvdGFsVHlwZQcFdHRTdW0AAQlBbGlnbm1lbnQHDXRhTGVmdEp1
+        +wVXaWR0aAJMB1Zpc2libGUJCVRvdGFsVHlwZQcFdHRTdW0AAQlBbGlnbm1lbnQHDXRhTGVmdEp1
         c3RpZnkIRXhwYW5kZWQICUZpZWxkTmFtZQYQVVNSJFNDSEVEVUxFUkhPVwhSZWFkT25seQgNVGl0
-        bGUuQ2FwdGlvbgYQ1+Dx7uIg7+4g4/Dg9Ojq8wVXaWR0aAJaB1Zpc2libGUJAAEJQWxpZ25tZW50
+        bGUuQ2FwdGlvbgYQ1+Dx7uIg7+4g4/Dg9Ojq8wVXaWR0aAJgB1Zpc2libGUJAAEJQWxpZ25tZW50
         Bw10YUxlZnRKdXN0aWZ5CEV4cGFuZGVkCAlGaWVsZE5hbWUGD1VTUiRERVNDUklQVElPTghSZWFk
         T25seQgNVGl0bGUuQ2FwdGlvbgYIzu/o8eDt6OUFV2lkdGgCeQdWaXNpYmxlCQABCUFsaWdubWVu
         dAcNdGFMZWZ0SnVzdGlmeQVDb2xvcgcHY2xXaGl0ZQhFeHBhbmRlZAgJRmllbGROYW1lBhBVU1Ik
@@ -12397,7 +12398,7 @@ Objects:
         4PLgBVdpZHRoAv8HVmlzaWJsZQgAAQlBbGlnbm1lbnQHDXRhTGVmdEp1c3RpZnkIRXhwYW5kZWQI
         CUZpZWxkTmFtZQYfWl9VU1IkRE9DVU1FTlRLRVlfRE9DMjcxNTI2MDQ3OAhSZWFkT25seQgNVGl0
         bGUuQ2FwdGlvbgYN0ujvIOTu6vPs5e3y4AVXaWR0aAL/B1Zpc2libGUIAAAICP0cCQg=
-      EDITIONDATE: 2014-10-28T09:51:16+03:00
+      EDITIONDATE: 2014-12-09T11:30:19+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -12618,6 +12619,7 @@ Objects:
       W8_START4: 1899-12-30T00:00:00+03:00
       W8_END4: 1899-12-30T00:00:00+03:00
       EDITIONDATE: 2014-03-14T15:54:21+03:00
+      USR$WAGE_OLDKEY: ~
       USR$DAYCICLECOUNT: 7
       USR$CALENDARTYPE: ~
       USR$FIRSTDAYDATE: ~

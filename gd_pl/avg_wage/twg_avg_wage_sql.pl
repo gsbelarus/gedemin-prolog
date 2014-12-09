@@ -94,7 +94,8 @@ gd_pl_ds(Scope, kb, usr_wg_MovementLine, 15, [
     fMoveYear-integer, fMoveMonth-integer, fDateBegin-date,
     fScheduleKey-integer, fMovementType-integer,
     fRate-float, fListNumber-string, fMSalary-float,
-    fPayFormKey-integer, fSalaryKey-integer, fTSalary-float, fAvgWageRate-float
+    fPayFormKey-integer, fSalaryKey-integer,
+    fTSalary-float, fTHoureRate-float
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
@@ -103,7 +104,7 @@ gd_pl_ds(Scope, kb, usr_wg_MovementLine, 15, [
 % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
 %   MoveYear, MoveMonth, DateBegin,
 %   ScheduleKey, MovementType, Rate, ListNumber, MSalary,
-%   PayFormKey, SalaryKey, TSalary, AvgWageRate)
+%   PayFormKey, SalaryKey, TSalary, THoureRate)
 get_sql(Scope, kb, usr_wg_MovementLine/15,
 "
 SELECT
@@ -121,7 +122,7 @@ SELECT
   COALESCE(ml.USR$PAYFORMKEY, 0) AS PayFormKey,
   (SELECT id FROM GD_P_GETID(pPayFormSalary_ruid)) AS SalaryKey,
   COALESCE(ml.USR$TSALARY, 0) AS TSalary,
-  8 * COALESCE(USR$THOURRATE, 0) AS AvgWageRate
+  COALESCE(USR$THOURRATE, 0) AS THoureRate
 FROM
   USR$WG_MOVEMENTLINE ml
 WHERE
@@ -267,7 +268,8 @@ gd_pl_ds(Scope, kb, usr_wg_TblCalLine, 7, [
     fDuration-float, fHoureType-integer
     ]) :-
     memberchk(Scope, [
-        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
+        wg_struct_sick
         ]).
 % usr_wg_TblCalLine(EmplKey, FirstMoveKey, CalYear, CalMonth, Date, Duration, HoureType)
 get_sql(Scope, kb, usr_wg_TblCalLine/7,
@@ -302,7 +304,8 @@ ORDER BY
     pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
     ]) :-
     memberchk(Scope, [
-        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
+        wg_struct_sick
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, [
@@ -780,7 +783,13 @@ SELECT
   al.USR$FIRSTMOVEKEY,
   EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear,
   EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth,
-  8 * COALESCE(al.USR$AVGSUM, 0) AS AvgSumma
+  CASE COALESCE(a.USR$CALCBYHOUR, 0)
+    WHEN 1 THEN
+      8 * COALESCE(al.USR$AVGSUM, 0)
+    ELSE
+      COALESCE(al.USR$AVGSUM, 0)
+  END
+    AS AvgSumma
 FROM
   USR$WG_AVGADDPAYLINE al
 JOIN

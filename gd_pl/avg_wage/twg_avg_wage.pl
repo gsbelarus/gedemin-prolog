@@ -411,7 +411,13 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % в список расчетов
     AvgWageList),
     % выбор по более выгодному варианту
-    max_member(AvgWage-Rule, AvgWageList),
+    max_member(AvgWage1-Rule, AvgWageList),
+      % от ставки - расчет при формировании структуры
+    ( memberchk(Rule, [by_rate])
+     -> AvgWage = 0
+    ; % иначе - по выбранному варианту
+      AvgWage = AvgWage1
+    ),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (от ставки без периодов со справкой)
@@ -544,44 +550,19 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     Rule = by_rate,
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
-    % взять расчетную дату
-    append(PK, [pDateCalc-DateCalc], Pairs),
-    get_param_list(Scope, run, Pairs),
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    % взять данные по ставке
-    findall( PayFormKey0-SalaryKey0-TSalary0-AvgWageRate0,
-               % из данных по движению
-             ( get_data(Scope, kb, usr_wg_MovementLine, [
-                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                         fDateBegin-DateBegin,
-                         fPayFormKey-PayFormKey0, fSalaryKey-SalaryKey0,
-                         fTSalary-TSalary0, fAvgWageRate-AvgWageRate0 ]),
-               % где дата меньше или равна расчетной
-               DateBegin @=< DateCalc ),
-    % в список ставок
-    RateList ),
-    % взять последние данные по ставке
-    last(RateList, PayFormKey-SalaryKey-TSalary-AvgWageRate),
-      % если форма оплаты оклад, то расчет по тарифному окладу
-    ( PayFormKey = SalaryKey,
-      % сформировать список заработков по тарифному окладу
-      findall( TSalary, member(_-_, Periods), Wages ),
-      % итоговый заработок
-      sum_list(Wages, Amount),
-      % сформировать список расчетных дней по календарным дням месяца
-      findall( CalcDays,
-               ( member(Y-M, Periods), month_days(Y, M, CalcDays) ),
-      CalcDaysList ),
-      % всего расчетных дней
-      sum_list(CalcDaysList, TotalCalcDays),
-      % среднедневной заработок
-      catch( AvgWage0 is Amount / TotalCalcDays, _, fail ),
-      AvgWage is round(AvgWage0)
-    ;
-      % иначе, расчет от часовой тарифной ставки
-      AvgWage is round(AvgWageRate)
-    ),
+    % взять данные по среднедневной ставке (окладу)
+    findall( AvgWage0,
+             ( member(Y-M, Periods),
+               atom_date(TheDate, date(Y, M, 1)),
+               get_avg_wage_rate(Scope, PK, TheDate, AvgWage0)
+             ),
+    % в список среднедневных заработков
+    AvgWageList),
+    % среднедневной заработок
+    sum_list(AvgWageList, AvgWageAmount),
+    length(Periods, MonthQty),
+    catch( AvgWage0 is AvgWageAmount / MonthQty, _, AvgWage0 = 0 ),
+    AvgWage is round(AvgWage0),
     !.
 calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     % по среднему заработку
@@ -2205,10 +2186,15 @@ struct_sick_sql(EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity,
     % формирование параметров выполнения
     DateCalcFrom = DateBegin,
     date_add(DateEnd, 1, day, DateCalcTo),
+    atom_date(DateBegin, date(Y, M, _)),
+    atom_date(DateNormFrom, date(Y, M, 1)),
+    date_add(DateEnd, 1, month, DateEnd1),
+    atom_date(DateEnd1, date(Y1, M1, _)),
+    atom_date(DateNormTo, date(Y1, M1, 1)),
     ParamPairs = [
                   pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                   pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
-                  pDateNormFrom-DateCalcFrom, pDateNormTo-DateCalcTo
+                  pDateNormFrom-DateNormFrom, pDateNormTo-DateNormTo
                  ],
     ( get_param_list(Scope, Type, [pCommon-1], CommonPairs) -> true
     ; CommonPairs = []
@@ -2536,30 +2522,36 @@ struct_sick_out(AccDate, IncludeDate, Percent, DOI, HOI, Summa, DateBegin, DateE
 get_avg_wage_rate(Scope, PK, TheDate, AvgWage) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % текущий месяц
+    atom_date(TheDate, date(Y, M, _)),
+    % календарных дней в текущем месяце
+    month_days(Y, M, MonthDays),
+    atom_date(LastDate, date(Y, M, MonthDays)),
     % взять данные по ставке
-    findall( PayFormKey0-SalaryKey0-TSalary0-AvgWageRate0,
+    findall( PayFormKey0-SalaryKey0-TSalary0-THoureRate0,
                % из данных по движению
              ( get_data(Scope, kb, usr_wg_MovementLine, [
                          fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                          fDateBegin-DateBegin,
                          fPayFormKey-PayFormKey0, fSalaryKey-SalaryKey0,
-                         fTSalary-TSalary0, fAvgWageRate-AvgWageRate0 ]),
-               % где дата меньше или равна расчетной
-               DateBegin @=< TheDate ),
+                         fTSalary-TSalary0, fTHoureRate-THoureRate0 ]),
+               % где дата меньше или равна последней дате месяца
+               DateBegin @=< LastDate ),
     % в список ставок
     RateList ),
     % взять последние данные по ставке
-    last(RateList, PayFormKey-SalaryKey-TSalary-AvgWageRate),
-      % если форма оплаты оклад, то расчет по тарифному окладу
+    last(RateList, PayFormKey-SalaryKey-TSalary-THoureRate),
+      % если форма оплаты оклад
     ( PayFormKey = SalaryKey,
-      % календарных дней в месяце
-      atom_date(TheDate, date(Y, M, _)),
-      month_days(Y, M, MonthDays),
-      % среднедневная ставка
+      % то расчет по тарифному окладу
       AvgWage is TSalary / MonthDays
-    ;
-      % иначе, расчет от часовой тарифной ставки
-      AvgWage is AvgWageRate
+    ; % иначе
+      % расчитать график за месяц
+      calc_month_norm(Scope, PK, Y-M, NormDays),
+      % сумма дней и часов по графику
+      sum_days_houres(NormDays, _, NHoures),
+      % расчет от часовой тарифной ставки
+      AvgWage is NHoures * THoureRate / MonthDays
     ),
     !.
 
