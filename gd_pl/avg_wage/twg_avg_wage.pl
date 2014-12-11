@@ -1145,17 +1145,16 @@ get_prop_coef(Scope, PK, Y, M, PropCoef) :-
     calc_prop_coef(TDays, NDays, THoures, NHoures, PropCoef),
     !.
 
-% расчитать коэфициент для пропорционального начисления
-calc_prop_coef(TabDays, NormDays, _, _, 1.0) :-
-    TabDays >= NormDays,
-    !.
-calc_prop_coef(_, _, TabHoures, NormHoures, 1.0) :-
-    TabHoures >= NormHoures,
-    !.
+% расчитать коэффициент для пропорционального начисления
 calc_prop_coef(TabDays, NormDays, TabHoures, NormHoures, PropCoef) :-
-    catch( PropCoef1 is TabDays / NormDays, _, fail ),
-    catch( PropCoef2 is TabHoures / NormHoures, _, fail ),
-    PropCoef is max(PropCoef1, PropCoef2),
+    ( TabDays =:= 0,
+      NormHoures > 0
+     ->
+      PropCoef is TabHoures / NormHoures
+    ; TabDays > 0,
+      NormDays > 0,
+      PropCoef is TabDays / NormDays
+    ),
     \+ PropCoef > 1.0,
     !.
 calc_prop_coef(_, _, _, _, 1.0) :-
@@ -1557,7 +1556,7 @@ get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
 % расчитать график и табель за месяц
 calc_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
     % расчитать график за месяц
-    calc_month_norm(Scope, PK, Y-M, NormDays),
+    calc_month_norm(Scope, PK, Y-M, [tbl_cal_flex, tbl_day_norm], NormDays),
     % сумма дней и часов по графику
     sum_days_houres(NormDays, NDays, NHoures),
     % расчитать табель за месяц
@@ -1567,9 +1566,9 @@ calc_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
     !.
 
 % расчитать график за месяц по одному из параметров
-calc_month_norm(Scope, PK, Y-M, NormDays) :-
+calc_month_norm(Scope, PK, Y-M, NormOptionList, NormDays) :-
     % параметры выбора графика
-    member(NormOption, [tbl_cal_flex, tbl_day_norm]),
+    member(NormOption, NormOptionList),
     % взять дату/часы
     findall( TheDay-1-WDuration,
             % для рабочего дня
@@ -1581,7 +1580,7 @@ calc_month_norm(Scope, PK, Y-M, NormDays) :-
     % проверить список графика
     \+ NormDays = [],
     !.
-calc_month_norm(_, _, _, []) :-
+calc_month_norm(_, _, _, _, []) :-
     !.
 
 % расчитать график за год по одному из параметров
@@ -1593,7 +1592,7 @@ calc_year_norm(Scope, PK, NormDays) :-
 calc_year_norm([], _, _, NormDays, NormDays) :-
     !.
 calc_year_norm([Y-M|Periods], Scope, PK, NormDays0, NormDays) :-
-    calc_month_norm(Scope, PK, Y-M, NormDays1),
+    calc_month_norm(Scope, PK, Y-M, [tbl_day_norm], NormDays1),
     append(NormDays0, NormDays1, NormDays2),
     !,
     calc_year_norm(Periods, Scope, PK, NormDays2, NormDays).
@@ -2547,7 +2546,7 @@ get_avg_wage_rate(Scope, PK, TheDate, AvgWage) :-
       AvgWage is TSalary / MonthDays
     ; % иначе
       % расчитать график за месяц
-      calc_month_norm(Scope, PK, Y-M, NormDays),
+      calc_month_norm(Scope, PK, Y-M, [tbl_cal_flex, tbl_day_norm], NormDays),
       % сумма дней и часов по графику
       sum_days_houres(NormDays, _, NHoures),
       % расчет от часовой тарифной ставки
