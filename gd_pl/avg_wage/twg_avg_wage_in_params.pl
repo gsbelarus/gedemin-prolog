@@ -19,6 +19,8 @@ twg_avg_wage_in_params:-
         pTblCal_DocType_Plan_dbid1-1514418708,
         pTblCal_DocType_Plan_xid2-147117601,
         pTblCal_DocType_Plan_dbid2-1481574092,
+        % Травма производственная
+        pJobIllType_ruid-'147036273,151520244',
         pTblCal_DocType_Fact_ruid-'187613422,1596169984'
         ]),
     fail.
@@ -65,8 +67,6 @@ twg_avg_wage_in_params:-
     new_param_list(wg_struct_sick, in, [
         pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
         pBugetCalcType-1, pBudgetPart-0.5, pViolatPart-0.5,
-        % Травма производственная
-        pJobIllType_ruid-'147036273,151520244',
         pBudget_ruid-'147073065,1224850260',
         pAvgSalaryRB_ruid-'147105585,1224850260',
         pAvgSalaryRB_Coef-3

@@ -1101,17 +1101,23 @@ FROM USR$WG_TBLCALDAY_P(pEmplKey, pFirstMoveKey, 'pDateCalcFrom', 'pDateCalcTo')
     pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
     ]).
 
-gd_pl_ds(wg_struct_sick, kb, wg_job_ill_type, 1, [
+gd_pl_ds(Scope, kb, wg_job_ill_type, 1, [
     fJobIllType-integer
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_struct_sick, wg_avg_wage_sick
+        ]).
 % wg_job_ill_type(ID)
-get_sql(wg_struct_sick, kb, wg_job_ill_type/1,
+get_sql(Scope, kb, wg_job_ill_type/1,
 "
 SELECT id FROM GD_P_GETID(pJobIllType_ruid)
 ",
     [
     pJobIllType_ruid-_
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_struct_sick, wg_avg_wage_sick
+        ]).
 
 gd_pl_ds(Scope, kb, usr_wg_pl_Rule, 2, [
     fAtom-string, fEnabled-boolean

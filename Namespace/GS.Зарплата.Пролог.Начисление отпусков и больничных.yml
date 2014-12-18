@@ -5,10 +5,10 @@ Properties:
   RUID: 528622143_99701464
   Name: "GS.Зарплата.Пролог.Начисление отпусков и больничных"
   Caption: "Начисление отпусков, больничных, по-среднему"
-  Version: "1.0.0.105"
+  Version: "1.0.0.108"
   Optional: False
   Internal: True
-  MD5: 6A9FC5B38B8FAD791D01E0C732E3646E
+  MD5: 51CC00671B27A9C41AFFD6A7F6B9683C
 Uses: 
   - "151049506_187967073 GS.Зарплата.Пролог.Общие"
 Objects: 
@@ -1273,17 +1273,23 @@ Objects:
             pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
             ]).
         
-        gd_pl_ds(wg_struct_sick, kb, wg_job_ill_type, 1, [
+        gd_pl_ds(Scope, kb, wg_job_ill_type, 1, [
             fJobIllType-integer
-            ]).
+            ]) :-
+            memberchk(Scope, [
+                wg_struct_sick, wg_avg_wage_sick
+                ]).
         % wg_job_ill_type(ID)
-        get_sql(wg_struct_sick, kb, wg_job_ill_type/1,
+        get_sql(Scope, kb, wg_job_ill_type/1,
         "
         SELECT id FROM GD_P_GETID(pJobIllType_ruid)
         ",
             [
             pJobIllType_ruid-_
-            ]).
+            ]) :-
+            memberchk(Scope, [
+                wg_struct_sick, wg_avg_wage_sick
+                ]).
         
         gd_pl_ds(Scope, kb, usr_wg_pl_Rule, 2, [
             fAtom-string, fEnabled-boolean
@@ -1328,7 +1334,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-12-09T14:52:15+03:00
+      EDITIONDATE: 2014-12-18T11:05:46+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1365,6 +1371,8 @@ Objects:
                 pTblCal_DocType_Plan_dbid1-1514418708,
                 pTblCal_DocType_Plan_xid2-147117601,
                 pTblCal_DocType_Plan_dbid2-1481574092,
+                % Травма производственная
+                pJobIllType_ruid-'147036273,151520244',
                 pTblCal_DocType_Fact_ruid-'187613422,1596169984'
                 ]),
             fail.
@@ -1411,8 +1419,6 @@ Objects:
             new_param_list(wg_struct_sick, in, [
                 pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
                 pBugetCalcType-1, pBudgetPart-0.5, pViolatPart-0.5,
-                % Травма производственная
-                pJobIllType_ruid-'147036273,151520244',
                 pBudget_ruid-'147073065,1224850260',
                 pAvgSalaryRB_ruid-'147105585,1224850260',
                 pAvgSalaryRB_Coef-3
@@ -1444,7 +1450,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-11-28T17:27:22+03:00
+      EDITIONDATE: 2014-12-18T11:05:34+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2606,8 +2612,7 @@ Objects:
             calc_prop_coef(TDays, NDays, THoures, NHoures, PropCoef),
             !.
         
-        % расчитать коэфициент для пропорционального начисления
-        
+        % расчитать коэффициент для пропорционального начисления
         calc_prop_coef(TabDays, NormDays, TabHoures, NormHoures, PropCoef) :-
             ( TabDays =:= 0,
               NormHoures > 0
@@ -2660,14 +2665,26 @@ Objects:
             ExclDays is ExclDays0 + ExclDays1,
             % расчетные дни
             CalcDays is MonthDays - ExclDays,
+            % Травма производственная
+            ( get_param(Scope, in, pIllType-IllType),
+              catch( wg_job_ill_type(IllType), _, fail)
+             ->
+              % расчитать табель за месяц
+              calc_month_tab(Scope, PK, Y-M, TabDays),
+              % сумма дней и часов по табелю
+              sum_days_houres(TabDays, TDays, _),
+              CalcDays1 = TDays
+            ;
+              CalcDays1 = CalcDays
+            ),
             % полнота месяца
-            ( CalcDays = MonthDays -> IsFullMonth = 1 ; IsFullMonth = 0 ),
+            ( CalcDays1 = MonthDays -> IsFullMonth = 1 ; IsFullMonth = 0 ),
             % все дни для исключения специальные
             ( ExclDays = SpecExclDays -> IsSpecMonth = 1 ; IsSpecMonth = 0 ),
             % записать во временные параметры данные по расчетным дням
             append(PK, [pYM-Y-M, pRule-Variant,
                         pMonthDays-MonthDays, pExclDays-ExclDays,
-                        pCalcDays-CalcDays, pIsFullMonth-IsFullMonth,
+                        pCalcDays-CalcDays1, pIsFullMonth-IsFullMonth,
                         pIsSpecMonth-IsSpecMonth],
                     Pairs),
             new_param_list(Scope, temp, Pairs),
@@ -3399,12 +3416,12 @@ Objects:
         %  06. Начисление больничных
         
         % загрузка входных данных по сотруднику
-        avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy) :-
+        avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy, IllType) :-
             Scope = wg_avg_wage_sick, Type = in,
             new_param_list(Scope, Type, [
                             pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                             pDateCalc-DateCalc, pIsAvgWageDoc-IsAvgWageDoc,
-                            pIsPregnancy-IsPregnancy ]),
+                            pIsPregnancy-IsPregnancy, pIllType-IllType ]),
             !.
         
         % выгрузка детальных выходных данных по сотруднику
@@ -4128,7 +4145,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-12-11T10:25:51+03:00
+      EDITIONDATE: 2014-12-18T11:17:17+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -9768,6 +9785,7 @@ Objects:
           'avg_wage_sick_in
           Dim P_in, Tv_in, Q_in
           Dim EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy
+          Dim IllType, CalcType
           'avg_wage_run, avg_wage_sql
           Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
           Dim DateCalcFrom, DateCalcTo
@@ -9810,6 +9828,25 @@ Objects:
           IsAvgWageDoc = gdcObject.FieldByName("USR$REFERENCE").AsInteger
           IsPregnancy = abs(gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
                  gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
+          IllType = gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger
+        
+          Dim IBSQL
+          '
+          Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
+          IBSQL.Transaction = gdcBaseManager.ReadTransaction
+          IBSQL.SQL.Text = _
+              "SELECT " & _
+              "  it.USR$CALCTYPE " & _
+              "FROM " & _
+              "  USR$WG_ILLTYPE it " & _
+              "WHERE " & _
+              "  it.ID = :ILLTYPEKEY "
+          IBSQL.ParamByName("ILLTYPEKEY").AsInteger = IllType
+          IBSQL.ExecQuery
+          '
+          CalcType = IBSQL.FieldByName("USR$CALCTYPE").AsInteger
+          '
+          IBSQL.Close
         
           'clean
           gdcSalary.First
@@ -9819,15 +9856,16 @@ Objects:
           '
           gdcSalary.OwnerForm.Repaint
         
-          'avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy)
+          'avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy, IllType)
           P_in = "avg_wage_sick_in"
-          Set Tv_in = Creator.GetObject(5, "TgsPLTermv", "")
+          Set Tv_in = Creator.GetObject(6, "TgsPLTermv", "")
           Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
           Tv_in.PutInteger 0, EmplKey
           Tv_in.PutInteger 1, FirstMoveKey
           Tv_in.PutDate 2, DateCalc
           Tv_in.PutInteger 3, IsAvgWageDoc
           Tv_in.PutInteger 4, IsPregnancy
+          Tv_in.PutInteger 5, IllType
           '
           Q_in.PredicateName = P_in
           Q_in.Termv = Tv_in
@@ -9967,7 +10005,7 @@ Objects:
           '                  Period, Rule,
           '                  MonthDays, ExclDays, CalcDays, IsFullMonth, IsSpecMonth,
           '                  Wage,
-          '                  TabDays, NormDays, TabHoures, NormHoures) :-
+          '                  TabDays, NormDays, TabHoures, NormHoures)
           P_det = "avg_wage_sick_det"
           Set Tv_det = Creator.GetObject(14, "TgsPLTermv", "")
           Set Q_det = Creator.GetObject(nil, "TgsPLQuery", "")
@@ -10098,7 +10136,7 @@ Objects:
         AAAAAEZOU1RGTFBS
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-12-03T09:19:53+03:00
+      EDITIONDATE: 2014-12-18T11:19:44+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

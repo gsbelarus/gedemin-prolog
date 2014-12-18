@@ -1198,14 +1198,26 @@ get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, IsSpecMon
     ExclDays is ExclDays0 + ExclDays1,
     % расчетные дни
     CalcDays is MonthDays - ExclDays,
+    % Травма производственная
+    ( get_param(Scope, in, pIllType-IllType),
+      catch( wg_job_ill_type(IllType), _, fail)
+     ->
+      % расчитать табель за месяц
+      calc_month_tab(Scope, PK, Y-M, TabDays),
+      % сумма дней и часов по табелю
+      sum_days_houres(TabDays, TDays, _),
+      CalcDays1 = TDays
+    ;
+      CalcDays1 = CalcDays
+    ),
     % полнота месяца
-    ( CalcDays = MonthDays -> IsFullMonth = 1 ; IsFullMonth = 0 ),
+    ( CalcDays1 = MonthDays -> IsFullMonth = 1 ; IsFullMonth = 0 ),
     % все дни для исключения специальные
     ( ExclDays = SpecExclDays -> IsSpecMonth = 1 ; IsSpecMonth = 0 ),
     % записать во временные параметры данные по расчетным дням
     append(PK, [pYM-Y-M, pRule-Variant,
                 pMonthDays-MonthDays, pExclDays-ExclDays,
-                pCalcDays-CalcDays, pIsFullMonth-IsFullMonth,
+                pCalcDays-CalcDays1, pIsFullMonth-IsFullMonth,
                 pIsSpecMonth-IsSpecMonth],
             Pairs),
     new_param_list(Scope, temp, Pairs),
@@ -1937,12 +1949,12 @@ avg_wage_det(EmplKey, FirstMoveKey,
 %  06. Начисление больничных
 
 % загрузка входных данных по сотруднику
-avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy) :-
+avg_wage_sick_in(EmplKey, FirstMoveKey, DateCalc, IsAvgWageDoc, IsPregnancy, IllType) :-
     Scope = wg_avg_wage_sick, Type = in,
     new_param_list(Scope, Type, [
                     pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                     pDateCalc-DateCalc, pIsAvgWageDoc-IsAvgWageDoc,
-                    pIsPregnancy-IsPregnancy ]),
+                    pIsPregnancy-IsPregnancy, pIllType-IllType ]),
     !.
 
 % выгрузка детальных выходных данных по сотруднику
