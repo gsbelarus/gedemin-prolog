@@ -13,7 +13,9 @@ twg_avg_wage_in_params:-
         ]),
     new_param_list(Scope, in, [
         pCommon-1,
+        % форма оплаты Оклад
         pPayFormSalary_ruid-'147009181,119619099',
+        % Календарный график
         %pTblCal_DocType_Plan_ruid-'147567935,1514418708',
         pTblCal_DocType_Plan_xid1-147567935,
         pTblCal_DocType_Plan_dbid1-1514418708,
@@ -21,6 +23,7 @@ twg_avg_wage_in_params:-
         pTblCal_DocType_Plan_dbid2-1481574092,
         % Травма производственная
         pJobIllType_ruid-'147036273,151520244',
+        % Табель мастера
         pTblCal_DocType_Fact_ruid-'187613422,1596169984'
         ]),
     fail.
@@ -68,6 +71,8 @@ twg_avg_wage_in_params:-
         pFirstCalcType-0, pFirstDuration-12, pFirstPart-0.8,
         pBugetCalcType-1, pBudgetPart-0.5, pViolatPart-0.5,
         pBudget_ruid-'147073065,1224850260',
+        % По уходу за ребенком до 3-х лет
+        pChildIllType_ruid-'147022918,119619099',
         pAvgSalaryRB_ruid-'147105585,1224850260',
         pAvgSalaryRB_Coef-3
         ]),

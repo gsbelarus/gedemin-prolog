@@ -42,6 +42,7 @@ wg_valid_sql([
             gd_const_AvgSalaryRB/2, % 06, 12
             %usr_wg_TblDayNorm/8,
             wg_job_ill_type/1,
+            wg_child_ill_type/1,
             % section twg_rule
             usr_wg_pl_Rule/2,
             -
@@ -129,6 +130,8 @@ WHERE
   ml.USR$EMPLKEY = pEmplKey
   AND
   ml.USR$FIRSTMOVE = pFirstMoveKey
+  AND
+  NOT ml.USR$MOVEMENTTYPE IN(7)
 ORDER BY
   ml.USR$EMPLKEY,
   ml.USR$FIRSTMOVE,
@@ -1117,6 +1120,24 @@ SELECT id FROM GD_P_GETID(pJobIllType_ruid)
     ]) :-
     memberchk(Scope, [
         wg_struct_sick, wg_avg_wage_sick
+        ]).
+
+gd_pl_ds(Scope, kb, wg_child_ill_type, 1, [
+    fChildIllType-integer
+    ]) :-
+    memberchk(Scope, [
+        wg_struct_sick
+        ]).
+% wg_child_ill_type(ID)
+get_sql(Scope, kb, wg_child_ill_type/1,
+"
+SELECT id FROM GD_P_GETID(pChildIllType_ruid)
+",
+    [
+    pChildIllType_ruid-_
+    ]) :-
+    memberchk(Scope, [
+        wg_struct_sick
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_pl_Rule, 2, [

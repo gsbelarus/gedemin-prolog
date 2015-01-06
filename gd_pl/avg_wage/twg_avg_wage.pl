@@ -66,6 +66,7 @@
     gd_const_AvgSalaryRB,
     %usr_wg_TblDayNorm,
     wg_job_ill_type,
+    wg_child_ill_type,
     % section twg_rule
     usr_wg_pl_Rule
     ],
@@ -2250,6 +2251,7 @@ struct_sick_in(
     make_schedule(Scope, PK),
     % формирование временных данных параметров расчета
     Pairs0 = [
+              pDateCalc-DateCalc,
               pBudgetOption-BudgetOption, pByRateOption-ByRateOption,
               pIsPregnancy-IsPregnancy, pIllType-IllType,
               pViolatDB-ViolatDB, pViolatDE-ViolatDE
@@ -2363,7 +2365,7 @@ struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWag
     Percent is SickPart * 100,
     date_add(DateEnd1, 1, day, DateEnd11),
     % сумма дней и часов периода
-    sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType, Scope, PK),
+    sum_sick_days(DateBegin1, DateEnd11, 0, DOI, 0, HOI, IllType, Scope, PK, 0),
       % если расчет от БПМ
     ( BudgetOption = 1,
       get_avg_wage_budget(Scope, in, Y-M, AvgWage),
@@ -2487,25 +2489,40 @@ teil_period(DateEnd, DateEnd1, DateBegin2, DateEnd) :-
     !.
 
 % сумма дней и часов периода
-sum_sick_days(DateBegin, DateBegin, DOI, DOI, HOI, HOI, _, _, _) :-
+sum_sick_days(DateBegin, DateBegin, DOI, DOI, HOI, HOI, _, _, _, _) :-
     !.
-sum_sick_days(DateBegin, DateEnd, DOI0, DOI, HOI0, HOI, IllType, Scope, PK) :-
-    add_sick_norm(DateBegin, DOI0, HOI0, DOI1, HOI1, IllType, Scope, PK),
+sum_sick_days(DateBegin, DateEnd, DOI0, DOI, HOI0, HOI, IllType, Scope, PK, Holiday) :-
+    % добавить дней и часов по графику
+    add_sick_norm(DateBegin, DOI0, HOI0, DOI1, HOI1, IllType, Scope, PK, Holiday, Holiday1),
+    % следующий день
     date_add(DateBegin, 1, day, DateBegin1),
     !,
-    sum_sick_days(DateBegin1, DateEnd, DOI1, DOI, HOI1, HOI, IllType, Scope, PK).
+    sum_sick_days(DateBegin1, DateEnd, DOI1, DOI, HOI1, HOI, IllType, Scope, PK, Holiday1).
 
-%
-add_sick_norm(TheDay, DOI0, HOI0, DOI1, HOI1, IllType, Scope, PK) :-
+% добавить дней и часов по графику
+add_sick_norm(TheDay, DOI, HOI, DOI, HOI, IllType, Scope, PK, Holiday, 1) :-
+    % По уходу за ребенком до 3-х лет
+    catch( wg_child_ill_type(IllType), _, fail),
+    \+ once( ( member(NormOption, [tbl_cal_flex, tbl_day_norm]),
+               usr_wg_TblDayNorm_mix(Scope, PK, _, TheDay, WDuration, 1, NormOption),
+               WDuration > 0
+             )
+           ),
+    get_param_list(Scope, temp, [pDateCalc-DateCalc | PK]),
+    ( TheDay =@= DateCalc ; Holiday =@= 1 ),
+    !.
+add_sick_norm(TheDay, DOI0, HOI0, DOI1, HOI1, IllType, Scope, PK, _, 0) :-
     ( member(NormOption, [tbl_cal_flex, tbl_day_norm]),
       usr_wg_TblDayNorm_mix(Scope, PK, _, TheDay, WDuration, 1, NormOption),
       WDuration > 0,
-      DOI1 is DOI0 + 1, HOI1 is HOI0 + WDuration
-    ;
+      DOI1 is DOI0 + 1,
+      HOI1 is HOI0 + WDuration
+    ;   % Травма производственная
       ( catch( wg_job_ill_type(IllType), _, fail),
         DOI1 = DOI0
       ; DOI1 is DOI0 + 1
-      ), HOI1 = HOI0
+      ),
+      HOI1 = HOI0
     ),
     !.
 
