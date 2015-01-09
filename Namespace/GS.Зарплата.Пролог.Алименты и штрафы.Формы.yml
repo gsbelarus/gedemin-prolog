@@ -1,0 +1,5189 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 152689412_258063421
+  Name: "GS.Зарплата.Пролог.Алименты и штрафы.Формы"
+  Caption: "Алименты и штрафы (формы)"
+  Version: "1.0.0.6"
+  Optional: False
+  Internal: True
+  MD5: 03105B3EEB29FC7988BFC0775EC5100F
+Uses: 
+  - "147753062_69526485 GS.Общие.Хранилище"
+  - "147737937_43451302 ОК - макросы"
+  - "147755479_69526485 GS.Общие.EVT_OBJECT"
+  - "147769863_84733194 Зарплата - Evt_Object"
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 152685674_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147057828_1220615315 GLOBAL\\DFM\\Tgdc_frmUserSimpleDocument"
+      NAME: "152685574_258063421"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: | 
+        object gdc_frmUserSimpleDocument152685574_258063421: Tgdc_frmUserSimpleDocument
+          ActiveControl = nil
+          PixelsPerInch = 96
+          TextHeight = 13
+          object sbMain: TStatusBar
+            Panels = <
+              item
+                Text = 'Нет фильтрации'
+                Width = 999
+              end
+              item
+                Width = 160
+              end>
+          end
+          object TBDockTop: TTBDock
+            object tbMainToolbar: TTBToolbar
+              SavedAtRunTime = True
+              object tbiNew: TTBItem
+                Enabled = False
+              end
+              object tbiEdit: TTBItem
+                Enabled = False
+              end
+              object tbiDelete: TTBItem
+                Enabled = False
+              end
+              object tbiDuplicate: TTBItem
+                Enabled = False
+              end
+              object tbiReduction: TTBItem
+                Enabled = False
+              end
+              object tbsiMainOne: TTBSeparatorItem
+              end
+              object tbiEditInGrid: TTBItem
+                Enabled = False
+              end
+              object tbiCopy: TTBItem
+              end
+              object tbiCut: TTBItem
+              end
+              object tbiPaste: TTBItem
+              end
+              object tbsiMainOneAndHalf: TTBSeparatorItem
+              end
+              object tbiLoadFromFile: TTBItem
+              end
+              object tbiSaveToFile: TTBItem
+              end
+              object tbsiMainTwo: TTBSeparatorItem
+              end
+              object tbiFind: TTBItem
+              end
+              object tbiFilter: TTBItem
+              end
+              object tbiPrint: TTBItem
+              end
+              object tbiOnlySelected: TTBItem
+              end
+              object tbiLinkObject: TTBItem
+              end
+              object tbsiMainThreeAndAHalf: TTBSeparatorItem
+              end
+              object tbiHelp: TTBItem
+              end
+            end
+            object tbMainCustom: TTBToolbar
+              SavedAtRunTime = True
+              object usrg_tbFeesByEmpl: TTBItem
+                Tag = 0
+                Action = nil
+                AutoCheck = False
+                Caption = 'Начисления'
+                Checked = False
+                DisplayMode = nbdmDefault
+                Enabled = True
+                GroupIndex = 0
+                HelpContext = 0
+                Hint = ''
+                ImageIndex = -1
+                Images = nil
+                InheritOptions = True
+                MaskOptions = []
+                Options = []
+                RadioItem = False
+                ShortCut = 0
+                Visible = True
+              end
+              object usrg_tbMovsByEmpl: TTBItem
+                Tag = 0
+                Action = nil
+                AutoCheck = False
+                Caption = 'Движения'
+                Checked = False
+                DisplayMode = nbdmDefault
+                Enabled = True
+                GroupIndex = 0
+                HelpContext = 0
+                Hint = ''
+                ImageIndex = -1
+                Images = nil
+                InheritOptions = True
+                MaskOptions = []
+                Options = []
+                RadioItem = False
+                ShortCut = 0
+                Visible = True
+              end
+            end
+            object tbMainMenu: TTBToolbar
+              SavedAtRunTime = True
+              object tbsiMainMenuObject: TTBSubmenuItem
+                object tbi_mm_New: TTBItem
+                end
+                object tbi_mm_Edit: TTBItem
+                end
+                object tbi_mm_Delete: TTBItem
+                end
+                object tbi_mm_Duplicate: TTBItem
+                end
+                object tbi_mm_Reduction: TTBItem
+                end
+                object tbi_mm_sep1_1: TTBSeparatorItem
+                end
+                object tbi_mm_Copy: TTBItem
+                end
+                object tbi_mm_Cut: TTBItem
+                end
+                object tbi_mm_Paste: TTBItem
+                end
+                object tbi_mm_sep2_2_: TTBSeparatorItem
+                end
+                object tbi_mm_AddToSelected: TTBItem
+                end
+                object tbi_mm_RemoveFromSelected: TTBItem
+                end
+                object tbi_mm_sep2_1: TTBSeparatorItem
+                end
+                object tbi_mm_Load: TTBItem
+                end
+                object tbi_mm_Save: TTBItem
+                end
+                object tbi_mm_sep3_1: TTBSeparatorItem
+                end
+                object tbi_mm_Commit: TTBItem
+                end
+                object tbi_mm_Rollback: TTBItem
+                end
+                object tbi_mm_sep4_1: TTBSeparatorItem
+                end
+                object tbi_mm_Find: TTBItem
+                end
+                object tbi_mm_Filter: TTBItem
+                end
+                object tbi_mm_Print: TTBItem
+                end
+                object tbi_mm_Macro: TTBItem
+                end
+                object tbi_mm_OnlySelected: TTBItem
+                end
+                object tbi_mm_LinkObject: TTBItem
+                end
+                object tbi_mm_sep5_1: TTBSeparatorItem
+                end
+                object tbi_mm_MainToSetting: TTBItem
+                end
+                object tbi_mm_sep5_2_: TTBSeparatorItem
+                end
+                object tbi_mm_CopySettings: TTBItem
+                end
+                object tbiDistributeSettings: TTBItem
+                end
+                object tbiDontSaveSettings: TTBItem
+                end
+              end
+              object tbsiMainMenuHelp: TTBSubmenuItem
+                object tbiMainMenuHelp: TTBItem
+                end
+              end
+            end
+            object tbMainInvariant: TTBToolbar
+              SavedAtRunTime = True
+              object tbiCommit: TTBItem
+              end
+              object tbiRollback: TTBItem
+              end
+              object tbsiMainThree: TTBSeparatorItem
+              end
+              object tbiMacros: TTBItem
+              end
+              object TBItem2: TTBItem
+              end
+              object TBItem1: TTBItem
+              end
+            end
+            object tbChooseMain: TTBToolbar
+              SavedAtRunTime = True
+              object tbiSelectAll: TTBItem
+              end
+              object tbiUnSelectAll: TTBItem
+              end
+              object tbiClearSelection: TTBItem
+              end
+            end
+          end
+          object TBDockLeft: TTBDock
+          end
+          object TBDockRight: TTBDock
+          end
+          object TBDockBottom: TTBDock
+          end
+          object pnlWorkArea: TPanel
+            object spChoose: TSplitter
+              Top = 539
+              Width = 1159
+            end
+            object pnlMain: TPanel
+              object pnlSearchMain: TPanel
+                Height = 444
+                object sbSearchMain: TScrollBox
+                  Height = 417
+                end
+                object pnlSearchMainButton: TPanel
+                  Top = 0
+                  object btnSearchMain: TButton
+                  end
+                  object btnSearchMainClose: TButton
+                  end
+                  object chbxFuzzyMatch: TCheckBox
+                  end
+                end
+              end
+              object ibgrMain: TgsIBGrid
+                Expands = <>
+                Conditions = <>
+                ColumnEditors = <>
+                Aliases = <>
+                Columns = <
+                  item
+                    Expanded = False
+                    FieldName = 'USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Начисление'
+                    Width = 95
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$DEPTKEY_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Подразделение'
+                    Width = 88
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$LISTNUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Таб. №'
+                    Width = 56
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AL_USR$EMPLKEY_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Сотрудник'
+                    Width = 151
+                    Visible = True
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'USR$DEBTSUM'
+                    ReadOnly = False
+                    Title.Caption = 'Сумма долга'
+                    Width = 86
+                    Visible = True
+                    TotalType = ttSum
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'PAYEDSUM'
+                    Title.Caption = 'Уплачено'
+                    Width = 118
+                    Visible = True
+                    TotalType = ttSum
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'RESTSUM'
+                    Title.Caption = 'Остаток'
+                    Width = 118
+                    Visible = True
+                    TotalType = ttSum
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'USR$DEBTMONTH'
+                    ReadOnly = False
+                    Title.Caption = 'Долг в месяцах'
+                    Width = -1
+                    Visible = False
+                    TotalType = ttSum
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$SORTNUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер для сортировки'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ID'
+                    ReadOnly = False
+                    Title.Caption = 'Ключ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'PARENT'
+                    ReadOnly = False
+                    Title.Caption = 'Родитель'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTTYPEKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Тип документа'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'TRTYPEKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Тип транзакции'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'TRANSACTIONKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Транзакция'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'NUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DESCRIPTION'
+                    ReadOnly = False
+                    Title.Caption = 'Описание'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMNCU'
+                    ReadOnly = False
+                    Title.Caption = 'Сумма в НДЕ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMCURR'
+                    ReadOnly = False
+                    Title.Caption = 'Сумма в валюте'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DELAYED'
+                    ReadOnly = False
+                    Title.Caption = 'Отложенный'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CURRKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Валюта'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'COMPANYKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Компания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CREATORKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Кто создал'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CREATIONDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата создания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'EDITORKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Кто исправил'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'EDITIONDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата изменения'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'PRINTDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата печати'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DISABLED'
+                    ReadOnly = False
+                    Title.Caption = 'Отключено'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'RESERVED'
+                    ReadOnly = False
+                    Title.Caption = 'Зарезервировано'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTKEY'
+                    Title.Caption = 'Ключ документа'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'RESERVED1'
+                    Title.Caption = 'Зарезервировано (Задолженность по алиментам)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ALIMONYKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Алименты'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$EMPLKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Сотрудник'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TOTALDOCKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Итоговое начисление'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$TOTALDOCKEY_NUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер (Документы)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$TOTALDOCKEY_DOCUMENTDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата (Документы)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$ALIMONYKEY_NUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер (Документы)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$ALIMONYKEY_DOCUMENTDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата (Документы)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$EMPLKEY1'
+                    ReadOnly = False
+                    Title.Caption = 'Сотрудник'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$EMPLKEY_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DEPTKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Подразделение'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MSALARY'
+                    ReadOnly = False
+                    Title.Caption = 'Оклад'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$PASTCAT'
+                    ReadOnly = False
+                    Title.Caption = 'Разряд'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEEND'
+                    ReadOnly = False
+                    Title.Caption = 'Дата окончания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEBEGIN'
+                    ReadOnly = False
+                    Title.Caption = 'Дата начала'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$WORKCHARACTERKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Характер работы'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$WORKCHARACTERK4142747105'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$KINDOFWORKKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Вид работы'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$KINDOFWORKKEY_USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CONDITIONS'
+                    ReadOnly = False
+                    Title.Caption = 'Условия труда'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$CONDITIONS_USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$FIRSTMOVE'
+                    ReadOnly = False
+                    Title.Caption = 'Документ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$FIRSTMOVE_NUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$FIRSTMOVE_DOCUMENTDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$POSITIONKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Должность'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$POSITIONKEY_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$PAYFORMKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Форма оплаты'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$PAYFORMKEY_USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MOVEMENTTYPE'
+                    ReadOnly = False
+                    Title.Caption = 'Тип движения'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$STAFFLISTPOSID'
+                    ReadOnly = False
+                    Title.Caption = 'Позиция ШР'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$STAFFNUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Шт. единиц'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DIPLOMADEQUACY'
+                    ReadOnly = False
+                    Title.Caption = 'Соответствие диплому'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TARSCALE'
+                    ReadOnly = False
+                    Title.Caption = 'Тарифная сетка'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$TARSCALE_USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DISCHARGEBASE'
+                    ReadOnly = False
+                    Title.Caption = 'Основание увольнения'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$DISCHARGEBASE_USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$SCHEDULEKEY'
+                    ReadOnly = False
+                    Title.Caption = 'График раб. времени'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$SCHEDULEKEY_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'График раб. времени'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$BYHOUR'
+                    ReadOnly = False
+                    Title.Caption = 'Расчет по часам'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEEND1'
+                    ReadOnly = False
+                    Title.Caption = 'Дата окончания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEBEGIN1'
+                    ReadOnly = False
+                    Title.Caption = 'Дата начала'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMEQ'
+                    ReadOnly = False
+                    Title.Caption = 'Сумма в эквиваленте'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DEBTSUM1'
+                    ReadOnly = False
+                    Title.Caption = 'Задолженность'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$FORMULA'
+                    ReadOnly = False
+                    Title.Caption = 'Формула'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TRANSFERTYPEKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Вид перевода'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AL_USR$TRANSFERTYPEKEY_USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$RECIPIENT'
+                    ReadOnly = False
+                    Title.Caption = 'Получатель'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AL_USR$RECIPIENT_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$RESTPERCENT'
+                    ReadOnly = False
+                    Title.Caption = 'Процент остатка'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEEND2'
+                    ReadOnly = False
+                    Title.Caption = 'Дата окончания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEBEGIN2'
+                    ReadOnly = False
+                    Title.Caption = 'Дата начала'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$EQRATE'
+                    ReadOnly = False
+                    Title.Caption = 'Курс экв.'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$BLOCKED'
+                    ReadOnly = False
+                    Title.Caption = 'Закрыто'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CHILDCOUNT'
+                    ReadOnly = False
+                    Title.Caption = 'Количество детей'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$PERCENT'
+                    ReadOnly = False
+                    Title.Caption = '% списания долга'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ACCOUNTKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Счет'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$ACCOUNTKEY_ALIAS'
+                    ReadOnly = False
+                    Title.Caption = 'Счет'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ORDERTEXT'
+                    ReadOnly = False
+                    Title.Caption = 'Запись в приказе'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ORDERBASE'
+                    ReadOnly = False
+                    Title.Caption = 'Основание в приказе'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TRANSACTIONKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Типовая операция'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$TRANSACTIONKEY_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Типовая операция'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CONTRACTCOEF'
+                    ReadOnly = False
+                    Title.Caption = 'По контракту'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$AGREEMENT'
+                    ReadOnly = False
+                    Title.Caption = 'Ссылка на контракт'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$AGREEMENT_NUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$AGREEMENT_DOCUMENTDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$RATE'
+                    ReadOnly = False
+                    Title.Caption = 'Ставка 1-го разряда'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$NEWDATEEND'
+                    ReadOnly = False
+                    Title.Caption = 'Дата окончания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$HAZARDKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Вредность'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$HAZARDKEY_USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ISCONTRACT'
+                    ReadOnly = False
+                    Title.Caption = 'Договор подряда'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEDEBT'
+                    ReadOnly = False
+                    Title.Caption = 'Дата задолженности'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MANUALDEBT'
+                    ReadOnly = False
+                    Title.Caption = 'Долг предыдущего пер'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$WHOMPAY'
+                    ReadOnly = False
+                    Title.Caption = 'Кому идет платеж'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AL_USR$WHOMPAY_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$LIVINGWAGEPERC'
+                    ReadOnly = False
+                    Title.Caption = '% от прожит. мин.'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TARIFFRATE'
+                    ReadOnly = False
+                    Title.Caption = 'ЧТС'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MONTHHOUR'
+                    ReadOnly = False
+                    Title.Caption = 'Норма времени'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TSALARY'
+                    ReadOnly = False
+                    Title.Caption = 'Тарифный оклад'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$THOURRATE'
+                    ReadOnly = False
+                    Title.Caption = 'ЧТС тарифная'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MHOURRATE'
+                    ReadOnly = False
+                    Title.Caption = 'ЧТС должностная'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$BASETSALARY'
+                    ReadOnly = False
+                    Title.Caption = 'Базовый тарифный окл'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'AFULL'
+                    ReadOnly = False
+                    Title.Caption = 'Полный доступ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'ACHAG'
+                    ReadOnly = False
+                    Title.Caption = 'Просмотр и редактирование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'AVIEW'
+                    ReadOnly = False
+                    Title.Caption = 'Только просмотр'
+                    Width = -1
+                    Visible = False
+                  end>
+              end
+            end
+            object pnChoose: TPanel
+              Top = 444
+              Width = 1159
+              object pnButtonChoose: TPanel
+                Left = 1054
+                object btnCancelChoose: TButton
+                end
+                object btnOkChoose: TButton
+                end
+                object btnDeleteChoose: TButton
+                end
+              end
+              object ibgrChoose: TgsIBGrid
+                Width = 1054
+                Expands = <>
+                Conditions = <>
+                ColumnEditors = <>
+                Aliases = <>
+              end
+              object pnlChooseCaption: TPanel
+                Width = 1159
+              end
+            end
+          end
+          object alMain: TActionList
+            Left = 92
+            Top = 136
+            object actNew: TAction
+            end
+            object actEdit: TAction
+            end
+            object actDelete: TAction
+            end
+            object actDuplicate: TAction
+            end
+            object actHlp: TAction
+            end
+            object actPrint: TAction
+            end
+            object actCut: TAction
+            end
+            object actCopy: TAction
+            end
+            object actPaste: TAction
+            end
+            object actCommit: TAction
+            end
+            object actRollback: TAction
+            end
+            object actMacros: TAction
+            end
+            object actFind: TAction
+            end
+            object actMainReduction: TAction
+            end
+            object actFilter: TAction
+            end
+            object actProperties: TAction
+            end
+            object actLoadFromFile: TAction
+            end
+            object actSaveToFile: TAction
+            end
+            object actSearchMain: TAction
+            end
+            object actSearchMainClose: TAction
+            end
+            object actOnlySelected: TAction
+            end
+            object actAddToSelected: TAction
+            end
+            object actRemoveFromSelected: TAction
+            end
+            object actQExport: TAction
+            end
+            object actMainToSetting: TAction
+            end
+            object actChooseOk: TAction
+            end
+            object actDeleteChoose: TAction
+            end
+            object actCopySettingsFromUser: TAction
+            end
+            object actSelectAll: TAction
+            end
+            object actUnSelectAll: TAction
+            end
+            object actClearSelection: TAction
+            end
+            object actEditInGrid: TAction
+            end
+            object actLinkObject: TAction
+            end
+            object actDistributeSettings: TAction
+            end
+            object actDontSaveSettings: TAction
+            end
+            object actCreateEntry: TAction
+            end
+            object actGotoEntry: TAction
+            end
+          end
+          object pmMain: TPopupMenu
+            Left = 124
+            Top = 204
+            object nNew_OLD: TMenuItem
+              Enabled = False
+            end
+            object nEdit_OLD: TMenuItem
+              Enabled = False
+            end
+            object nDel_OLD: TMenuItem
+              Enabled = False
+            end
+            object nDublicate_OLD: TMenuItem
+              Enabled = False
+            end
+            object nProperties_OLD: TMenuItem
+            end
+            object nQExport_OLD: TMenuItem
+            end
+            object nSeparator1_OLD: TMenuItem
+            end
+            object actCopy1_OLD: TMenuItem
+            end
+            object actCut1_OLD: TMenuItem
+            end
+            object actPaste1_OLD: TMenuItem
+            end
+            object nSepartor2_OLD: TMenuItem
+            end
+            object nFind_OLD: TMenuItem
+            end
+            object nReduction_OLD: TMenuItem
+              Enabled = False
+            end
+            object nSeparator3_OLD: TMenuItem
+            end
+            object actAddToSelected1: TMenuItem
+            end
+            object actRemoveFromSelected1: TMenuItem
+            end
+            object sprSetting: TMenuItem
+            end
+            object miMainToSetting: TMenuItem
+            end
+          end
+          object dsMain: TDataSource
+            Left = 92
+            Top = 204
+          end
+          object gdMacrosMenu: TgdMacrosMenu
+            Left = 249
+            Top = 103
+          end
+          object dsChoose: TDataSource
+            Left = 153
+            Top = 306
+          end
+          object gdcUserDocument: TgdcUserDocument
+            Left = 169
+            Top = 105
+          end
+          object IBTransaction: TIBTransaction
+            Params.Strings = (
+              'read_committed'
+              'rec_version'
+              'nowait')
+            Left = 217
+            Top = 105
+          end
+        end
+        
+      EDITIONDATE: 2014-12-09T10:25:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152685599_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990010_17 USER - Administrator"
+      NAME: "gdc_frmUserSimpleDocument152685574_258063421(Tgdc_frmUserSimpleDocument)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-12-08T16:47:43+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152685600_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152685599_258063421 USER - Administrator\\gdc_frmUserSimpleDocument152685574_258063421(Tgdc_frmUserSimpleDocument)"
+      NAME: "ibgrMain(TgsIBGrid)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-12-08T16:47:43+03:00
+  - 
+    Properties: 
+      Class: "TgdcMacrosGroup"
+      RUID: 152685580_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685667_258063421
+    Fields: 
+      HASCHILDREN: ~
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTPARENT: ~
+      CLASSNAME: ""
+      SUBTYPE: ""
+      PARENT: ~
+      NAME: "Локальные макросы"
+      ISGLOBAL: 0
+      DESCRIPTION: ~
+      EDITIONDATE: 2014-12-08T16:40:50+03:00
+  - 
+    Properties: 
+      Class: "TgdcReportGroup"
+      RUID: 152685581_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685667_258063421
+    Fields: 
+      HASCHILDREN: ~
+      PARENT: ~
+      NAME: "Отчеты(gdc_frmUserSimpleDocument152685574_258063421)"
+      DESCRIPTION: ~
+      USERGROUPNAME: "152685581_258063421"
+      EDITIONDATE: 2014-12-08T16:40:50+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685578_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685667_258063421
+    Fields: 
+      NAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      DESCRIPTION: ~
+      PARENT: ~
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: "152685580_258063421 Локальные макросы"
+      REPORTGROUPKEY: "152685581_258063421 Отчеты(gdc_frmUserSimpleDocument152685574_258063421)"
+      CLASSNAME: ""
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      SUBTYPE: ""
+      EDITIONDATE: 2014-12-08T16:40:50+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685669_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685667_258063421
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "gdc_frmUserSimpleDocument152685574_258063421OnLoadSettingsAfterCreate"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include WG_SHOWADDINFO_FRM_LOADSETTINGSAFTERCREATE
+        Option Explicit
+        sub gdc_frmUserSimpleDocument152685574_258063421OnLoadSettingsAfterCreate(ByVal Sender)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+          call   Inherited(Sender, "OnLoadSettingsAfterCreate", Array(Sender))
+        '*** конец кода поддержки встроенного обработчика            ***
+          call wg_ShowAddInfo_frm_LoadSettingsAfterCreate(Sender)
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        GDC_FRMUSERSIMPLEDOCUMENT152685574_258063421ONLOADSETTINGSAFTERCREATE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONLOADSETTINGSAFTERCREATE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:17:36+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "148480260_1417992169 wg_ShowAddInfo_frm_LoadSettingsAfterCreate"
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685667_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      PARENTNAME: ~
+      OBJECTKEY: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      EVENTNAME: "ONLOADSETTINGSAFTERCREATE"
+      FUNCTIONKEY: "152685669_258063421 gdc_frmUserSimpleDocument152685574_258063421OnLoadSettingsAfterCreate"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:17:36+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685643_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685644_258063421
+    Fields: 
+      NAME: "actDelete"
+      DESCRIPTION: ~
+      PARENT: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "actDelete"
+      SUBTYPE: ""
+      EDITIONDATE: 2014-12-08T17:15:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685646_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685644_258063421
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "actDeleteOnUpdate"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub actDeleteOnUpdate(ByVal Sender)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+        '  call   Inherited(Sender, "OnUpdate", Array(Sender))
+        '*** конец кода поддержки встроенного обработчика            ***
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        ACTDELETEONUPDATE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONUPDATE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:15:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685644_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "actDelete"
+      PARENTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTKEY: "152685643_258063421 gdc_frmUserSimpleDocument152685574_258063421\\actDelete"
+      EVENTNAME: "ONUPDATE"
+      FUNCTIONKEY: "152685646_258063421 actDeleteOnUpdate"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:15:22+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685647_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685648_258063421
+    Fields: 
+      NAME: "actDuplicate"
+      DESCRIPTION: ~
+      PARENT: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "actDuplicate"
+      SUBTYPE: ""
+      EDITIONDATE: 2014-12-08T17:15:37+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685650_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685648_258063421
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "actDuplicateOnUpdate"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub actDuplicateOnUpdate(ByVal Sender)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+        '  call   Inherited(Sender, "OnUpdate", Array(Sender))
+        '*** конец кода поддержки встроенного обработчика            ***
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        ACTDUPLICATEONUPDATE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONUPDATE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:15:37+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685648_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "actDuplicate"
+      PARENTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTKEY: "152685647_258063421 gdc_frmUserSimpleDocument152685574_258063421\\actDuplicate"
+      EVENTNAME: "ONUPDATE"
+      FUNCTIONKEY: "152685650_258063421 actDuplicateOnUpdate"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:15:37+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685651_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685652_258063421
+    Fields: 
+      NAME: "actEdit"
+      DESCRIPTION: ~
+      PARENT: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "actEdit"
+      SUBTYPE: ""
+      EDITIONDATE: 2014-12-08T17:15:44+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685654_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685652_258063421
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "actEditOnUpdate"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub actEditOnUpdate(ByVal Sender)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+        '  call   Inherited(Sender, "OnUpdate", Array(Sender))
+        '*** конец кода поддержки встроенного обработчика            ***
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        ACTEDITONUPDATE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONUPDATE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:15:44+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685652_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "actEdit"
+      PARENTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTKEY: "152685651_258063421 gdc_frmUserSimpleDocument152685574_258063421\\actEdit"
+      EVENTNAME: "ONUPDATE"
+      FUNCTIONKEY: "152685654_258063421 actEditOnUpdate"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:15:44+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685655_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685656_258063421
+    Fields: 
+      NAME: "actEditInGrid"
+      DESCRIPTION: ~
+      PARENT: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "actEditInGrid"
+      SUBTYPE: ""
+      EDITIONDATE: 2014-12-08T17:15:51+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685658_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685656_258063421
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "actEditInGridOnUpdate"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub actEditInGridOnUpdate(ByVal Sender)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+        '  call   Inherited(Sender, "OnUpdate", Array(Sender))
+        '*** конец кода поддержки встроенного обработчика            ***
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        ACTEDITINGRIDONUPDATE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONUPDATE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:15:52+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685656_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "actEditInGrid"
+      PARENTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTKEY: "152685655_258063421 gdc_frmUserSimpleDocument152685574_258063421\\actEditInGrid"
+      EVENTNAME: "ONUPDATE"
+      FUNCTIONKEY: "152685658_258063421 actEditInGridOnUpdate"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:15:52+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685659_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685660_258063421
+    Fields: 
+      NAME: "actMainReduction"
+      DESCRIPTION: ~
+      PARENT: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "actMainReduction"
+      SUBTYPE: ""
+      EDITIONDATE: 2014-12-08T17:16:12+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685662_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685660_258063421
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "actMainReductionOnUpdate"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub actMainReductionOnUpdate(ByVal Sender)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+        '  call   Inherited(Sender, "OnUpdate", Array(Sender))
+        '*** конец кода поддержки встроенного обработчика            ***
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        ACTMAINREDUCTIONONUPDATE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONUPDATE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:16:12+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685660_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "actMainReduction"
+      PARENTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTKEY: "152685659_258063421 gdc_frmUserSimpleDocument152685574_258063421\\actMainReduction"
+      EVENTNAME: "ONUPDATE"
+      FUNCTIONKEY: "152685662_258063421 actMainReductionOnUpdate"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:16:12+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685663_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685664_258063421
+    Fields: 
+      NAME: "actNew"
+      DESCRIPTION: ~
+      PARENT: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "actNew"
+      SUBTYPE: ""
+      EDITIONDATE: 2014-12-08T17:16:18+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685666_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685664_258063421
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "actNewOnUpdate"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub actNewOnUpdate(ByVal Sender)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+        '  call   Inherited(Sender, "OnUpdate", Array(Sender))
+        '*** конец кода поддержки встроенного обработчика            ***
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        ACTNEWONUPDATE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONUPDATE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685578_258063421 gdc_frmUserSimpleDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:16:18+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685664_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "actNew"
+      PARENTNAME: "gdc_frmUserSimpleDocument152685574_258063421"
+      OBJECTKEY: "152685663_258063421 gdc_frmUserSimpleDocument152685574_258063421\\actNew"
+      EVENTNAME: "ONUPDATE"
+      FUNCTIONKEY: "152685666_258063421 actNewOnUpdate"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:16:18+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685583_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685584_258063421
+    Fields: 
+      NAME: "TgdcUserDocument152685574_258063421"
+      DESCRIPTION: ~
+      PARENT: "147010431_119560140 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument"
+      OBJECTTYPE: 1
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: "TgdcUserDocument"
+      OBJECTNAME: ""
+      SUBTYPE: "152685574_258063421"
+      EDITIONDATE: 2014-12-08T16:41:09+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685586_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685584_258063421
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "TgdcUserDocument152685574_258063421CheckSubSet"
+      COMMENT: ~
+      SCRIPT: | 
+        'Option Explicit
+        function TgdcUserDocument152685574_258063421CheckSubSet(Self, ASubSet)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          TgdcUserDocument152685574_258063421CheckSubSet = _
+            Inherited(Self, "CheckSubSet", Array(Self, ASubSet))
+        '***               Конец кода поддержки gdc-класса.                  ***
+          Result = TgdcUserDocument152685574_258063421CheckSubSet
+          if not Result then
+            Result = (ASubSet = "ByAlimonyDoc")
+          end if
+          TgdcUserDocument152685574_258063421CheckSubSet = Result
+        
+        End function
+        
+      DISPLAYSCRIPT: | 
+        TGDCUSERDOCUMENT152685574_258063421CHECKSUBSET
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNU
+        BwAAAEFTVUJTRVQHAAAAQVNVQlNFVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T16:55:55+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685584_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      EVENTNAME: "CHECKSUBSET"
+      FUNCTIONKEY: "152685586_258063421 TgdcUserDocument152685574_258063421CheckSubSet"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T16:55:55+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685589_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685587_258063421
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "TgdcUserDocument152685574_258063421GetFromClause"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        function TgdcUserDocument152685574_258063421GetFromClause(Self, ARefresh)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          TgdcUserDocument152685574_258063421GetFromClause = _
+            Inherited(Self, "GetFromClause", Array(Self, ARefresh))
+        '***               Конец кода поддержки gdc-класса.                  ***
+          TgdcUserDocument152685574_258063421GetFromClause = _
+            TgdcUserDocument152685574_258063421GetFromClause + _
+            " LEFT JOIN usr$wg_total total ON total.documentkey = U.usr$totaldockey " & _
+            " LEFT JOIN usr$wg_alimony al ON U.usr$alimonykey = al.documentkey " & _
+            " LEFT JOIN USR$WG_P_EMPLMOVESTATE(al.usr$emplkey, total.usr$dateend) state ON 1 = 1 " & _
+            " LEFT JOIN usr$wg_movementline ml ON ml.documentkey = state.id " & _
+            " LEFT JOIN usr$wg_p_tblchargebydoc(al.usr$emplkey, " & gdcBaseManager.GetIDByRUIDString("147049310_1011422021")& ", Z.id) payedsum ON 1=1" '& _
+            '" LEFT JOIN usr$wg_p_alimonypayedmonth(Z.id) pmonth ON 1=1 "
+        
+        End function
+        
+      DISPLAYSCRIPT: | 
+        TGDCUSERDOCUMENT152685574_258063421GETFROMCLAUSE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNU
+        CAAAAEFSRUZSRVNICAAAAEFSRUZSRVNIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T16:43:27+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685587_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      EVENTNAME: "GETFROMCLAUSE"
+      FUNCTIONKEY: "152685589_258063421 TgdcUserDocument152685574_258063421GetFromClause"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T16:43:27+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685592_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685590_258063421
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "TgdcUserDocument152685574_258063421GetSelectClause"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        function TgdcUserDocument152685574_258063421GetSelectClause(Self)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          TgdcUserDocument152685574_258063421GetSelectClause = _
+            Inherited(Self, "GetSelectClause", Array(Self))
+        '***               Конец кода поддержки gdc-класса.                  ***
+            TgdcUserDocument152685574_258063421GetSelectClause = _
+              TgdcUserDocument152685574_258063421GetSelectClause + _
+              ", payedsum.credit AS PayedSum, (u.usr$debtsum - payedsum.credit) AS RestSum " '& _
+              '", pmonth.mcount, (u.usr$debtmonth - pmonth.mcount) AS restmonth "
+        
+        End function
+        
+      DISPLAYSCRIPT: | 
+        TGDCUSERDOCUMENT152685574_258063421GETSELECTCLAUSE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T16:44:55+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685590_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      EVENTNAME: "GETSELECTCLAUSE"
+      FUNCTIONKEY: "152685592_258063421 TgdcUserDocument152685574_258063421GetSelectClause"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T16:44:55+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685595_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685593_258063421
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "TgdcUserDocument152685574_258063421GetWhereClause"
+      COMMENT: ~
+      SCRIPT: | 
+        'Option Explicit
+        function TgdcUserDocument152685574_258063421GetWhereClause(Self)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          TgdcUserDocument152685574_258063421GetWhereClause = _
+            Inherited(Self, "GetWhereClause", Array(Self))
+        '***               Конец кода поддержки gdc-класса.                  ***
+          Result = TgdcUserDocument152685574_258063421GetWhereClause
+          if Self.HasSubSet("ByAlimonyDoc") then
+            if Result = "" then
+              Result = " WHERE "
+            else
+              Result = Result + " AND "
+            end if
+            Result = Result + " usr$alimonykey = :dockey "
+          end if
+          TgdcUserDocument152685574_258063421GetWhereClause = Result
+        
+        End function
+        
+      DISPLAYSCRIPT: | 
+        TGDCUSERDOCUMENT152685574_258063421GETWHERECLAUSE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T16:49:02+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685593_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      EVENTNAME: "GETWHERECLAUSE"
+      FUNCTIONKEY: "152685595_258063421 TgdcUserDocument152685574_258063421GetWhereClause"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T16:49:02+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685598_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685596_258063421
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "TgdcUserDocument152685574_258063421_DoOnNewRecord"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub TgdcUserDocument152685574_258063421_DoOnNewRecord(Self)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          Call Inherited(Self, "_DoOnNewRecord", Array(Self))
+        '***               Конец кода поддержки gdc-класса.                  ***
+        
+          if Assigned(Self.MasterSource) then
+            if Self.MasterSource.DataSet.State = dsEdit or _
+               Self.MasterSource.DataSet.State = dsInsert then
+              Self.MasterSource.DataSet.Post
+            end if
+            Self.FieldByName("usr$alimonykey").AsInteger = Self.MasterSource.DataSet.ID
+            Self.FieldByName("usr$emplkey").Value = Self.MasterSource.DataSet.FieldByName("usr$emplkey").Value
+            Self.FieldByName("usr$debtsum").AsCurrency = 0
+            'if Assigned(Self.FindField("usr$debtmonth")) then
+            '  Self.FieldByName("usr$debtmonth").AsInteger = 0
+            'end if
+          end if
+        
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        TGDCUSERDOCUMENT152685574_258063421_DOONNEWRECORD
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T16:46:14+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685596_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument152685574_258063421"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "152685583_258063421 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument152685574_258063421"
+      EVENTNAME: "_DOONNEWRECORD"
+      FUNCTIONKEY: "152685598_258063421 TgdcUserDocument152685574_258063421_DoOnNewRecord"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T16:46:14+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 147123542_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147057828_1220615315 GLOBAL\\DFM\\Tgdc_frmUserSimpleDocument"
+      NAME: "147050774_1011422021"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: | 
+        object gdc_frmUserSimpleDocument147050774_1011422021: Tgdc_frmUserSimpleDocument
+          ActiveControl = nil
+          PixelsPerInch = 96
+          TextHeight = 13
+          object sbMain: TStatusBar
+            Panels = <
+              item
+                Text = 'Нет фильтрации'
+                Width = 883
+              end
+              item
+                Width = 160
+              end>
+          end
+          object TBDockTop: TTBDock
+            object tbMainToolbar: TTBToolbar
+              SavedAtRunTime = True
+              object tbiNew: TTBItem
+              end
+              object tbiEdit: TTBItem
+              end
+              object tbiDelete: TTBItem
+              end
+              object tbiDuplicate: TTBItem
+              end
+              object tbiReduction: TTBItem
+              end
+              object tbsiMainOne: TTBSeparatorItem
+              end
+              object tbiEditInGrid: TTBItem
+              end
+              object tbiCopy: TTBItem
+              end
+              object tbiCut: TTBItem
+              end
+              object tbiPaste: TTBItem
+              end
+              object tbsiMainOneAndHalf: TTBSeparatorItem
+              end
+              object tbiLoadFromFile: TTBItem
+              end
+              object tbiSaveToFile: TTBItem
+              end
+              object tbsiMainTwo: TTBSeparatorItem
+              end
+              object tbiFind: TTBItem
+              end
+              object tbiFilter: TTBItem
+              end
+              object tbiPrint: TTBItem
+              end
+              object tbiOnlySelected: TTBItem
+              end
+              object tbiLinkObject: TTBItem
+              end
+              object tbsiMainThreeAndAHalf: TTBSeparatorItem
+              end
+              object tbiHelp: TTBItem
+              end
+            end
+            object tbMainCustom: TTBToolbar
+              Left = 472
+              DockPos = 472
+              SavedAtRunTime = True
+              object usrg_TBItem1: TTBItem
+                Tag = 0
+                Action = usrg_actAddEmployee
+                AutoCheck = False
+                DisplayMode = nbdmDefault
+                GroupIndex = 0
+                Images = dmImages.il16x16
+                InheritOptions = True
+                MaskOptions = []
+                Options = []
+                RadioItem = False
+              end
+            end
+            object tbMainMenu: TTBToolbar
+              SavedAtRunTime = True
+              object tbsiMainMenuObject: TTBSubmenuItem
+                object tbi_mm_New: TTBItem
+                end
+                object tbi_mm_Edit: TTBItem
+                end
+                object tbi_mm_Delete: TTBItem
+                end
+                object tbi_mm_Duplicate: TTBItem
+                end
+                object tbi_mm_Reduction: TTBItem
+                end
+                object tbi_mm_sep1_1: TTBSeparatorItem
+                end
+                object tbi_mm_Copy: TTBItem
+                end
+                object tbi_mm_Cut: TTBItem
+                end
+                object tbi_mm_Paste: TTBItem
+                end
+                object tbi_mm_sep2_2_: TTBSeparatorItem
+                end
+                object tbi_mm_AddToSelected: TTBItem
+                end
+                object tbi_mm_RemoveFromSelected: TTBItem
+                end
+                object tbi_mm_sep2_1: TTBSeparatorItem
+                end
+                object tbi_mm_Load: TTBItem
+                end
+                object tbi_mm_Save: TTBItem
+                end
+                object tbi_mm_sep3_1: TTBSeparatorItem
+                end
+                object tbi_mm_Commit: TTBItem
+                end
+                object tbi_mm_Rollback: TTBItem
+                end
+                object tbi_mm_sep4_1: TTBSeparatorItem
+                end
+                object tbi_mm_Find: TTBItem
+                end
+                object tbi_mm_Filter: TTBItem
+                end
+                object tbi_mm_Print: TTBItem
+                end
+                object tbi_mm_Macro: TTBItem
+                end
+                object tbi_mm_OnlySelected: TTBItem
+                end
+                object tbi_mm_LinkObject: TTBItem
+                end
+                object tbi_mm_sep5_1: TTBSeparatorItem
+                end
+                object tbi_mm_MainToSetting: TTBItem
+                end
+                object tbi_mm_sep5_2_: TTBSeparatorItem
+                end
+                object tbi_mm_CopySettings: TTBItem
+                end
+                object tbiDistributeSettings: TTBItem
+                end
+              end
+              object tbsiMainMenuHelp: TTBSubmenuItem
+                object tbiMainMenuHelp: TTBItem
+                end
+              end
+            end
+            object tbMainInvariant: TTBToolbar
+              SavedAtRunTime = True
+              object tbiCommit: TTBItem
+              end
+              object tbiRollback: TTBItem
+              end
+              object tbsiMainThree: TTBSeparatorItem
+              end
+              object tbiMacros: TTBItem
+              end
+              object TBItem2: TTBItem
+              end
+              object TBItem1: TTBItem
+              end
+            end
+            object tbChooseMain: TTBToolbar
+              Left = 435
+              DockPos = 432
+              SavedAtRunTime = True
+              object tbiSelectAll: TTBItem
+              end
+              object tbiUnSelectAll: TTBItem
+              end
+              object tbiClearSelection: TTBItem
+              end
+            end
+          end
+          object TBDockLeft: TTBDock
+          end
+          object TBDockRight: TTBDock
+          end
+          object TBDockBottom: TTBDock
+          end
+          object pnlWorkArea: TPanel
+            object spChoose: TSplitter
+              Top = 803
+              Width = 1043
+            end
+            object pnlMain: TPanel
+              object pnlSearchMain: TPanel
+                Height = 708
+                object sbSearchMain: TScrollBox
+                  Height = 670
+                end
+                object pnlSearchMainButton: TPanel
+                  Top = 670
+                  object btnSearchMain: TButton
+                  end
+                  object btnSearchMainClose: TButton
+                  end
+                  object chbxFuzzyMatch: TCheckBox
+                  end
+                end
+              end
+              object ibgrMain: TgsIBGrid
+                Expands = <>
+                Conditions = <>
+                ColumnEditors = <>
+                Aliases = <>
+                Columns = <
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEBEGIN'
+                    ReadOnly = False
+                    Title.Caption = 'Дата начала'
+                    Width = 69
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEEND'
+                    ReadOnly = False
+                    Title.Caption = 'Дата окончания'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$EMPLKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Сотрудник'
+                    Width = 144
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$FORMULA'
+                    ReadOnly = False
+                    Title.Caption = 'Формула'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$TRANSFERTYPEKEY_USR$NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Вид перевода'
+                    Width = 174
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$RECIPIENT_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Получатель'
+                    Width = 364
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$EMPLKEY_NAME'
+                    ReadOnly = False
+                    Title.Caption = 'Сотрудник'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DEBTSUM'
+                    ReadOnly = False
+                    Title.Caption = 'Задолженность'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$RECIPIENT'
+                    ReadOnly = False
+                    Title.Caption = 'Получатель'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$RESTPERCENT'
+                    ReadOnly = False
+                    Title.Caption = 'Процент остатка'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ID'
+                    ReadOnly = False
+                    Title.Caption = 'Ключ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'PARENT'
+                    ReadOnly = False
+                    Title.Caption = 'Родитель'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTTYPEKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Тип документа'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'TRTYPEKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Тип транзакции'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'TRANSACTIONKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Транзакция'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'NUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DESCRIPTION'
+                    ReadOnly = False
+                    Title.Caption = 'Описание'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMNCU'
+                    ReadOnly = False
+                    Title.Caption = 'Сумма в НДЕ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMCURR'
+                    ReadOnly = False
+                    Title.Caption = 'Сумма в валюте'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMEQ'
+                    ReadOnly = False
+                    Title.Caption = 'Сумма в эквиваленте'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DELAYED'
+                    ReadOnly = False
+                    Title.Caption = 'Отложенный'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CURRKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Валюта'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'COMPANYKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Компания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CREATORKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Кто создал'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CREATIONDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата создания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'EDITORKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Кто исправил'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'EDITIONDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата изменения'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'PRINTDATE'
+                    ReadOnly = False
+                    Title.Caption = 'Дата печати'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DISABLED'
+                    ReadOnly = False
+                    Title.Caption = 'Отключено'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'RESERVED'
+                    ReadOnly = False
+                    Title.Caption = 'Зарезервировано'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTKEY'
+                    Title.Caption = 'Ключ документа'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'RESERVED1'
+                    Title.Caption = 'Зарезервировано (Алименты)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TRANSFERTYPEKEY'
+                    ReadOnly = False
+                    Title.Caption = 'Вид перевода'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$SORTNUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер для сортировки'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'AFULL'
+                    ReadOnly = False
+                    Title.Caption = 'Полный доступ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'ACHAG'
+                    ReadOnly = False
+                    Title.Caption = 'Просмотр и редактирование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'AVIEW'
+                    ReadOnly = False
+                    Title.Caption = 'Только просмотр'
+                    Width = -1
+                    Visible = False
+                  end>
+              end
+            end
+            object pnChoose: TPanel
+              Top = 708
+              Width = 1043
+              object pnButtonChoose: TPanel
+                Left = 938
+                object btnCancelChoose: TButton
+                end
+                object btnOkChoose: TButton
+                end
+                object btnDeleteChoose: TButton
+                end
+              end
+              object ibgrChoose: TgsIBGrid
+                Width = 938
+                Expands = <>
+                Conditions = <>
+                ColumnEditors = <>
+                Aliases = <>
+              end
+              object pnlChooseCaption: TPanel
+                Width = 1043
+              end
+            end
+          end
+          object alMain: TActionList
+            Left = 92
+            Top = 136
+            object actNew: TAction
+            end
+            object actEdit: TAction
+            end
+            object actDelete: TAction
+            end
+            object actDuplicate: TAction
+            end
+            object actHlp: TAction
+            end
+            object actPrint: TAction
+            end
+            object actCut: TAction
+            end
+            object actCopy: TAction
+            end
+            object actPaste: TAction
+            end
+            object actCommit: TAction
+            end
+            object actRollback: TAction
+            end
+            object actMacros: TAction
+            end
+            object actFind: TAction
+            end
+            object actMainReduction: TAction
+            end
+            object actFilter: TAction
+            end
+            object actProperties: TAction
+            end
+            object actLoadFromFile: TAction
+            end
+            object actSaveToFile: TAction
+            end
+            object actSearchMain: TAction
+            end
+            object actSearchMainClose: TAction
+            end
+            object actOnlySelected: TAction
+            end
+            object actAddToSelected: TAction
+            end
+            object actRemoveFromSelected: TAction
+            end
+            object actQExport: TAction
+            end
+            object actMainToSetting: TAction
+            end
+            object actChooseOk: TAction
+            end
+            object actDeleteChoose: TAction
+            end
+            object actCopySettingsFromUser: TAction
+            end
+            object actSelectAll: TAction
+            end
+            object actUnSelectAll: TAction
+            end
+            object actClearSelection: TAction
+            end
+            object actEditInGrid: TAction
+            end
+            object actLinkObject: TAction
+            end
+            object actDistributeSettings: TAction
+            end
+            object actCreateEntry: TAction
+            end
+            object actGotoEntry: TAction
+            end
+            object usrg_actAddEmployee: TgsAction
+              Tag = 0
+              Category = 'wage'
+              Caption = ''
+              Checked = False
+              Enabled = True
+              HelpContext = 0
+              Hint = ''
+              ImageIndex = 31
+              ShortCut = 0
+              Visible = True
+            end
+          end
+          object pmMain: TPopupMenu
+            Left = 124
+            Top = 204
+            object nNew_OLD: TMenuItem
+            end
+            object nEdit_OLD: TMenuItem
+            end
+            object nDel_OLD: TMenuItem
+            end
+            object nDublicate_OLD: TMenuItem
+            end
+            object nProperties_OLD: TMenuItem
+            end
+            object nQExport_OLD: TMenuItem
+            end
+            object nSeparator1_OLD: TMenuItem
+            end
+            object actCopy1_OLD: TMenuItem
+            end
+            object actCut1_OLD: TMenuItem
+            end
+            object actPaste1_OLD: TMenuItem
+            end
+            object nSepartor2_OLD: TMenuItem
+            end
+            object nFind_OLD: TMenuItem
+            end
+            object nReduction_OLD: TMenuItem
+            end
+            object nSeparator3_OLD: TMenuItem
+            end
+            object actAddToSelected1: TMenuItem
+            end
+            object actRemoveFromSelected1: TMenuItem
+            end
+            object sprSetting: TMenuItem
+            end
+            object miMainToSetting: TMenuItem
+            end
+          end
+          object dsMain: TDataSource
+            Left = 92
+            Top = 204
+          end
+          object gdMacrosMenu: TgdMacrosMenu
+            Left = 249
+            Top = 103
+          end
+          object dsChoose: TDataSource
+            Left = 153
+            Top = 306
+          end
+          object gdcUserDocument: TgdcUserDocument
+            Left = 169
+            Top = 105
+          end
+          object IBTransaction: TIBTransaction
+            Params.Strings = (
+              'read_committed'
+              'rec_version'
+              'nowait')
+            Left = 217
+            Top = 105
+          end
+        end
+        
+      EDITIONDATE: 2010-09-21T11:30:55+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147064167_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990010_17 USER - Administrator"
+      NAME: "gdc_frmUserSimpleDocument147050774_1011422021(Tgdc_frmUserSimpleDocument)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:32:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147064168_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147064167_1439110857 USER - Administrator\\gdc_frmUserSimpleDocument147050774_1011422021(Tgdc_frmUserSimpleDocument)"
+      NAME: "ibgrMain(TgsIBGrid)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2010-04-20T13:32:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148480459_1417992169
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "gdc_frmUserSimpleDocument147050774_1011422021"
+      PARENTNAME: ~
+      OBJECTKEY: "147050778_1011422021 gdc_frmUserSimpleDocument147050774_1011422021"
+      EVENTNAME: "ONLOADSETTINGSAFTERCREATE"
+      FUNCTIONKEY: "148480461_1417992169 gdc_frmUserSimpleDocument147050774_1011422021OnLoadSettingsAfterCreate"
+      DISABLE: ~
+      EDITIONDATE: 2010-03-16T17:33:59+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 147050953_1011422021
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_actAddEmployee"
+      PARENTNAME: "gdc_frmUserSimpleDocument147050774_1011422021"
+      OBJECTKEY: "147050952_1011422021 gdc_frmUserSimpleDocument147050774_1011422021\\usrg_actAddEmployee"
+      EVENTNAME: "ONEXECUTE"
+      FUNCTIONKEY: "147050955_1011422021 usrg_actAddEmployeeOnExecute"
+      DISABLE: ~
+      EDITIONDATE: 2008-04-29T16:06:14+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 147050793_1011422021
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument147050774_1011422021"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "147050792_1011422021 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument147050774_1011422021"
+      EVENTNAME: "CREATEFIELDS"
+      FUNCTIONKEY: "147050795_1011422021 TgdcUserDocument147050774_1011422021CreateFields"
+      DISABLE: ~
+      EDITIONDATE: 2008-04-29T16:08:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685566_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685564_258063421
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument147050774_1011422021"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "TgdcUserDocument147050774_1011422021GetFromClause"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        function TgdcUserDocument147050774_1011422021GetFromClause(Self, ARefresh)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          TgdcUserDocument147050774_1011422021GetFromClause = _
+            Inherited(Self, "GetFromClause", Array(Self, ARefresh))
+        '***               Конец кода поддержки gdc-класса.                  ***
+          TgdcUserDocument147050774_1011422021GetFromClause = _
+            TgdcUserDocument147050774_1011422021GetFromClause + _
+            " LEFT JOIN USR$WG_P_EMPLMOVESTATE(U.usr$emplkey, Z.documentdate) state ON 1 = 1 " & _
+            " LEFT JOIN usr$wg_movementline ml ON ml.documentkey = state.id " & _
+            " LEFT JOIN usr$wg_p_tblchargebydoc(U.usr$emplkey, " & gdcBaseManager.GetIDByRUIDString("147049310_1011422021")& ", Z.id) payedsum ON 1=1"
+        End function
+        
+      DISPLAYSCRIPT: | 
+        TGDCUSERDOCUMENT147050774_1011422021GETFROMCLAUSE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147050792_1011422021 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument147050774_1011422021"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNU
+        CAAAAEFSRUZSRVNICAAAAEFSRUZSRVNIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T16:05:38+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685564_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument147050774_1011422021"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "147050792_1011422021 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument147050774_1011422021"
+      EVENTNAME: "GETFROMCLAUSE"
+      FUNCTIONKEY: "152685566_258063421 TgdcUserDocument147050774_1011422021GetFromClause"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T16:05:38+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685569_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685567_258063421
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument147050774_1011422021"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "TgdcUserDocument147050774_1011422021GetSelectClause"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        function TgdcUserDocument147050774_1011422021GetSelectClause(Self)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          TgdcUserDocument147050774_1011422021GetSelectClause = _
+            Inherited(Self, "GetSelectClause", Array(Self))
+        '***               Конец кода поддержки gdc-класса.                  ***
+            TgdcUserDocument147050774_1011422021GetSelectClause = _
+              TgdcUserDocument147050774_1011422021GetSelectClause + _
+              ", payedsum.credit AS PayedSum, (u.usr$debtsum - payedsum.credit) AS RestSum, " & _
+              " (SELECT SUM(usr$debtsum) FROM usr$wg_alimonydebt WHERE usr$alimonykey = Z.ID) AS debtsum "
+        
+        End function
+        
+      DISPLAYSCRIPT: | 
+        TGDCUSERDOCUMENT147050774_1011422021GETSELECTCLAUSE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "147050792_1011422021 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument147050774_1011422021"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T16:07:24+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685567_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument147050774_1011422021"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "147050792_1011422021 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument147050774_1011422021"
+      EVENTNAME: "GETSELECTCLAUSE"
+      FUNCTIONKEY: "152685569_258063421 TgdcUserDocument147050774_1011422021GetSelectClause"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T16:07:24+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 147051361_1011422021
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "TgdcUserDocument147050774_1011422021"
+      PARENTNAME: "TgdcUserDocument"
+      OBJECTKEY: "147050792_1011422021 TgdcBase\\TgdcTree\\TgdcDocument\\TgdcUserBaseDocument\\TgdcUserDocument\\TgdcUserDocument147050774_1011422021"
+      EVENTNAME: "_DOONNEWRECORD"
+      FUNCTIONKEY: "147051363_1011422021 TgdcUserDocument147050774_1011422021_DoOnNewRecord"
+      DISABLE: ~
+      EDITIONDATE: 2008-04-29T12:16:31+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 147123451_1439110857
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147030551_1439110857 GLOBAL\\DFM\\Tgdc_dlgUserSimpleDocument"
+      NAME: "147050774_1011422021"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: | 
+        object gdc_dlgUserSimpleDocument147050774_1011422021: Tgdc_dlgUserSimpleDocument
+          Left = 348
+          Top = 167
+          VertScrollBar.Range = 0
+          ActiveControl = nil
+          BorderStyle = bsDialog
+          ClientHeight = 408
+          ClientWidth = 663
+          Constraints.MinHeight = 280
+          Constraints.MinWidth = 525
+          PixelsPerInch = 96
+          TextHeight = 13
+          object pnlHolding: TPanel
+            Width = 663
+            TabOrder = 3
+            Visible = False
+            object lblCompany: TLabel
+            end
+            object iblkCompany: TgsIBLookupComboBox
+            end
+          end
+          object usrg_Panel1: TPanel
+            Tag = 0
+            Left = 0
+            Top = 371
+            Width = 663
+            Height = 37
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            Align = alBottom
+            Alignment = taCenter
+            Anchors = [akLeft, akRight, akBottom]
+            AutoSize = False
+            BevelInner = bvNone
+            BevelOuter = bvNone
+            BevelWidth = 1
+            BorderWidth = 0
+            BorderStyle = bsNone
+            Caption = ''
+            Color = clBtnFace
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            UseDockManager = True
+            DockSite = False
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FullRepaint = True
+            Locked = False
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentCtl3D = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            TabOrder = 1
+            TabStop = False
+            Visible = True
+            object btnAccess: TButton
+              Top = 8
+              TabOrder = 0
+            end
+            object btnNew: TButton
+              Top = 8
+              TabOrder = 1
+            end
+            object btnHelp: TButton
+              Top = 8
+              TabOrder = 2
+            end
+            object btnOK: TButton
+              Left = 493
+              Top = 8
+              TabOrder = 3
+            end
+            object btnCancel: TButton
+              Left = 581
+              Top = 8
+              TabOrder = 4
+            end
+          end
+          object usrg_PageControl1: TPageControl
+            Tag = 0
+            Left = 0
+            Top = 0
+            Width = 663
+            Height = 371
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            ActivePage = usrg_TabSheet1
+            Align = alClient
+            Anchors = [akLeft, akTop, akRight, akBottom]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DockSite = False
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            HotTrack = False
+            Images = nil
+            MultiLine = False
+            OwnerDraw = False
+            ParentBiDiMode = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            RaggedRight = False
+            ScrollOpposite = False
+            Style = tsTabs
+            TabHeight = 0
+            TabOrder = 0
+            TabPosition = tpTop
+            TabStop = True
+            TabWidth = 0
+            Visible = True
+            object usrg_TabSheet1: TTabSheet
+              Tag = 0
+              Cursor = crDefault
+              Hint = ''
+              HelpContext = 0
+              BorderWidth = 0
+              Caption = 'Основные'
+              DragMode = dmManual
+              Enabled = True
+              Highlighted = False
+              ImageIndex = 0
+              Constraints.MaxHeight = 0
+              Constraints.MaxWidth = 0
+              Constraints.MinHeight = 0
+              Constraints.MinWidth = 0
+              ParentFont = True
+              ParentShowHint = True
+              PopupMenu = nil
+              TabVisible = True
+              object usrg_SpeedButton1: TSpeedButton
+                Tag = 0
+                Left = 465
+                Top = 101
+                Width = 23
+                Height = 22
+                Cursor = crDefault
+                Action = usrg_actChooseVar
+                AllowAllUp = False
+                Anchors = [akLeft, akTop]
+                Constraints.MaxHeight = 0
+                Constraints.MaxWidth = 0
+                Constraints.MinHeight = 0
+                Constraints.MinWidth = 0
+                GroupIndex = 0
+                Down = False
+                Flat = False
+                Glyph.Data = {
+                  36040000424D3604000000000000360000002800000010000000100000000100
+                  2000000000000004000000000000000000000000000000000000FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF000000
+                  0000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF000000000042424200FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF0000000000FF00FF00FF00FF00FF00FF000000000042424200FF00
+                  FF004242420000000000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF000000000042424200FF00FF00FF00FF00FF00FF00000000000000
+                  000000000000FF00FF0000000000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF000000000000000000FF00FF00FF00FF0000000000FF00FF000000
+                  00000000000000000000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00848484000000000042424200FF00FF00FF00FF00000000004242
+                  4200FF00FF004242420000000000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF000000000000000000FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF000000000000000000FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF000000000000000000000000000000000000000000FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF000000000000000000FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF004242420000000000FF00FF00000000000000
+                  0000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00424242000000000042424200FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                  FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
+                Layout = blGlyphLeft
+                Margin = -1
+                NumGlyphs = 1
+                ParentFont = True
+                ParentShowHint = True
+                ParentBiDiMode = True
+                PopupMenu = nil
+                Spacing = 4
+                Transparent = True
+              end
+              object usrat_gsIBLookupComboBox_USR_EMPLKEY_Label: TLabel
+                Top = 14
+              end
+              object usrat_xDateDBEdit_USR_DATEBEGIN_Label: TLabel
+                Top = 37
+              end
+              object usrat_xDateDBEdit_USR_DATEEND_Label: TLabel
+                Left = 5
+                Top = 59
+              end
+              object usrat_DBEdit_USR_FORMULA_Label: TLabel
+                Top = 105
+              end
+              object usrat_gsIBLookupComboBox_USR_TRANSFERTYPEKEY_Label: TLabel
+                Top = 155
+              end
+              object usrat_gsIBLookupComboBox_USR_RECIPIENT_Label: TLabel
+                Top = 178
+              end
+              object usrat_DBEdit_USR_RESTPERCENT_Label: TLabel
+                Left = 5
+                Top = 202
+              end
+              object usrat_DBEdit_USR_CHILDCOUNT_Label: TLabel
+                Top = 82
+                Visible = False
+              end
+              object usrat_DBEdit_USR_PERCENT_Label: TLabel
+                Top = 226
+              end
+              object usrat_DBEdit_USR_LIVINGWAGEPERC_Label: TLabel
+                Top = 131
+                Width = 110
+                Caption = '% от БПМ (не менее):'
+                Visible = False
+              end
+              object usrat_gsIBLookupComboBox_USR_EMPLKEY: TgsIBLookupComboBox
+                Left = 135
+                Top = 10
+                Width = 324
+                ListTable = 'GD_CONTACT'
+                Condition = 
+                  'ID in (SELECT usr$emplkey FROM usr$wg_emplworkterm term LEFT JOI' +
+                  'N GD_DOCUMENT doc ON doc.id = term.usr$firstmovekey WHERE usr$da' +
+                  'tebegin <= :dateend AND (usr$dateend > :datebegin or usr$dateend' +
+                  ' is NULL) AND doc.companykey = <COMPANYKEY/>)'
+                gdClassName = 'TgdcEmployee'
+                TabOrder = 0
+              end
+              object usrat_xDateDBEdit_USR_DATEBEGIN: TxDateDBEdit
+                Left = 135
+                Top = 33
+                Width = 84
+                TabOrder = 1
+              end
+              object usrat_xDateDBEdit_USR_DATEEND: TxDateDBEdit
+                Left = 135
+                Top = 55
+                Width = 84
+                TabOrder = 2
+              end
+              object usrat_DBEdit_USR_FORMULA: TDBEdit
+                Left = 135
+                Top = 101
+                Width = 324
+                TabOrder = 4
+              end
+              object usrat_gsIBLookupComboBox_USR_TRANSFERTYPEKEY: TgsIBLookupComboBox
+                Left = 135
+                Top = 151
+                Width = 324
+                Condition = 'parent is null'
+                TabOrder = 5
+              end
+              object usrat_gsIBLookupComboBox_USR_RECIPIENT: TgsIBLookupComboBox
+                Left = 135
+                Top = 174
+                Width = 324
+                SortOrder = soAsc
+                TabOrder = 6
+              end
+              object usrat_DBEdit_USR_RESTPERCENT: TxDBCalculatorEdit
+                Left = 135
+                Top = 198
+                Width = 76
+                Cursor = crIBeam
+                TabOrder = 7
+              end
+              object usrat_DBEdit_USR_CHILDCOUNT: TxDBCalculatorEdit
+                Left = 135
+                Top = 78
+                Width = 84
+                Cursor = crIBeam
+                TabOrder = 3
+                Visible = False
+              end
+              object usrat_DBEdit_USR_PERCENT: TxDBCalculatorEdit
+                Left = 135
+                Top = 222
+                Width = 76
+                Cursor = crIBeam
+                TabOrder = 8
+              end
+              object usrat_DBEdit_USR_LIVINGWAGEPERC: TxDBCalculatorEdit
+                Left = 135
+                Top = 127
+                Width = 84
+                Cursor = crIBeam
+                TabOrder = 9
+                Visible = False
+              end
+            end
+            object usrg_TabSheet3: TTabSheet
+              Tag = 0
+              Cursor = crDefault
+              Hint = ''
+              HelpContext = 0
+              BorderWidth = 0
+              Caption = 'Задолженость'
+              DragMode = dmManual
+              Enabled = True
+              Highlighted = False
+              ImageIndex = 0
+              Constraints.MaxHeight = 0
+              Constraints.MaxWidth = 0
+              Constraints.MinHeight = 0
+              Constraints.MinWidth = 0
+              ParentFont = True
+              ParentShowHint = True
+              PopupMenu = nil
+              TabVisible = True
+              object usrg_TBDock1: TTBDock
+                Tag = 0
+                Left = 0
+                Top = 0
+                Width = 655
+                Height = 26
+                Cursor = crDefault
+                Hint = ''
+                HelpContext = 0
+                AllowDrag = True
+                Background = nil
+                BackgroundOnToolbars = True
+                BoundLines = []
+                Color = clBtnFace
+                FixAlign = False
+                LimitToOneRow = False
+                PopupMenu = nil
+                Position = dpTop
+                Visible = True
+                object usrg_TBToolbar1: TTBToolbar
+                  Tag = 0
+                  Left = 0
+                  Top = 0
+                  Cursor = crDefault
+                  HelpContext = 0
+                  ActivateParent = True
+                  Align = alNone
+                  Anchors = [akLeft, akTop]
+                  AutoResize = True
+                  BorderStyle = bsSingle
+                  Caption = 'usrg_TBToolbar1'
+                  ChevronMoveItems = True
+                  ChevronPriorityForNewItems = tbcpHighest
+                  CloseButton = False
+                  CloseButtonWhenDocked = False
+                  Color = clBtnFace
+                  DefaultDock = nil
+                  DockableTo = [dpTop, dpBottom, dpLeft, dpRight]
+                  DockMode = dmCannotFloatOrChangeDocks
+                  DockPos = 0
+                  DockRow = 0
+                  DragHandleStyle = dhSingle
+                  FloatingMode = fmOnTopOfParentForm
+                  FloatingWidth = 0
+                  FullSize = False
+                  HideWhenInactive = True
+                  Images = dmImages.il16x16
+                  LinkSubitems = nil
+                  MenuBar = False
+                  Options = []
+                  ParentFont = True
+                  ParentShowHint = True
+                  PopupMenu = nil
+                  ProcessShortCuts = False
+                  Resizable = True
+                  ShowCaption = True
+                  ShrinkMode = tbsmChevron
+                  SmoothDrag = True
+                  Stretch = True
+                  SystemFont = True
+                  TabOrder = 0
+                  UpdateActions = True
+                  UseLastDock = True
+                  Visible = True
+                  SavedAtRunTime = True
+                  object usrg_TBItem1: TTBItem
+                    Tag = 0
+                    Action = usrg_actDebtNew
+                    AutoCheck = False
+                    DisplayMode = nbdmDefault
+                    GroupIndex = 0
+                    Images = nil
+                    InheritOptions = True
+                    MaskOptions = []
+                    Options = []
+                    RadioItem = False
+                  end
+                  object usrg_TBItem2: TTBItem
+                    Tag = 0
+                    Action = usrg_actDebtEdit
+                    AutoCheck = False
+                    DisplayMode = nbdmDefault
+                    GroupIndex = 0
+                    Images = nil
+                    InheritOptions = True
+                    MaskOptions = []
+                    Options = []
+                    RadioItem = False
+                  end
+                  object usrg_TBItem3: TTBItem
+                    Tag = 0
+                    Action = usrg_actDelete
+                    AutoCheck = False
+                    DisplayMode = nbdmDefault
+                    GroupIndex = 0
+                    Images = nil
+                    InheritOptions = True
+                    MaskOptions = []
+                    Options = []
+                    RadioItem = False
+                  end
+                end
+              end
+              object usrg_gsibgrAlimonyDebt: TgsIBGrid
+                Tag = 0
+                Left = 0
+                Top = 26
+                Width = 655
+                Height = 317
+                Cursor = crDefault
+                Hint = ''
+                HelpContext = 0
+                TabStop = True
+                Align = alClient
+                Anchors = [akLeft, akTop, akRight, akBottom]
+                BorderStyle = bsSingle
+                Constraints.MaxHeight = 0
+                Constraints.MaxWidth = 0
+                Constraints.MinHeight = 0
+                Constraints.MinWidth = 0
+                DataSource = usrg_dsAlimonyDebt
+                DefaultDrawing = True
+                DragCursor = crDrag
+                DragKind = dkDrag
+                DragMode = dmManual
+                Enabled = True
+                ImeMode = imDontCare
+                ImeName = ''
+                Options = [dgEditing, dgTitles, dgColumnResize, dgColLines, dgTabs, dgAlwaysShowSelection, dgConfirmDelete, dgCancelOnExit, dgMultiSelect]
+                ParentBiDiMode = True
+                ParentColor = False
+                ParentCtl3D = True
+                ParentFont = True
+                ParentShowHint = True
+                PopupMenu = nil
+                ReadOnly = False
+                TabOrder = 1
+                Visible = True
+                TableColor = clWindow
+                SelectedColor = clHighlight
+                TitleColor = clBtnFace
+                RefreshType = rtCloseOpen
+                Striped = True
+                StripeOdd = 15201271
+                StripeEven = 14084071
+                InternalMenuKind = imkWithSeparator
+                Expands = <>
+                ExpandsActive = False
+                ExpandsSeparate = False
+                TitlesExpanding = False
+                Conditions = <>
+                ConditionsActive = False
+                CheckBox.DisplayField = ''
+                CheckBox.FieldName = ''
+                CheckBox.Visible = False
+                CheckBox.FirstColumn = False
+                ScaleColumns = False
+                MinColWidth = 40
+                ToolBar = nil
+                FinishDrawing = True
+                RememberPosition = True
+                SaveSettings = True
+                ColumnEditors = <
+                  item
+                    Lookup.LookupListField = 'usr$name'
+                    Lookup.LookupKeyField = 'documentkey'
+                    Lookup.LookupTable = 'usr$wg_total'
+                    Lookup.CheckUserRights = False
+                    Lookup.SortOrder = soAsc
+                    Lookup.Database = dmDatabase.ibdbGAdmin
+                    Lookup.Transaction = ibtrCommon
+                    Lookup.Distinct = False
+                    EditorStyle = cesLookup
+                    FieldName = 'usr$totaldockey'
+                    DisplayField = 'usr$name'
+                    DropDownCount = 8
+                  end>
+                Aliases = <>
+                ShowFooter = False
+                ShowTotals = True
+                Columns = <
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MANUALDEBT'
+                    Title.Caption = 'Долг(ручн.)'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEDEBT'
+                    Title.Caption = 'Дата задолженности'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DEBTSUM'
+                    Title.Caption = 'Сумма долга'
+                    Width = 130
+                    Visible = True
+                    DisplayFormat = '#,##0.##'
+                    TotalType = ttSum
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'PAYEDSUM'
+                    Title.Caption = 'Оплачено'
+                    Width = 85
+                    Visible = True
+                    DisplayFormat = '#,##0.##'
+                    TotalType = ttSum
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Expanded = False
+                    FieldName = 'RESTSUM'
+                    Title.Caption = 'Остаток'
+                    Width = 81
+                    Visible = True
+                    DisplayFormat = '#,##0.##'
+                    TotalType = ttSum
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DEBTMONTH'
+                    Title.Caption = 'Долг в месяцах'
+                    Width = 130
+                    Visible = True
+                    TotalType = ttSum
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$NAME'
+                    Title.Caption = 'Начисление'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TOTALDOCKEY'
+                    Title.Caption = 'Итоговое начисление'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$SORTNUMBER'
+                    ReadOnly = False
+                    Title.Caption = 'Номер для сортировки'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$TOTALDOCKEY_DOCUMENTDATE'
+                    Title.Caption = 'Дата (Документы)'
+                    Width = 65
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$ALIMONYKEY_DOCUMENTDATE'
+                    Title.Caption = 'Дата (Документы)'
+                    Width = 65
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEBEGIN'
+                    Title.Caption = 'Дата начала'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEEND'
+                    Title.Caption = 'Дата окончания'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$EMPLKEY1'
+                    Title.Caption = 'Сотрудник (Движение(позиция))'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DEPTKEY'
+                    Title.Caption = 'Подразделение'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CURRKEY'
+                    Title.Caption = 'Валюта'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'COMPANYKEY'
+                    Title.Caption = 'Компания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CREATORKEY'
+                    Title.Caption = 'Кто создал'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'CREATIONDATE'
+                    Title.Caption = 'Дата создания'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'EDITORKEY'
+                    Title.Caption = 'Кто исправил'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'EDITIONDATE'
+                    Title.Caption = 'Дата изменения'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'PRINTDATE'
+                    Title.Caption = 'Дата печати'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DISABLED'
+                    Title.Caption = 'Отключено'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'RESERVED'
+                    Title.Caption = 'Зарезервировано'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ID'
+                    Title.Caption = 'Ключ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'PARENT'
+                    Title.Caption = 'Родитель'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTTYPEKEY'
+                    Title.Caption = 'Тип документа'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'TRTYPEKEY'
+                    Title.Caption = 'Тип транзакции'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'TRANSACTIONKEY'
+                    Title.Caption = 'Транзакция'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'NUMBER'
+                    Title.Caption = 'Номер'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTDATE'
+                    Title.Caption = 'Дата'
+                    Width = 65
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DESCRIPTION'
+                    Title.Caption = 'Описание'
+                    Width = 390
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMNCU'
+                    Title.Caption = 'Сумма в НДЕ'
+                    Width = 52
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMCURR'
+                    Title.Caption = 'Сумма в валюте'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'SUMEQ'
+                    Title.Caption = 'Сумма в эквиваленте'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DELAYED'
+                    Title.Caption = 'Отложенный'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'DOCUMENTKEY'
+                    ReadOnly = True
+                    Title.Caption = 'Ключ документа'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'RESERVED1'
+                    ReadOnly = True
+                    Title.Caption = 'Зарезервировано (Задолженность по алиментам)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ALIMONYKEY'
+                    Title.Caption = 'Алименты'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$EMPLKEY'
+                    Title.Caption = 'Сотрудник'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$TOTALDOCKEY_NUMBER'
+                    Title.Caption = 'Номер (Документы)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'U_USR$ALIMONYKEY_NUMBER'
+                    Title.Caption = 'Номер (Документы)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$EMPLKEY_NAME'
+                    Title.Caption = 'Наименование (Контакты)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$DEPTKEY_NAME'
+                    Title.Caption = 'Наименование (Контакты)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MSALARY'
+                    Title.Caption = 'Оклад'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$PASTCAT'
+                    Title.Caption = 'Разряд'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEEND1'
+                    Title.Caption = 'Дата окончания (Движение(позиция))'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEBEGIN1'
+                    Title.Caption = 'Дата начала (Движение(позиция))'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$WORKCHARACTERKEY'
+                    Title.Caption = 'Характер работы'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$WORKCHARACTERK4142747105'
+                    Title.Caption = 'Наименование (Характер работы)'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$KINDOFWORKKEY'
+                    Title.Caption = 'Вид работы'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$KINDOFWORKKEY_USR$NAME'
+                    Title.Caption = 'Наименование (Вид работы)'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CONDITIONS'
+                    Title.Caption = 'Условия труда'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$CONDITIONS_USR$NAME'
+                    Title.Caption = 'Наименование (Условия труда)'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$FIRSTMOVE'
+                    Title.Caption = 'Документ'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$FIRSTMOVE_NUMBER'
+                    Title.Caption = 'Номер (Документы)'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$FIRSTMOVE_DOCUMENTDATE'
+                    Title.Caption = 'Дата (Документы)'
+                    Width = 65
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$POSITIONKEY'
+                    Title.Caption = 'Должность'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$POSITIONKEY_NAME'
+                    Title.Caption = 'Наименование (Должности)'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$PAYFORMKEY'
+                    Title.Caption = 'Форма оплаты'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$PAYFORMKEY_USR$NAME'
+                    Title.Caption = 'Наименование (Форма оплаты)'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MOVEMENTTYPE'
+                    Title.Caption = 'Тип движения'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$STAFFLISTPOSID'
+                    Title.Caption = 'Позиция ШР'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$STAFFNUMBER'
+                    Title.Caption = 'Количество штатных единиц'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DIPLOMADEQUACY'
+                    Title.Caption = 'Соответствие спец-ти по диплому занимаемой должности'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$LISTNUMBER'
+                    Title.Caption = 'Табельный номер'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TARSCALE'
+                    Title.Caption = 'Тарифная сетка'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$TARSCALE_USR$NAME'
+                    Title.Caption = 'Наименование (Тарифная сетка)'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DISCHARGEBASE'
+                    Title.Caption = 'Основание увольнения'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$DISCHARGEBASE_USR$NAME'
+                    Title.Caption = 'Наименование (Основания увольнения)'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$SCHEDULEKEY'
+                    Title.Caption = 'График раб. времени'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$SCHEDULEKEY_NAME'
+                    Title.Caption = 'График рабочего времени'
+                    Width = 260
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$BYHOUR'
+                    Title.Caption = 'Расчет по часам'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ACCOUNTKEY'
+                    Title.Caption = 'Счет'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$ACCOUNTKEY_ALIAS'
+                    Title.Caption = 'Счет (План счетов)'
+                    Width = 39
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AL_USR$EMPLKEY_NAME'
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DEBTSUM1'
+                    Title.Caption = 'Задолженность'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$FORMULA'
+                    Title.Caption = 'Формула'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TRANSFERTYPEKEY'
+                    Title.Caption = 'Вид перевода'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AL_USR$TRANSFERTYPEKEY_USR$NAME'
+                    Title.Caption = 'Наименование'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$RECIPIENT'
+                    Title.Caption = 'Получатель'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AL_USR$RECIPIENT_NAME'
+                    Title.Caption = 'Наименование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$RESTPERCENT'
+                    Title.Caption = 'Процент остатка'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEEND2'
+                    Title.Caption = 'Дата окончания'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$DATEBEGIN2'
+                    Title.Caption = 'Дата начала'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ORDERTEXT'
+                    Title.Caption = 'Запись в приказе'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ORDERBASE'
+                    Title.Caption = 'Основание в приказе'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TRANSACTIONKEY'
+                    Title.Caption = 'Типовая операция'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$TRANSACTIONKEY_NAME'
+                    Title.Caption = 'Типовая операция'
+                    Width = 260
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CONTRACTCOEF'
+                    Title.Caption = 'По контракту'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$AGREEMENT'
+                    Title.Caption = 'Ссылка на контракт'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$AGREEMENT_NUMBER'
+                    Title.Caption = 'Номер'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$AGREEMENT_DOCUMENTDATE'
+                    Title.Caption = 'Дата'
+                    Width = 65
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$EQRATE'
+                    Title.Caption = 'Курс экв.'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$BLOCKED'
+                    Title.Caption = 'Закрыто'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CHILDCOUNT'
+                    Title.Caption = 'Количество детей'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$PERCENT'
+                    Title.Caption = '% списания долга'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$LIVINGWAGEPERC'
+                    Title.Caption = '% от прожит. мин.'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$RATE'
+                    Title.Caption = 'Ставка 1-го разряда'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$NEWDATEEND'
+                    Title.Caption = 'Дата окончания'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$HAZARDKEY'
+                    Title.Caption = 'Вредность'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$HAZARDKEY_USR$NAME'
+                    Title.Caption = 'Наименование'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$ISCONTRACT'
+                    Title.Caption = 'Договор подряда'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TARIFFRATE'
+                    Title.Caption = 'ЧТС'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MONTHHOUR'
+                    Title.Caption = 'Норма времени'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$TSALARY'
+                    Title.Caption = 'Тарифный оклад'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$THOURRATE'
+                    Title.Caption = 'ЧТС тарифная'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$MHOURRATE'
+                    Title.Caption = 'ЧТС должностная'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$BASETSALARY'
+                    Title.Caption = 'Базовый тарифный окл'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AFULL'
+                    Title.Caption = 'Полный доступ'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ACHAG'
+                    Title.Caption = 'Просмотр и редактирование'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'AVIEW'
+                    Title.Caption = 'Только просмотр'
+                    Width = -1
+                    Visible = False
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$ACCOUNTKEY_NAME'
+                    Title.Caption = 'Расшифровка счета'
+                    Width = 260
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CONTRACTDATEBEGIN'
+                    Title.Caption = 'Начало контракта'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CONTRACTDATEEND'
+                    Title.Caption = 'Окончание контракта'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'USR$CONTRACTTYPE'
+                    Title.Caption = 'Тип договора'
+                    Width = 130
+                    Visible = True
+                  end
+                  item
+                    Expanded = False
+                    FieldName = 'ML_USR$CONTRACTTYPE_USR$NAME'
+                    Title.Caption = 'Наименование (Тип договора)'
+                    Width = 130
+                    Visible = True
+                  end>
+              end
+            end
+            object usrg_TabSheet2: TTabSheet
+              Tag = 0
+              Cursor = crDefault
+              Hint = ''
+              HelpContext = 0
+              BorderWidth = 0
+              Caption = 'Атрибуты'
+              DragMode = dmManual
+              Enabled = True
+              Highlighted = False
+              ImageIndex = 0
+              Constraints.MaxHeight = 0
+              Constraints.MaxWidth = 0
+              Constraints.MinHeight = 0
+              Constraints.MinWidth = 0
+              ParentFont = True
+              ParentShowHint = True
+              PopupMenu = nil
+              TabVisible = True
+              object atContainer: TatContainer
+                Top = 0
+                Width = 655
+                Height = 343
+                VertScrollBar.Position = 4
+                Align = alClient
+                Anchors = [akLeft, akTop, akRight, akBottom]
+                object usrat_DBEdit_USR_DEBTSUM_Label: TLabel
+                  Top = 94
+                  Visible = False
+                end
+                object usrat_DBEdit_NUMBER_Label: TLabel
+                  Left = 5
+                  Top = 26
+                  Visible = True
+                end
+                object usrat_xDateDBEdit_DOCUMENTDATE_Label: TLabel
+                  Top = 2
+                  Visible = True
+                end
+                object usrat_DBEdit_USR_SORTNUMBER_Label: TLabel
+                  Top = 73
+                  Visible = False
+                end
+                object usrat_DBEdit_USR_EQRATE_Label: TLabel
+                  Top = 327
+                end
+                object usrat_DBEdit_USR_DEBTSUM: TxDBCalculatorEdit
+                  Top = 90
+                  Width = 84
+                  Cursor = crIBeam
+                  TabOrder = 3
+                  Visible = False
+                end
+                object usrat_DBEdit_NUMBER: TDBEdit
+                  Left = 135
+                  Top = 22
+                  Width = 70
+                  TabOrder = 2
+                  Visible = True
+                end
+                object usrat_xDateDBEdit_DOCUMENTDATE: TxDateDBEdit
+                  Top = -2
+                  TabOrder = 1
+                  Visible = True
+                end
+                object usrat_DBEdit_USR_SORTNUMBER: TxDBCalculatorEdit
+                  Top = 69
+                  Cursor = crIBeam
+                  TabOrder = 0
+                  Visible = False
+                end
+                object usrat_DBEdit_USR_EQRATE: TxDBCalculatorEdit
+                  Top = 323
+                  Cursor = crArrow
+                  TabOrder = 4
+                end
+              end
+            end
+          end
+          object alBase: TActionList
+            Left = 390
+            Top = 88
+            object actNew: TAction
+            end
+            object actHelp: TAction
+            end
+            object actSecurity: TAction
+            end
+            object actOk: TAction
+            end
+            object actCancel: TAction
+            end
+            object actNextRecord: TAction
+            end
+            object actPrevRecord: TAction
+            end
+            object actApply: TAction
+            end
+            object actFirstRecord: TAction
+            end
+            object actLastRecord: TAction
+            end
+            object actProperty: TAction
+            end
+            object actCopySettingsFromUser: TAction
+            end
+            object actAddToSetting: TAction
+            end
+            object actDocumentType: TAction
+            end
+            object actDistributeUserSettings: TAction
+            end
+            object actHistory: TAction
+            end
+            object usrg_actChooseVar: TgsAction
+              Tag = 0
+              Category = 'wage'
+              Caption = ''
+              Checked = False
+              Enabled = True
+              HelpContext = 0
+              Hint = 'Выбрать переменные ...'
+              ImageIndex = 137
+              ShortCut = 0
+              Visible = True
+            end
+            object usrg_actDebtNew: TgsAction
+              Tag = 0
+              Category = 'wage_debt'
+              Caption = 'Новый'
+              Checked = False
+              Enabled = True
+              HelpContext = 0
+              Hint = 'Новый'
+              ImageIndex = 0
+              ShortCut = 0
+              Visible = True
+            end
+            object usrg_actDebtEdit: TgsAction
+              Tag = 0
+              Category = 'wage_debt'
+              Caption = 'Редктировать'
+              Checked = False
+              Enabled = True
+              HelpContext = 0
+              Hint = 'Редктировать'
+              ImageIndex = 1
+              ShortCut = 0
+              Visible = True
+            end
+            object usrg_actDelete: TgsAction
+              Tag = 0
+              Category = 'wage_debt'
+              Caption = 'Удалить'
+              Checked = False
+              Enabled = True
+              HelpContext = 0
+              Hint = 'Удалить'
+              ImageIndex = 2
+              ShortCut = 0
+              Visible = True
+            end
+          end
+          object dsgdcBase: TDataSource
+            Left = 345
+            Top = 119
+          end
+          object pm_dlgG: TPopupMenu
+            Left = 360
+            Top = 88
+            object actSecurity1: TMenuItem
+            end
+            object actHistory1: TMenuItem
+            end
+            object N1: TMenuItem
+            end
+            object sepFirst: TMenuItem
+            end
+            object actNextRecord1: TMenuItem
+            end
+            object actPrevRecord1: TMenuItem
+            end
+            object actFirstRecord1: TMenuItem
+            end
+            object actLastRecord1: TMenuItem
+            end
+            object sepSecond: TMenuItem
+            end
+            object actApply1: TMenuItem
+            end
+            object sepThird: TMenuItem
+            end
+            object actProperty1: TMenuItem
+            end
+            object actCopySettings1: TMenuItem
+            end
+            object nAddToSetting1: TMenuItem
+            end
+          end
+          object ibtrCommon: TIBTransaction
+            Params.Strings = (
+              'read_committed'
+              'rec_version'
+              'nowait')
+            Left = 330
+            Top = 88
+          end
+          object usrg_dsAlimonyDebt: TDataSource
+            Tag = 0
+            AutoEdit = True
+            DataSet = usrg_gdcAlimonyDebt
+            Enabled = True
+            Left = 359
+            Top = 149
+          end
+          object usrg_gdcAlimonyDebt: TgdcUserDocument
+            Tag = 0
+            ForcedRefresh = False
+            AutoCalcFields = True
+            ObjectView = False
+            AllowStreamedActive = False
+            SubType = '152685574_258063421'
+            MasterSource = dsgdcBase
+            MasterField = 'documentkey'
+            DetailField = 'dockey'
+            SubSet = 'ByAlimonyDoc'
+            SetTable = ''
+            Active = True
+            CachedUpdates = False
+            Filtered = False
+            Left = 375
+            Top = 119
+          end
+        end
+        
+      EDITIONDATE: 2015-01-08T18:40:24+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152685689_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990010_17 USER - Administrator"
+      NAME: "gdc_dlgUserSimpleDocument147050774_1011422021(Tgdc_dlgUserSimpleDocument)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-12-08T17:47:42+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 152685690_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152685689_258063421 USER - Administrator\\gdc_dlgUserSimpleDocument147050774_1011422021(Tgdc_dlgUserSimpleDocument)"
+      NAME: "usrg_gsibgrAlimonyDebt(TgsIBGrid)"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-12-08T17:47:42+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 152685675_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685685_258063421
+    Fields: 
+      NAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      DESCRIPTION: ~
+      PARENT: "147019252_15581101 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument"
+      OBJECTTYPE: 1
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: "Tgdc_dlgUserSimpleDocument"
+      OBJECTNAME: ""
+      SUBTYPE: "147050774_1011422021"
+      EDITIONDATE: 2014-12-08T17:42:36+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685687_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685685_258063421
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021LoadSettingsAfterCreate"
+      COMMENT: ~
+      SCRIPT: | 
+        sub Tgdc_dlgUserSimpleDocument147050774_1011422021LoadSettingsAfterCreate(Self)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          Call Inherited(Self, "LoadSettingsAfterCreate", Array(Self))
+        '***               Конец кода поддержки gdc-класса.                  ***
+          set Grid = Self.GetComponent("usrg_gsibgrAlimonyDebt")
+          Self.LoadGrid(Grid)
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        TGDC_DLGUSERSIMPLEDOCUMENT147050774_1011422021LOADSETTINGSAFTERCREATE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685675_258063421 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument\\Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:46:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685685_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      PARENTNAME: "Tgdc_dlgUserSimpleDocument"
+      OBJECTKEY: "152685675_258063421 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument\\Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      EVENTNAME: "LOADSETTINGSAFTERCREATE"
+      FUNCTIONKEY: "152685687_258063421 Tgdc_dlgUserSimpleDocument147050774_1011422021LoadSettingsAfterCreate"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:46:48+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685684_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685682_258063421
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021SaveSettings"
+      COMMENT: ~
+      SCRIPT: | 
+        sub Tgdc_dlgUserSimpleDocument147050774_1011422021SaveSettings(Self)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          Call Inherited(Self, "SaveSettings", Array(Self))
+        '***               Конец кода поддержки gdc-класса.                  ***
+          set Grid = Self.GetComponent("usrg_gsibgrAlimonyDebt")
+          if Grid.SettingsModified then
+            Self.SaveGrid(Grid)
+          end if
+        
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        TGDC_DLGUSERSIMPLEDOCUMENT147050774_1011422021SAVESETTINGS
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685675_258063421 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument\\Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:46:32+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685682_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      PARENTNAME: "Tgdc_dlgUserSimpleDocument"
+      OBJECTKEY: "152685675_258063421 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument\\Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      EVENTNAME: "SAVESETTINGS"
+      FUNCTIONKEY: "152685684_258063421 Tgdc_dlgUserSimpleDocument147050774_1011422021SaveSettings"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:46:32+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685678_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685676_258063421
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021SetupRecord"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include   wg_SetPersSimpleDocLookupParams
+        Option Explicit
+        sub Tgdc_dlgUserSimpleDocument147050774_1011422021SetupRecord(Self)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          Call Inherited(Self, "SetupRecord", Array(Self))
+        '***               Конец кода поддержки gdc-класса.                  ***
+        
+          wg_SetPersSimpleDocLookupParams(Self)
+        
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        TGDC_DLGUSERSIMPLEDOCUMENT147050774_1011422021SETUPRECORD
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685675_258063421 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument\\Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:45:52+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147664975_119619099 wg_SetPersSimpleDocLookupParams"
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685676_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      PARENTNAME: "Tgdc_dlgUserSimpleDocument"
+      OBJECTKEY: "152685675_258063421 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument\\Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      EVENTNAME: "SETUPRECORD"
+      FUNCTIONKEY: "152685678_258063421 Tgdc_dlgUserSimpleDocument147050774_1011422021SetupRecord"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:45:52+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 152685681_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 152685679_258063421
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      MODULE: "METHOD"
+      LANGUAGE: "VBScript"
+      NAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021SyncField"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include wg_SetPersSimpleDocLookupParams
+        Option Explicit
+        sub Tgdc_dlgUserSimpleDocument147050774_1011422021SyncField(Self, Field, SyncList)
+        '*** Данный код необходим для вызова кода определенного в gdc-классе.***
+        '*** При его удаления  возможно нарушение  правильной работы системы.***
+          Call Inherited(Self, "SyncField", Array(Self, Field, SyncList))
+        '***               Конец кода поддержки gdc-класса.                  ***
+        
+          select case Field.FieldName
+            case "DOCUMENTDATE"
+              wg_SetPersSimpleDocLookupParams(Self)
+          end select
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        TGDC_DLGUSERSIMPLEDOCUMENT147050774_1011422021SYNCFIELD
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "152685675_258063421 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument\\Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAAU0VMRgQAAABTRUxGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNU
+        BQAAAEZJRUxEBQAAAEZJRUxEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNUCAAAAFNZ
+        TkNMSVNUCAAAAFNZTkNMSVNUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2014-12-08T17:46:20+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "147664975_119619099 wg_SetPersSimpleDocLookupParams"
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 152685679_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      PARENTNAME: "Tgdc_dlgUserSimpleDocument"
+      OBJECTKEY: "152685675_258063421 TgdcCreateableForm\\Tgdc_dlgG\\Tgdc_dlgTR\\Tgdc_dlgUserSimpleDocument\\Tgdc_dlgUserSimpleDocument147050774_1011422021"
+      EVENTNAME: "SYNCFIELD"
+      FUNCTIONKEY: "152685681_258063421 Tgdc_dlgUserSimpleDocument147050774_1011422021SyncField"
+      DISABLE: 0
+      EDITIONDATE: 2014-12-08T17:46:20+03:00
+  - 
+    Properties: 
+      Class: "TgdcUserDocumentType"
+      RUID: 152685574_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      ADDNUMBER: 1
+      MASK: "\"NUMBER\""
+      FIXLENGTH: ~
+      PARENT: "147084662_274788016 Документы Зарплаты и ОК\\Документы Зарплаты"
+      NAME: "Задолженность по штрафам"
+      DESCRIPTION: "Задолженность по штрафам"
+      CLASSNAME: "TgdcUserDocumentType"
+      DOCUMENTTYPE: "D"
+      OPTIONS: ~
+      HEADERRELKEY: "147072392_453357870 Задолженность по алиментам, USR$WG_ALIMONYDEBT"
+      LINERELKEY: ~
+      DISABLED: 0
+      RUID: "152685574_258063421"
+      BRANCHKEY: ~
+      REPORTGROUPKEY: ~
+      ISCOMMON: 0
+      ISCHECKNUMBER: 0
+      HEADERFUNCTIONKEY: ~
+      HEADERFUNCTIONTEMPLATE: ~
+      LINEFUNCTIONKEY: ~
+      LINEFUNCTIONTEMPLATE: ~
+      EDITIONDATE: 2014-12-08T16:37:29+03:00
+  - 
+    Properties: 
+      Class: "TgdcExplorer"
+      RUID: 152685575_258063421
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147084664_274788016 Исследователь\\Зарплата и Отдел кадров\\Зарплата\\01. Данные"
+      NAME: "Задолженность по штрафам"
+      CMD: "152685574_258063421"
+      CMDTYPE: 0
+      HOTKEY: ~
+      IMGINDEX: 0
+      ORDR: ~
+      CLASSNAME: "TgdcUserDocument"
+      SUBTYPE: "152685574_258063421"
+      DISABLED: 0
+      EDITIONDATE: 2014-12-08T16:38:46+03:00

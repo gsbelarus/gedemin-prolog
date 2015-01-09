@@ -4,7 +4,7 @@ Option Explicit
 '#include pl_GetScriptIDByName
 
 Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal FeeTypeKey, _
-                              ByVal AccountKeyArr)
+                              ByVal AccountKeyArr, ByVal Scope)
 '
   Dim T, T1, T2
   '
@@ -12,7 +12,7 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   IsDebug = True
   '
   Dim PL, Ret, Pred, Tv, PredFile, Append
-  Dim ScriptName, Scope
+  Dim ScriptName', Scope
   'fee_calc_in, fee_calc_prep
   Dim P_in, Tv_in, Q_in, P_prep, Tv_prep, Q_prep
   Dim EmplKey, DateBegin, RoundType, RoundValue
@@ -56,7 +56,7 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   If Not Ret Then
     Exit Function
   End If
-  Scope = "wg_fee_alimony"
+  'Scope = "wg_fee_alimony"
   'debug
   PL.Debug = (True And IsDebug And plGlobalDebug)
 
@@ -153,22 +153,6 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
     Tv_sql.PutInteger 1, EmplKey
     Q_sql.OpenQuery
     '
-    Do Until Q_sql.EOF
-      PredicateName = Tv_sql.ReadAtom(2)
-      Arity = Tv_sql.ReadInteger(3)
-      SQL = Tv_sql.ReadString(4)
-      '
-      Ret =  PL.MakePredicatesOfSQLSelect _
-                (SQL, _
-                wg_EmployeeCharge.Transaction, _
-                PredicateName, PredicateName, Append)
-      '
-      Q_sql.NextSolution
-    Loop
-    Q_sql.Close
-    '
-    Append = True
-    '
     Tv_cmd.Reset
     Tv_cmd.PutAtom 0, Scope
     Tv_cmd.PutInteger 1, EmplKey
@@ -186,6 +170,22 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
       Q_cmd.NextSolution
     Loop
     Q_cmd.Close
+    '
+    Do Until Q_sql.EOF
+      PredicateName = Tv_sql.ReadAtom(2)
+      Arity = Tv_sql.ReadInteger(3)
+      SQL = Tv_sql.ReadString(4)
+      '
+      Ret =  PL.MakePredicatesOfSQLSelect _
+                (SQL, _
+                wg_EmployeeCharge.Transaction, _
+                PredicateName, PredicateName, Append)
+      '
+      Q_sql.NextSolution
+    Loop
+    Q_sql.Close
+    '
+    Append = True
     '
     Q_run.NextSolution
   Loop

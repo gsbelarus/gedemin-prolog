@@ -20,11 +20,13 @@ function wg_FeeAlimonyCalc(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal Fee
   wg_FeeType_AlimonyDebt_ID = gdcBaseManager.GetIDByRUIDString(wg_FeeType_AlimonyDebt_RUID)
 
   AccountKey = wg_GetAccountKey(FeeTypeKey, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
-  AccountKeyDebt = wg_GetAccountKey(wg_FeeType_AlimonyDebt_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
-  AccountKeyTransf = wg_GetAccountKey(wg_FeeType_TransferDed_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.BeginDate)
+  AccountKeyDebt = wg_GetAccountKey(wg_FeeType_AlimonyDebt_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
+  AccountKeyTransf = wg_GetAccountKey(wg_FeeType_TransferDed_ID, wg_EmployeeCharge.EmployeeKey, wg_EmployeeCharge.FirstMoveKey, wg_EmployeeCharge.EndDate)
 
   '<pl>
   Dim AccountKeyArr
+  Dim Scope
+  Scope = "wg_fee_alimony"
   '
   AccountKeyArr = Array(AccountKey, AccountKeyDebt, AccountKeyTransf)
 
@@ -45,14 +47,15 @@ function wg_FeeAlimonyCalc(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal Fee
       If Prolog_Alimony.Checked = True Then
         'Расчет через Пролог-скрипт
         wg_FeeAlimonyCalc = _
-          wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr)
+          wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr, Scope)
         Exit Function
       End If
     End If
   Else
     'Расчет через Пролог-скрипт
     wg_FeeAlimonyCalc = _
-      wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr)
+      wg_FeeAlimonyCalc_pl(wg_EmployeeCharge, TotalDocKey, FeeTypeKey, AccountKeyArr, Scope)
+    Exit Function
   End If
   '</pl>
 

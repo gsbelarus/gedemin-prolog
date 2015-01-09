@@ -28,6 +28,7 @@ wg_valid_sql(
             usr_wg_TransferType/4,
             usr_wg_TransferScale/3,
             usr_wg_AlimonyDebt/8,
+            usr_wg_Alimony_FeeDoc/2,
             usr_wg_AlimonyDebt_delete/0,
             -
             ]).
@@ -35,7 +36,7 @@ wg_valid_sql(
 %
 is_valid_sql(Functor/Arity) :-
     wg_valid_sql(ValidSQL),
-    member(Functor/Arity, ValidSQL),
+    memberchk(Functor/Arity, ValidSQL),
     !.
 
 /* база знаний */
@@ -48,7 +49,7 @@ gd_pl_ds(Scope, kb, usr_wg_MovementLine, 15, [
     fPayFormKey-integer, fSalaryKey-integer, fTSalary-float, fAvgWageRate-float
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_MovementLine(EmplKey, DocumentKey, FirstMoveKey,
 %   MoveYear, MoveMonth, DateBegin,
@@ -91,14 +92,14 @@ ORDER BY
     pEmplKey-_, pPayFormSalary_ruid-_, pKindOfWork_Basic_ruid-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, gd_contact, 2, [
     fID-integer, fName-string
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % gd_contact(ID, Name)
 get_sql(Scope, kb, gd_contact/2,
@@ -124,7 +125,7 @@ WHERE
     pEmplKey-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblCharge, 14, [
@@ -135,7 +136,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblCharge, 14, [
     fTotalYear-integer, fTotalMonth-integer, fTotalDateBegin-date
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_TblCharge(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, DOW, HOW, TotalYear, TotalMonth, TotalDateBegin)
 get_sql(Scope, kb, usr_wg_TblCharge/14,
@@ -169,7 +170,7 @@ WHERE
     pEmplKey-_, pTotalDocKey-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblCharge_Prev, 12, [
@@ -179,7 +180,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblCharge_Prev, 12, [
     fTotalYear-integer, fTotalMonth-integer, fTotalDateBegin-date
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_TblCharge_Prev(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, TotalYear, TotalMonth, TotalDateBegin)
 get_sql(Scope, kb, usr_wg_TblCharge_Prev/12,
@@ -214,7 +215,7 @@ WHERE
     pDatePrevCalcFrom-_, pDatePrevCalcTo-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblCharge_AlimonyDebt, 9, [
@@ -223,7 +224,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblCharge_AlimonyDebt, 9, [
     fDebit-float, fCredit-float, fFeeTypeKey-integer
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_TblCharge_AlimonyDebt(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey)
 get_sql(Scope, kb, usr_wg_TblCharge_AlimonyDebt/9,
@@ -252,7 +253,7 @@ WHERE
     pEmplKey-_, pDateCalcFrom-_, pFeeType_AlimonyDebt_ruid-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_FeeType, 4, [
@@ -260,7 +261,7 @@ gd_pl_ds(Scope, kb, usr_wg_FeeType, 4, [
     fFeeGroupKey-integer, fFeeTypeKey-integer, fAvgDayHOW-integer
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_FeeType(EmplKey, FeeGroupKey, FeeTypeKey, AvgDayHOW)
 get_sql(Scope, kb, usr_wg_FeeType/4,
@@ -283,7 +284,7 @@ WHERE
     pEmplKey-_, pFeeGroupKey_ruid-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_FeeType_Taxable, 3, [
@@ -291,7 +292,7 @@ gd_pl_ds(Scope, kb, usr_wg_FeeType_Taxable, 3, [
     fFeeGroupKey-integer, fFeeTypeKey-integer
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_FeeType_Taxable(EmplKey, FeeGroupKey, FeeTypeKey)
 get_sql(Scope, kb, usr_wg_FeeType_Taxable/3,
@@ -313,7 +314,7 @@ WHERE
     pEmplKey-_, pFeeGroupKey_IncomeTax_ruid-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_FeeType_Dict, 6, [
@@ -321,7 +322,7 @@ gd_pl_ds(Scope, kb, usr_wg_FeeType_Dict, 6, [
     fRoundByFeeType-integer, fRoundType-integer, fRoundValue-float
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_FeeType_Dict(ID, Alias, Name, RoundByFeeType, RoundType, RoundValue)
 get_sql(Scope, kb, usr_wg_FeeType_Dict/6,
@@ -332,6 +333,9 @@ SELECT
     WHEN
       (SELECT id FROM GD_P_GETID(pFeeType_Alimony_ruid))
         THEN 'ftAlimony'
+    WHEN
+      (SELECT id FROM GD_P_GETID(pFeeType_Fine_ruid))
+        THEN 'ftFine'
     WHEN
       (SELECT id FROM GD_P_GETID(pFeeType_HolidayComp_ruid))
         THEN 'ftHolidayComp'
@@ -344,6 +348,9 @@ SELECT
     WHEN
       (SELECT id FROM GD_P_GETID(pFeeType_AlimonyDebt_ruid))
         THEN 'ftAlimonyDebt'
+    WHEN
+      (SELECT id FROM GD_P_GETID(pFeeType_FineDebt_ruid))
+        THEN 'ftFineDebt'
     ELSE
         'unknown'
   END
@@ -357,13 +364,15 @@ FROM
 ",
     [
     pFeeType_Alimony_ruid-_,
+    pFeeType_Fine_ruid-_,
     pFeeType_HolidayComp_ruid-_,
     pFeeType_IncomeTax_ruid-_,
     pFeeType_TransferDed_ruid-_,
-    pFeeType_AlimonyDebt_ruid-_
+    pFeeType_AlimonyDebt_ruid-_,
+    pFeeType_FineDebt_ruid-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblCalLine, 7, [
@@ -372,7 +381,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblCalLine, 7, [
     fDuration-float, fHoureType-integer
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_TblCalLine(EmplKey, FirstMoveKey, CalYear, CalMonth, Date, Duration, HoureType)
 get_sql(Scope, kb, usr_wg_TblCalLine/7,
@@ -405,7 +414,7 @@ ORDER BY
     pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, [
@@ -430,7 +439,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblCal_FlexLine, 68, [
     fS31-variant, fH31-variant
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 % usr_wg_TblCal_FlexLine(FlexType, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, S1, H1, ..., S31, H31)
 get_sql(Scope, kb, usr_wg_TblCal_FlexLine/68,
@@ -495,14 +504,17 @@ WHERE
     pTblCal_DocType_Plan_ruid-_, pTblCal_DocType_Fact_ruid-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony
+        wg_fee_alimony, wg_fee_fine
         ]).
 
-gd_pl_ds(wg_fee_alimony, kb, usr_wg_FCRate, 2, [
+gd_pl_ds(Scope, kb, usr_wg_FCRate, 2, [
     fDate-date, fMinWage-float
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 % usr_wg_FCRate(Date, MinWage)
-get_sql(wg_fee_alimony, kb, usr_wg_FCRate/2,
+get_sql(Scope, kb, usr_wg_FCRate/2,
 "
 SELECT
   fc.USR$WG_DATE,
@@ -516,13 +528,19 @@ ORDER BY
 ",
     [
     pStartDate-_
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 
-gd_pl_ds(wg_fee_alimony, kb, gd_const_budget, 2, [
+gd_pl_ds(Scope, kb, gd_const_budget, 2, [
     fConstDate-date, fBudget-float
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 % gd_const_budget(ConstDate, Budget)
-get_sql(wg_fee_alimony, kb, gd_const_budget/2,
+get_sql(Scope, kb, gd_const_budget/2,
 "
 SELECT
   cv.CONSTDATE,
@@ -542,13 +560,19 @@ ORDER BY
 ",
     [
     pStartDate-_, pBudget_ruid-_
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 
-gd_pl_ds(wg_fee_alimony, kb, usr_wg_Variables, 2, [
+gd_pl_ds(Scope, kb, usr_wg_Variables, 2, [
     fAlias-string, fName-string
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 % usr_wg_Varuables(Alias, Name)
-get_sql(wg_fee_alimony, kb, usr_wg_Variables/2,
+get_sql(Scope, kb, usr_wg_Variables/2,
 "
 SELECT
   'vBV' AS Alias,
@@ -565,21 +589,35 @@ FROM
   USR$WG_VARIABLES
 WHERE
   ID = (SELECT id FROM GD_P_GETID(pVar_ForAlimony_ruid))
+UNION ALL
+SELECT
+  'vForFine' AS Alias,
+  USR$NAME
+FROM
+  USR$WG_VARIABLES
+WHERE
+  ID = (SELECT id FROM GD_P_GETID(pVar_ForFine_ruid))
 ",
     [
-    pVar_BV_ruid-_, pVar_ForAlimony_ruid-_
-    ]).
+    pVar_BV_ruid-_, pVar_ForAlimony_ruid-_, pVar_ForFine_ruid-_
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 
-gd_pl_ds(wg_fee_alimony, kb, usr_wg_Alimony, 12, [
+gd_pl_ds(Scope, kb, usr_wg_Alimony, 12, [
     fDocKey-integer, fEmplKey-integer,
     fDateBegin-date, fDateEnd-date,
     fDebtSum-float, fFormula-string,
     fTransferTypeKey-integer, fRecipient-integer,
     fRestPercent-float, fChildCount-integer,
     fPercent-float, fLivingWagePerc-float
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 % usr_wg_Alimony(DocKey, EmplKey, DateBegin, DateEnd, DebtSum, Formula, TransferTypeKey, Recipient, RestPercent, ChildCount, Percent, LivingWagePerc)
-get_sql(wg_fee_alimony, kb, usr_wg_Alimony/12,
+get_sql(Scope, kb, usr_wg_Alimony/12,
 "
 SELECT
   calc.DOCUMENTKEY,
@@ -602,7 +640,7 @@ JOIN
 WHERE
   d.COMPANYKEY = <COMPANYKEY/>
   AND
-  d.DOCUMENTTYPEKEY = (SELECT id FROM GD_P_GETID(pDocType_Alimony_ruid))
+  d.DOCUMENTTYPEKEY = (SELECT id FROM GD_P_GETID(pDocType_ruid))
   AND
   calc.USR$EMPLKEY = pEmplKey
   AND
@@ -613,16 +651,22 @@ ORDER BY
   calc.USR$DATEBEGIN
 ",
     [
-    pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_, pDocType_Alimony_ruid-_,
+    pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_, pDocType_ruid-_,
     pNullDate-_
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 
-gd_pl_ds(wg_fee_alimony, kb, usr_wg_TransferType, 4, [
+gd_pl_ds(Scope, kb, usr_wg_TransferType, 4, [
     fID-integer, fParent-integer,
     fDateBegin-date, fName-string
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 % usr_wg_TransferType(ID, Parent, DateBegin, Name)
-get_sql(wg_fee_alimony, kb, usr_wg_TransferType/4,
+get_sql(Scope, kb, usr_wg_TransferType/4,
 "
 SELECT
   tt.ID,
@@ -635,14 +679,20 @@ ORDER BY
   Parent, DateBegin, tt.ID
 ",
     [
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 
-gd_pl_ds(wg_fee_alimony, kb, usr_wg_TransferScale, 3, [
+gd_pl_ds(Scope, kb, usr_wg_TransferScale, 3, [
     fTranferTypeKey-integer,
     fStartSum-float, fPercent-float
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 % usr_wg_TransferScale(TranferTypeKey, StartSum, Percent)
-get_sql(wg_fee_alimony, kb, usr_wg_TransferScale/3,
+get_sql(Scope, kb, usr_wg_TransferScale/3,
 "
 SELECT
   ts.USR$TRANSFERTYPEKEY,
@@ -654,15 +704,21 @@ ORDER BY
   ts.USR$TRANSFERTYPEKEY, StartSum
 ",
     [
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 
-gd_pl_ds(wg_fee_alimony, kb, usr_wg_AlimonyDebt, 8, [
+gd_pl_ds(Scope, kb, usr_wg_AlimonyDebt, 8, [
     fDocKey-integer, fEmplKey-integer,
     fCalYear-integer, fCalMonth-integer, fDateDebt-date,
     fAlimonyKey-integer, fTotalDocKey-integer, fDebtSum-float
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 % usr_wg_AlimonyDebt(DocKey, EmplKey, CalYear, CalMonth, DateDebt, AlimonyKey, TotalDocKey, DebtSum)
-get_sql(wg_fee_alimony, kb, usr_wg_AlimonyDebt/8,
+get_sql(Scope, kb, usr_wg_AlimonyDebt/8,
 "
 SELECT
   aldebt.DOCUMENTKEY,
@@ -702,13 +758,83 @@ ORDER BY
 ",
     [
     pEmplKey-_, pDateCalcTo-_
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 
+
+gd_pl_ds(Scope, kb, usr_wg_Alimony_FeeDoc, 2, [
+    fDocKey-integer, fEmplKey-integer
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
+% usr_wg_Alimony(DocKey, EmplKey)
+get_sql(Scope, kb, usr_wg_Alimony_FeeDoc/2,
+"
+SELECT
+  calc.DOCUMENTKEY,
+  calc.USR$EMPLKEY
+FROM
+  USR$WG_ALIMONY calc
+JOIN
+  GD_DOCUMENT d
+    ON calc.DOCUMENTKEY = d.ID
+WHERE
+  d.COMPANYKEY = <COMPANYKEY/>
+  AND
+  calc.USR$EMPLKEY = pEmplKey
+  AND
+  calc.USR$DATEBEGIN < 'pDateCalcTo'
+  AND
+  COALESCE(calc.USR$DATEEND, 'pNullDate') >= 'pDateCalcFrom'
+UNION ALL
+SELECT
+  aldebt.DOCUMENTKEY,
+  al.USR$EMPLKEY
+FROM
+  USR$WG_ALIMONYDEBT aldebt
+JOIN
+  USR$WG_ALIMONY al
+    ON al.DOCUMENTKEY = aldebt.USR$ALIMONYKEY
+WHERE
+  al.USR$EMPLKEY = pEmplKey
+  AND
+  aldebt.USR$DATEDEBT < 'pDateCalcTo'
+  AND
+  aldebt.USR$DATEDEBT >=
+    (SELECT FIRST 1
+       ml.USR$DATEBEGIN
+     FROM
+       USR$WG_MOVEMENTLINE ml
+     WHERE
+       ml.USR$EMPLKEY = pEmplKey
+       AND
+       ml.DOCUMENTKEY = ml.USR$FIRSTMOVE
+       AND
+       ml.USR$MOVEMENTTYPE = 1
+     ORDER BY
+       ml.USR$DATEBEGIN DESC
+    )
+",
+    [
+    pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_,
+    pNullDate-_
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
+        
 /* удаление данных */
 
-gd_pl_ds(wg_fee_alimony, cmd, usr_wg_AlimonyDebt_delete, 0, []).
+gd_pl_ds(Scope, cmd, usr_wg_AlimonyDebt_delete, 0, [
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 % usr_wg_AlimonyDebt_delete
-get_sql(wg_fee_alimony, cmd, usr_wg_AlimonyDebt_delete/0,
+get_sql(Scope, cmd, usr_wg_AlimonyDebt_delete/0,
 "
 DELETE
 FROM
@@ -740,7 +866,10 @@ WHERE
 ",
     [
     pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
 
 /**/
 

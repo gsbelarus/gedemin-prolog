@@ -49,7 +49,8 @@
     usr_wg_Alimony,
     usr_wg_TransferType,
     usr_wg_TransferScale,
-    usr_wg_AlimonyDebt
+    usr_wg_AlimonyDebt,
+    usr_wg_Alimony_FeeDoc
     ],
     working_directory(_, '..').
 %%
@@ -67,8 +68,8 @@
 
 % расчет итогового начисления
 fee_calc(Scope) :-
-    % - для алиментов
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     % для каждого сотрудника
     get_param(Scope, in, pEmplKey-EmplKey),
     % выполнить расчет
@@ -81,8 +82,9 @@ fee_calc(_) :-
 
 % выполнить расчет
 fee_calc(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = PK,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = PK,
     % первичный ключ
     PK = [pEmplKey-EmplKey],
     % записать отладочную информацию
@@ -112,8 +114,9 @@ fee_calc(Scope, EmplKey) :-
 
 % расчет табеля
 calc_tab(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCalcTab,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pCalcTab,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
     % последний прием на работу
@@ -162,8 +165,9 @@ calc_tab(Scope, EmplKey) :-
 
 % расчет суммы
 calc_amount(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pCalcAmount,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
     % спецификация Начислений по Предыдущему периоду
@@ -182,20 +186,21 @@ calc_amount(Scope, EmplKey) :-
                 pAlimonySum-AlimonySum, pAlimonyCoef-AlimonyCoef ],
     % сумма по Предыдущему периоду
     % где дата Зачисления соответствует Текущему периоду
-    calc_amount(Scope, EmplKey, 1),
+    calc_amount_by_shape(Scope, EmplKey, 1),
     get_param_list(Scope, Type, [
                     Section-1, pEmplKey-EmplKey,
                     pForAlimony-ForAlimony1 ]),
     % сумма по Предыдущему периоду
-    calc_amount(Scope, EmplKey, 2),
+    calc_amount_by_shape(Scope, EmplKey, 2),
     get_param_list(Scope, Type, [
                     Section-2, pEmplKey-EmplKey,
                     pForAlimony-ForAlimony2 ]),
     % Коэффициент для Переходящего начисления
     catch( AlimonyCoef is ForAlimony1 / ForAlimony2, _, AlimonyCoef = 0.0 ),
     % начислено Алиментов по Предыдущему периоду
+    fee_type_alias(Scope, "ftAlimony", Alias),
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                fID-FeeTypeKey, fAlias-"ftAlimony" ]),
+                fID-FeeTypeKey, fAlias-Alias ]),
     findall( AlimonySum,
              ( get_data(Scope, kb, usr_wg_TblCharge_Prev, SpecTblChargePrev),
                AlimonySum is Credit - Debit
@@ -205,7 +210,7 @@ calc_amount(Scope, EmplKey) :-
     % Оплачено по Предыдущему периоду
     AlimonyAmountPaid is round(AlimonyAmount * AlimonyCoef) * 1.0,
     % сумма по Текущему периоду
-    calc_amount(Scope, EmplKey, 3),
+    calc_amount_by_shape(Scope, EmplKey, 3),
     % добавить временные данные
     new_param_list(Scope, Type, AmountPaidPairs),
     forall( get_data(Scope, kb, usr_wg_TblCharge_Prev, SpecTblChargePrev),
@@ -216,10 +221,22 @@ calc_amount(Scope, EmplKey) :-
             )
           ),
     !.
-%
-calc_amount(Scope, EmplKey, Shape) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCalcAmount,
+
+% подстановка псевдонима
+fee_type_alias(wg_fee_alimony, "ftAlimony", "ftAlimony").
+fee_type_alias(wg_fee_fine, "ftAlimony", "ftFine").
+fee_type_alias(wg_fee_alimony, "vForAlimony", "vForAlimony").
+fee_type_alias(wg_fee_fine, "vForAlimony", "vForFine").
+fee_type_alias(wg_fee_alimony, "ftAlimonyDebt", "ftAlimonyDebt").
+fee_type_alias(wg_fee_fine, "ftAlimonyDebt", "ftFine"). % ftFineDebt
+fee_type_alias(wg_fee_alimony, "ftTransferDed", "ftTransferDed").
+fee_type_alias(wg_fee_fine, "ftTransferDed", "ftTransferDed").
+
+% расчет суммы по шаблону
+calc_amount_by_shape(Scope, EmplKey, Shape) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pCalcAmount,
     % собрать начисления по Группе начислений
     fee_group_charges(Scope, EmplKey, Charges, Shape),
     % Общая сумма
@@ -261,8 +278,9 @@ calc_amount(Scope, EmplKey, Shape) :-
 
 % расчет формулы
 calc_formula(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pCalcFormula,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
     % спецификация алиментов
@@ -288,7 +306,7 @@ calc_formula(Scope, EmplKey) :-
     % для всех алиментов
     forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
             ( % получить сумму по формуле
-              calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs),
+              calc_formula_by_spec(Scope, EmplKey, SpecAlimony, FormulaPairs),
               % добавить временные данные
               new_param_list(Scope, Type, FormulaPairs)
             )
@@ -296,9 +314,10 @@ calc_formula(Scope, EmplKey) :-
     !.
 
 % расчет формулы по спецификациям
-calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCalcFormula,
+calc_formula_by_spec(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pCalcFormula,
     % спецификация алиментов
     SpecAlimony = [
                 fDocKey-AlimonyKey, fEmplKey-EmplKey, fFormula-Formula,
@@ -322,7 +341,8 @@ calc_formula(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
     get_data(Scope, kb, usr_wg_Variables, [fAlias-"vBV", fName-Var_BV]),
     replace_all(Formula, Var_BV, BV, Formula1),
     get_for_alimony(Scope, Type, EmplKey, AlimonyKey, ForAlimony, WithPrev, ForAlimonyPrev),
-    get_data(Scope, kb, usr_wg_Variables, [fAlias-"vForAlimony", fName-Var_ForAlimony]),
+    fee_type_alias(Scope, "vForAlimony", Alias),
+    get_data(Scope, kb, usr_wg_Variables, [fAlias-Alias, fName-Var_ForAlimony]),
     replace_all(Formula1, Var_ForAlimony, ForAlimony, Formula2),
     replace_all(Formula2, ",", ".", Formula3),
     % вычислить Результат
@@ -368,7 +388,8 @@ get_for_alimony(Scope, Type, EmplKey, AlimonyKey, ForAlimony, WithPrev, ForAlimo
                 fDocKey-AlimonyKey, fEmplKey-EmplKey, fDateBegin-ADateBegin ]),
     get_param_list(Scope, Type, [
                     pCalcAmount-1, pEmplKey-EmplKey, pForAlimony-ForAlimony1 ]),
-    ( ADateBegin @>= DateCalcFrom, ForAlimony1 > 0
+    ( ADateBegin @>= DateCalcFrom,
+      ForAlimony1 > 0
      ->
       ForAlimony is ForAlimony3 + ForAlimony1,
       WithPrev = 1
@@ -379,8 +400,9 @@ get_for_alimony(Scope, Type, EmplKey, AlimonyKey, ForAlimony, WithPrev, ForAlimo
 
 % расчет расходов по переводу
 calc_transf(Scope, EmplKey, Stage) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCalcTransf,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pCalcTransf,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
     % спецификация алиментов
@@ -495,8 +517,9 @@ aggr_fransf(Scope, EmplKey, TransfData, TransfDataList, TransfDataList1, TransfA
 
 % контроль остатка
 check_rest(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCheckRest,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pCheckRest,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
     % спецификация алиментов
@@ -514,7 +537,8 @@ check_rest(Scope, EmplKey) :-
     CheckPairs = [
                 Section-1, pEmplKey-EmplKey,
                 pAlimonyAmount-AlimonyAmount, pCheckAmount-CheckAmount,
-                pAmountAll-AmountAll, pRestPercent-RestPercent, pRestAmount-RestAmount
+                pAmountAll-AmountAll, pRestPercent-RestPercent, pRestAmount-RestAmount,
+                pFeeAmount-FeeAmount
                  ],
     AlimonyPairs = [
                 Section-2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
@@ -532,10 +556,14 @@ check_rest(Scope, EmplKey) :-
     min_list(RestPercentList, RestPercent0),
     RestPercent1 is RestPercent0 / 100,
     fit_data(Scope, [pRestPercent-RestPercent1], [pRestPercent-RestPercent]),
-    % сумма Контроля
     get_param_list(Scope, Type, CheckParams),
+    % сумма Удержаний
+    get_fee_amount(Scope, EmplKey, FeeAmount),
+    % сумма Остатка
     RestAmount is round(AmountAll * RestPercent) * 1.0,
-    CheckAmount is round(AmountAll - RestAmount) * 1.0,
+    % сумма Контроля
+    CheckAmount is round(AmountAll - RestAmount - FeeAmount) * 1.0,
+    CheckAmount > 0,
     % добавить временные данные
     new_param_list(Scope, Type, CheckPairs),
     % для всех алиментов
@@ -550,15 +578,42 @@ check_rest(Scope, EmplKey) :-
     % Дельта для расчета при нехватке средств
     get_param(Scope, fit, pCalcDelta-CalcDelta), CalcDelta > 0,
     % контроль остатка по сумме Контроля
-    check_rest(Scope, EmplKey, CheckAmount, 0, CalcDelta, 0),
+    check_rest_amount(Scope, EmplKey, CheckAmount, 0, CalcDelta, 0),
     !.
 check_rest(_, _) :-
     !.
 
+% сумма Удержаний
+get_fee_amount(Scope, EmplKey, FeeAmount) :-
+    % собрать документы по алиментам и штрафам
+    findall( DocKey,
+             get_data(Scope, kb, usr_wg_Alimony_FeeDoc, [
+                        fDocKey-DocKey, fEmplKey-EmplKey ]),
+    DocKeyList ),
+    \+ DocKeyList = [],
+    % взять суммы
+    findall( ChargeSum,
+              % по начислениям
+            ( get_data(Scope, kb, usr_wg_TblCharge, [
+                        fDocKey-DocKey, fEmplKey-EmplKey,
+                        fDebit-Debit, fCredit-Credit ]),
+              ChargeSum is Credit - Debit,
+              % для документов
+              memberchk(DocKey, DocKeyList)
+            ),
+    % в список
+    ChargeSumList ),
+    % итоговая сумма
+    sum_list(ChargeSumList, FeeAmount),
+    !.
+get_fee_amount(_, _, 0.0) :-
+    !.
+
 % контроль остатка по сумме Контроля
-check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pCheckRest,
+check_rest_amount(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pCheckRest,
     % спецификация параметров алиментов
     AlimonyParams = [
                 pCalcFormula-1, pEmplKey-EmplKey, pAlimonyCharge-AlimonyCharge ],
@@ -593,9 +648,9 @@ check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
     % добавить временные данные
     new_param_list(Scope, Type, CheckPairs),
     !.
-check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
-    % - для алиментов
-    Scope = wg_fee_alimony,
+check_rest_amount(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     % увеличить Дельту
     CalcDelta1 is CalcDelta0 + CalcDelta * CalcSwitch,
     % сумма Резерва
@@ -608,12 +663,13 @@ check_rest(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch) :-
     % пересчитать расходы по Переводу
     calc_transf(Scope, EmplKey, 2),
     !,
-    check_rest(Scope, EmplKey, CheckAmount, CalcDelta1, CalcDelta, 1).
+    check_rest_amount(Scope, EmplKey, CheckAmount, CalcDelta1, CalcDelta, 1).
 
 % распределить суммы по Коэффициентам от суммы Резерва
 charge_by_coef(Scope, EmplKey, ReserveAmount) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp,
     % спецификации параметров алиментов
     CalcFormulaParams = [
                 pCalcFormula-1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
@@ -642,8 +698,9 @@ charge_by_coef(Scope, EmplKey, ReserveAmount) :-
 
 % начисление долгов
 add_debt(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pAddDebt,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pAddDebt,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
     % спецификации параметров алиментов
@@ -677,8 +734,9 @@ add_debt(Scope, EmplKey) :-
 
 % списание долгов
 drop_debt(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pDropDebt,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pDropDebt,
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
     % нет новых долгов
@@ -706,14 +764,15 @@ drop_debt(Scope, EmplKey) :-
     drop_debt_check_rest(Scope, EmplKey),
     !.
 drop_debt(Scope, _) :-
-    % - для алиментов
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     !.
 
 % Подготовка данных по Cписанию долгов
 drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pDropDebt,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pDropDebt,
     CutRoundType = 3,
     % спецификация Алиментов
     SpecAlimony = [
@@ -861,8 +920,9 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
 
 % Списание долгов
 drop_debt_charge(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pDropDebt,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pDropDebt,
     % Итоги для Списания долгов
     TotalDebtParams = [
                 Section-3, pEmplKey-EmplKey,
@@ -877,8 +937,9 @@ drop_debt_charge(Scope, EmplKey) :-
     !.
 % Списание долгов по Балансу
 drop_debt_charge(Scope, EmplKey, DropDeptBalance, ByDropDebtCoef) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, Section = pDropDebt,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, Section = pDropDebt,
     % спецификации параметров Долгов по алиментам
     RestDebtParams = [
                 Section-1, pEmplKey-EmplKey,
@@ -925,13 +986,14 @@ drop_debt_charge(Scope, EmplKey, DropDeptBalance, ByDropDebtCoef) :-
 
 % списать Остатки долгов
 drop_debt_charge(Scope, RestDebtDataList, _, DropDebtAmount, DropDeptBalance, _, _) :-
-    % - для алиментов
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     ( RestDebtDataList = [] ; DropDebtAmount =< 0 ; DropDeptBalance =< 0 ),
     !.
 drop_debt_charge(Scope, [_-AlimonyDebtKey-RestSum|RestDebtDataList], DropDebtChargePairs, DropDebtAmount, DropDeptBalance, RoundType, RoundValue) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp,
     % определить сумму Списания
     ( RestSum < DropDebtAmount  ->
       DropDebtCharge0 is RestSum
@@ -1007,8 +1069,9 @@ drop_debt_check_rest(_, _) :-
 
 % расчет итога
 calc_total(Scope, EmplKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony, Type = temp, NextType = out, Section = pCalcTotal,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, NextType = out, Section = pCalcTotal,
     % записать отладочную информацию
     param_list_debug(Scope, NextType-Section),
     % спецификации параметров
@@ -1055,7 +1118,8 @@ calc_total(Scope, EmplKey) :-
 /* реализация - сервис */
 
 % взять параметры Округления
-get_round_data(Scope, _, Alias, RoundType, RoundValue) :-
+get_round_data(Scope, _, Alias0, RoundType, RoundValue) :-
+    fee_type_alias(Scope, Alias0, Alias),
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
                 fAlias-Alias, fRoundByFeeType-1,
                 fRoundType-RoundType, fRoundValue-RoundValue ]),
@@ -1124,18 +1188,18 @@ fee_group_charges(Scope, EmplKey, Charges, Shape) :-
     get_param_list(Scope, run, [
                     pEmplKey-EmplKey, pDateBegin-DateBegin0 ]),
     atom_date(DateBegin0, date(Y0, M0, _)),
-    % выбор набора данных по виду расчета
+    % выбор набора данных по шаблону расчета
     memberchk(Shape-DatasetName, [
-                    1-usr_wg_TblCharge_Prev,
-                    2-usr_wg_TblCharge_Prev,
-                    3-usr_wg_TblCharge ]),
+                    1-usr_wg_TblCharge_Prev, % предыдущий - зачисление текущий
+                    2-usr_wg_TblCharge_Prev, % предыдущий
+                    3-usr_wg_TblCharge ]),   % текущий
     % взять данные
     findall( ChargeData,
               % по начислениям
             ( get_data(Scope, kb, DatasetName, SpecTblCharge),
               % соответствующего типа
               get_data(Scope, kb, usr_wg_FeeType, SpecFeeType),
-              % с фильтром для вида расчета
+              % с фильтром для шаблона расчета
               ( Shape = 1, Y-M = Y0-M0 -> true ; \+ Shape = 1 ),
               % и контролем суммы
               ( \+ Debit =:= 0 -> true ; \+ Credit =:= 0 )
@@ -1195,8 +1259,8 @@ charge_acc(_, _, _, Amount, Amount) :-
 
 % тип начисления исключается из расчета
 is_fee_type_excl(Scope, EmplKey, DateBegin, FeeTypeKey) :-
-    % - для алиментов
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     % если вид начисления "Компенсация отпуска"
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
                 fID-FeeTypeKey, fAlias-Alias ]),
@@ -1216,8 +1280,9 @@ is_fired(Scope, EmplKey, DateBegin) :-
 
 % сопоставить с данными по умолчанию
 fit_data(Scope, [Name-Value0], [Name-Value]) :-
-    % - для алиментов (Процент остатка)
-    Scope = wg_fee_alimony, Type = fit,
+    % - для алиментов и штрафов (Процент остатка)
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = fit,
     Name = pRestPercent,
     get_param(Scope, Type, Name-Value1),
     ( Value0 < Value1, Value = Value1
@@ -1226,8 +1291,9 @@ fit_data(Scope, [Name-Value0], [Name-Value]) :-
     !.
 % сопоставить с данными по умолчанию
 fit_data(Scope, [Name-Value0], [Name-Value]) :-
-    % - для алиментов (Процент списания долга)
-    Scope = wg_fee_alimony, Type = fit,
+    % - для алиментов и штрафов (Процент списания долга)
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = fit,
     Name = pPercent,
     ( Value0 > 0, Value = Value0
     ; get_param(Scope, Type, Name-Value)
@@ -1235,7 +1301,9 @@ fit_data(Scope, [Name-Value0], [Name-Value]) :-
     !.
 fit_data(Scope, Pairs0, Pairs) :-
     % - для алиментов (Процент от БПМ)
-    Scope = wg_fee_alimony, Type = fit,
+    Scope = wg_fee_alimony,
+    Type = fit,
+    % fine
     Pairs0 = [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc0],
     Pairs = [pChildCount-ChildCount, pLivingWagePerc-LivingWagePerc],
     Pairs1 = [pChildQtyCmp-ChildQtyCmp, pLivingWagePerc-LivingWagePerc1],
@@ -1256,7 +1324,9 @@ fit_data(_, Pairs, Pairs) :-
 
 % загрузка входных данных по сотруднику
 fee_calc_in(Scope, EmplKey, DateBegin, TotalDocKey, FeeTypeKey, RoundType, RoundValue) :-
-    Scope = wg_fee_alimony, Type = in, Section = PK,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = in, Section = PK,
     % первичный ключ
     PK = [pEmplKey-EmplKey],
     % записать отладочную информацию
@@ -1271,7 +1341,9 @@ fee_calc_in(Scope, EmplKey, DateBegin, TotalDocKey, FeeTypeKey, RoundType, Round
 
 % подготовка данных выполнения
 fee_calc_prep(Scope) :-
-    Scope = wg_fee_alimony, Type = in, TypeNextStep = run,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = in, TypeNextStep = run,
     % записать отладочную информацию
     param_list_debug(Scope, Type-TypeNextStep),
     % для каждого сотрудника
@@ -1310,7 +1382,9 @@ fee_calc_prep(_) :-
 
 % выгрузка данных выполнения по сотруднику
 fee_calc_run(Scope, EmplKey) :-
-    Scope = wg_fee_alimony, Type = run, Section = PK,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = run, Section = PK,
     % первичный ключ
     PK = [pEmplKey-EmplKey],
     % взять данные выполнения
@@ -1321,7 +1395,9 @@ fee_calc_run(Scope, EmplKey) :-
 
 % формирование SQL-запросов по сотруднику
 fee_calc_sql(Scope, EmplKey, PredicateName, Arity, SQL) :-
-    Scope = wg_fee_alimony, Type = run, TypeNextStep = query,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = run, TypeNextStep = query,
     % записать отладочную информацию
     param_list_debug(Scope, Type-TypeNextStep),
     % взять данные выполнения для подстановки параметров
@@ -1343,7 +1419,9 @@ fee_calc_sql(Scope, EmplKey, PredicateName, Arity, SQL) :-
 
 % формирование SQL-команд по сотруднику
 fee_calc_cmd(Scope, EmplKey, PredicateName, Arity, SQL) :-
-    Scope = wg_fee_alimony, Type = run, TypeNextStep = cmd,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = run, TypeNextStep = cmd,
     % записать отладочную информацию
     param_list_debug(Scope, Type-TypeNextStep),
     % взять данные выполнения для подстановки параметров
@@ -1365,7 +1443,9 @@ fee_calc_cmd(Scope, EmplKey, PredicateName, Arity, SQL) :-
 
 % выгрузка выходных данных по сотруднику
 fee_calc_out(Scope, EmplKey, Result) :-
-    Scope = wg_fee_alimony, Type = out, Section = PK,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = out, Section = PK,
     % первичный ключ
     PK = [pEmplKey-EmplKey],
     % спецификация параметров выходных данных
@@ -1378,10 +1458,12 @@ fee_calc_out(Scope, EmplKey, Result) :-
 
 % выгрузка выходных данных по начислениям по сотруднику
 fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
-    % - начисление алиментов
-    Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 0,
+    % - для алиментов и штрафов (начисление)
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, AccountKeyIndex = 0,
+    fee_type_alias(Scope, "ftAlimony", Alias),
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                fID-FeeTypeID, fAlias-"ftAlimony" ]),
+                fID-FeeTypeID, fAlias-Alias ]),
     % спецификация параметров алиментов
     AlimonyParams = [
                 pCalcFormula-1, pEmplKey-EmplKey,
@@ -1391,10 +1473,12 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :
     ChargeSum > 0,
     true.
 fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
-    % - списание долгов по алиментам
-    Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 1,
+    % - для алиментов и штрафов (списание долгов)
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, AccountKeyIndex = 1,
+    fee_type_alias(Scope, "ftAlimonyDebt", Alias),
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                fID-FeeTypeID, fAlias-"ftAlimonyDebt" ]),
+                fID-FeeTypeID, fAlias-Alias ]),
     % спецификация параметров списания долгов
     DropDebtParams = [
                 pDropDebt-5, pEmplKey-EmplKey,
@@ -1404,8 +1488,9 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :
     ChargeSum > 0,
     true.
 fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :-
-    % - пересылка алиментов
-    Scope = wg_fee_alimony, Type = temp, AccountKeyIndex = 2,
+    % - для алиментов и штрафов (пересылка)
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp, AccountKeyIndex = 2,
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
                 fID-FeeTypeID, fAlias-"ftTransferDed" ]),
     % спецификация параметров перевода
@@ -1419,8 +1504,9 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :
 
 % выгрузка выходных данных по долгам по сотруднику
 fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum, DateDebt) :-
-    % - долги по алиментам
-    Scope = wg_fee_alimony, Type = temp,
+    % - для алиментов и штрафов (долги)
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = temp,
     % спецификация параметров долга
     DebtParams = [
                 pAddDebt-1, pEmplKey-EmplKey,
@@ -1434,9 +1520,10 @@ fee_calc_debt(Scope, EmplKey, AlimonyKey, DebtSum, DateDebt) :-
     date_add(DateCalcTo, -1, day, DateDebt),
     true.
 
+% протокол по начислению
 fee_calc_prot(Scope, EmplKey, ProtText) :-
-    % - протокол по алиментам
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     findall( Sections, fee_prot(Scope, _, Sections), SectionsList),
     fee_calc_prot(Scope, SectionsList, EmplKey, "", ProtText),
     !.
@@ -1453,16 +1540,16 @@ fee_calc_prot(Scope, [Sections|SectionsList], EmplKey, ProtText0, ProtText) :-
 /* реализация - протокол */
 
 % Протокол удержания алиментов (общая информация)
-fee_prot(wg_fee_alimony, in, pEmplInfo-1).
-fee_prot(wg_fee_alimony, temp, pCalcTab-1).
+fee_prot(wg_fee_alimony, [in], [pEmplInfo-1]).
+fee_prot(wg_fee_alimony, [temp], [pCalcTab-1]).
 % Исполнительные листы (пропорция по отработанному времени)
-fee_prot(wg_fee_alimony, temp, pCalcTab-2).
+fee_prot(wg_fee_alimony, [temp], [pCalcTab-2]).
 % Суммы для расчета
-fee_prot(wg_fee_alimony, temp, pCalcAmount-3).
+fee_prot(wg_fee_alimony, [temp], [pCalcAmount-3]).
 % Исполнительные листы (расчетная сумма алиментов)
 fee_prot(wg_fee_alimony, [temp, temp], [pCalcFormula-1, pCheckRest-1]).
 % Контрольная сумма
-fee_prot(wg_fee_alimony, temp, pCheckRest-1).
+fee_prot(wg_fee_alimony, [temp], [pCheckRest-1]).
 % Удержания и долги
 fee_prot(wg_fee_alimony, [temp, temp, temp, out], [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1]).
 % Исполнительные листы (расчетная сумма списания долгов)
@@ -1472,11 +1559,24 @@ fee_prot(wg_fee_alimony, [temp, temp, out], [pDropDebt-3, pDropDebt-5, pCalcTota
 % расходы по Переводу
 fee_prot(wg_fee_alimony, [temp, out], [pCalcTransf-_, pCalcTotal-1]).
 % Итого удержано
-fee_prot(wg_fee_alimony, out, pCalcTotal-1).
+fee_prot(wg_fee_alimony, [out], [pCalcTotal-1]).
+% Штрафы
+fee_prot(wg_fee_fine, Types, Sections) :-
+    fee_prot(wg_fee_alimony, Types, Sections).
+
+% подстановка псевдонима в протоколе
+prot_alias(wg_fee_alimony, "Алименты", "Алименты").
+prot_alias(wg_fee_alimony, "алиментов", "алиментов").
+prot_alias(wg_fee_alimony, "алиментам", "алиментам").
+prot_alias(wg_fee_fine, "Алименты", "Штрафы").
+prot_alias(wg_fee_fine, "алиментов", "штрафов").
+prot_alias(wg_fee_fine, "алиментам", "штрафам").
 
 % Протокол удержания алиментов (общая информация)
-fee_prot(Scope, _, Section, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony, Section = pEmplInfo-1,
+fee_prot(Scope, _, Sections, EmplKey, ProtText) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Sections = [pEmplInfo-1],
     % шаблон первичного ключа
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % для даты последнего приема на работу
@@ -1490,13 +1590,19 @@ fee_prot(Scope, _, Section, EmplKey, ProtText) :-
     % взять наименование сотрудника из контактов
     get_data(Scope, kb, gd_contact, [
                 fID-EmplKey, fName-Name ]),
+    prot_alias(Scope, "алиментов", Alias1),
     format( string(ProtText),
-            "~w~n~` t~w~9+ ~w~` t~w~32+ ~w~n",
-            [ "Протокол удержания алиментов",
+            "~w~w~n~` t~w~9+ ~w~` t~w~32+ ~w~n",
+            [ "Протокол удержания ", Alias1,
               "Таб. №:", ListNumber, "Сотрудник:", Name ] ),
         !.
-fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony, Section = pCalcTab-1,
+fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Types = [Type],
+    Sections = [pCalcTab-1],
+    Sections = [Section],
+    % fine
     get_param_list(Scope, Type, [
                     Section, pEmplKey-EmplKey,
                     pYM-Y-M, pTDays-TDays, pTHoures-THoures ]),
@@ -1507,31 +1613,40 @@ fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
               "Отработано:", THoures, "ч. (", TDays, "дн.)" ] ),
     !.
 % Исполнительные листы (пропорция по отработанному времени)
-fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony, Section = pCalcTab-2,
+fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Sections = [pCalcTab-2],
+    %Types = [Type],
+    %Sections = [Section],
     format( string(ProtText0),
             "~n~2|~w~n~4|~w~15|~w~27|~w~39|~w~60|~w~n",
             [ "Исполнительные листы (пропорция по отработанному времени):",
               "Ключ", "Начало", "Окончание", "Отработано", "Пропорция"  ] ),
     findall( ProtDetText,
-             fee_prot_det(Scope, Type, Section, EmplKey, ProtDetText),
+             fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
     ProtDetTextList),
     atomic_list_to_string([ProtText0|ProtDetTextList], ProtText),
     !.
 % Суммы для расчета
-fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony, Section = pCalcAmount-3,
+fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Sections = [pCalcAmount-3],
+    Types = [Type],
+    Sections = [Section],
     get_param_list(Scope, Type, [
                     Section, pEmplKey-EmplKey, pForAlimony-ForAlimony,
                     pAmountAll-AmountAll, pIncomeTax-IncomeTax,
                     pAmountExcl-AmountExcl, pIncomeTaxExcl-IncomeTaxExcl ]),
+    prot_alias(Scope, "алиментов", Alias1),
     ( AmountExcl > 0 ->
       Format1 = "~n~2|~w~n~4|~0f~w~0f~w~0f~n",
       Args1 = [ "Заработок = Начисленная сумма - ПН",
               AmountAll, " = ", AmountAll - IncomeTax, " - ", -IncomeTax
               ]
-    ; Format1 = "~n~2|~w~n~4|~0f~w~0f~w~0f~n",
-      Args1 = [ "Для алиментов = Начисленная сумма - ПН",
+    ; Format1 = "~n~2|~w~w~w~n~4|~0f~w~0f~w~0f~n",
+      Args1 = [ "Для ", Alias1, " = Начисленная сумма - ПН",
               AmountAll, " = ", AmountAll - IncomeTax, " - ", -IncomeTax
               ]
     ),
@@ -1543,8 +1658,8 @@ fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
     ; Format2 = "", Args2 = []
     ),
     ( AmountExcl > 0 ->
-      Format3 = "~2|~w~n~4|~0f~w~0f~w~0f~n",
-      Args3 = [ "Для алиментов = Заработок - Исключаемый заработок",
+      Format3 = "~2|~w~w~w~n~4|~0f~w~0f~w~0f~n",
+      Args3 = [ "Для ", Alias1, " = Заработок - Исключаемый заработок",
                 ForAlimony, " = ", AmountAll, " - ",  AmountExcl + IncomeTaxExcl
               ]
     ; Format3 = "", Args3 = []
@@ -1555,7 +1670,8 @@ fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
     !.
 % Исполнительные листы (расчетная сумма алиментов)
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pCalcFormula-1, pCheckRest-1],
     Types = [_, Type2],
     Sections = [_, Section2],
@@ -1565,12 +1681,22 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     get_min_wage(Scope, DateCalcTo, BV),
     % БПМ
     get_budget(Scope, DateCalcTo, BudgetConst),
-    format( string(ProtText1),
-            "~n~2|~w~0f~n~2|~w~0f~n~n~2|~w~n~4|~w~15|~w~27|~w~55|~w~61|~w~n",
-            [ "Базовая величина (БВ) = ", BV,
-              "Бюджет прожиточного минимума (БПМ) = ", BudgetConst,
-              "Исполнительные листы (расчетная сумма алиментов):",
-              "Ключ", "Сумма", "Формула", "Дети", "Примечание"  ] ),
+    prot_alias(Scope, "алиментов", Alias1),
+    ( Scope = wg_fee_alimony
+     ->
+      format( string(ProtText1),
+              "~n~2|~w~0f~n~2|~w~0f~n~n~2|~w~w~w~n~4|~w~15|~w~27|~w~55|~w~61|~w~n",
+              [ "Базовая величина (БВ) = ", BV,
+                "Бюджет прожиточного минимума (БПМ) = ", BudgetConst,
+                "Исполнительные листы (расчетная сумма ", Alias1, "):",
+                "Ключ", "Сумма", "Формула", "Дети", "Примечание"  ] )
+    ;
+      format( string(ProtText1),
+              "~n~2|~w~0f~n~n~2|~w~w~w~n~4|~w~15|~w~27|~w~55|~w~n",
+              [ "Базовая величина (БВ) = ", BV,
+                "Исполнительные листы (расчетная сумма ", Alias1, "):",
+                "Ключ", "Сумма", "Формула", "Примечание"  ] )
+    ),
     findall( ProtDetText2,
              fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText2),
     ProtDetTextList2),
@@ -1584,40 +1710,59 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     atomic_list_to_string([ProtText1, ProtText2, ProtText3], ProtText),
     !.
 % Контрольная сумма
-fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony, Section = pCheckRest-1,
+fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Sections = [pCheckRest-1],
+    Types = [Type],
+    Sections = [Section],
     get_param_list(Scope, Type, [
                     Section, pEmplKey-EmplKey,
                     pCheckAmount-CheckAmount,
-                    pAmountAll-AmountAll, pRestPercent-RestPercent ]),
-    format( string(ProtText),
-            "~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~w~n",
-            [ "Контрольная сумма = Заработок - Заработок * Процент остатка",
-              CheckAmount, " = ", AmountAll, " - ",
-              AmountAll, " * ", RestPercent * 100, "%" ] ),
+                    pAmountAll-AmountAll, pRestPercent-RestPercent,
+                    pFeeAmount-FeeAmount ]),
+    ( FeeAmount > 0
+     ->
+      format( string(ProtText),
+              "~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~w~w~0f~n",
+              [ "Контрольная сумма = Заработок - Заработок * Процент остатка - Удержаний",
+                CheckAmount, " = ", AmountAll, " - ",
+                AmountAll, " * ", RestPercent * 100, "%",
+                " - ", FeeAmount ] )
+    ; format( string(ProtText),
+              "~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~w~n",
+              [ "Контрольная сумма = Заработок - Заработок * Процент остатка",
+                CheckAmount, " = ", AmountAll, " - ",
+                AmountAll, " * ", RestPercent * 100, "%" ] )
+    ),
     !.
 % Удержания и долги
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
     Types = [Type1|_],
     Sections = [Section1|_],
     get_param_list(Scope, Type1, [
                     Section1, pEmplKey-EmplKey,
                     pChargeStep-0 ]),
+    prot_alias(Scope, "Алименты", Alias1),
     format( string(ProtText),
-            "~n~2|~w~n",
-            [ "Алименты к удержанию по расчетной сумме" ] ),
+            "~n~2|~w~w~n",
+            [ Alias1, " к удержанию по расчетной сумме" ] ),
     !.
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
     Types = [_, _, Type3, Type4],
     Sections = [_, _, Section3, Section4],
+    prot_alias(Scope, "Алименты", Alias1),
+    prot_alias(Scope, "алиментов", Alias2),
     format( string(ProtText0),
-            "~n~2|~w~n~n~2|~w~n~4|~w~15|~w~27|~w~n",
-            [ "Алименты к удержанию по частичной сумме",
-              "Исполнительные листы (частичная сумма алиментов):",
+            "~n~2|~w~w~n~n~2|~w~w~w~n~4|~w~15|~w~27|~w~n",
+            [ Alias1, " к удержанию по частичной сумме",
+              "Исполнительные листы (частичная сумма ", Alias2, "):",
               "Ключ", "Сумма", "Долг"  ] ),
     findall( ProtDetText,
              fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
@@ -1639,7 +1784,8 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     !.
 % Исполнительные листы (расчетная сумма списания долга)
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pDropDebt-2, pDropDebt-3],
     Types = [Type1, Type2],
     Sections = [Section1, Section2],
@@ -1666,7 +1812,8 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     !.
 % Исполнительные листы (частичная сумма списания долга)
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
     Types = [Type1, Type2, _],
     Sections = [Section1, Section2, _],
@@ -1676,20 +1823,23 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     get_param_list(Scope, Type2, [
                     Section2, pEmplKey-EmplKey,
                     pByDropDebtCoef-0 ]),
+    prot_alias(Scope, "алиментам", Alias1),
     format( string(ProtText),
-            "~n~2|~w~n",
-            [ "Долг по алиментам к удержанию по расчетной сумме" ] ),
+            "~n~2|~w~w~w~n",
+            [ "Долг по ", Alias1, " к удержанию по расчетной сумме" ] ),
     !.
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
     Types = [Type1, _, Type3],
     Sections = [Section1, _, Section3],
     get_param_list(Scope, Type1, [
                     Section1, pEmplKey-EmplKey ]),
+    prot_alias(Scope, "алиментам", Alias1),
     format( string(ProtText0),
-            "~n~2|~w~n~n~2|~w~n~4|~w~15|~w~n",
-            [ "Долг по алиментам к удержанию по частичной сумме",
+            "~n~2|~w~w~w~n~n~2|~w~n~4|~w~15|~w~n",
+            [ "Долг по ", Alias1, " к удержанию по частичной сумме",
               "Исполнительные листы (частичная сумма списания долга):",
               "Ключ", "Сумма" ] ),
     findall( ProtDetText,
@@ -1706,7 +1856,8 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     !.
 % расходы по Переводу
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pCalcTransf-_, pCalcTotal-1],
     Types = [_, Type2],
     Sections = [_, Section2],
@@ -1728,17 +1879,22 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     string_concat(ProtText1, ProtText2, ProtText),
     !.
 % Итого удержано
-fee_prot(Scope, Type, Section, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony, Section = pCalcTotal-1,
+fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Sections = [pCalcTotal-1],
+    Types = [Type],
+    Sections = [Section],
     get_param_list(Scope, Type, [
                     Section, pEmplKey-EmplKey,
                     pAllChargeTotal-AllChargeTotal,
                     pAlimonyChargeTotal-AlimonyChargeTotal,
                     pDropDebtChargeTotal-DropDebtChargeTotal,
                     pTransfChargeTotal-TransfChargeTotal ]),
+    prot_alias(Scope, "Алименты", Alias1),
     format( string(ProtText),
-            "~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~n",
-            [ "Итого удержано = Алименты + Списание долгов + Расходы по переводу",
+            "~n~2|~w~w~w~n~4|~0f~w~0f~w~0f~w~0f~n",
+            [ "Итого удержано = ", Alias1, " + Списание долгов + Расходы по переводу",
               AllChargeTotal, " = ",
               AlimonyChargeTotal, " + ", DropDebtChargeTotal, " + ", TransfChargeTotal] ),
         !.
@@ -1747,8 +1903,12 @@ fee_prot(_, _, _, _, "") :-
     !.
 
 % Исполнительные листы (пропорция по отработанному времени) - детали
-fee_prot_det(Scope, Type, Section, EmplKey, ProtDetText) :-
-    Scope = wg_fee_alimony, Section = pCalcTab-2,
+fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Sections = [pCalcTab-2],
+    Types = [Type],
+    Sections = [Section],
     get_param(Scope, in, pNullDate-NullDate),
     get_param_list(Scope, Type, [
                     Section, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
@@ -1771,7 +1931,8 @@ fee_prot_det(Scope, Type, Section, EmplKey, ProtDetText) :-
     true.
 % Исполнительные листы (расчетная сумма алиментов) - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pCalcFormula-1, pCheckRest-1],
     Types = [Type1, _],
     Sections = [Section1, _],
@@ -1804,13 +1965,21 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     ),
     append([Desc1, Desc2, Desc32], DescList),
     atomic_list_to_string(DescList, "; ", Desc),
-    format( string(ProtText),
-            "~4|~w~14| ~0f~26| ~w~54| ~0f~60| ~w~n",
-            [ AlimonyKey, AlimonySum, Formula, ChildCount, Desc ] ),
+    ( Scope = wg_fee_alimony
+     ->
+      format( string(ProtText),
+              "~4|~w~14| ~0f~26| ~w~54| ~0f~60| ~w~n",
+              [ AlimonyKey, AlimonySum, Formula, ChildCount, Desc ] )
+    ;
+      format( string(ProtText),
+              "~4|~w~14| ~0f~26| ~w~54| ~w~n",
+              [ AlimonyKey, AlimonySum, Formula, Desc ] )
+    ),
     true.
 % Удержания и долги - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
     Types = [_, Type2, Type3, _],
     Sections = [_, Section2, Section3, _],
@@ -1828,7 +1997,8 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     true.
 % Исполнительные листы (расчетная сумма списания долга) - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pDropDebt-2, pDropDebt-3],
     Types = [Type1, _],
     Sections = [Section1, _],
@@ -1846,7 +2016,8 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     true.
 % Исполнительные листы (частичная сумма списания долга) - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
     Types = [_, Type2, _],
     Sections = [_, Section2, _],
@@ -1864,7 +2035,8 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     true.
 % расходы по Переводу - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
-    Scope = wg_fee_alimony,
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pCalcTransf-_, pCalcTotal-1],
     Types = [Type1, _],
     Sections = [Section1, _],
@@ -1884,8 +2056,8 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
 /**/
 
 % отладка
-p:-
-    fee_calc_prot(_, _, ProtText),
+p(Scope):-
+    fee_calc_prot(Scope, _, ProtText),
     string_length(ProtText, Len),
     writeln(ProtText),
     writeln(Len),
