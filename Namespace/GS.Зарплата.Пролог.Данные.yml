@@ -5,10 +5,10 @@ Properties:
   RUID: 152151923_242785704
   Name: "GS.Зарплата.Пролог.Данные"
   Caption: "Данные"
-  Version: "1.0.0.8"
+  Version: "1.0.0.14"
   Optional: False
   Internal: True
-  MD5: 09E39CDB7508440B202A7FA98FF0A7F0
+  MD5: 64DCAC5F5A390889D72DE1D09B70B725
 Objects: 
   - 
     Properties: 
@@ -169,7 +169,7 @@ Objects:
     Fields: 
       PARENT: "152006526_236240980 Начисление отпусков\\по расчетным месяцам\\по размеру заработка"
       DISABLED: 0
-      EDITIONDATE: 2014-09-19T17:02:59+03:00
+      EDITIONDATE: 2015-01-25T22:50:25+03:00
       USR$NODETYPE: 2
       USR$ENABLED: 1
       USR$ATOM: "by_month_wage_any"
@@ -189,7 +189,7 @@ Objects:
     Fields: 
       PARENT: "152006526_236240980 Начисление отпусков\\по расчетным месяцам\\по размеру заработка"
       DISABLED: 0
-      EDITIONDATE: 2014-09-19T17:03:05+03:00
+      EDITIONDATE: 2015-01-25T22:50:28+03:00
       USR$NODETYPE: 2
       USR$ENABLED: 0
       USR$ATOM: "by_month_wage_all"
@@ -209,7 +209,7 @@ Objects:
     Fields: 
       PARENT: "152006495_236240980 Начисление отпусков\\по расчетным месяцам"
       DISABLED: 0
-      EDITIONDATE: 2014-09-22T17:32:07+03:00
+      EDITIONDATE: 2015-01-25T22:19:44+03:00
       USR$NODETYPE: 1
       USR$ENABLED: 0
       USR$ATOM: "by_month_no_bad_type"
@@ -459,3 +459,22 @@ Objects:
       USR$DESCRIPTION: | 
         нет требуемого количества месяцев
       USR$ORDER: 2200
+  - 
+    Properties: 
+      Class: "TgdcAttrUserDefinedLBRBTree"
+      SubType: "USR$WG_PL_RULE"
+      RUID: 151801641_279315193
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "152006526_236240980 Начисление отпусков\\по расчетным месяцам\\по размеру заработка"
+      DISABLED: 0
+      EDITIONDATE: 2015-01-27T16:46:35+03:00
+      USR$NODETYPE: 2
+      USR$ENABLED: 0
+      USR$ATOM: "by_month_avg_wage"
+      USR$NAME: "не меньше среднемесячного"
+      USR$DESCRIPTION: | 
+        заработок за месяц не меньше среднемесячного по полным месяцам
+      USR$ORDER: 1123

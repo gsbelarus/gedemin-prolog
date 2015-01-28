@@ -282,6 +282,8 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
             PeriodRule = "по размеру заработка (не меньше всех полных)"
           Case "by_month_wage_any"
             PeriodRule = "по размеру заработка (не меньше любого полного)"
+          Case "by_month_avg_wage"
+            PeriodRule = "по размеру заработка (не меньше среднего по полным месяцам)"
           Case "by_month_no_bad_type"
             PeriodRule = "виды начислений и типы часов в норме"
           Case Else

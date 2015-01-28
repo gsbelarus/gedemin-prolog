@@ -107,6 +107,8 @@ wg_valid_rules([by_month_wage_any]).
 % [заработок за месяц не меньше каждого из полных месяцев]
 % (для одинаковых коэфициентов осовременивания)
 wg_valid_rules([-by_month_wage_all]).
+% [заработок за месяц не меньше среднемесячного по полным месяцам]
+wg_valid_rules([-by_month_avg_wage]).
 % [отсутствие в месяце плохих типов начислений и часов]
 wg_valid_rules([-by_month_no_bad_type]).
 
@@ -137,6 +139,7 @@ wg_full_month_rules([by_days_houres, by_houres, by_days]).
 wg_deny_flag_rules(flag_spec_dep, [by_days_houres, by_houres, by_days]).
 wg_deny_flag_rules(flag_spec_dep, [by_month_wage_all]).
 wg_deny_flag_rules(flag_spec_dep, [by_month_wage_any]).
+wg_deny_flag_rules(flag_spec_dep, [by_month_avg_wage]).
 
 % правило действительно
 is_valid_rule(Scope, PK, Y-M, Rule) :-
@@ -1670,6 +1673,35 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     Term =.. [Condition, Wage, Wages1], Term,
     % то месяц включается в расчет
     !.
+% заработок за месяц не меньше среднемесячного по полным месяцам
+rule_month_wage(Scope, PK, Y-M, Rule) :-
+    Rule = by_month_avg_wage,
+    % правило действительно
+    is_valid_rule(Scope, PK, _, Rule),
+    % варианты правил полных месяцев
+    wg_full_month_rules(FullMonthRules),
+    % взять заработок за проверяемый месяц
+    get_month_wage(Scope, PK, Y, M, _, Wage),
+    % взять заработок
+    findall( Wage1,
+              % для расчетного месяца
+            ( get_month_incl(Scope, PK, Y1, M1, Variant1),
+              % который принят для исчисления по варианту полного месяца
+              memberchk(Variant1, FullMonthRules),
+              % с заработком  за месяц
+              get_month_wage(Scope, PK, Y1, M1, _, Wage1)
+            ),
+    % в список заработков
+    Wages1 ),
+    % итоговый заработок за полные месяцы
+    sum_list(Wages1, Amount),
+    % количество полных месяцев
+    length(Wages1, Num),
+    % среднемесячный заработок
+    catch( MonthAvgWage is round(Amount / Num), _, fail ),
+    % заработок за месяц не меньше среднемесячного
+    Wage >= MonthAvgWage,
+    !.
 
 % заработок покрывает любое значение из списка
 wage_over_any(Over, [Head|_]) :-
@@ -1848,7 +1880,8 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
     MonthAdd is (- (MonthQty + MonthBefore)),
     date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),
     % DateNormFrom, DateNormTo
-    date_add(DateCalcTo, -1, day, DateCalcTo1),
+    %date_add(DateCalcTo, -1, day, DateCalcTo1),
+    date_add(DateCalcTo, 0, day, DateCalcTo1), % ?
     atom_date(DateCalcTo1, date(Y, _, _)),
     atom_date(DateNormFrom, date(Y, 1, 1)),
     Y1 is Y + 1,
@@ -2504,7 +2537,7 @@ add_sick_norm(TheDay, DOI, HOI, DOI, HOI, IllType, Scope, PK, Holiday, 1) :-
     % По уходу за ребенком до 3-х лет
     catch( wg_child_ill_type(IllType), _, fail),
     \+ once( ( member(NormOption, [tbl_cal_flex, tbl_day_norm]),
-               usr_wg_TblDayNorm_mix(Scope, PK, _, TheDay, WDuration, 1, NormOption),
+      usr_wg_TblDayNorm_mix(Scope, PK, _, TheDay, WDuration, 1, NormOption),
                WDuration > 0
              )
            ),

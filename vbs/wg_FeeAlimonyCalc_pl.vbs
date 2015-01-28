@@ -251,7 +251,12 @@ Function wg_FeeAlimonyCalc_pl(ByRef wg_EmployeeCharge, ByVal TotalDocKey, ByVal 
   Q_debt.Termv = Tv_debt
   'Журнал долгов по алиментам
   Set gdcAlimonyDebt = Creator.GetObject(nil, "TgdcUserDocument", "")
-  gdcAlimonyDebt.SubType = "147072391_453357870"
+  Select Case Scope
+    Case "wg_fee_alimony"
+      gdcAlimonyDebt.SubType = "147072391_453357870"
+    Case "wg_fee_fine"
+      gdcAlimonyDebt.SubType = "152685574_258063421"
+  End Select
   gdcAlimonyDebt.SubSet = "ByID"
   gdcAlimonyDebt.Transaction = wg_EmployeeCharge.Transaction
 

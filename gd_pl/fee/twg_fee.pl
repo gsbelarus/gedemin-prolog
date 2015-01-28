@@ -715,8 +715,11 @@ add_debt(Scope, EmplKey) :-
                 pAlimonyCharge-AlimonyCharge, pAlimonySum-AlimonySum ],
     % параметры Округления
     get_round_data(Scope, EmplKey, "ftAlimonyDebt", RoundType, RoundValue),
-    % для всех Алиментов с заполненным Количеством детей
-    forall( ( get_param_list(Scope, Type, CalcFormulaParams), ChildCount > 0 ),
+    forall( ( % для всех Алиментов
+              get_param_list(Scope, Type, CalcFormulaParams),
+              % с заполненным Количеством детей или Штрафов
+              ( ChildCount > 0 -> true ; Scope = wg_fee_fine )
+            ),
             ( % рассчитать сумму Долга по алиментам
               AlimonyDebt0 is AlimonySum - AlimonyCharge,
                       % при наличии Долга по алиментам
@@ -1284,9 +1287,8 @@ fit_data(Scope, [Name-Value0], [Name-Value]) :-
     memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Type = fit,
     Name = pRestPercent,
-    get_param(Scope, Type, Name-Value1),
-    ( Value0 < Value1, Value = Value1
-    ; Value = Value0
+    ( Value0 > 0, Value = Value0
+    ; get_param(Scope, Type, Name-Value)
     ),
     !.
 % сопоставить с данными по умолчанию
@@ -1551,7 +1553,7 @@ fee_prot(wg_fee_alimony, [temp, temp], [pCalcFormula-1, pCheckRest-1]).
 % Контрольная сумма
 fee_prot(wg_fee_alimony, [temp], [pCheckRest-1]).
 % Удержания и долги
-fee_prot(wg_fee_alimony, [temp, temp, temp, out], [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1]).
+fee_prot(wg_fee_alimony, [temp, temp, out], [pCalcFormula-1, pAddDebt-1, pCalcTotal-1]).
 % Исполнительные листы (расчетная сумма списания долгов)
 fee_prot(wg_fee_alimony, [temp, temp], [pDropDebt-2, pDropDebt-3]).
 % Исполнительные листы (частичная сумма списания долга)
@@ -1740,23 +1742,12 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     % - для алиментов и штрафов
     memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
-    Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
-    Types = [Type1|_],
-    Sections = [Section1|_],
-    get_param_list(Scope, Type1, [
-                    Section1, pEmplKey-EmplKey,
-                    pChargeStep-0 ]),
-    prot_alias(Scope, "Алименты", Alias1),
-    format( string(ProtText),
-            "~n~2|~w~w~n",
-            [ Alias1, " к удержанию по расчетной сумме" ] ),
-    !.
-fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
-    % - для алиментов и штрафов
-    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
-    Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
-    Types = [_, _, Type3, Type4],
-    Sections = [_, _, Section3, Section4],
+    Sections = [pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
+    Types = [Type1, Type2, Type3],
+    Sections = [Section1, Section2, Section3],
+    \+ get_param_list(Scope, Type1, [
+                        Section1, pEmplKey-EmplKey,
+                        pAlimonyCharge-AlimonySum, pAlimonySum-AlimonySum ]),
     prot_alias(Scope, "Алименты", Alias1),
     prot_alias(Scope, "алиментов", Alias2),
     format( string(ProtText0),
@@ -1768,12 +1759,12 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
              fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
     ProtDetTextList),
     atomic_list_to_string([ProtText0|ProtDetTextList], ProtText1),
-    get_param_list(Scope, Type4, [
-                    Section4, pEmplKey-EmplKey,
+    get_param_list(Scope, Type3, [
+                    Section3, pEmplKey-EmplKey,
                     pAlimonyChargeTotal-AlimonyChargeTotal ]),
     findall( AlimonyDebt,
-             get_param_list(Scope, Type3, [
-                             Section3, pEmplKey-EmplKey,
+             get_param_list(Scope, Type2, [
+                             Section2, pEmplKey-EmplKey,
                              pAlimonyDebt-AlimonyDebt ]),
     AlimonyDebtList ),
     sum_list(AlimonyDebtList, AlimonyDebtTotal),
@@ -1782,6 +1773,18 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
             ["Итого:", AlimonyChargeTotal, AlimonyDebtTotal] ),
     string_concat(ProtText1, ProtText2, ProtText),
     !.
+fee_prot(Scope, Types, Sections, _, ProtText) :-
+    % - для алиментов и штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Sections = [pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
+    Types = [_, _, _],
+    Sections = [_, _, _],
+    prot_alias(Scope, "Алименты", Alias1),
+    format( string(ProtText),
+            "~n~2|~w~w~n",
+            [ Alias1, " к удержанию по расчетной сумме" ] ),
+    !.
+
 % Исполнительные листы (расчетная сумма списания долга)
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     % - для алиментов и штрафов
@@ -1929,7 +1932,7 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText) :-
             [ AlimonyKey, ADateBegin1, ADateEnd1,
               AHoures, "ч. (", ADays, "дн.)", TCoef1 ] ),
     true.
-% Исполнительные листы (расчетная сумма алиментов) - детали
+% Исполнительные листы (расчетная сумма) - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     % - для алиментов и штрафов
     memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
@@ -1980,14 +1983,14 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     % - для алиментов и штрафов
     memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
-    Sections = [pCheckRest-3, pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
-    Types = [_, Type2, Type3, _],
-    Sections = [_, Section2, Section3, _],
-    get_param_list(Scope, Type2, [
-                    Section2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+    Sections = [pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
+    Types = [Type1, Type2, _],
+    Sections = [Section1, Section2, _],
+    get_param_list(Scope, Type1, [
+                    Section1, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                     pAlimonyCharge-AlimonyCharge ]),
-    ( get_param_list(Scope, Type3, [
-                        Section3, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+    ( get_param_list(Scope, Type2, [
+                        Section2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
                         pAlimonyDebt-AlimonyDebt ]) -> true
     ; AlimonyDebt = 0
     ),
