@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.4"
+  Version: "1.0.0.5"
   Optional: False
   Internal: True
-  MD5: 7FF1DD971959A57E3D40C995F7C68D4F
+  MD5: A94344DDA354462A2CA42B2E591AA503
 Objects: 
   - 
     Properties: 
@@ -2104,8 +2104,8 @@ Objects:
         % [заработок за месяц не меньше каждого из полных месяцев]
         % (для одинаковых коэфициентов осовременивания)
         wg_valid_rules([-by_month_wage_all]).
-        % [заработок за месяц не меньше среднего по полным месяцам]
-        wg_valid_rules([by_month_avg_wage]).
+        % [заработок за месяц не меньше среднемесячного по полным месяцам]
+        wg_valid_rules([-by_month_avg_wage]).
         % [отсутствие в месяце плохих типов начислений и часов]
         wg_valid_rules([-by_month_no_bad_type]).
         
@@ -3670,7 +3670,7 @@ Objects:
             Term =.. [Condition, Wage, Wages1], Term,
             % то месяц включается в расчет
             !.
-        % заработок за месяц не меньше среднего по полным месяцам
+        % заработок за месяц не меньше среднемесячного по полным месяцам
         rule_month_wage(Scope, PK, Y-M, Rule) :-
             Rule = by_month_avg_wage,
             % правило действительно
@@ -4725,7 +4725,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-01-25T22:09:05+03:00
+      EDITIONDATE: 2015-01-28T11:59:43+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
