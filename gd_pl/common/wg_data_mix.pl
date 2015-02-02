@@ -238,11 +238,11 @@ usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                     fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
 % или день месяца из dbf
-usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, 0, InHoures, 0, TabelOption) :-
+usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, InDays, InHoures, 0, TabelOption) :-
     TabelOption = dbf_sums,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
     get_data(Scope, kb, usr_wg_DbfSums, [
-                fEmplKey-EmplKey, fInHoures-InHoures,
+                fEmplKey-EmplKey, fInDays-InDays, fInHoures-InHoures,
                 fInYear-Y, fInMonth-M, fDateBegin-Date]).
 
 % день месяца по календарному графику или табелю мастера

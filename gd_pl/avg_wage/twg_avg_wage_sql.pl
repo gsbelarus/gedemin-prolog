@@ -12,7 +12,7 @@
 wg_valid_sql([
             % section twg_avg_wage
             %  05. Начисление отпусков
-            -usr_wg_DbfSums/7, % 05, 06, 12
+            -usr_wg_DbfSums/8, % 05, 06, 12
             usr_wg_MovementLine/15, % 05, 06, 12
             usr_wg_FCRate/4,
             usr_wg_TblCalDay/9, % 05, 06, 12
@@ -55,17 +55,18 @@ is_valid_sql(Functor/Arity) :-
     !.
 
 %  05. Начисление отпусков
-gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_DbfSums, 7, [
-    fEmplKey-integer, fInSum-float, fInHoures-float,
+gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_DbfSums, 8, [
+    fEmplKey-integer, fInSum-float, fInDays-float, fInHoures-float,
     fInYear-integer, fInMonth-integer, fDateBegin-date,
     fSickProp-boolean
     ]).
-% usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin, SickProp)
-get_sql(wg_avg_wage_vacation, kb, usr_wg_DbfSums/7,
+% usr_wg_DbfSums(EmplKey, InSum, InDays, InHoures, InYear, InMonth, DateBegin, SickProp)
+get_sql(wg_avg_wage_vacation, kb, usr_wg_DbfSums/8,
 "
 SELECT
   Z.USR$EMPLKEY,
   COALESCE(Z.USR$SUM, 0) AS INSUM,
+  COALESCE(Z.USR$DOW, 0) AS InDays,
   COALESCE(Z.USR$MID_HOW, 0) AS INHOURES,
   EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear,
   EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth,
@@ -688,20 +689,21 @@ FROM
     ]).
 
 %  06. Начисление больничных
-gd_pl_ds(Scope, kb, usr_wg_DbfSums, 7, [
-    fEmplKey-integer, fInSum-float, fInHoures-float,
+gd_pl_ds(Scope, kb, usr_wg_DbfSums, 8, [
+    fEmplKey-integer, fInSum-float, fInDays-float, fInHoures-float,
     fInYear-integer, fInMonth-integer, fDateBegin-date,
     fSickProp-boolean
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_sick, wg_avg_wage_avg
         ]).
-% usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin, SickProp)
-get_sql(Scope, kb, usr_wg_DbfSums/7,
+% usr_wg_DbfSums(EmplKey, InSum, InDays, InHoures, InYear, InMonth, DateBegin, SickProp)
+get_sql(Scope, kb, usr_wg_DbfSums/8,
 "
 SELECT
   Z.USR$EMPLKEY,
   COALESCE(Z.USR$SUMSICK, 0) AS INSUM,
+  COALESCE(Z.USR$DOW, 0) AS InDays,
   COALESCE(Z.USR$MID_HOW, 0) AS INHOURES,
   EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear,
   EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth,

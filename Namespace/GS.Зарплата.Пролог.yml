@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.5"
+  Version: "1.0.0.6"
   Optional: False
   Internal: True
-  MD5: A94344DDA354462A2CA42B2E591AA503
+  MD5: 007242361B74D8FB50AF1EE029C7F18D
 Objects: 
   - 
     Properties: 
@@ -610,11 +610,11 @@ Objects:
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                             fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
         % или день месяца из dbf
-        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, 0, InHoures, 0, TabelOption) :-
+        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, InDays, InHoures, 0, TabelOption) :-
             TabelOption = dbf_sums,
             PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
             get_data(Scope, kb, usr_wg_DbfSums, [
-                        fEmplKey-EmplKey, fInHoures-InHoures,
+                        fEmplKey-EmplKey, fInDays-InDays, fInHoures-InHoures,
                         fInYear-Y, fInMonth-M, fDateBegin-Date]).
         
         % день месяца по календарному графику или табелю мастера
@@ -658,7 +658,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2014-10-29T14:59:12+03:00
+      EDITIONDATE: 2015-02-02T11:05:39+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -688,7 +688,7 @@ Objects:
         wg_valid_sql([
                     % section twg_avg_wage
                     %  05. Начисление отпусков
-                    -usr_wg_DbfSums/7, % 05, 06, 12
+                    -usr_wg_DbfSums/8, % 05, 06, 12
                     usr_wg_MovementLine/15, % 05, 06, 12
                     usr_wg_FCRate/4,
                     usr_wg_TblCalDay/9, % 05, 06, 12
@@ -731,17 +731,18 @@ Objects:
             !.
         
         %  05. Начисление отпусков
-        gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_DbfSums, 7, [
-            fEmplKey-integer, fInSum-float, fInHoures-float,
+        gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_DbfSums, 8, [
+            fEmplKey-integer, fInSum-float, fInDays-float, fInHoures-float,
             fInYear-integer, fInMonth-integer, fDateBegin-date,
             fSickProp-boolean
             ]).
-        % usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin, SickProp)
-        get_sql(wg_avg_wage_vacation, kb, usr_wg_DbfSums/7,
+        % usr_wg_DbfSums(EmplKey, InSum, InDays, InHoures, InYear, InMonth, DateBegin, SickProp)
+        get_sql(wg_avg_wage_vacation, kb, usr_wg_DbfSums/8,
         "
         SELECT
           Z.USR$EMPLKEY,
           COALESCE(Z.USR$SUM, 0) AS INSUM,
+          COALESCE(Z.USR$DOW, 0) AS InDays,
           COALESCE(Z.USR$MID_HOW, 0) AS INHOURES,
           EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear,
           EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth,
@@ -1364,20 +1365,21 @@ Objects:
             ]).
         
         %  06. Начисление больничных
-        gd_pl_ds(Scope, kb, usr_wg_DbfSums, 7, [
-            fEmplKey-integer, fInSum-float, fInHoures-float,
+        gd_pl_ds(Scope, kb, usr_wg_DbfSums, 8, [
+            fEmplKey-integer, fInSum-float, fInDays-float, fInHoures-float,
             fInYear-integer, fInMonth-integer, fDateBegin-date,
             fSickProp-boolean
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_sick, wg_avg_wage_avg
                 ]).
-        % usr_wg_DbfSums(EmplKey, InSum, InHoures, InYear, InMonth, DateBegin, SickProp)
-        get_sql(Scope, kb, usr_wg_DbfSums/7,
+        % usr_wg_DbfSums(EmplKey, InSum, InDays, InHoures, InYear, InMonth, DateBegin, SickProp)
+        get_sql(Scope, kb, usr_wg_DbfSums/8,
         "
         SELECT
           Z.USR$EMPLKEY,
           COALESCE(Z.USR$SUMSICK, 0) AS INSUM,
+          COALESCE(Z.USR$DOW, 0) AS InDays,
           COALESCE(Z.USR$MID_HOW, 0) AS INHOURES,
           EXTRACT(YEAR FROM IDK.USR$DATEBEGIN) AS InYear,
           EXTRACT(MONTH FROM IDK.USR$DATEBEGIN) AS InMonth,
@@ -1859,7 +1861,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-01-05T13:59:21+03:00
+      EDITIONDATE: 2015-02-02T11:05:23+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
