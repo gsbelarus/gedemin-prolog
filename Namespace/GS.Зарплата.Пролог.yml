@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.6"
+  Version: "1.0.0.8"
   Optional: False
   Internal: True
-  MD5: 007242361B74D8FB50AF1EE029C7F18D
+  MD5: 78B7891B58406933717C29DF51CB0940
 Objects: 
   - 
     Properties: 
@@ -707,7 +707,7 @@ Objects:
                     usr_wg_AvgWage/6,
                     usr_wg_FeeTypeProp/4, % 06, 12
                     wg_holiday/1,
-                    usr_wg_ExclDays/7,
+                    usr_wg_ExclDays/8, % 05, 06
                     % 12. Начисление по-среднему
                     usr_wg_TblChargeBonus/8,
                     % section twg_struct
@@ -1540,23 +1540,27 @@ Objects:
             pDateCalcFrom-_, pDateCalcTo-_
             ]).
         
-        gd_pl_ds(wg_avg_wage_sick, kb, usr_wg_ExclDays, 7, [
+        gd_pl_ds(Scope, kb, usr_wg_ExclDays, 8, [
             fEmplKey-integer, fFirstMoveKey-integer,
-            fExclType-string, fOrderType-integer,
+            fExclType-string, fOrderType-integer, fHourType-integer,
             fExclWeekDay-integer,
             fFromDate-date, fToDate-date
-            ]).
-        % usr_wg_ExclDays(EmplKey, FirstMoveKey, ExclType, OrderType, ExclWeekDay, FromDate, ToDate)
-        get_sql(wg_avg_wage_sick, kb, usr_wg_ExclDays/7,
+            ]) :-
+            memberchk(Scope, [
+                wg_avg_wage_vacation, wg_avg_wage_sick
+                ]).
+        % usr_wg_ExclDays(EmplKey, FirstMoveKey, ExclType, OrderType, HourType, ExclWeekDay, FromDate, ToDate)
+        get_sql(Scope, kb, usr_wg_ExclDays/8,
         "
         SELECT
-          EmplKey, FirstMoveKey, ExclType, OrderType, ExclWeekDay, FromDate, ToDate
+          EmplKey, FirstMoveKey, ExclType, OrderType, HourType, ExclWeekDay, FromDate, ToDate
         FROM (
         SELECT
           pEmplKey AS EmplKey,
           pFirstMoveKey AS FirstMoveKey,
           'LIGHTWORKLINE' AS ExclType,
           0 AS OrderType,
+          0 AS HourType,
           0 AS ExclWeekDay,
           CAST( IIF(lw.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', lw.USR$DATEBEGIN) AS DATE) AS FromDate,
           CAST( IIF(lw.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(lw.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', lw.USR$DATEEND)) AS DATE) AS ToDate
@@ -1571,6 +1575,7 @@ Objects:
           pFirstMoveKey AS FirstMoveKey,
           'LEAVEDOCLINE' AS ExclType,
           t.USR$TYPE AS OrderType,
+          t.USR$HOURTYPE AS HourType,
           0 AS ExclWeekDay,
           CAST( IIF(ld.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', ld.USR$DATEBEGIN) AS DATE) AS FromDate,
           CAST( IIF(ld.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(ld.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', ld.USR$DATEEND)) AS DATE) AS ToDate
@@ -1586,11 +1591,13 @@ Objects:
           pEmplKey AS EmplKey,
           pFirstMoveKey AS FirstMoveKey,
           'SICKLISTJOURNAL' AS ExclType,
-          0 AS OrderType,
+          t.USR$CALCTYPE AS OrderType,
+          0 AS HourType,
           0 AS ExclWeekDay,
           CAST( IIF(s.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', s.USR$DATEBEGIN) AS DATE) AS FromDate,
           CAST( IIF(s.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(s.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', s.USR$DATEEND)) AS DATE) AS ToDate
         FROM USR$WG_SICKLISTJOURNAL s
+        JOIN USR$WG_ILLTYPE t ON t.ID = s.USR$ILLTYPEKEY
         WHERE s.USR$EMPLKEY = pEmplKey
           AND s.USR$DATEBEGIN <= 'pDateCalcTo'
           AND COALESCE(s.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
@@ -1600,6 +1607,7 @@ Objects:
           pFirstMoveKey AS FirstMoveKey,
           'LEAVEEXTDOC' AS ExclType,
           0 AS OrderType,
+          0 AS HourType,
           0 AS ExclWeekDay,
           CAST( IIF(ext.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', ext.USR$DATEBEGIN) AS DATE) AS FromDate,
           CAST( IIF(ext.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(ext.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', ext.USR$DATEEND)) AS DATE) AS ToDate
@@ -1613,6 +1621,7 @@ Objects:
           pFirstMoveKey AS FirstMoveKey,
           'KINDDAYLINE' AS ExclType,
           0 AS OrderType,
+          0 AS HourType,
           kdl.USR$DAY AS ExclWeekDay,
           CAST( IIF(kdl.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', kdl.USR$DATEBEGIN) AS DATE) AS FromDate,
           CAST( IIF(kdl.USR$DATEEND IS NULL, 'pDateCalcTo', IIF(kdl.USR$DATEEND > 'pDateCalcTo', 'pDateCalcTo', kdl.USR$DATEEND)) AS DATE) AS ToDate
@@ -1627,7 +1636,10 @@ Objects:
         ",
             [
             pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
-            ]).
+            ]) :-
+            memberchk(Scope, [
+                wg_avg_wage_vacation, wg_avg_wage_sick
+                ]).
         
         % twg_struct
         
@@ -1861,7 +1873,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-02-02T11:05:23+03:00
+      EDITIONDATE: 2015-02-04T12:58:50+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2132,6 +2144,10 @@ Objects:
         %  - для отпусков
         % табель за месяц покрывает график [по дням и часам, по часам, по дням]
         wg_full_month_rules([by_days_houres, by_houres, by_days]).
+        %% варианты правил условно полных месяцев
+        %  - для отпусков
+        % [отсутствие в месяце плохих типов начислений и часов]
+        wg_full_month_rules_cond([by_month_no_bad_type]).
         
         % правила запрещены по признаку
         %  - для отпусков
@@ -2248,6 +2264,8 @@ Objects:
             prep_avg_wage(Scope, PK, Periods),
             % проверка по табелю
             check_month_tab(Scope, PK, Periods),
+            % проверка на отсутствие плохих типов начислений и часов
+            check_month_no_bad_type(Scope, PK, Periods),
             % если есть хотя бы один расчетный месяц
             ( once( get_month_incl(Scope, PK, _, _, _) )
             ->
@@ -2255,8 +2273,6 @@ Objects:
               check_month_wage(Scope, PK, Periods)
               % иначе далее
             ; true ),
-            % проверка на отсутствие плохих типов начислений и часов
-            check_month_no_bad_type(Scope, PK, Periods),
             % есть хотя бы один расчетный месяц
             once( get_month_incl(Scope, PK, _, _, _) ),
             % взять заработок
@@ -3678,7 +3694,9 @@ Objects:
             % правило действительно
             is_valid_rule(Scope, PK, _, Rule),
             % варианты правил полных месяцев
-            wg_full_month_rules(FullMonthRules),
+            wg_full_month_rules(FullMonthRules1),
+            wg_full_month_rules_cond(FullMonthRules2),
+            append(FullMonthRules1, FullMonthRules2, FullMonthRules),
             % взять заработок за проверяемый месяц
             get_month_wage(Scope, PK, Y, M, _, Wage),
             % взять заработок
@@ -3781,6 +3799,43 @@ Objects:
             FeeTypeKey > 0,
             once( get_data(Scope, kb, usr_wg_BadFeeType, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-FeeTypeKey]) ),
+            !.
+        month_bad_type(Scope, PK, Y-M) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % нет данных в табеле
+            \+ usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, _, tbl_cal_flex),
+            \+ usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, _, tbl_cal),
+            % из приказов по дням исключения
+            get_data(Scope, kb, usr_wg_ExclDays, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fExclType-ExclType, fHourType-HoureType,
+                        fFromDate-FromDate, fToDate-ToDate] ),
+            % для отпусков
+            ExclType = "LEAVEDOCLINE",
+            % с плохим типом часов
+            nonvar(HoureType),
+            HoureType > 0,
+            once( get_data(Scope, kb, usr_wg_BadHourType, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]) ),
+            % входящих в проверяемый месяц
+            ( atom_date(FromDate, date(Y, M, _)) ; atom_date(ToDate, date(Y, M, _)) ),
+            !.
+        month_bad_type(Scope, PK, Y-M) :-
+            % разложить первичный ключ
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+            % нет данных в табеле
+            \+ usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, _, tbl_cal_flex),
+            \+ usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, _, tbl_cal),
+            % из приказов по дням исключения
+            get_data(Scope, kb, usr_wg_ExclDays, [
+                        fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                        fExclType-ExclType,
+                        fFromDate-FromDate, fToDate-ToDate] ),
+            % для больничных
+            ExclType = "SICKLISTJOURNAL",
+            % входящих в проверяемый месяц
+            ( atom_date(FromDate, date(Y, M, _)) ; atom_date(ToDate, date(Y, M, _)) ),
             !.
         
         /* реализация - механизм подготовки данных */
@@ -4727,7 +4782,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-01-28T11:59:43+03:00
+      EDITIONDATE: 2015-02-04T12:37:43+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

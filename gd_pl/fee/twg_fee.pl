@@ -9,7 +9,7 @@
 :- dynamic(debug_mode/0).
 % ! при использовании в ТП Гедымин
 % ! комментировать следующую строку
-:- assertz(debug_mode).
+%:- assertz(debug_mode).
 
 %%% begin debug mode section
 :- if(debug_mode).

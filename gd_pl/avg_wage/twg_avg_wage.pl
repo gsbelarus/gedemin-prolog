@@ -133,6 +133,10 @@ wg_valid_rules([by_calc_days_any, -by_calc_days_all]).
 %  - для отпусков
 % табель за месяц покрывает график [по дням и часам, по часам, по дням]
 wg_full_month_rules([by_days_houres, by_houres, by_days]).
+%% варианты правил условно полных месяцев
+%  - для отпусков
+% [отсутствие в месяце плохих типов начислений и часов]
+wg_full_month_rules_cond([by_month_no_bad_type]).
 
 % правила запрещены по признаку
 %  - для отпусков
@@ -249,6 +253,8 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     prep_avg_wage(Scope, PK, Periods),
     % проверка по табелю
     check_month_tab(Scope, PK, Periods),
+    % проверка на отсутствие плохих типов начислений и часов
+    check_month_no_bad_type(Scope, PK, Periods),
     % если есть хотя бы один расчетный месяц
     ( once( get_month_incl(Scope, PK, _, _, _) )
     ->
@@ -256,8 +262,6 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
       check_month_wage(Scope, PK, Periods)
       % иначе далее
     ; true ),
-    % проверка на отсутствие плохих типов начислений и часов
-    check_month_no_bad_type(Scope, PK, Periods),
     % есть хотя бы один расчетный месяц
     once( get_month_incl(Scope, PK, _, _, _) ),
     % взять заработок
@@ -1679,7 +1683,9 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     % правило действительно
     is_valid_rule(Scope, PK, _, Rule),
     % варианты правил полных месяцев
-    wg_full_month_rules(FullMonthRules),
+    wg_full_month_rules(FullMonthRules1),
+    wg_full_month_rules_cond(FullMonthRules2),
+    append(FullMonthRules1, FullMonthRules2, FullMonthRules),
     % взять заработок за проверяемый месяц
     get_month_wage(Scope, PK, Y, M, _, Wage),
     % взять заработок
@@ -1782,6 +1788,43 @@ month_bad_type(Scope, PK, Y-M) :-
     FeeTypeKey > 0,
     once( get_data(Scope, kb, usr_wg_BadFeeType, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-FeeTypeKey]) ),
+    !.
+month_bad_type(Scope, PK, Y-M) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % нет данных в табеле
+    \+ usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, _, tbl_cal_flex),
+    \+ usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, _, tbl_cal),
+    % из приказов по дням исключения
+    get_data(Scope, kb, usr_wg_ExclDays, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fExclType-ExclType, fHourType-HoureType,
+                fFromDate-FromDate, fToDate-ToDate] ),
+    % для отпусков
+    ExclType = "LEAVEDOCLINE",
+    % с плохим типом часов
+    nonvar(HoureType),
+    HoureType > 0,
+    once( get_data(Scope, kb, usr_wg_BadHourType, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey, fID-HoureType]) ),
+    % входящих в проверяемый месяц
+    ( atom_date(FromDate, date(Y, M, _)) ; atom_date(ToDate, date(Y, M, _)) ),
+    !.
+month_bad_type(Scope, PK, Y-M) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % нет данных в табеле
+    \+ usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, _, tbl_cal_flex),
+    \+ usr_wg_TblCalLine_mix(Scope, PK, Y-M, _, _, _, _, tbl_cal),
+    % из приказов по дням исключения
+    get_data(Scope, kb, usr_wg_ExclDays, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fExclType-ExclType,
+                fFromDate-FromDate, fToDate-ToDate] ),
+    % для больничных
+    ExclType = "SICKLISTJOURNAL",
+    % входящих в проверяемый месяц
+    ( atom_date(FromDate, date(Y, M, _)) ; atom_date(ToDate, date(Y, M, _)) ),
     !.
 
 /* реализация - механизм подготовки данных */
