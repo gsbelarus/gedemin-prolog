@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.8"
+  Version: "1.0.0.9"
   Optional: False
   Internal: True
-  MD5: 78B7891B58406933717C29DF51CB0940
+  MD5: 8608701DEC239CD29565EB8C9468E528
 Objects: 
   - 
     Properties: 
@@ -6438,7 +6438,6 @@ Objects:
             RestAmount is round(AmountAll * RestPercent) * 1.0,
             % сумма Контроля
             CheckAmount is round(AmountAll - RestAmount - FeeAmount) * 1.0,
-            CheckAmount > 0,
             % добавить временные данные
             new_param_list(Scope, Type, CheckPairs),
             % для всех алиментов
@@ -6451,11 +6450,9 @@ Objects:
                     )
                   ),
             % Дельта для расчета при нехватке средств
-            get_param(Scope, fit, pCalcDelta-CalcDelta), CalcDelta > 0,
+            get_param(Scope, fit, pCalcDelta-CalcDelta),
             % контроль остатка по сумме Контроля
             check_rest_amount(Scope, EmplKey, CheckAmount, 0, CalcDelta, 0),
-            !.
-        check_rest(_, _) :-
             !.
         
         % сумма Удержаний
@@ -6513,7 +6510,7 @@ Objects:
             sum_list(TransfChargeList, TransfAmount),
             ChargeAmount is AlimonyChargeAmount + TransfAmount,
             % сумма Контроля не меньше суммы к Удержанию
-            \+ CheckAmount < ChargeAmount,
+            ( \+ CheckAmount < ChargeAmount -> true ; ChargeAmount =:= 0 ),
             % сумма Баланса
             Balance is CheckAmount - ChargeAmount,
             % сумма Резерва
@@ -7545,7 +7542,7 @@ Objects:
             append([Args1, Args2, Args3], Args),
             format(string(ProtText), Format, Args),
             !.
-        % Исполнительные листы (расчетная сумма алиментов)
+        % Исполнительные листы (расчетная сумма)
         fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
             % - для алиментов и штрафов
             memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
@@ -7620,9 +7617,10 @@ Objects:
             Sections = [pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
             Types = [Type1, Type2, Type3],
             Sections = [Section1, Section2, Section3],
-            \+ get_param_list(Scope, Type1, [
-                                Section1, pEmplKey-EmplKey,
-                                pAlimonyCharge-AlimonySum, pAlimonySum-AlimonySum ]),
+            get_param_list(Scope, Type1, [
+                            Section1, pEmplKey-EmplKey,
+                            pAlimonyCharge-AlimonyCharge, pAlimonySum-AlimonySum ]),
+            ( \+ AlimonyCharge =:= AlimonySum -> true ; AlimonyCharge =:= 0 ),
             prot_alias(Scope, "Алименты", Alias1),
             prot_alias(Scope, "алиментов", Alias2),
             format( string(ProtText0),
@@ -7958,7 +7956,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-01-28T11:47:57+03:00
+      EDITIONDATE: 2015-02-09T15:59:53+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

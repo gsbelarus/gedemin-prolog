@@ -563,7 +563,6 @@ check_rest(Scope, EmplKey) :-
     RestAmount is round(AmountAll * RestPercent) * 1.0,
     % сумма Контроля
     CheckAmount is round(AmountAll - RestAmount - FeeAmount) * 1.0,
-    CheckAmount > 0,
     % добавить временные данные
     new_param_list(Scope, Type, CheckPairs),
     % для всех алиментов
@@ -576,11 +575,9 @@ check_rest(Scope, EmplKey) :-
             )
           ),
     % Дельта для расчета при нехватке средств
-    get_param(Scope, fit, pCalcDelta-CalcDelta), CalcDelta > 0,
+    get_param(Scope, fit, pCalcDelta-CalcDelta),
     % контроль остатка по сумме Контроля
     check_rest_amount(Scope, EmplKey, CheckAmount, 0, CalcDelta, 0),
-    !.
-check_rest(_, _) :-
     !.
 
 % сумма Удержаний
@@ -638,7 +635,7 @@ check_rest_amount(Scope, EmplKey, CheckAmount, CalcDelta0, CalcDelta, CalcSwitch
     sum_list(TransfChargeList, TransfAmount),
     ChargeAmount is AlimonyChargeAmount + TransfAmount,
     % сумма Контроля не меньше суммы к Удержанию
-    \+ CheckAmount < ChargeAmount,
+    ( \+ CheckAmount < ChargeAmount -> true ; ChargeAmount =:= 0 ),
     % сумма Баланса
     Balance is CheckAmount - ChargeAmount,
     % сумма Резерва
@@ -1670,7 +1667,7 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     append([Args1, Args2, Args3], Args),
     format(string(ProtText), Format, Args),
     !.
-% Исполнительные листы (расчетная сумма алиментов)
+% Исполнительные листы (расчетная сумма)
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     % - для алиментов и штрафов
     memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
@@ -1745,9 +1742,10 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     Sections = [pCalcFormula-1, pAddDebt-1, pCalcTotal-1],
     Types = [Type1, Type2, Type3],
     Sections = [Section1, Section2, Section3],
-    \+ get_param_list(Scope, Type1, [
-                        Section1, pEmplKey-EmplKey,
-                        pAlimonyCharge-AlimonySum, pAlimonySum-AlimonySum ]),
+    get_param_list(Scope, Type1, [
+                    Section1, pEmplKey-EmplKey,
+                    pAlimonyCharge-AlimonyCharge, pAlimonySum-AlimonySum ]),
+    ( \+ AlimonyCharge =:= AlimonySum -> true ; AlimonyCharge =:= 0 ),
     prot_alias(Scope, "Алименты", Alias1),
     prot_alias(Scope, "алиментов", Alias2),
     format( string(ProtText0),
