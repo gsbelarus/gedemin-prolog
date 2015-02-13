@@ -30,7 +30,11 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
   DateBegin = gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime
   DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
   AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
-  SliceOption = 0
+
+  Dim ExtraDaysArr
+  ExtraDaysArr = Array("usrat_DBEdit_USR_EXTRADURATION")
+  SliceOption = wg_AvgSalary_SliceOption(Sender, ExtraDaysArr)
+
   '
   Dim IBSQL
   Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
@@ -152,7 +156,7 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
     gdcDetail.FieldByName("USR$SUMMA").AsVariant = Summa
     gdcDetail.FieldByName("USR$DATEBEGIN").AsVariant = DateBegin
     gdcDetail.FieldByName("USR$DATEEND").AsVariant = DateEnd
-    'gdcDetail.FieldByName("USR$VCTYPE").AsVariant = VcType
+    gdcDetail.FieldByName("USR$VCTYPE").AsVariant = VcType
     gdcDetail.Post
     '
     Q_out.NextSolution
@@ -164,3 +168,22 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
   wg_AvgSalaryDetailGenerate_pl = True
 '
 End function
+
+Function wg_AvgSalary_SliceOption(ByRef gdcObject, ByVal ExtraDaysArr)
+  Dim i, ExtraDaysField, ExtraDaysSum
+
+  ExtraDaysSum = 0
+
+  For i = LBound(ExtraDaysArr) To UBound(ExtraDaysArr)
+    Set ExtraDaysField = gdcObject.FindComponent(ExtraDaysArr(i))
+    If Assigned(ExtraDaysField) Then
+      ExtraDaysSum = ExtraDaysSum + ExtraDaysField.Value
+    End If
+  Next
+
+  If ExtraDaysSum > 0 then
+    wg_AvgSalary_SliceOption = 1
+  Else
+    wg_AvgSalary_SliceOption = 0
+  End If
+End Function

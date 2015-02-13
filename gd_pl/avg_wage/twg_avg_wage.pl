@@ -2163,10 +2163,12 @@ avg_wage_out(Scope, EmplKey, FirstMoveKey, AvgWage, Variant) :-
 
 % удаление данных по сотруднику
 avg_wage_clean(Scope, EmplKey, FirstMoveKey) :-
+    get_scope_type(Scope-Type),
     gd_pl_ds(Scope, Type, Name, _, _),
     del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
     fail.
 avg_wage_clean(Scope, EmplKey, FirstMoveKey) :-
+    get_scope_type(Scope-Type),
     get_param_list(Scope, Type, [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey], Pairs),
     dispose_param_list(Scope, Type, Pairs),
     fail.

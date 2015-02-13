@@ -2,13 +2,14 @@
 Option Explicit
 
 Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSalary, _
-                             ByVal MonthBefore, ByVal MonthOffset)
+                             ByVal MonthBefore, ByVal MonthOffset, ByRef PL)
 '
   Dim T, T1, T2
   '
   Dim Creator
   '
-  Dim PL, Ret, Pred, Tv, Append
+  'Dim PL
+  Dim Ret, Pred, Tv, Append
   Dim PredFile, Scope
   'avg_wage
   Dim P_main, Tv_main, Q_main
@@ -24,24 +25,26 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
   Dim AvgWage, AvgWageRule
   Dim Period, Wage
   Dim TabDays, TabHoures, NormDays, NormHoures
+  'avg_wage_clean
+  Dim P_cl, Tv_cl, Q_cl
 
   T1 = Timer
   wg_CalcAvgAddPay_pl = ""
 
   'init
   Set Creator = New TCreator
-  Set PL = Creator.GetObject(nil, "TgsPLClient", "")
-  Ret = PL.Initialise("")
-  If Not Ret Then
-    Exit Function
-  End If
+  'Set PL = Creator.GetObject(nil, "TgsPLClient", "")
+  'Ret = PL.Initialise("")
+  'If Not Ret Then
+  '  Exit Function
+  'End If
   'debug
-  PL.Debug = True
+  'PL.Debug = True
   'load
-  Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
-  If Not Ret Then
-    Exit Function
-  End If
+  'Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
+  'If Not Ret Then
+  '  Exit Function
+  'End If
   Scope = "wg_avg_wage_avg"
 
   'params
@@ -96,6 +99,14 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
   End If
   Q_in.Close
 
+  'save param_list
+  If PL.Debug Then
+    Pred = "param_list"
+    PredFile = "param_list_in"
+    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+    PL.SavePredicatesToFile Pred, Tv, PredFile
+  End If
+
   'avg_wage(Scope) - prepare data
   P_main = "avg_wage"
   Set Tv_main = Creator.GetObject(1, "TgsPLTermv", "")
@@ -114,7 +125,7 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
   'save param_list
   If PL.Debug Then
     Pred = "param_list"
-    PredFile = "param_list"
+    PredFile = "param_list_prep"
     Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
@@ -180,7 +191,7 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
   'save param_list
   If PL.Debug Then
     Pred = "param_list"
-    PredFile = "param_list"
+    PredFile = "param_list_sql"
     Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
@@ -211,7 +222,7 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
   '
   Q_out.OpenQuery
   If Q_out.EOF Then
-    Exit Function
+    'Exit Function
   End If
   '
   Do Until Q_out.EOF
@@ -225,7 +236,7 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
       Case "avg_houre", "avg_day"
         '
       Case Else
-        Exit Function
+        Exit Do
     End Select
     '
     Tv_det.Reset
@@ -262,12 +273,39 @@ Function wg_CalcAvgAddPay_pl(ByRef gdcObject, ByRef gdcDetailObject, ByRef gdcSa
   Q_out.Close
   '
 
-  gdcSalary.First
+  'save param_list
+  If PL.Debug Then
+    Pred = "param_list"
+    PredFile = "param_list_out"
+    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+    PL.SavePredicatesToFile Pred, Tv, PredFile
+  End If
 
-  gdcDetailObject.Edit
-  gdcDetailObject.FieldByName("USR$AVGSUM").AsCurrency = AvgWage
-  gdcDetailObject.Post
+  'avg_wage_clean(Scope, EmplKey, FirstMoveKey)
+  P_cl = "avg_wage_clean"
+  Set Tv_cl = Creator.GetObject(3, "TgsPLTermv", "")
+  Set Q_cl = Creator.GetObject(nil, "TgsPLQuery", "")
+  Tv_cl.PutAtom 0, Scope
+  Tv_cl.PutInteger 1, EmplKey
+  Tv_cl.PutInteger 2, FirstMoveKey
+  '
+  Q_cl.PredicateName = P_cl
+  Q_cl.Termv = Tv_cl
+  '
+  Q_cl.OpenQuery
+  If Q_cl.EOF Then
+    Exit Function
+  End If
+  Q_cl.Close
 
+  If AvgWage > 0 Then
+    gdcSalary.First
+
+    gdcDetailObject.Edit
+    gdcDetailObject.FieldByName("USR$AVGSUM").AsCurrency = AvgWage
+    gdcDetailObject.Post
+  End If
+  
   T2 = Timer
   T = T2 - T1
 '

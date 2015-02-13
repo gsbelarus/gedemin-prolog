@@ -12,13 +12,31 @@ Sub usrg_actGenerateOnExecute(ByVal Sender)
   Set gdcSalary = Sender.OwnerForm.GetComponent("usrg_gdcAvgSalaryStr")
 
   Dim MonthBefore, MonthOffset
+  'init
+  Dim PL
+  Set PL = Designer.CreateObject(nil, "TgsPLClient", "")
+  Ret = PL.Initialise("")
+  If Not Ret Then
+    PL.DestroyObject
+    PL = Empty
+    Exit Sub
+  End If
+  'debug
+  PL.Debug = True
+  'load
+  Ret = PL.LoadScript(pl_GetScriptIDByName("twg_avg_wage"))
+  If Not Ret Then
+    Exit Sub
+  End If
+  '
 
   gdcDetailObject.First
   While Not gdcDetailObject.EoF
     '
   MonthBefore = 0
+  MonthOffset = 0
   Do
-    Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore, MonthOffset)
+    Ret = wg_CalcAvgAddPay_pl(gdcObject, gdcDetailObject, gdcSalary, MonthBefore, MonthOffset, PL)
     Select Case Ret
       Case "need_more"
         MonthBefore = MonthBefore + 1
@@ -52,6 +70,9 @@ Sub usrg_actGenerateOnExecute(ByVal Sender)
     '
     gdcDetailObject.Next
   Wend
+  '
+  PL.DestroyObject
+  PL = Empty
 '
 End Sub
 
