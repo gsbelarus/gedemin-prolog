@@ -11,7 +11,26 @@ Sub usrg_actGenerateOnExecute(ByVal Sender)
   Set gdcDetailObject = Sender.OwnerForm.gdcDetailObject
   Set gdcSalary = Sender.OwnerForm.GetComponent("usrg_gdcAvgSalaryStr")
 
-  Dim MonthBefore, MonthOffset
+  Dim Msg, IsCurTotal
+  '
+  Msg = _
+    "Для новых сотрудников" & _
+    vbCrLf & _
+    "предварительно необходимо" & _
+    vbCrLf & _
+    "произвести итоговый расчет" & _
+    vbCrLf & _
+    "за текущий месяц!" & _
+    vbCrLf & _
+    vbCrLf & _
+    "Продолжить?"
+  IsCurTotal = _
+    ( MsgBox(Msg, vbExclamation + vbYesNoCancel, "Внимание") = vbYes )
+  '
+  If Not IsCurTotal Then
+    Exit Sub
+  End If
+
   'init
   Dim PL
   Set PL = Designer.CreateObject(nil, "TgsPLClient", "")
@@ -30,6 +49,8 @@ Sub usrg_actGenerateOnExecute(ByVal Sender)
   End If
   '
 
+  Dim MonthBefore, MonthOffset
+  
   gdcDetailObject.First
   While Not gdcDetailObject.EoF
     '
@@ -44,15 +65,7 @@ Sub usrg_actGenerateOnExecute(ByVal Sender)
         '
         If Not MonthOffset < 0 Then
           '
-          Dim Msg
-          Msg = "Сотрудник: " & _
-                gdcDetailObject.FieldByName("U_USR$EMPLKEY_NAME").AsString & _
-                vbCrLf & _
-                "Требуется итоговый расчет для текущего месяца." & _
-                vbCrLf & _
-                "Продолжить?"
-          '
-          If MsgBox(Msg, vbExclamation + vbYesNoCancel, "Предупреждение") = vbYes Then
+          If IsCurTotal Then
             MonthBefore = 0
             MonthOffset = -1
           Else

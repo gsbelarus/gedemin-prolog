@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.9"
+  Version: "1.0.0.12"
   Optional: False
   Internal: True
-  MD5: 8608701DEC239CD29565EB8C9468E528
+  MD5: 3D9FB18CDE726998F728D7CDAE38FEFD
 Objects: 
   - 
     Properties: 
@@ -3166,7 +3166,8 @@ Objects:
         
         % расчитать коэффициент для пропорционального начисления
         calc_prop_coef(TabDays, NormDays, TabHoures, NormHoures, PropCoef) :-
-            ( TabDays =:= 0,
+            ( TabDays =:= 0, % комментировать, если приоритет по часам
+              TabHoures > 0,
               NormHoures > 0
              ->
               PropCoef is TabHoures / NormHoures
@@ -4174,10 +4175,12 @@ Objects:
         
         % удаление данных по сотруднику
         avg_wage_clean(Scope, EmplKey, FirstMoveKey) :-
+            get_scope_type(Scope-Type),
             gd_pl_ds(Scope, Type, Name, _, _),
             del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
             fail.
         avg_wage_clean(Scope, EmplKey, FirstMoveKey) :-
+            get_scope_type(Scope-Type),
             get_param_list(Scope, Type, [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey], Pairs),
             dispose_param_list(Scope, Type, Pairs),
             fail.
@@ -4782,7 +4785,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-02-04T12:37:43+03:00
+      EDITIONDATE: 2015-02-16T17:11:49+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

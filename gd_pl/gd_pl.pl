@@ -1,3 +1,6 @@
+% swipl.exe -f none -s gd_pl -g gd_pl,halt
+% swipl.exe -f none -x gd_pl_state.dat
+
 %
 :- volatile gd_pl_path/1, gd_pl/0, lib/0, usr/0, fsp/0, flg/0, gd/0.
 %

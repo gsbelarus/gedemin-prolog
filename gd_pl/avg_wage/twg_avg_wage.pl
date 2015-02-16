@@ -1155,7 +1155,8 @@ get_prop_coef(Scope, PK, Y, M, PropCoef) :-
 
 % расчитать коэффициент для пропорционального начисления
 calc_prop_coef(TabDays, NormDays, TabHoures, NormHoures, PropCoef) :-
-    ( TabDays =:= 0,
+    ( TabDays =:= 0, % комментировать, если приоритет по часам
+      TabHoures > 0,
       NormHoures > 0
      ->
       PropCoef is TabHoures / NormHoures
