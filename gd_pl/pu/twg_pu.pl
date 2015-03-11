@@ -835,8 +835,27 @@ pu_calc_out(Scope, EmplKey, Result) :-
                atomic_list_to_string([ExpStr1, ExpStr2], ExpStr)
              ),
     ExpStrList ),
+    % ПЕНСИЯ
+    ( EDocType = 3
+     ->
+      atom_date(DateEnd, date(Y3, M3, _)),
+      atom_date(DateBegin3, date(Y3, M3, 1)),
+      cast_date(DateBegin3, EDocExpBegin3),
+      cast_date(DateEnd, EDocExpEnd3),
+      get_param_list(Scope, dict, [pExpType-6, pExpCode-ExpCode6]),
+      format( string(ExpStr3),
+              "~w~w~w~w~w~w~w~n",
+              [ "СТАЖ=", EDocExpBegin3, "=", EDocExpEnd3, "= =",
+                ExpCode6, "= = ="
+              ] ),
+      ExpStrList3 = [ExpStr3]
+    ; ExpStrList3 = []
+    ),
     %
-    append([[EDocHeader], FeeStrList, ExpStrList, [">\n"]], ResultList),
+    append([
+            [EDocHeader], FeeStrList, ExpStrList, ExpStrList3, [">\n"]
+           ],
+           ResultList),
     atomic_list_to_string(ResultList, Result),
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),

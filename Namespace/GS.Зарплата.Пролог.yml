@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.11"
+  Version: "1.0.0.12"
   Optional: False
   Internal: True
-  MD5: 5CD4352F882F56B9F805B94FA2309413
+  MD5: DCA2E1B95C4F350797103F75D9D664FE
 Objects: 
   - 
     Properties: 
@@ -9611,8 +9611,27 @@ Objects:
                        atomic_list_to_string([ExpStr1, ExpStr2], ExpStr)
                      ),
             ExpStrList ),
+            % ПЕНСИЯ
+            ( EDocType = 3
+             ->
+              atom_date(DateEnd, date(Y3, M3, _)),
+              atom_date(DateBegin3, date(Y3, M3, 1)),
+              cast_date(DateBegin3, EDocExpBegin3),
+              cast_date(DateEnd, EDocExpEnd3),
+              get_param_list(Scope, dict, [pExpType-6, pExpCode-ExpCode6]),
+              format( string(ExpStr3),
+                      "~w~w~w~w~w~w~w~n",
+                      [ "СТАЖ=", EDocExpBegin3, "=", EDocExpEnd3, "= =",
+                        ExpCode6, "= = ="
+                      ] ),
+              ExpStrList3 = [ExpStr3]
+            ; ExpStrList3 = []
+            ),
             %
-            append([[EDocHeader], FeeStrList, ExpStrList, [">\n"]], ResultList),
+            append([
+                    [EDocHeader], FeeStrList, ExpStrList, ExpStrList3, [">\n"]
+                   ],
+                   ResultList),
             atomic_list_to_string(ResultList, Result),
             % записать отладочную информацию
             param_list_debug(Scope, Type-Section),
@@ -9659,7 +9678,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-03-11T10:28:21+03:00
+      EDITIONDATE: 2015-03-11T16:58:33+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
