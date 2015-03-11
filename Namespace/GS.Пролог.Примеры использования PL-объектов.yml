@@ -1,0 +1,560 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 148082070_215642201
+  Name: "GS.Пролог.Примеры использования PL-объектов"
+  Caption: "Примеры использования PL-объектов"
+  Version: "1.0.0.5"
+  Optional: False
+  Internal: True
+  MD5: 82763BBB7776D8E4517B3E600141074E
+Uses: 
+  - "147753062_69526485 GS.Общие.Хранилище"
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148082065_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148082063_215642201
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "MACROS"
+      LANGUAGE: "VBScript"
+      NAME: "pl_Examples"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        '#include pl_GetScriptIDByName
+        'uses pl_Const
+        
+        Sub pl_Examples()
+          Dim frmMsg, Creator
+          Set Creator = New TCreator
+          Set frmMsg = Creator.GetObject(nil, "usrf_Msg", "")
+        
+          Dim Title, Msg, Ret
+          Title = "Гедымин - Пролог"
+          Msg = "% Примеры работы с PL-объектами" & vbCrLf & vbCrLf & _
+                "%    pl_Examples" & vbCrLf & _
+                "%    TgsPLClient: Initialise, IsInitialised"
+          
+          Dim PL
+          Set PL = Designer.CreateObject(nil, "TgsPLClient", "")
+          If Not PL.IsInitialised Then
+            If Not PL.Initialise("") Then
+              Msg = "Клиентская часть Prolog не установлена!"
+              Call MsgBox(Msg, vbCritical + vbOkOnly, Title)
+              PL.DestroyObject
+              Exit Sub
+            End If
+          End If
+        
+          If Not PL.IsInitialised Then
+            Msg = "Prolog не инициализирован!"
+            Call MsgBox(Msg, vbCritical + vbOkOnly, Title)
+            Exit Sub
+          End If
+        
+          Msg = Msg & vbCrLf & _
+             pl_Example1(PL)
+          Msg = Msg & vbCrLf & _
+             pl_Example2(PL)
+          Msg = Msg & vbCrLf & _
+             pl_Example3(PL)
+          Msg = Msg & vbCrLf & _
+             pl_Example4(PL)
+        
+          PL.DestroyObject
+        
+          frmMsg.Caption = Title
+          frmMsg.GetComponent("usrg_Msg").Lines.Text = Msg
+          frmMsg.ShowModal
+        End Sub
+        
+        Function pl_Example1(ByRef PL)
+          Dim Title, Msg
+          Title = vbCrLf & _
+                  "% 1. pl_Example1(PL)" & vbCrLf & _
+                  "%    TgsPLClient: Call" & vbCrLf & _
+                  "%    TgsPLTermv: PutAtom, ToString"
+        
+          pl_Example1 = ""
+          
+          Dim PredicateName, Params
+          PredicateName = "current_prolog_flag"
+          Set Params = Designer.CreateObject(2, "TgsPLTermv", "")
+          Params.PutAtom 0, "executable"
+          Msg = _
+            "% Запрос" & vbCrLf & _
+            "?- current_prolog_flag(" & Params.ReadString(0) & ", AppPath)."
+        
+          If PL.Call(PredicateName, Params) Then
+            Dim AppPath
+            AppPath = Params.ToString(1)
+            Msg = Msg & vbCrLf & _
+              "AppPath = " & AppPath & "."
+          Else
+            Msg = Msg & vbCrLf & "false."
+          End If
+          
+        
+          pl_Example1 = Title & vbCrLf & Msg
+        
+          Params.DestroyObject
+        End Function
+        
+        Function pl_Example2(ByRef PL)
+          Dim Title, Msg
+          Title = vbCrLf & _
+                  "% 2. pl_Example2(PL)" & vbCrLf & _
+                  "%    TgsPLClient: Call2, Call" & vbCrLf & _
+                  "%    TgsPLTermv: PutAtom, ToString"
+        
+          pl_Example2 = ""
+        
+          Dim Code
+          Code = "assertz( pl_Example(pl_Example2, 'Пример 2') )"
+          Call PL.Call2(Code)
+          Msg = _
+            "% Выполнение кода" & vbCrLf & _
+            "?- " & Code & "."
+        
+          If PL.Call2(Code) Then
+            Msg = Msg & vbCrLf & "true."
+          Else
+            Msg = Msg & vbCrLf & "false."
+          End If
+        
+          Dim PredicateName, Params
+          PredicateName = "pl_Example"
+          Set Params = Designer.CreateObject(2, "TgsPLTermv", "")
+          Msg = Msg & vbCrLf & _
+            "% Запрос" & vbCrLf & _
+            "?- pl_Example(pl_Example2, Text)."
+        
+          Params.PutAtom 0, "pl_Example2"
+        
+          If PL.Call(PredicateName, Params) Then
+            Msg = Msg & vbCrLf & _
+              "Text = " & Params.ToString(1) & "."
+          Else
+            Msg = Msg & vbCrLf & "false."
+          End If
+        
+          pl_Example2 = Title & vbCrLf & Msg
+        
+          Params.DestroyObject
+        End Function
+        
+        Function pl_Example3(ByRef PL)
+          Dim Title, Msg
+          Title = vbCrLf & _
+                  "% 3. pl_Example3(PL)" & vbCrLf & _
+                  "%    TgsPLClient: Compound, Call" & vbCrLf & _
+                  "%    TgsPLTermv: PutAtom"
+        
+          pl_Example3 = ""
+        
+          Dim Goal, Functor, Termv
+          Set Goal = Designer.CreateObject(1, "TgsPLTermv", "")
+          Functor = "pl_Example"
+          Set Termv = Designer.CreateObject(2, "TgsPLTermv", "")
+          Termv.PutAtom 0, "pl_Example3"
+          Termv.PutAtom 1, "Пример 3"
+          Call PL.Compound(Goal.Term(0), Functor, Termv)
+        
+          Dim Code
+          Code = "assertz"
+          Msg = _
+            "% Выполнение кода" & vbCrLf & _
+            "?- " & Code & "( " & Goal.ToString(0) & " )."
+        
+          If PL.Call(Code, Goal) Then
+            Msg = Msg & vbCrLf & "true."
+          Else
+            Msg = Msg & vbCrLf & "false."
+          End If
+        
+          Dim PredicateName, Params
+          PredicateName = "pl_Example"
+          Set Params = Designer.CreateObject(2, "TgsPLTermv", "")
+          Params.PutAtom 0, "pl_Example3"
+        
+          If PL.Call(PredicateName, Params) Then
+            Msg = Msg & vbCrLf & _
+              "% Запрос" & vbCrLf & _
+              "?- pl_Example(pl_Example3, Text)." & vbCrLf & _
+              "Text = " & Params.ToString(1) & "."
+          Else
+            Msg = Msg & vbCrLf & "false."
+          End If
+        
+          pl_Example3 = Title & vbCrLf & Msg
+          
+          Termv.DestroyObject
+          Goal.DestroyObject
+          Params.DestroyObject
+        End Function
+        
+        Function pl_Example4(ByRef PL)
+          Dim Title, Msg
+          Title = vbCrLf & _
+                  "% 4. pl_Example4(PL)" & vbCrLf & _
+                  "%    TgsPLClient: LoadScript, Call" & vbCrLf & _
+                  "%    TgsPLTermv: ReadAtom"
+        
+          pl_Example4 = ""
+        
+          Dim ScriptName
+          ScriptName = "pl_Examples_Script"
+          If Not PL.LoadScript( pl_GetScriptIDByName(ScriptName) ) Then
+            Exit Function
+          End If
+        
+          Dim PredicateName, Params
+          PredicateName = "hello_world"
+          Set Params = Designer.CreateObject(1, "TgsPLTermv", "")
+          Msg = _
+            "% Запрос" & vbCrLf & _
+            "?- hello_world(Hello)."
+        
+          If PL.Call(PredicateName, Params) Then
+            Msg = Msg & vbCrLf & _
+              "Hello = '" & Params.ReadAtom(0) & "'."
+          Else
+            Msg = Msg & vbCrLf & "false."
+          End If
+        
+          pl_Example4 = Title & vbCrLf & Msg
+        
+          Params.DestroyObject
+        End Function
+        
+        
+      DISPLAYSCRIPT: | 
+        PL_EXAMPLES
+        PL_EXAMPLE1
+        PL_EXAMPLE2
+        PL_EXAMPLE3
+        PL_EXAMPLE4
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-02-21T16:58:37+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "151158419_5956463 pl_GetScriptIDByName"
+  - 
+    Properties: 
+      Class: "TgdcMacros"
+      RUID: 148082063_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MACROSGROUPKEY: "1020001_17 Глобальные макросы"
+      FUNCTIONKEY: "148082065_215642201 pl_Examples"
+      NAME: "Примеры использования PL-объектов"
+      SERVERKEY: ~
+      ISLOCALEXECUTE: 0
+      ISREBUILD: 0
+      EXECUTEDATE: ~
+      SHORTCUT: 0
+      EDITIONDATE: 2015-02-21T16:58:37+03:00
+      DISPLAYINMENU: 0
+      RUNONLOGIN: 0
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147082887_146403466
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147015466_1522056380 GLOBAL\\NewForm"
+      NAME: "usrf_Msg"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2015-02-21T12:26:37+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 147082889_146403466
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147082887_146403466 GLOBAL\\NewForm\\usrf_Msg"
+      NAME: "Class"
+      DATA_TYPE: "S"
+      STR_DATA: "TgdcCreateableForm"
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-04-11T16:13:46+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 147082888_146403466
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147082887_146403466 GLOBAL\\NewForm\\usrf_Msg"
+      NAME: "dfm"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: | 
+        object usrf_Msg: TgdcCreateableForm
+          Tag = 0
+          Left = 319
+          Top = 19
+          Cursor = crDefault
+          Hint = ''
+          HelpContext = 0
+          HorzScrollBar.ButtonSize = 0
+          HorzScrollBar.Color = clBtnHighlight
+          HorzScrollBar.Increment = 8
+          HorzScrollBar.Margin = 0
+          HorzScrollBar.ParentColor = True
+          HorzScrollBar.Position = 0
+          HorzScrollBar.Range = 0
+          HorzScrollBar.Smooth = False
+          HorzScrollBar.Size = 0
+          HorzScrollBar.Style = ssRegular
+          HorzScrollBar.ThumbSize = 0
+          HorzScrollBar.Tracking = False
+          HorzScrollBar.Visible = True
+          VertScrollBar.ButtonSize = 0
+          VertScrollBar.Color = clBtnHighlight
+          VertScrollBar.Increment = 8
+          VertScrollBar.Margin = 0
+          VertScrollBar.ParentColor = True
+          VertScrollBar.Position = 0
+          VertScrollBar.Range = 0
+          VertScrollBar.Smooth = False
+          VertScrollBar.Size = 0
+          VertScrollBar.Style = ssRegular
+          VertScrollBar.ThumbSize = 0
+          VertScrollBar.Tracking = False
+          VertScrollBar.Visible = True
+          Action = nil
+          ActiveControl = nil
+          Align = alNone
+          Anchors = [akLeft, akTop]
+          AutoSize = False
+          BorderIcons = [biSystemMenu, biMinimize, biMaximize]
+          BorderStyle = bsDialog
+          BorderWidth = 0
+          Caption = 'Сообщение'
+          ClientHeight = 668
+          ClientWidth = 651
+          Color = clBtnFace
+          Constraints.MaxHeight = 0
+          Constraints.MaxWidth = 0
+          Constraints.MinHeight = 0
+          Constraints.MinWidth = 0
+          Ctl3D = True
+          UseDockManager = False
+          DefaultMonitor = dmActiveForm
+          DockSite = False
+          DragKind = dkDrag
+          DragMode = dmManual
+          Enabled = True
+          ParentFont = False
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          Font.Pitch = fpDefault
+          Font.Style = []
+          FormStyle = fsNormal
+          HelpFile = ''
+          KeyPreview = False
+          Menu = nil
+          OldCreateOrder = False
+          ObjectMenuItem = nil
+          ParentBiDiMode = True
+          PopupMenu = nil
+          Position = poDesigned
+          PrintScale = poProportional
+          Scaled = True
+          Visible = False
+          WindowState = wsNormal
+          WindowMenu = nil
+          ShowSpeedButton = False
+          PixelsPerInch = 96
+          TextHeight = 13
+          object usrg_Msg: TMemo
+            Tag = 0
+            Left = 9
+            Top = 7
+            Width = 633
+            Height = 617
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            TabStop = True
+            Align = alNone
+            Alignment = taLeftJustify
+            Anchors = [akLeft, akTop]
+            BorderStyle = bsSingle
+            Color = clWindow
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -15
+            Font.Name = 'Consolas'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            HideSelection = True
+            ImeMode = imDontCare
+            ImeName = ''
+            MaxLength = 0
+            OEMConvert = False
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentCtl3D = True
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ReadOnly = False
+            ScrollBars = ssVertical
+            TabOrder = 1
+            Visible = True
+            WantReturns = True
+            WantTabs = False
+            WordWrap = True
+          end
+          object usrg_Close: TButton
+            Tag = 0
+            Left = 281
+            Top = 634
+            Width = 75
+            Height = 25
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            Action = nil
+            Anchors = [akLeft, akTop]
+            Cancel = True
+            Caption = 'Закрыть'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            Default = True
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            ModalResult = 1
+            ParentBiDiMode = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            TabOrder = 0
+            TabStop = True
+            Visible = True
+          end
+        end
+        
+      EDITIONDATE: 2015-02-21T13:45:07+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 147082890_146403466
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147082887_146403466 GLOBAL\\NewForm\\usrf_Msg"
+      NAME: "InternalType"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 1
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2014-04-11T16:13:46+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148082051_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "pl_Examples_Script"
+      COMMENT: ~
+      SCRIPT: | 
+        hello_world(Msg) :-
+            format(atom(Msg), '~w~w~w', ['Hello', ' ', 'World']).
+        hello_world(Msg) :-
+            findall(X, some_fact(X), Xs),
+            atomic_list_concat(Xs, ' ', Msg).
+        
+        some_fact(hello).
+        some_fact(next).
+        some_fact(world).
+        
+        some_fact(1, 'Delphi').
+        some_fact(2, 'VBScript').
+        some_fact(3, 'Firebird').
+        some_fact(4, 'FastReport').
+        some_fact(5, 'SWI-Prolog').
+        
+        some_fact('1995-01-01', 'Анжелика').
+        some_fact('2003-01-01', 'Гедымин').
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-02-21T16:50:59+03:00

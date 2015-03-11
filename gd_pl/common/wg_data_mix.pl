@@ -1,11 +1,34 @@
 ﻿%% wg_data_mix
-%  смешанные данные для twg_avg_wage, twg_fee
+%  смешанные данные для twg_avg_wage, twg_fee, twg_pu
 %
 
 %:- ['../gd_pl_state/date', '../gd_pl_state/dataset'].
 %:- ['../common/lib', '../common/params'].
 
 /* реализация - общий код */
+
+% взять среднюю зп по РБ
+get_avg_salary_rb(Scope, Y-M, MonthAvgSalary) :-
+    % первая дата месяца
+    atom_date(FirstMonthDate, date(Y, M, 1)),
+    % взять среднюю зп
+    findall( AvgSalary0,
+                  % взять данные по средней зп
+                ( get_data(Scope, kb, gd_const_AvgSalaryRB, [
+                            fConstDate-ConstDate, fAvgSalaryRB-AvgSalary0]),
+                  % где дата константы меньше первой даты месяца
+                  ConstDate @< FirstMonthDate
+                ),
+    % в список средних зп
+    AvgSalaryList),
+    % проверить список средних зп
+    \+ AvgSalaryList = [],
+    % последние данные средней зп за месяц
+    last(AvgSalaryList, MonthAvgSalary),
+    !.
+get_avg_salary_rb(Scope, _, 0) :-
+    new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
+    !.
 
 % взять БВ
 get_min_wage(Scope, DateCalcTo, MinWage) :-

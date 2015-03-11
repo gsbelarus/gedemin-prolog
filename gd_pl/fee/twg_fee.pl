@@ -59,6 +59,8 @@
 :- ['kb/param_list'].
 %%
 
+:- else.
+
 :- ps32k_lgt(64, 128, 64).
 
 :- endif.

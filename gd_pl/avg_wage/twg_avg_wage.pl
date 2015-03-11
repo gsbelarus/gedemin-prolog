@@ -77,6 +77,8 @@
 :- ['kb/param_list'].
 %%
 
+:- else.
+
 :- ps32k_lgt(64, 128, 64).
 
 :- endif.
@@ -2164,7 +2166,6 @@ avg_wage_out(Scope, EmplKey, FirstMoveKey, AvgWage, Variant) :-
 
 % удаление данных по сотруднику
 avg_wage_clean(Scope, EmplKey, FirstMoveKey) :-
-    get_scope_type(Scope-Type),
     gd_pl_ds(Scope, Type, Name, _, _),
     del_data(Scope, Type, Name, [fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey]),
     fail.
@@ -2690,29 +2691,6 @@ get_avg_wage_budget(Scope, Type, Y-M, AvgWageBudget) :-
 get_avg_wage_budget(Scope, _, _, 0) :-
     new_param_list(Scope, error, [
                     pError-"Введите константу 'Бюджет прожиточного минимума'"]),
-    !.
-
-% взять среднюю зп по РБ
-get_avg_salary_rb(Scope, Y-M, MonthAvgSalary) :-
-    % первая дата месяца
-    atom_date(FirstMonthDate, date(Y, M, 1)),
-    % взять среднюю зп
-    findall( AvgSalary0,
-                  % взять данные по средней зп
-                ( get_data(Scope, kb, gd_const_AvgSalaryRB, [
-                            fConstDate-ConstDate, fAvgSalaryRB-AvgSalary0]),
-                  % где дата константы меньше первой даты месяца
-                  ConstDate @< FirstMonthDate
-                ),
-    % в список средних зп
-    AvgSalaryList),
-    % проверить список средних зп
-    \+ AvgSalaryList = [],
-    % последние данные средней зп за месяц
-    last(AvgSalaryList, MonthAvgSalary),
-    !.
-get_avg_salary_rb(Scope, _, 0) :-
-    new_param_list(Scope, error, [pError-"Введите константу 'Средняя зарплата по РБ'"]),
     !.
 
 % среднедневная зп для месяца по среднемесячной зп в РБ
