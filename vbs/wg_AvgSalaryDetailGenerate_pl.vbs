@@ -1,12 +1,11 @@
 Option Explicit
 '#include pl_GetScriptIDByName
 
-Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
+Function wg_AvgSalaryDetailGenerate_pl(ByRef gdcObject, ByRef gdcDetail, _
+                                       ByVal Silence)
 '
   Dim Creator, IsDebug
   IsDebug = True
-  '
-  Dim gdcObject, gdcDetail
   '
   Dim PL, Ret, Pred, Tv, Append
   'struct_vacation_sql
@@ -22,19 +21,12 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
   wg_AvgSalaryDetailGenerate_pl = False
   Set Creator = New TCreator
 
-  Sender.GetComponent("actApply").Execute
-
-  Set gdcObject = Sender.gdcObject
   '
   DocKey = gdcObject.FieldByName("DOCUMENTKEY").AsInteger
   DateBegin = gdcObject.FieldByName("USR$DATEBEGIN").AsDateTime
   DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
   AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
-
-  Dim ExtraDaysArr
-  ExtraDaysArr = Array("usrat_DBEdit_USR_EXTRADURATION")
-  SliceOption = wg_AvgSalary_SliceOption(Sender, ExtraDaysArr)
-
+  SliceOption = 0
   '
   Dim IBSQL
   Set IBSQL = Creator.GetObject(nil, "TIBSQL", "")
@@ -67,14 +59,15 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
   'debug
   PL.Debug = (True And IsDebug And plGlobalDebug)
 
-  Set gdcDetail = Sender.gdcDetailObject
   '
   gdcDetail.First
   While Not gdcDetail.EOF
     gdcDetail.Delete
   Wend
   '
-  Sender.Repaint
+  If Silence = 0 Then
+    gdcObject.OwnerForm.Repaint
+  End If
 
   'struct_vacation_sql(DocKey, DateBegin, DateEnd, PredicateName, Arity, SQL)
   P_sql = "struct_vacation_sql"
@@ -156,7 +149,7 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
     gdcDetail.FieldByName("USR$SUMMA").AsVariant = Summa
     gdcDetail.FieldByName("USR$DATEBEGIN").AsVariant = DateBegin
     gdcDetail.FieldByName("USR$DATEEND").AsVariant = DateEnd
-    gdcDetail.FieldByName("USR$VCTYPE").AsVariant = VcType
+    'gdcDetail.FieldByName("USR$VCTYPE").AsVariant = VcType
     gdcDetail.Post
     '
     Q_out.NextSolution
@@ -168,22 +161,3 @@ Function wg_AvgSalaryDetailGenerate_pl(ByRef Sender)
   wg_AvgSalaryDetailGenerate_pl = True
 '
 End function
-
-Function wg_AvgSalary_SliceOption(ByRef gdcObject, ByVal ExtraDaysArr)
-  Dim i, ExtraDaysField, ExtraDaysSum
-
-  ExtraDaysSum = 0
-
-  For i = LBound(ExtraDaysArr) To UBound(ExtraDaysArr)
-    Set ExtraDaysField = gdcObject.FindComponent(ExtraDaysArr(i))
-    If Assigned(ExtraDaysField) Then
-      ExtraDaysSum = ExtraDaysSum + ExtraDaysField.Value
-    End If
-  Next
-
-  If ExtraDaysSum > 0 then
-    wg_AvgSalary_SliceOption = 1
-  Else
-    wg_AvgSalary_SliceOption = 0
-  End If
-End Function

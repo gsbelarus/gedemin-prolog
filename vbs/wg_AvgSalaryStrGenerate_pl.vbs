@@ -1,17 +1,15 @@
 Option Explicit
-'#include wg_WageSettings
 '#include wg_EnableFieldChange
 '#include pl_GetScriptIDByName
-'#include wg_AvgSalary_CoefOption
 
-Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
+Function wg_AvgSalaryStrGenerate_pl(ByRef gdcObject, ByRef gdcSalary, _
+                                    ByVal CalcType, ByVal Silence, _
+                                    ByVal MonthOffset, ByVal CoefOption)
 '
   Dim T, T1, T2
   
   Dim Creator, IsDebug
   IsDebug = True
-  '
-  Dim gdcObject, gdcSalary
   '
   Dim PL, Ret, Pred, Tv, Append
   Dim PredFile, Scope
@@ -20,8 +18,6 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   'avg_wage_in
   Dim P_in, Tv_in, Q_in
   Dim EmplKey, FirstMoveKey, DateCalc
-  Dim InflType, InflFCType
-  Dim MonthOffset, CoefOption
   'avg_wage_run, avg_wage_sql
   Dim P_run, Tv_run, Q_run, P_sql, Tv_sql, Q_sql, P_kb
   Dim DateCalcFrom, DateCalcTo
@@ -38,9 +34,6 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   wg_AvgSalaryStrGenerate_pl = False
   Set Creator = New TCreator
   
-  Sender.GetComponent("actApply").Execute
-
-  Set gdcObject = Sender.gdcObject
   '
   EmplKey = gdcObject.FieldByName("usr$emplkey").AsInteger
   FirstMoveKey = gdcObject.FieldByName("usr$firstmovekey").AsInteger
@@ -63,32 +56,6 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
     DateCalc = gdcObject.FieldByName("usr$from").AsDateTime
   end if
   '
-  MonthOffset = 0
-  '
-  InflType = wg_WageSettings.Inflation.InflType
-  InflFCType = wg_WageSettings.Inflation.InflFCType
-  'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
-  Select Case InflType
-    'usrg_rbSalaryInf - ќт оклада
-    Case 0
-      CoefOption = "ml_msalary"
-    'usrg_rbRateInf - ќт ставки 1-го разр€да
-    Case 1
-      Select Case InflFCType
-        'usrg_rbFCRate - справочника
-        Case 0
-          CoefOption = "fc_fcratesum"
-        'usrg_rbMovementRate - кадрового движени€
-        Case 2
-          CoefOption = "ml_rate"
-      End Select
-  End Select
-  '
-
-  'проблема wg_WageSettings
-  'CoefOption = "ml_rate" 'только дл€ ћћ , иначе эту строку закомментировать
-
-  wg_AvgSalary_CoefOption(Sender)
 
   'init
   Set PL = Creator.GetObject(nil, "TgsPLClient", "")
@@ -107,7 +74,6 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   'debug
   PL.Debug = (True And IsDebug And plGlobalDebug)
 
-  Set gdcSalary = Sender.GetComponent("usrg_gdcAvgSalaryStr")
   '
   Call wg_DisableFieldChange(gdcSalary, "AVGSALARYCALC")
   '
@@ -118,7 +84,9 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
   '
   gdcObject.FieldByName("USR$AVGSUMMA").Clear
   '
-  Sender.Repaint
+  If Silence = 0 Then
+    gdcObject.OwnerForm.Repaint
+  End If
 
   'avg_wage_in(EmplKey, FirstMoveKey, DateCalc, MonthOffset, CoefOption)
   P_in = "avg_wage_in"
@@ -282,8 +250,6 @@ Function wg_AvgSalaryStrGenerate_pl(ByRef Sender, ByVal CalcType)
             PeriodRule = "по размеру заработка (не меньше всех полных)"
           Case "by_month_wage_any"
             PeriodRule = "по размеру заработка (не меньше любого полного)"
-          Case "by_month_avg_wage"
-            PeriodRule = "по размеру заработка (не меньше среднего по полным мес€цам)"
           Case "by_month_no_bad_type"
             PeriodRule = "виды начислений и типы часов в норме"
           Case Else
