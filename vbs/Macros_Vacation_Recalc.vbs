@@ -1,3 +1,7 @@
+' эти строки добавлены для проверки, сможет ли гит хаб
+' определить самостоятельно кодовую страницу этого файла
+' гугл код этого сделать не смог
+
 Option Explicit
 '#include wg_AvgSalaryDetailGenerate_pl
 '#include wg_AvgSalaryStrGenerate_pl
