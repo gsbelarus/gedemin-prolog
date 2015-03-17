@@ -1,6 +1,6 @@
-' эти строки добавлены для проверки, сможет ли гит хаб
-' определить самостоятельно кодовую страницу этого файла
-' гугл код этого сделать не смог
+п»ї' СЌС‚Рё СЃС‚СЂРѕРєРё РґРѕР±Р°РІР»РµРЅС‹ РґР»СЏ РїСЂРѕРІРµСЂРєРё, СЃРјРѕР¶РµС‚ Р»Рё РіРёС‚ С…Р°Р±
+' РѕРїСЂРµРґРµР»РёС‚СЊ СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕ РєРѕРґРѕРІСѓСЋ СЃС‚СЂР°РЅРёС†Сѓ СЌС‚РѕРіРѕ С„Р°Р№Р»Р°
+' РіСѓРіР» РєРѕРґ СЌС‚РѕРіРѕ СЃРґРµР»Р°С‚СЊ РЅРµ СЃРјРѕРі
 
 Option Explicit
 '#include wg_AvgSalaryDetailGenerate_pl
@@ -23,24 +23,24 @@ Sub Macros_Vacation_Recalc(OwnerForm)
   InflFCType = wg_WageSettings.Inflation.InflFCType
   'CoefOption: fc_fcratesum ; ml_rate ; ml_msalary
   Select Case InflType
-    'usrg_rbSalaryInf - От оклада
+    'usrg_rbSalaryInf - РћС‚ РѕРєР»Р°РґР°
     Case 0
       CoefOption = "ml_msalary"
-    'usrg_rbRateInf - От ставки 1-го разряда
+    'usrg_rbRateInf - РћС‚ СЃС‚Р°РІРєРё 1-РіРѕ СЂР°Р·СЂСЏРґР°
     Case 1
       Select Case InflFCType
-        'usrg_rbFCRate - справочника
+        'usrg_rbFCRate - СЃРїСЂР°РІРѕС‡РЅРёРєР°
         Case 0
           CoefOption = "fc_fcratesum"
-        'usrg_rbMovementRate - кадрового движения
+        'usrg_rbMovementRate - РєР°РґСЂРѕРІРѕРіРѕ РґРІРёР¶РµРЅРёСЏ
         Case 2
           CoefOption = "ml_rate"
       End Select
   End Select
   '
 
-  'проблема wg_WageSettings
-  'CoefOption = "ml_rate" 'только для ММК, иначе эту строку закомментировать
+  'РїСЂРѕР±Р»РµРјР° wg_WageSettings
+  'CoefOption = "ml_rate" 'С‚РѕР»СЊРєРѕ РґР»СЏ РњРњРљ, РёРЅР°С‡Рµ СЌС‚Сѓ СЃС‚СЂРѕРєСѓ Р·Р°РєРѕРјРјРµРЅС‚РёСЂРѕРІР°С‚СЊ
 
   MonthOffset = 0
 
