@@ -15,7 +15,7 @@ Sub Macros_Sick_Recalc(OwnerForm)
     OwnerForm.gdcObject.AddVariableItem("DontRecalcLine")
   End If
   '
-  OwnerForm.gdcObject.Variables("DontRecalcLine") = Tru
+  OwnerForm.gdcObject.Variables("DontRecalcLine") = True
 
   gdcObject.First
   inID = ""
@@ -30,8 +30,8 @@ Sub Macros_Sick_Recalc(OwnerForm)
     gdcObject.Next
   Wend
   '
-  inID = "(" & ID & ")"
-  gdcObject.ExtraConditions.Add(" z.id in " & ID )
+  inID = "(" & inID & ")"
+  gdcObject.ExtraConditions.Add(" z.id in " & inID )
 
   Set Creator = New TCreator
   Set gdcAvgStr = Creator.GetObject(OwnerForm, "TgdcAttrUserDefined", "")
@@ -47,9 +47,11 @@ Sub Macros_Sick_Recalc(OwnerForm)
   gdcObject.First
   '
   While Not gdcObject.EOF
+    gdcObject.Edit
     gdcObject.FieldByName("USR$AVGSUMMA").Clear
     gdcObject.FieldByName("USR$THIRDMETHOD").AsInteger = 0
     gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger = 0
+    gdcObject.FieldByName("USR$AVERAGE").AsInteger = 0
 
     Ret = wg_AvgSalaryStrGenerate_Sick_pl(gdcObject, gdcAvgStr)
     Ret = wg_AvgSalaryDetailGenerate_Sick_pl(gdcObject, gdcDetail)
@@ -57,8 +59,8 @@ Sub Macros_Sick_Recalc(OwnerForm)
     gdcObject.Next
   Wend
 
-  gdcObject.ExtraConditions.Clear
   OwnerForm.gdcObject.Variables("DontRecalcLine") = False
   Call wg_Prolog.SyncField(OwnerForm.gdcObject, False)
+  gdcObject.ExtraConditions.Clear
 '
 End Sub

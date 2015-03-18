@@ -13,7 +13,9 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   Dim EmplKey, FirstMoveKey, DateBegin, DateEnd, PredicateName, Arity, SQL
   'struct_sick_in
   Dim P_in, Tv_in, Q_in
-  Dim DateCalc, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType
+  Dim DateCalc, AvgWage, CalcType
+  Dim BudgetOption, ByRateOption, IsPregnancy, IllType
+  Dim ViolatDB, ViolatDE
   'struct_sick_err
   Dim P_err, Tv_err, Q_err
   Dim ErrMessage
@@ -48,9 +50,12 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   DateEnd = gdcObject.FieldByName("USR$DATEEND").AsDateTime
   AvgWage = gdcObject.FieldByName("USR$AVGSUMMA").AsCurrency
   BudgetOption = gdcObject.FieldByName("USR$CALCBYBUDGET").AsInteger
+  ByRateOption = gdcObject.FieldByName("USR$THIRDMETHOD").AsInteger
   IsPregnancy = abs(gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger = _
          gdcBaseManager.GetIDByRUIDString(wg_SickType_Pregnancy_RUID))
   IllType = gdcObject.FieldByName("USR$ILLTYPEKEY").AsInteger
+  ViolatDB = gdcObject.FieldByName("USR$VIOLATDB").AsDateTime
+  ViolatDE = gdcObject.FieldByName("USR$VIOLATDE").AsDateTime
   
   Dim IBSQL
   '
@@ -119,9 +124,9 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
     PL.SavePredicatesToFile Pred, Tv, PredFile
   End If
 
-  'struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, IsPregnancy, IllType)
+  'struct_sick_in(DateCalc, DateBegin, DateEnd, AvgWage, CalcType, BudgetOption, ByRateOption, IsPregnancy, IllType, ViolatDB, ViolatDE)
   P_in = "struct_sick_in"
-  Set Tv_in = Creator.GetObject(8, "TgsPLTermv", "")
+  Set Tv_in = Creator.GetObject(11, "TgsPLTermv", "")
   Set Q_in = Creator.GetObject(nil, "TgsPLQuery", "")
   Tv_in.PutDate 0, DateCalc
   Tv_in.PutDate 1, DateBegin
@@ -129,8 +134,11 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
   Tv_in.PutFloat 3, AvgWage
   Tv_in.PutInteger 4, CalcType
   Tv_in.PutInteger 5, BudgetOption
-  Tv_in.PutInteger 6, IsPregnancy
-  Tv_in.PutInteger 7, IllType
+  Tv_in.PutInteger 6, ByRateOption
+  Tv_in.PutInteger 7, IsPregnancy
+  Tv_in.PutInteger 8, IllType
+  Tv_in.PutDate 9, ViolatDB
+  Tv_in.PutDate 10, ViolatDE
   '
   Q_in.PredicateName = P_in
   Q_in.Termv = Tv_in
@@ -140,6 +148,14 @@ Function wg_AvgSalaryDetailGenerate_Sick_pl(ByRef gdcObject, ByRef gdcDetail)
     Exit Function
   End If
   Q_in.Close
+
+  'save param_list
+  If PL.Debug Then
+    Pred = "param_list"
+    PredFile = "param_list"
+    Set Tv = Creator.GetObject(3, "TgsPLTermv", "")
+    PL.SavePredicatesToFile Pred, Tv, PredFile
+  End If
 
   'struct_sick_err(ErrMessage)
   P_err = "struct_sick_err"
