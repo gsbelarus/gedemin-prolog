@@ -1,4 +1,4 @@
-% Примеры использования PL-объектов
+п»ї% РџСЂРёРјРµСЂС‹ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ PL-РѕР±СЉРµРєС‚РѕРІ
 
 hello_world(Msg) :-
     format(atom(Msg), '~w~w~w', ['Hello', ' ', 'World']).
@@ -17,8 +17,8 @@ some_fact(3, 'Firebird').
 some_fact(4, 'FastReport').
 some_fact(5, 'SWI-Prolog').
 some_fact(none, 0).
-some_fact('1995-01-01', "Анжелика").
-some_fact('2003-01-01', "Гедымин").
+some_fact('1995-01-01', "РђРЅР¶РµР»РёРєР°").
+some_fact('2003-01-01', "Р“РµРґС‹РјРёРЅ").
 some_fact('2015-01-01', 2.6).
 
 :- dynamic([gd_place/4]).
@@ -44,4 +44,9 @@ FROM
   GD_PLACE p
 "
 ).
+
+generate_some_rec(ID, Name, Number) :-
+    integer(Number),
+    between(1, Number, ID),
+    atomic_list_concat(["Record", ID], Name).
 

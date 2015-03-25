@@ -3,7 +3,9 @@ Option Explicit
 Sub pl_Examples()
   Dim Title, Msg, Ret
   Title = "Гедымин - Пролог"
-  Msg = "% Примеры использования PL-объектов" & vbCrLf & vbCrLf & _
+  Msg = _
+        "/* Примеры использования PL-объектов */" & vbCrLf & vbCrLf & _
+        "%%%%" & vbCrLf & _
         "%    pl_Examples" & vbCrLf & _
         "%      TgsPLClient: Initialise, IsInitialised"
   
@@ -30,13 +32,13 @@ Sub pl_Examples()
 
   Dim FuncIndex, FuncName, FuncBegin, FuncEnd
   FuncName = "pl_Example"
-  FuncBegin = 7
-  FuncEnd = 7
+  FuncBegin = 1
+  FuncEnd = 8
   For FuncIndex = FuncBegin To FuncEnd
     Msg = Msg & vbCrLf & _
           Eval(FuncName & FuncIndex & "(PL, InitStr)")
   Next
-  
+  Msg = Msg & vbCrLf & "%%%%"
   PL.DestroyObject
 
   Dim frmMsg, Creator
@@ -51,6 +53,7 @@ End Sub
 Function pl_Example1(ByRef PL, ByVal InitStr)
   Dim Title, Msg
   Title = vbCrLf & _
+          "%%" & vbCrLf & _
           "% 1. pl_Example1(PL, InitStr)" & vbCrLf & _
           "%      TgsPLClient: Call" & vbCrLf & _
           "%      TgsPLTermv: PutAtom, ToString"
@@ -64,7 +67,7 @@ Function pl_Example1(ByRef PL, ByVal InitStr)
 
   Msg = _
     "% Запрос" & vbCrLf & _
-    "?- current_prolog_flag(" & Params.ReadString(0) & ", AppPath)."
+    "?- " & PredicateName & "(" & Params.ToString(0) & ", AppPath)."
 
   If PL.Call(PredicateName, Params) Then
     Dim AppPath
@@ -84,6 +87,7 @@ End Function
 Function pl_Example2(ByRef PL, ByVal InitStr)
   Dim Title, Msg
   Title = vbCrLf & _
+          "%%" & vbCrLf & _
           "% 2. pl_Example2(PL, InitStr)" & vbCrLf & _
           "%      TgsPLClient: Call2, Call" & vbCrLf & _
           "%      TgsPLTermv: PutAtom, ToString"
@@ -105,11 +109,11 @@ Function pl_Example2(ByRef PL, ByVal InitStr)
   Dim PredicateName, Params
   PredicateName = "pl_Example"
   Set Params = Designer.CreateObject(2, "TgsPLTermv", "")
+  Params.PutAtom 0, "pl_Example2"
+
   Msg = Msg & vbCrLf & _
     "% Запрос" & vbCrLf & _
-    "?- pl_Example(pl_Example2, Text)."
-
-  Params.PutAtom 0, "pl_Example2"
+    "?- " & PredicateName & "(" & Params.ToString(0) & ", Text)."
 
   If PL.Call(PredicateName, Params) Then
     Msg = Msg & vbCrLf & _
@@ -126,9 +130,10 @@ End Function
 Function pl_Example3(ByRef PL, ByVal InitStr)
   Dim Title, Msg
   Title = vbCrLf & _
+          "%%" & vbCrLf & _
           "% 3. pl_Example3(PL, InitStr)" & vbCrLf & _
           "%      TgsPLClient: Compound, Term, Call" & vbCrLf & _
-          "%      TgsPLTermv: PutAtom"
+          "%      TgsPLTermv: PutAtom, ToString"
 
   pl_Example3 = ""
 
@@ -160,7 +165,7 @@ Function pl_Example3(ByRef PL, ByVal InitStr)
   If PL.Call(PredicateName, Params) Then
     Msg = Msg & vbCrLf & _
       "% Запрос" & vbCrLf & _
-      "?- pl_Example(pl_Example3, Text)." & vbCrLf & _
+      "?- " & PredicateName & "(" & Params.ToString(0) & ", Text)." & vbCrLf & _
       "Text = " & Params.ToString(1) & "."
   Else
     Msg = Msg & vbCrLf & "false."
@@ -176,6 +181,7 @@ End Function
 Function pl_Example4(ByRef PL, ByVal InitStr)
   Dim Title, Msg
   Title = vbCrLf & _
+          "%%" & vbCrLf & _
           "% 4. pl_Example4(PL, InitStr)" & vbCrLf & _
           "%      TgsPLClient: LoadScriptByName, Call" & vbCrLf & _
           "%      TgsPLTermv: ToString"
@@ -193,9 +199,10 @@ Function pl_Example4(ByRef PL, ByVal InitStr)
   Dim PredicateName, Params
   PredicateName = "hello_world"
   Set Params = Designer.CreateObject(1, "TgsPLTermv", "")
+
   Msg = _
     "% Запрос" & vbCrLf & _
-    "?- hello_world(Hello)."
+    "?- " & PredicateName & "(Hello)."
 
   If PL.Call(PredicateName, Params) Then
     Msg = Msg & vbCrLf & _
@@ -212,6 +219,7 @@ End Function
 Function pl_Example5(ByRef PL, ByVal InitStr)
   Dim Title, Msg
   Title = vbCrLf & _
+          "%%" & vbCrLf & _
           "% 5. pl_Example5(PL, InitStr)" & vbCrLf & _
           "%      TgsPLClient: Debug, LoadScriptByName" & vbCrLf & _
           "%      TgsPLTermv: ToString" & vbCrLf & _
@@ -231,16 +239,16 @@ Function pl_Example5(ByRef PL, ByVal InitStr)
   
   Dim Params
   Set Params = Designer.CreateObject(1, "TgsPLTermv", "")
-  Msg = _
-    "% Запрос" & vbCrLf & _
-    "?- hello_world(Hello)."
-
   Dim PredicateName, Query
   PredicateName = "hello_world"
   Set Query = Designer.CreateObject(nil, "TgsPLQuery", "")
   Query.PredicateName = PredicateName
   Query.Termv = Params
   Query.OpenQuery
+
+  Msg = _
+    "% Запрос" & vbCrLf & _
+    "?- " & PredicateName & "(Hello)."
 
   If Not Query.EOF Then
     Do Until Query.EOF
@@ -260,7 +268,7 @@ Function pl_Example5(ByRef PL, ByVal InitStr)
 
   Msg = Msg & vbCrLf & _
     "% Запрос" & vbCrLf & _
-    "?- hello_world(Hello), !."
+    "?- " & PredicateName & "(Hello), !."
 
   Query.OpenQuery
 
@@ -298,6 +306,7 @@ Function pl_Example6(ByRef PL, ByVal InitStr)
 
   Dim Title, Msg
   Title = vbCrLf & _
+          "%%" & vbCrLf & _
           "% 6. pl_Example6(PL, InitStr)" & vbCrLf & _
           "%      TgsPLClient: LoadScriptByName" & vbCrLf & _
           "%      TgsPLTermv: DataType, ReadInteger, ReadAtom, ReadDate, ReadString" & vbCrLf & _
@@ -315,9 +324,6 @@ Function pl_Example6(ByRef PL, ByVal InitStr)
 
   Dim Params
   Set Params = Designer.CreateObject(2, "TgsPLTermv", "")
-  Msg = _
-    "% Запрос" & vbCrLf & _
-    "?- some_fact(Arg1, Arg2)."
 
   Dim PredicateName, Query
   Dim Arg1, Arg2
@@ -326,6 +332,10 @@ Function pl_Example6(ByRef PL, ByVal InitStr)
   Query.PredicateName = PredicateName
   Query.Termv = Params
   Query.OpenQuery
+
+  Msg = _
+    "% Запрос" & vbCrLf & _
+    "?- " & PredicateName & "(Arg1, Arg2)."
 
   Msg = Msg & vbCrLf & _
     "% Обработка фактов"
@@ -371,8 +381,9 @@ End Function
 Function pl_Example7(ByRef PL, ByVal InitStr)
   Dim Title, Msg
   Title = vbCrLf & _
+          "%%" & vbCrLf & _
           "% 7. pl_Example7(PL, InitStr)" & vbCrLf & _
-          "%      TgsPLClient: LoadScriptByName, MakePredicatesOfSQLSelect" & vbCrLf & _
+          "%      TgsPLClient: LoadScriptByName, Debug, MakePredicatesOfSQLSelect" & vbCrLf & _
           "%      TgsPLTermv: PutAtom, ReadString, PutString" & vbCrLf & _
           "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close"
 
@@ -401,7 +412,7 @@ Function pl_Example7(ByRef PL, ByVal InitStr)
   
   Msg = _
     "% Запрос" & vbCrLf & _
-    "?- gd_sql(" & FactName & ", SQL)."
+    "?- " & P_sql & "(" & FactName & ", SQL)."
 
   Dim Ret
   PL.Debug = True
@@ -441,7 +452,7 @@ Function pl_Example7(ByRef PL, ByVal InitStr)
 
   Msg = Msg & vbCrLf & _
     "% Запрос" & vbCrLf & _
-    "?- place_info(""" & PlaceNameIn & """, PlaceNameOut, PlaceTypeOut)."
+    "?- " & P_info & "(""" & PlaceNameIn & """, PlaceNameOut, PlaceTypeOut)."
   Msg = Msg & vbCrLf & _
     "% Поиск решений"
   If Not Q_info.EOF Then
@@ -458,5 +469,112 @@ Function pl_Example7(ByRef PL, ByVal InitStr)
   Tv_info.DestroyObject
 
   pl_Example7 = Title & vbCrLf & Msg
+End Function
+
+Function pl_Example8(ByRef PL, ByVal InitStr)
+  Dim Title, Msg
+  Title = vbCrLf & _
+          "%%" & vbCrLf & _
+          "% 8. pl_Example8(PL, InitStr)" & vbCrLf & _
+          "%      TgsPLClient: LoadScriptByName, ExtractData, MakePredicatesOfDataSet" & vbCrLf & _
+          "%      TgsPLTermv: PutInteger, ReadInteger, ReadString" & vbCrLf & _
+          "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close"
+
+  pl_Example8 = ""
+
+  Dim ScriptName
+  ScriptName = "pl_Examples_Script"
+  If InitStr = "" Then
+    If Not PL.LoadScriptByName(ScriptName) Then
+      Exit Function
+    End If
+  End If
+
+  Dim P_rec, Tv_rec, RecNum
+  P_rec = "generate_some_rec"
+  Set Tv_rec = Designer.CreateObject(3, "TgsPLTermv", "")
+  RecNum = 8
+  Tv_rec.PutInteger 2, RecNum
+
+  Msg = _
+    "% Запрос" & vbCrLf & _
+    "?- " & P_rec & "(ID, Name, " & RecNum & ")."
+
+  Dim CDS
+  Set CDS = Designer.CreateObject(nil, "TClientDataset", "")
+  CDS.FieldDefs.Add "ID", ftInteger, 0, True
+  CDS.FieldDefs.Add "Name", ftString, 20, True
+  CDS.CreateDataSet
+  CDS.Open
+  
+  Msg = Msg & vbCrLf & _
+    "% Заполнение клиентского набора данных из Пролог-запроса"
+  Call PL.ExtractData(CDS, P_rec, Tv_rec)
+  Msg = Msg & vbCrLf & _
+    "% Добавлено записей: " & CDS.RecordCount
+
+  If Not CDS.RecordCount = 0 Then
+    Msg = Msg & vbCrLf & _
+      "% Считывание клиентского набора данных"
+      Msg = Msg & vbCrLf & _
+            "%   ID   Name"
+    CDS.First
+    Do Until CDS.Eof
+      Msg = Msg & vbCrLf & _
+            "%   " & CDS.FieldByName("ID").AsInteger & _
+            "    " & CDS.FieldByName("Name").AsString
+      CDS.Next
+    Loop
+  End If
+  Tv_rec.DestroyObject
+  
+  Dim P_cds, Tv_cds, Q_cds
+  P_cds = "gd_some_rec"
+  Set Tv_cds = Designer.CreateObject(2, "TgsPLTermv", "")
+  Set Q_cds = Designer.CreateObject(nil, "TgsPLQuery", "")
+  Q_cds.PredicateName = P_cds
+  Q_cds.Termv = Tv_cds
+
+  Dim I, DelCount
+  DelCount = 3
+  CDS.First
+  For I = 1 To DelCount
+    CDS.Delete
+  Next
+  Msg = Msg & vbCrLf & _
+    "% Удалено первых записей: " & DelCount
+
+  Msg = Msg & vbCrLf & _
+    "% Наполнение базы знаний из клиентского набора данных"
+  Dim Ret
+  Ret = PL.MakePredicatesOfDataSet(CDS, "ID,Name", P_cds, P_cds, False)
+
+  Msg = Msg & vbCrLf & _
+    "% Добавлено фактов " & P_cds & ": " & Ret
+
+  CDS.Close
+  CDS.DestroyObject
+
+  Msg = Msg & vbCrLf & _
+    "% Запрос" & vbCrLf & _
+    "?- " & P_cds & "(ID, Name)"
+  Q_cds.OpenQuery
+
+  Msg = Msg & vbCrLf & _
+    "% Обработка фактов"
+  If Not Q_cds.EOF Then
+    While Not Q_cds.EOF
+      Msg = Msg & vbCrLf & _
+            "%   " & Tv_cds.ReadInteger(0) & ": " & Tv_cds.ReadString(1)
+      Q_cds.NextSolution
+    Wend
+  Else
+    Msg = Msg & vbCrLf & "false."
+  End If
+  Q_cds.Close
+  Q_cds.DestroyObject
+  Tv_cds.DestroyObject
+
+  pl_Example8 = Title & vbCrLf & Msg
 End Function
 

@@ -28,3 +28,26 @@ some_fact('1995-01-01', "Angelica").
 some_fact('2003-01-01', "Gedemin").
 some_fact('2015-01-01', 2.6).
 
+:- dynamic([gd_place/4]).
+
+% gd_place(ID, Parent, Name, PlaceType)
+
+place_info(Name, PlaceName, PlaceType) :-
+    place_name_type(_, Name, PlaceName, PlaceType).
+
+place_name_type(ID, Name, Name, PlaceType) :-
+    gd_place(ID, _, Name, PlaceType).
+place_name_type(ID, Name, PlaceName, PlaceType) :-
+    gd_place(ID, Parent, Name, _),
+    place_name_type(Parent, _, PlaceName, PlaceType).
+
+:-  style_check(-atom).
+
+gd_sql(gd_place,
+"
+SELECT
+  p.ID, p.PARENT, p.NAME, p.PLACETYPE
+FROM
+  GD_PLACE p
+"
+).
