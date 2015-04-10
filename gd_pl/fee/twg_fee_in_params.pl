@@ -43,7 +43,7 @@ twg_fee_in_params:-
         pFeeType_IncomeTax_ruid-'147567139,119619099',     % Подоходный
         pFeeType_TransferDed_ruid-'147069035,453357870',   % Расходы по переводу
         pFeeType_AlimonyDebt_ruid-'147067786,453357870',   % Долг по алиментам
-        pFeeType_FineDebt_ruid-'147049310,1011422021'      % Долг по штрафам (Штрафы)
+        pFeeType_FineDebt_ruid-'147036413,360343892'       % Долг по штрафам
         ]),
     fail.
 twg_fee_in_params:-

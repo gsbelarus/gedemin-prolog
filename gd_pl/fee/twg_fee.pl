@@ -230,7 +230,7 @@ fee_type_alias(wg_fee_fine, "ftAlimony", "ftFine").
 fee_type_alias(wg_fee_alimony, "vForAlimony", "vForAlimony").
 fee_type_alias(wg_fee_fine, "vForAlimony", "vForFine").
 fee_type_alias(wg_fee_alimony, "ftAlimonyDebt", "ftAlimonyDebt").
-fee_type_alias(wg_fee_fine, "ftAlimonyDebt", "ftFine"). % ftFineDebt
+fee_type_alias(wg_fee_fine, "ftAlimonyDebt", "ftFineDebt").
 fee_type_alias(wg_fee_alimony, "ftTransferDed", "ftTransferDed").
 fee_type_alias(wg_fee_fine, "ftTransferDed", "ftTransferDed").
 

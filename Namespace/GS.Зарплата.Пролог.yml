@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.12"
+  Version: "1.0.0.13"
   Optional: False
   Internal: True
-  MD5: DCA2E1B95C4F350797103F75D9D664FE
+  MD5: 13BE13D201A9DE82A146D175FFCDC355
 Objects: 
   - 
     Properties: 
@@ -5041,7 +5041,7 @@ Objects:
             fDebit-float, fCredit-float, fFeeTypeKey-integer
             ]) :-
             memberchk(Scope, [
-                wg_fee_alimony, wg_fee_fine
+                wg_fee_alimony
                 ]).
         % usr_wg_TblCharge_AlimonyDebt(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey)
         get_sql(Scope, kb, usr_wg_TblCharge_AlimonyDebt/9,
@@ -5070,7 +5070,45 @@ Objects:
             pEmplKey-_, pDateCalcFrom-_, pFeeType_AlimonyDebt_ruid-_
             ]) :-
             memberchk(Scope, [
-                wg_fee_alimony, wg_fee_fine
+                wg_fee_alimony
+                ]).
+        
+        gd_pl_ds(Scope, kb, usr_wg_TblCharge_AlimonyDebt, 9, [
+            fDocKey-integer, fEmplKey-integer, fFirstMoveKey-integer,
+            fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+            fDebit-float, fCredit-float, fFeeTypeKey-integer
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_fine
+                ]).
+        % usr_wg_TblCharge_AlimonyDebt(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey)
+        get_sql(Scope, kb, usr_wg_TblCharge_AlimonyDebt/9,
+        "
+        SELECT
+          tch.USR$DOCUMENTKEY,
+          tch.USR$EMPLKEY,
+          tch.USR$FIRSTMOVEKEY,
+          EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear,
+          EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth,
+          tch.USR$DATEBEGIN,
+          tch.USR$DEBIT,
+          tch.USR$CREDIT,
+          tch.USR$FEETYPEKEY
+        FROM
+          USR$WG_TBLCHARGE tch
+        WHERE
+          tch.USR$EMPLKEY = pEmplKey
+          AND
+          tch.USR$DATEBEGIN < 'pDateCalcFrom'
+          AND
+          tch.USR$FEETYPEKEY =
+            (SELECT id FROM GD_P_GETID(pFeeType_FineDebt_ruid))
+        ",
+            [
+            pEmplKey-_, pDateCalcFrom-_, pFeeType_FineDebt_ruid-_
+            ]) :-
+            memberchk(Scope, [
+                wg_fee_fine
                 ]).
         
         gd_pl_ds(Scope, kb, usr_wg_FeeType, 4, [
@@ -5707,7 +5745,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-01-06T15:36:14+03:00
+      EDITIONDATE: 2015-04-09T16:30:52+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -5768,7 +5806,7 @@ Objects:
                 pFeeType_IncomeTax_ruid-'147567139,119619099',     % Подоходный
                 pFeeType_TransferDed_ruid-'147069035,453357870',   % Расходы по переводу
                 pFeeType_AlimonyDebt_ruid-'147067786,453357870',   % Долг по алиментам
-                pFeeType_FineDebt_ruid-'147049310,1011422021'      % Долг по штрафам (Штрафы)
+                pFeeType_FineDebt_ruid-'147036413,360343892'       % Долг по штрафам
                 ]),
             fail.
         twg_fee_in_params:-
@@ -5862,7 +5900,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-01-06T15:36:29+03:00
+      EDITIONDATE: 2015-04-09T16:35:35+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -5937,6 +5975,8 @@ Objects:
         %% dynamic state
         :- ['kb/param_list'].
         %%
+        
+        :- else.
         
         :- ps32k_lgt(64, 128, 64).
         
@@ -6107,7 +6147,7 @@ Objects:
         fee_type_alias(wg_fee_alimony, "vForAlimony", "vForAlimony").
         fee_type_alias(wg_fee_fine, "vForAlimony", "vForFine").
         fee_type_alias(wg_fee_alimony, "ftAlimonyDebt", "ftAlimonyDebt").
-        fee_type_alias(wg_fee_fine, "ftAlimonyDebt", "ftFine"). % ftFineDebt
+        fee_type_alias(wg_fee_fine, "ftAlimonyDebt", "ftFineDebt").
         fee_type_alias(wg_fee_alimony, "ftTransferDed", "ftTransferDed").
         fee_type_alias(wg_fee_fine, "ftTransferDed", "ftTransferDed").
         
@@ -7960,7 +8000,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-02-09T15:59:53+03:00
+      EDITIONDATE: 2015-04-09T16:29:11+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

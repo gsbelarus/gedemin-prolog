@@ -224,7 +224,7 @@ gd_pl_ds(Scope, kb, usr_wg_TblCharge_AlimonyDebt, 9, [
     fDebit-float, fCredit-float, fFeeTypeKey-integer
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony, wg_fee_fine
+        wg_fee_alimony
         ]).
 % usr_wg_TblCharge_AlimonyDebt(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey)
 get_sql(Scope, kb, usr_wg_TblCharge_AlimonyDebt/9,
@@ -253,7 +253,45 @@ WHERE
     pEmplKey-_, pDateCalcFrom-_, pFeeType_AlimonyDebt_ruid-_
     ]) :-
     memberchk(Scope, [
-        wg_fee_alimony, wg_fee_fine
+        wg_fee_alimony
+        ]).
+
+gd_pl_ds(Scope, kb, usr_wg_TblCharge_AlimonyDebt, 9, [
+    fDocKey-integer, fEmplKey-integer, fFirstMoveKey-integer,
+    fCalYear-integer, fCalMonth-integer, fDateBegin-date,
+    fDebit-float, fCredit-float, fFeeTypeKey-integer
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_fine
+        ]).
+% usr_wg_TblCharge_AlimonyDebt(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey)
+get_sql(Scope, kb, usr_wg_TblCharge_AlimonyDebt/9,
+"
+SELECT
+  tch.USR$DOCUMENTKEY,
+  tch.USR$EMPLKEY,
+  tch.USR$FIRSTMOVEKEY,
+  EXTRACT(YEAR FROM tch.USR$DATEBEGIN) AS CalYear,
+  EXTRACT(MONTH FROM tch.USR$DATEBEGIN) AS CalMonth,
+  tch.USR$DATEBEGIN,
+  tch.USR$DEBIT,
+  tch.USR$CREDIT,
+  tch.USR$FEETYPEKEY
+FROM
+  USR$WG_TBLCHARGE tch
+WHERE
+  tch.USR$EMPLKEY = pEmplKey
+  AND
+  tch.USR$DATEBEGIN < 'pDateCalcFrom'
+  AND
+  tch.USR$FEETYPEKEY =
+    (SELECT id FROM GD_P_GETID(pFeeType_FineDebt_ruid))
+",
+    [
+    pEmplKey-_, pDateCalcFrom-_, pFeeType_FineDebt_ruid-_
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_fine
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_FeeType, 4, [
