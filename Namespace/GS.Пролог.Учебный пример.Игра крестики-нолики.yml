@@ -1,0 +1,4304 @@
+%YAML 1.1
+--- 
+StructureVersion: "1.0"
+Properties: 
+  RUID: 148085368_215642201
+  Name: "GS.Пролог.Учебный пример.Игра крестики-нолики"
+  Caption: "GS.Пролог.Учебный пример.Игра крестики-нолики"
+  Version: "1.0.0.36"
+  Optional: False
+  Internal: True
+  MD5: 5967A6E978282E45658B526B70C02480
+Uses: 
+  - "147753062_69526485 GS.Общие.Хранилище"
+Objects: 
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148085832_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "xo_game"
+      COMMENT: ~
+      SCRIPT: | 
+        % xo_game
+        % игра крестики-нолики
+        %
+        
+        :- dynamic([ xo_params/1, xo_cell/2, xo_solve/2, xo_step/4 ]).
+        
+        %:- ['kb/xo_cell', 'kb/xo_solve'].
+        
+        % параметры игры
+        % xo_params([Size, Line, Level, Go, ModeOpt])
+        %   Size = size(PosBegin, PosEnd) - размер игрового поля
+        %   Line = line(WinLength) - длина линии выигрыша
+        %   Level = level(Level) - уровень игры
+        %   Go = go(CompMark, UserMark) - отметки хода
+        %   ModeOpt - опции режима
+        xo_params( [
+            size(0, 19),
+            line(5),
+            level(3),
+            go(x, o),
+            mode_opt([level(echo, +4)])
+        ] ).
+        
+        % пространство ячеек
+        % xo_cell(Coor, Mark)
+        %   Coor = X-Y
+        %   Mark = {x ; o ; n}
+        
+        % пространство решений
+        % xo_solve(Solve, State)
+        %   Solve = [ cell(Coor, Mark) | _ ]
+        %   Coor = X-Y
+        %   Mark = {x ; o ; n}
+        %   State = [x-Qty1, o-Qty2, n-Qty3]
+        
+        % пространство движений для поиска решения
+        % xo_solve_moves(SolveMoves)
+        %   SolveMoves = [ move(DeltaX, DeltaY) | _ ]
+        xo_solve_moves([move(1, 0), move(-1, 0)]).    % горизонталь
+        xo_solve_moves([move(0, 1), move(0, -1)]).    % вертикаль
+        xo_solve_moves([move(1, 1), move(-1, -1)]).   % диагональ1
+        xo_solve_moves([move(1, -1), move(-1, 1)]).   % диагональ2
+        
+        % формирование пространства ячеек
+        % xo_make_cell
+        xo_make_cell :-
+            length(CellArgs, 2),
+            CellFact =.. [xo_cell|CellArgs],
+            retractall( CellFact ),
+            xo_params(Params),
+            memberchk(size(PosBegin, PosEnd), Params),
+            between(PosBegin, PosEnd, X),
+            between(PosBegin, PosEnd, Y),
+            assertz( xo_cell(X-Y, n) ),
+            fail.
+        xo_make_cell :-
+            once( xo_cell(_, _) ).
+        
+        % формирование пространства решений
+        % xo_make_solve
+        xo_make_solve :-
+            length(SolveArgs, 2),
+            SolveFact =.. [xo_solve|SolveArgs],
+            retractall( SolveFact ),
+            xo_params(Params),
+            memberchk(size(PosBegin, PosEnd), Params),
+            memberchk(line(WinLength), Params),
+            Coor = X-Y,
+            xo_cell(Coor, _),
+            once( ( \+ WinLength =:= (PosEnd - PosBegin) + 1
+                  ; ( X = PosBegin ; Y = PosBegin )
+                  )
+                ),
+            xo_solve_moves(Moves),
+            xo_cell_solve(Moves, Coor, Coor, WinLength, [cell(Coor, n)], Solve),
+            \+ xo_solve(Solve, _),
+            State = [x-0, o-0, n-WinLength],
+            assertz( xo_solve(Solve, State) ),
+            fail.
+        xo_make_solve :-
+            once( xo_solve(_, _) ).
+        
+        % шаблон решения по ячейке
+        % xo_cell_solve(Moves, BeginCoor, CurrentCoor, WinLength, Solve0, Solve)
+        xo_cell_solve(_, _, _, WinLength, Solve, SortedSolve) :-
+            length(Solve, WinLength),
+            sort(Solve, SortedSolve),
+            !.
+        xo_cell_solve([Move | Moves], BeginCoor, X-Y, WinLength, Solve0, Solve) :-
+            Move = move(DeltaX, DeltaY),
+            plus(X, DeltaX, X1),
+            plus(Y, DeltaY, Y1),
+            xo_cell(X1-Y1, _),
+            Solve1 = [cell(X1-Y1, n) | Solve0],
+            !,
+            xo_cell_solve([Move | Moves], BeginCoor, X1-Y1, WinLength, Solve1, Solve).
+        xo_cell_solve([_ | Moves], BeginCoor, _, WinLength, Solve0, Solve) :-
+            !,
+            xo_cell_solve(Moves, BeginCoor, BeginCoor, WinLength, Solve0, Solve).
+        
+        % выигрыш
+        % xo_win(Mode, Mark, X, Y)
+        xo_win(Mode, Mark, X, Y) :-
+            xo_win(Mode, Mark, Solve),
+            member(cell(X-Y, _), Solve).
+        % xo_win(Mode, Mark, Solve)
+        xo_win(Mode, Mark, Solve) :-
+            xo_params(Params),
+            memberchk(line(WinLength), Params),
+            memberchk(go(CompMark, UserMark), Params),
+            member(Mode-Mark, [normal-CompMark, echo-UserMark]),
+            xo_solve(Solve, State),
+            memberchk(Mark-WinLength, State),
+            !.
+        
+        % ничья
+        % xo_tie(Mode)
+        xo_tie(Mode) :-
+            xo_params(Params),
+            memberchk(level(Level), Params),
+            memberchk(mode_opt(ModeOpt), Params),
+            xo_mode_level(Mode, ModeOpt, Level, ModeLevel),
+            ModeLevel >= 3,
+            memberchk(go(CompMark, UserMark), Params),
+            once( xo_solve(_, _) ),
+            \+ xo_has_chance(CompMark, _, _),
+            \+ xo_has_chance(UserMark, _, _),
+            !.
+        xo_tie(_) :-
+            once( xo_cell(_, _) ),
+            \+ xo_cell(_, n),
+            !.
+        
+        % xo_mode_level(Mode, ModeOpt, Level, ModeLevel)
+        xo_mode_level(Mode, ModeOpt, Level, ModeLevel) :-
+            Mode = echo,
+            memberchk(level(Mode, Diff), ModeOpt),
+            plus(Level, Diff, ModeLevel),
+            !.
+        xo_mode_level(_, _, Level, Level).
+        
+        % есть шанс для выигрыша
+        % xo_has_chance(Mark, Solve, MarkedQty)
+        xo_has_chance(Mark, Solve, MarkedQty) :-
+            xo_params(Params),
+            memberchk(line(WinLength), Params),
+            xo_solve(Solve, State),
+            memberchk(n-FreeQty, State),
+            memberchk(Mark-MarkedQty, State),
+            ( WinLength = FreeQty
+             -> true
+            ; plus(FreeQty, MarkedQty, WinLength)
+            ).
+        
+        % xo_mode_go(Mode, Go, ModeGo)
+        xo_mode_go(echo, go(Mark1, Mark2), go(Mark2, Mark1)) :-
+            !.
+        xo_mode_go(normal, Go, Go).
+        
+        % игра
+        % xo_play(Mode, X, Y, Rule)
+        xo_play(Mode, X, Y, Rule) :-
+            Cell = cell(X-Y, n),
+            xo_play(Mode, Cell, Rule),
+            !.
+        % xo_play(Mode, PlayCell, Rule)
+        % первый ход - случайный выбор из лучших позиций
+        xo_play(Mode, PlayCell, Rule) :-
+            xo_params(Params),
+            memberchk(level(Level), Params),
+            memberchk(mode_opt(ModeOpt), Params),
+            xo_mode_level(Mode, ModeOpt, Level, ModeLevel),
+            ModeLevel >= 3,
+            \+ xo_cell(_, x),
+            \+ xo_cell(_, o),
+            %check_point,
+            Method = 0,
+            findall( Method-rate(Gift, Count) / Coor,
+                     ( xo_cell(Coor, n),
+                       findall( FreeQty-1,
+                                ( xo_solve(Solve, State),
+                                  memberchk(cell(Coor, n), Solve),
+                                  memberchk(n-FreeQty, State)
+                                ),
+                                FreeQtyList
+                       ),
+                       sum_int_pairs(FreeQtyList, Gift-Count)
+                     ),
+                     RateCoorList
+            ),
+            \+ RateCoorList = [],
+            sort(RateCoorList, SortedRateCoorList),
+            reverse(SortedRateCoorList, PlayCoorList),
+            length(PlayCoorList, PlayLen),
+            catch( PlayBest is PlayLen // 2 ** (ModeLevel - 2), _, PlayBest = 1 ),
+            catch( PlayIndex is random(PlayBest), _, PlayIndex = 0 ),
+            nth0(PlayIndex, PlayCoorList, Method-Rate / _),
+            findall( Coor,
+                     member(Method-Rate / Coor, PlayCoorList),
+                     PlayRateCoorList
+            ),
+            length(PlayRateCoorList, PlayRateLen),
+            PlayRateIndex is random(PlayRateLen),
+            nth0(PlayRateIndex, PlayRateCoorList, PlayCoor),
+            PlayCell = cell(PlayCoor, n),
+            Rule = rule(random_best,method=Method,length=PlayLen,index=PlayIndex),
+            !.
+        % первый ход - случайный выбор
+        xo_play(_, PlayCell, Rule) :-
+            \+ xo_cell(_, x),
+            \+ xo_cell(_, o),
+            xo_random_free_cell(PlayCell, Rule),
+            !.
+        % выигрыш следующим ходом
+        xo_play(Mode, PlayCell, Rule) :-
+            xo_params(Params),
+            memberchk(level(Level), Params),
+            memberchk(mode_opt(ModeOpt), Params),
+            xo_mode_level(Mode, ModeOpt, Level, ModeLevel),
+            ModeLevel >= 1,
+            memberchk(go(Mark1, Mark2), Params),
+            xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
+            memberchk(line(WinLength), Params),
+            plus(WinLength, -1, ToWinLength),
+            %
+            ( Mark = CompMark ; Mark = UserMark ),
+            xo_has_chance(Mark, Solve, ToWinLength),
+            %
+            PlayCell = cell(X-Y, n),
+            memberchk(PlayCell, Solve),
+            Rule = rule(next_step_win,Mark,X,Y),
+            !.
+        % свободные края
+        xo_play(Mode, PlayCell, Rule) :-
+            xo_params(Params),
+            memberchk(level(Level), Params),
+            memberchk(mode_opt(ModeOpt), Params),
+            xo_mode_level(Mode, ModeOpt, Level, ModeLevel),
+            ModeLevel >= 5,
+            memberchk(go(Mark1, Mark2), Params),
+            xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
+            memberchk(line(WinLength), Params),
+            plus(WinLength, -2, ToWinLength1),
+            plus(WinLength, -3, ToWinLength2),
+            %
+            ( Mark = CompMark ; Mark = UserMark ),
+            xo_has_chance(Mark, Solve, ToWinLength1),
+            First = cell(_, n),
+            Solve = [First | Right],
+            Last = cell(_, n),
+            last(Solve, Last),
+            append(Left, Last, Solve),
+            %check_point,
+            findall( BorderCell,
+                     ( xo_has_chance(Mark, BorderSolve, MarkedQty),
+                       MarkedQty >= ToWinLength2,
+                       ( append(Right, [_], BorderSolve),
+                         BorderCell = Last
+                       ; BorderSolve = [_ | Left],
+                         BorderCell = First
+                       )
+                     ),
+                     BorderCellList
+            ),
+            \+ BorderCellList = [],
+            %check_point,
+            length(BorderCellList, PlayLength),
+            PlayIndex is random(PlayLength),
+            nth0(PlayIndex, BorderCellList, PlayCell),
+            PlayCell = cell(X-Y, n),
+            Rule = rule(free_border,Mark,X,Y),
+            !.
+        % вилка
+        xo_play(Mode, PlayCell, Rule) :-
+            xo_params(Params),
+            memberchk(level(Level), Params),
+            memberchk(mode_opt(ModeOpt), Params),
+            xo_mode_level(Mode, ModeOpt, Level, ModeLevel),
+            ModeLevel >= 7,
+            memberchk(go(Mark1, Mark2), Params),
+            xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
+            memberchk(line(WinLength), Params),
+            plus(WinLength, -2, ToWinLength1),
+            plus(WinLength, -3, ToWinLength2),
+            MarkedQtyList = [ToWinLength1, ToWinLength2],
+            OrderMarkList = [1-CompMark, 0-UserMark],
+            %check_point,
+            findall( MarkedQty-Order-Mark-Solve,
+                     ( member(MarkedQty, MarkedQtyList),
+                       member(Order-Mark, OrderMarkList),
+                       xo_has_chance(Mark, Solve, MarkedQty)
+                     ),
+                     SolveList
+            ),
+            \+ SolveList = [],
+            %check_point,
+            findall( Fork,
+                     xo_has_fork(SolveList, Fork),
+                     ForkList
+            ),
+            \+ ForkList = [],
+            sort(ForkList, SortedForkList),
+            reverse(SortedForkList, [BestFork | TeilForkList]),
+            BestFork = fork(ForkHeight, ForkOrder, ForkPower, _, _, _),
+            PlayFork = fork(ForkHeight, ForkOrder, ForkPower, _, _, _),
+            findall( PlayFork,
+                     member(PlayFork, [BestFork | TeilForkList]),
+                     PlayForkList
+            ),
+            length(PlayForkList, PlayLength),
+            PlayIndex is random(PlayLength),
+            nth0(PlayIndex, PlayForkList, PlayFork),
+            %check_point,
+            PlayCell = cell(X-Y, n),
+            PlayFork = fork(Height, _, Power, Width, Mark, PlayCell),
+            Rule = rule(fork,height=Height,power=Power,width=Width,Mark,X,Y),
+            !.
+        % случайный выбор из лучших шансов на выигрыш
+        xo_play(Mode, PlayCell, Rule) :-
+            xo_params(Params),
+            memberchk(level(Level), Params),
+            memberchk(mode_opt(ModeOpt), Params),
+            xo_mode_level(Mode, ModeOpt, Level, ModeLevel),
+            ModeLevel >= 3,
+            memberchk(go(Mark1, Mark2), Params),
+            xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
+            memberchk(line(WinLength), Params),
+            xo_limit_coor(WinLength, LimitData),
+            between(2, WinLength, CostCut),
+            Cost is WinLength - CostCut,
+            %check_point,
+            RateShape = [TotalGift, TotalCount, CompGift, UserGift, CompCount, UserCount],
+            xo_rate_shape(RateShape, Method-Rate),
+            findall( Method-Rate / Coor,
+                     ( xo_cell(Coor, n),
+                       xo_check_coor(Coor, LimitData),
+                       xo_rate(CompMark, Coor, Cost, CompGift-CompCount),
+                       xo_rate(UserMark, Coor, Cost, UserGift-UserCount),
+                       plus(CompCount, UserCount, TotalCount),
+                       TotalCount > 0,
+                       plus(CompGift, UserGift, TotalGift)
+                     ),
+                     RateCoorList
+            ),
+            \+ RateCoorList = [],
+            sort(RateCoorList, SortedRateCoorList),
+            reverse(SortedRateCoorList, PlayCoorList),
+            length(PlayCoorList, PlayLen),
+            catch( PlayBest is PlayLen // 2 ** (ModeLevel - 2), _, PlayBest = 1 ),
+            catch( PlayIndex is random(PlayBest), _, PlayIndex = 0 ),
+            nth0(PlayIndex, PlayCoorList, Method-Rate / _),
+            findall( Coor,
+                     member(Method-Rate / Coor, PlayCoorList),
+                     PlayRateCoorList
+            ),
+            length(PlayRateCoorList, PlayRateLen),
+            PlayRateIndex is random(PlayRateLen),
+            nth0(PlayRateIndex, PlayRateCoorList, PlayCoor),
+            PlayCell = cell(PlayCoor, n),
+            Rule = rule(random_best,method=Method,cost=Cost,length=PlayLen,index=PlayIndex),
+            !.
+        % случайный выбор из шансов на выигрыш
+        xo_play(Mode, PlayCell, Rule) :-
+            xo_params(Params),
+            memberchk(level(Level), Params),
+            memberchk(mode_opt(ModeOpt), Params),
+            xo_mode_level(Mode, ModeOpt, Level, ModeLevel),
+            ModeLevel >= 2,
+            memberchk(go(Mark1, Mark2), Params),
+            xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
+            memberchk(line(WinLength), Params),
+            xo_limit_coor(WinLength, LimitData),
+            between(3, WinLength, CostCut),
+            Cost is WinLength - CostCut,
+            ( Mark = CompMark ;  Mark = UserMark ),
+            findall( Coor,
+                     ( xo_cell(Coor, n),
+                       xo_check_coor(Coor, LimitData),
+                       xo_rate(Mark, Coor, Cost, _-Count),
+                       \+ Count = 0
+                     ),
+                     FreeCoorList
+            ),
+            \+ FreeCoorList = [],
+            length(FreeCoorList, Len),
+            Index is random(Len),
+            nth0(Index, FreeCoorList, Coor),
+            PlayCell = cell(Coor, n),
+            Rule = rule(random_chance,cost=Cost,length=Len,index=Index),
+            !.
+        % случайный выбор свободной ячейки
+        xo_play(_, PlayCell, Rule) :-
+            xo_random_free_cell(PlayCell, Rule).
+        
+        % xo_limit_coor(WinLength, LimitData)
+        xo_limit_coor(WinLength, LimitData) :-
+            LimitData = [MinX, MaxX, MinY, MaxY],
+            findall( X, ( xo_cell(X-_, Mark), \+ Mark = n ), XList ),
+            findall( Y, ( xo_cell(_-Y, Mark), \+ Mark = n ), YList ),
+            min_list(XList, MinX0),
+            max_list(XList, MaxX0),
+            min_list(YList, MinY0),
+            max_list(YList, MaxY0),
+            WinLength1 is -WinLength,
+            plus(MinX0, WinLength1, MinX),
+            plus(MaxX0, WinLength, MaxX),
+            plus(MinY0, WinLength1, MinY),
+            plus(MaxY0, WinLength, MaxY),
+            !.
+        
+        % xo_check_coor(Coor, LimitData)
+        xo_check_coor(Coor, LimitData) :-
+            Coor = X-Y,
+            LimitData = [MinX, MaxX, MinY, MaxY],
+            X >= MinX, X =< MaxX,
+            Y >= MinY, Y =< MaxY,
+            !.
+        
+        % xo_random_free_cell(PlayCell, Rule)
+        xo_random_free_cell(PlayCell, Rule) :-
+            findall( Coor,
+                     xo_cell(Coor, n),
+                     FreeCoorList
+            ),
+            \+ FreeCoorList = [],
+            length(FreeCoorList, Len),
+            Index is random(Len),
+            nth0(Index, FreeCoorList, Coor),
+            PlayCell = cell(Coor, n),
+            Rule = rule(random_free_cell,length=Len,index=Index),
+            !.
+        
+        % шаблон ранга
+        % xo_rate_shape(RateShape, MethodRate)
+        xo_rate_shape(RateShape, MethodRate) :-
+            RateShape = [TotalGift, TotalCount, CompGift, UserGift, CompCount, UserCount],
+            List = [
+                1-rate(TotalGift, TotalCount, CompGift, UserGift, CompCount, UserCount),
+                2-rate(TotalGift, TotalCount, UserGift, CompGift, UserCount, CompCount),
+                3-rate(TotalCount, TotalGift, CompCount, UserCount, CompGift, UserGift),
+                4-rate(TotalCount, TotalGift, UserCount, CompCount, UserGift, CompGift),
+                5-rate(TotalGift, TotalCount, CompCount, UserCount, CompGift, UserGift),
+                6-rate(TotalGift, TotalCount, UserCount, CompCount, UserGift, CompGift),
+                7-rate(TotalCount, TotalGift, CompGift, UserGift, CompCount, UserCount),
+                8-rate(TotalCount, TotalGift, UserGift, CompGift, UserCount, CompCount),
+                -
+            ],
+            length(List, Len),
+            Index is random(Len - 1),
+            nth0(Index, List, MethodRate),
+            !.
+        
+        % ранг ячейки
+        % xo_rate(Mark, X, Y, Cost, Gift, Count)
+        xo_rate(Mark, X, Y, Cost, Gift, Count) :-
+            xo_rate(Mark, X-Y, Cost, Gift-Count).
+        % xo_rate(Mark, Coor, Cost, Rate)
+        xo_rate(Mark, Coor, Cost, Gift-Count) :-
+            findall( MarkedQty-1,
+                     ( xo_has_chance(Mark, Solve, MarkedQty),
+                       MarkedQty >= Cost,
+                       memberchk(cell(Coor, n), Solve)
+                     ),
+                     MarkedQtyList
+            ),
+            sum_int_pairs(MarkedQtyList, Gift-Count),
+            !.
+        
+        % есть вилка
+        % xo_has_fork(MarkSolveList, MarkedFreeCell)
+        xo_has_fork([MarkedQty-Order-Mark-Solve | TeilSolves], Fork) :-
+            Fork = fork(ForkHeight, Order, ForkPower, ForkWidth, Mark, FreeCell),
+            FreeCell = cell(_, n),
+            member(FreeCell, Solve),
+            findall( ForkMarkedQty,
+                     ( member(ForkMarkedQty-Order-Mark-ForkSolve, TeilSolves),
+                       select(FreeCell, ForkSolve, ForkSolveRest),
+                       \+ ( member(ForkCell, ForkSolveRest),
+                            memberchk(ForkCell, Solve)
+                          )
+                     ),
+                     ForkMarkedQtyList
+            ),
+            \+ ForkMarkedQtyList = [],
+            %check_point,
+            length(ForkMarkedQtyList, ForkWidth0),
+            succ(ForkWidth0, ForkWidth),
+            max_list([MarkedQty | ForkMarkedQtyList], MaxMarkedQty),
+            succ(MaxMarkedQty, ForkHeight),
+            sort([MarkedQty | ForkMarkedQtyList], SortedMarkedQty),
+            reverse(SortedMarkedQty, [First, Second | _]),
+            plus(First, Second, ForkPower).
+        xo_fork_count([_ | TeilSolves], Count, Fork) :-
+            xo_fork_count(TeilSolves, Count, Fork).
+        
+        % оценка ситуации
+        % xo_review(Mark, X, Y, Cost, OutMark, OutX, OutY)
+        xo_review(Mark, X, Y, Cost, OutMark, OutX, OutY) :-
+            xo_has_chance(Mark, Solve, MarkedQty),
+            MarkedQty >= Cost,
+            selectchk(cell(X-Y, n), Solve, Review),
+            member(cell(OutX-OutY, OutMark), Review).
+        
+        % sum_int_pairs(Pairs, SumPairs)
+        sum_int_pairs(Pairs, SumPairs) :-
+            sum_int_pairs(Pairs, 0-0, SumPairs),
+            !.
+        % sum_int_pairs(Pairs, SumPairs0, SumPairs)
+        sum_int_pairs([], SumPairs, SumPairs).
+        sum_int_pairs([X1-X2|Xs], Sum01-Sum02, SumPairs) :-
+            plus(Sum01, X1, Sum11),
+            plus(Sum02, X2, Sum12),
+            sum_int_pairs(Xs, Sum11-Sum12, SumPairs).
+        
+        % отметка ячейки
+        % xo_mark_cell(Mode, X, Y)
+        xo_mark_cell(Mode, X, Y) :-
+            Cell = cell(X-Y, n),
+            xo_mark_cell(Mode, Cell),
+            !.
+        % xo_mark_cell(Mode, Cell)
+        xo_mark_cell(Mode, Cell) :-
+            xo_params(Params),
+            memberchk(go(CompMark, UserMark), Params),
+            memberchk(Mode-Mark, [normal-CompMark, echo-UserMark]),
+            xo_solve(Solve, State),
+            memberchk(Cell, Solve),
+            xo_change_solve(Solve, Cell, Mark, ChangedSolve, State, ChangedState),
+            retract( xo_solve(Solve, State) ),
+            assertz( xo_solve(ChangedSolve, ChangedState) ),
+            fail.
+        xo_mark_cell(Mode, Cell) :-
+            xo_params(Params),
+            memberchk(go(CompMark, UserMark), Params),
+            memberchk(Mode-Mark, [normal-CompMark, echo-UserMark]),
+            Cell = cell(X-Y, n),
+            retract( xo_cell(X-Y, n) ),
+            assertz( xo_cell(X-Y, Mark) ),
+            !.
+        
+        % очистка ячейки
+        % xo_unmark_cell(X, Y)
+        xo_unmark_cell(X, Y) :-
+            Cell = cell(X-Y, _),
+            xo_solve(Solve, State),
+            memberchk(Cell, Solve),
+            xo_change_solve(Solve, Cell, n, ChangedSolve, State, ChangedState),
+            retract( xo_solve(Solve, State) ),
+            assertz( xo_solve(ChangedSolve, ChangedState) ),
+            fail.
+        xo_unmark_cell(X, Y) :-
+            retract( xo_cell(X-Y, _) ),
+            assertz( xo_cell(X-Y, n) ),
+            !.
+        
+        % смена состояния для решения
+        % xo_change_solve(Solve, State, Cell, Mark, ChangedSolve, ChangedState)
+        xo_change_solve([Cell|TeilSolve], Cell, Mark, [ChangedCell|TeilSolve], State, ChangedState) :-
+            Cell = cell(X-Y, OldMark),
+            ChangedCell = cell(X-Y, Mark),
+            select(Mark-MarkedQty, State, State1),
+            select(OldMark-OldMarkQty, State1, State2),
+            succ(MarkedQty, MarkedQty1),
+            plus(OldMarkQty, -1, OldMarkQty1),
+            append(State2, [Mark-MarkedQty1, OldMark-OldMarkQty1], ChangedState),
+            !.
+        xo_change_solve([SafeCell|TeilSolve], Cell, Mark, [SafeCell|RestSolve], State, ChangedState) :-
+            !,
+            xo_change_solve(TeilSolve, Cell, Mark, RestSolve, State, ChangedState).
+        
+        % взять параметры игры
+        % xo_get_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark)
+        xo_get_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark) :-
+            xo_params( [
+                size(PosBegin, PosEnd),
+                line(WinLength),
+                level(Level),
+                go(CompMark, UserMark),
+                _
+            ] ).
+        
+        % установить параметры игры
+        % xo_get_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark)
+        xo_set_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark) :-
+            length(ParamsArgs, 1),
+            ParamsFact =.. [xo_params|ParamsArgs],
+            retractall( ParamsFact ),
+            assertz(
+                xo_params( [
+                    size(PosBegin, PosEnd),
+                    line(WinLength),
+                    level(Level),
+                    go(CompMark, UserMark),
+                    mode_opt([])
+                ] )
+            ).
+        
+        % инициализация
+        % xo_init
+        xo_init :-
+            xo_make_cell,
+            xo_make_solve,
+            !.
+        
+        % тест
+        % xo_test
+        xo_test :-
+            Count = 1,
+            between(1, Count, Value),
+            xo_test(Result, Solve),
+            once( xo_step(Mark, Step, _, _) ),
+            writeln(game_over(Value, Result, Mark, Step, Solve)),
+            Value = Count,
+            !.
+        % xo_test(Result, Solve)
+        xo_test(Result, Solve) :-
+            xo_init,
+            xo_params(Params),
+            memberchk(go(CompMark, UserMark), Params),
+            memberchk(size(PosBegin, PosEnd), Params),
+            length(StepArgs, 4),
+            StepFact =.. [xo_step|StepArgs],
+            retractall( StepFact ),
+            PlayCell = cell(X-Y, n),
+            MaxStep is (PosEnd - PosBegin + 1) ** 2 / 2 * sign(PosEnd - PosBegin + 1),
+            between(1, MaxStep, Step),
+            member(Mode-Mark, [normal-CompMark, echo-UserMark]),
+            ( xo_play_in(Mode-Mark, PlayCell, Rule)
+             -> true
+            ; xo_play(Mode, PlayCell, Rule)
+            ),
+            xo_mark_cell(Mode, PlayCell),
+            asserta( xo_step(Mark, Step, X, Y) ),
+            writeln(Rule->step(Step, Mark, X, Y)),
+            ( xo_win(Mode, Mark, Solve)
+             ->
+              Result = Mode
+            ; xo_tie(Mode),
+              Result = none,
+              Solve = none
+            ),
+            !.
+        
+        %
+        xo_play_in(Mode-Mark, cell(X-Y,_), input) :-
+            fail,
+            write(Mode-Mark),
+            write(': '),
+            read(In),
+            In = X-Y.
+        
+        %
+        check_point.
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-28T16:31:14+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151158415_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "CONST"
+      LANGUAGE: "VBScript"
+      NAME: "pl_Const"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        'Константы и переменные Prolog
+        
+        Public Const scrPrologModuleName = "PROLOG"
+        
+        'TERM-TYPE CONSTANTS
+        Public Const PL_VARIABLE = 1
+        Public Const PL_ATOM = 2
+        Public Const PL_INTEGER = 3
+        Public Const PL_FLOAT = 4
+        Public Const PL_STRING = 5
+        Public Const PL_TERM = 6
+        '
+        
+        'for Function wg_Prolog
+        Public wg_Prolog_
+        Set wg_Prolog_ = Nothing
+        '
+        
+        ' global switch fo debug
+        Public Const plGlobalDebug = True
+        '
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-27T11:25:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 151158419_5956463
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148085833_215642201
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "pl_GetScriptIDByName"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include pl_Const
+        Option Explicit
+        
+        Function pl_GetScriptIDByName(Name)
+          Dim Creator, ibsql
+        
+          pl_GetScriptIDByName = 0
+        
+          Set ibsql = Designer.CreateObject(nil, "TIBSQL", "")
+        
+          ibsql.Transaction = gdcBaseManager.ReadTransaction
+          ibsql.SQL.TEXT = _
+              "SELECT * FROM gd_function" & _
+              " WHERE UPPER(name) = UPPER(:name) AND module = :module"
+          ibsql.ParamByName("name").AsString = Name
+          ibsql.ParamByName("module").AsString = scrPrologModuleName
+          ibsql.ExecQuery
+        
+          If Not ibsql.EOF Then
+             pl_GetScriptIDByName = ibsql.FieldByName("id").AsInteger
+          End If
+          
+          ibsql.DestroyObject
+        End Function
+        
+      DISPLAYSCRIPT: | 
+        PL_GETSCRIPTIDBYNAME
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QEAAAATkFNRQQAAABOQU1FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-27T14:13:56+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "151158415_5956463 pl_Const"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148085833_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "VBCLASSES"
+      LANGUAGE: "VBScript"
+      NAME: "TxoGame"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include pl_GetScriptIDByName
+        Option Explicit
+        
+        Private Const xoMinSize = 3
+        Private Const xoMaxSize = 20
+        Private Const xoMinWinLength = 3
+        Private Const xoMaxWinLength = 5
+        Private Const xoMinLevel = 0
+        Private Const xoMaxLevel = 9
+        Public Const xoCompMark = "x"
+        Public Const xoUserMark = "o"
+        Public Const xoFreeMark = "n"
+        Public Const xoNormal = "normal"
+        Public Const xoEcho = "echo"
+        
+        Class TxoGame
+        '
+          Private FIsInitialised
+          Private FPlayCoor(1)
+          Private FWinMode, FWinMark
+          Private FWinCells()
+          '
+          Private FPosBegin, FPosEnd, FWinLength, FLevel, FCompMark, FUserMark
+          Private FMode, FCurrentMove, FCurrentStep
+          '
+          Private FPL, FP, FTv, FQ
+        
+          Private Sub Class_Initialize
+            Set FPL = Designer.CreateObject(nil, "TgsPLClient", "")
+            '
+            If Not FPL.IsInitialised Then
+              FIsInitialised = FPL.Initialise("")
+            End If
+            
+            If FIsInitialised Then
+              'FIsInitialised = FPL.LoadScriptByName("xo_game")
+              FIsInitialised = FPL.LoadScript(pl_GetScriptIDByName("xo_game"))
+              Call GetParams
+              '
+            End If
+          End Sub
+        
+          ' GetParams
+          Private Function GetParams
+            FP = "xo_get_params"
+            Set FTv = Designer.CreateObject(6, "TgsPLTermv", "")
+            '
+            GetParams = FPL.Call(FP, FTv)
+            If GetParams Then
+              Me.PosBegin = FTv.ReadInteger(0)
+              Me.PosEnd = FTv.ReadInteger(1)
+              Me.WinLength = FTv.ReadInteger(2)
+              Me.Level = FTv.ReadInteger(3)
+              Me.CompMark = FTv.ReadAtom(4)
+              Me.UserMark = FTv.ReadAtom(5)
+            Else
+              Me.PosBegin = FPosBegin
+              Me.PosEnd = FPosEnd
+              Me.WinLength = FWinLength
+              Me.Level = FLevel
+              Me.CompMark = FCompMark
+              Me.UserMark = FUserMark
+            End If
+            '
+            Redim FWinCells(FWinLength-1, 1)
+            Me.Mode = FMode
+            '
+            FTv.DestroyObject
+          End Function
+        
+          ' SetParams
+          Private Function SetParams
+            FP = "xo_set_params"
+            Set FTv = Designer.CreateObject(6, "TgsPLTermv", "")
+            '
+            FTv.PutInteger 0, FPosBegin
+            FTv.PutInteger 1, FPosEnd
+            FTv.PutInteger 2, FWinLength
+            FTv.PutInteger 3, FLevel
+            FTv.PutAtom 4, FCompMark
+            FTv.PutAtom 5, FUserMark
+            '
+            SetParams = FPL.Call(FP, FTv)
+            '
+            FTv.DestroyObject
+          End Function
+          
+          ' NewGame
+          Public Function NewGame
+            NewGame = (SetParams And FPL.Call2("xo_init") And GetParams)
+            FCurrentMove = Me.StartMove
+            FCurrentStep = 1
+          End Function
+        
+          ' DebugGame
+          Public Function DebugGame
+            Dim Ret
+            FPL.Debug = True
+            '
+            FP = "xo_cell"
+            Set FTv = Designer.CreateObject(2, "TgsPLTermv", "")
+            Ret = FPL.SavePredicatesToFile(FP, FTv, FP)
+            FP = "xo_solve"
+            FTv.Reset
+            DebugGame = (Ret And FPL.SavePredicatesToFile(FP, FTv, FP))
+            FTv.DestroyObject
+            '
+            FPL.Debug = False
+          End Function
+        
+          ' Win
+          Public Function Win
+            FP = "xo_win"
+            Set FTv = Designer.CreateObject(4, "TgsPLTermv", "")
+            Set FQ = Designer.CreateObject(nil, "TgsPLQuery", "")
+            FQ.PredicateName = FP
+            FQ.Termv = FTv
+            '
+            FQ.OpenQuery
+            If Not FQ.EOF Then
+              Dim I
+              I = 0
+              FWinMode = FTv.ReadAtom(0)
+              FWinMark = FTv.ReadAtom(1)
+              '
+              While Not FQ.EOF
+                FWinCells(I, 0) = FTv.ReadInteger(2)
+                FWinCells(I, 1) = FTv.ReadInteger(3)
+                I = I + 1
+                FQ.NextSolution
+              Wend
+              FQ.Close
+              '
+              Win = True
+            Else
+              FWinMark = "n"
+              '
+              Win = False
+            End If
+            '
+            FQ.DestroyObject
+            FTv.DestroyObject
+          End Function
+        
+          ' Tie
+          Public Function Tie
+            FP = "xo_tie"
+            Set FTv = Designer.CreateObject(1, "TgsPLTermv", "")
+            FTv.PutAtom 0, FMode
+            Tie =  FPL.Call(FP, FTv)
+            FTv.DestroyObject
+          End Function
+        
+          ' Play
+          Public Function Play
+            FP = "xo_play"
+            Set FTv = Designer.CreateObject(4, "TgsPLTermv", "")
+            FTv.PutAtom 0, FMode
+            Play =  FPL.Call(FP, FTv)
+            '
+            If Play Then
+              FPlayCoor(0) = FTv.ReadInteger(1)
+              FPlayCoor(1) = FTv.ReadInteger(2)
+            End If
+            '
+            FTv.DestroyObject
+          End Function
+        
+          ' MarkCell
+          Public Function MarkCell(X, Y)
+            Dim MarkMode
+            If Me.CurrentMove = 1 Then
+              MarkMode = xoEcho
+            Else
+              MarkMode = xoNormal
+            End If
+            '
+            FP = "xo_mark_cell"
+            Set FTv = Designer.CreateObject(3, "TgsPLTermv", "")
+            FTv.PutAtom 0, MarkMode
+            FTv.PutInteger 1, CInt(X)
+            FTv.PutInteger 2, CInt(Y)
+            MarkCell =  FPL.Call(FP, FTv)
+            '
+            FTv.DestroyObject
+          End Function
+        
+          ' NextMove
+          Public Sub NextMove
+            If Me.CurrentMove = 0 Then
+              FCurrentMove = 1
+            Else
+              FCurrentMove = 0
+            End If
+            '
+            If Me.CurrentMove = Me.StartMove Then
+               FCurrentStep = Me.CurrentStep + 1
+            End If
+          End Sub
+        
+          ' Rate
+          Public Function Rate(Mark, X, Y, Cost)
+            FP = "xo_rate"
+            Set FTv = Designer.CreateObject(6, "TgsPLTermv", "")
+            FTv.PutAtom 0, CStr(Mark)
+            FTv.PutInteger 1, CInt(X)
+            FTv.PutInteger 2, CInt(Y)
+            FTv.PutInteger 3, CInt(Cost)
+            '
+            If FPL.Call(FP, FTv) Then
+              Rate = Array(FTv.ReadInteger(4), FTv.ReadInteger(5))
+            End If
+            '
+            FTv.DestroyObject
+          End Function
+        
+          ' Review
+          Public Function Review(Mark, X, Y, Cost)
+            FP = "xo_review"
+            Set FTv = Designer.CreateObject(7, "TgsPLTermv", "")
+            Set FQ = Designer.CreateObject(nil, "TgsPLQuery", "")
+            FQ.PredicateName = FP
+            FQ.Termv = FTv
+            '
+            FTv.PutAtom 0, CStr(Mark)
+            FTv.PutInteger 1, CInt(X)
+            FTv.PutInteger 2, CInt(Y)
+            FTv.PutInteger 3, CInt(Cost)
+            '
+            Review = ""
+            FQ.OpenQuery
+            If Not FQ.EOF Then
+              '
+              While Not FQ.EOF
+                Review = Review & _
+                         FTv.ReadAtom(4) & "," & _
+                         FTv.ReadInteger(5) & "," & _
+                         FTv.ReadInteger(6) & ";"
+                FQ.NextSolution
+              Wend
+              FQ.Close
+              '
+            End If
+            '
+            FQ.DestroyObject
+            FTv.DestroyObject
+          End Function
+        
+          ' IsInitialised
+          Public Property Get IsInitialised
+            IsInitialised = FIsInitialised
+          End Property
+        
+          ' PlayCoor
+          Public Property Get PlayCoor
+            PlayCoor = FPlayCoor
+          End Property
+        
+          ' WinMode
+          Public Property Get WinMode
+            WinMode = FWinMode
+          End Property
+        
+          ' WinMark
+          Public Property Get WinMark
+            WinMark = FWinMark
+          End Property
+        
+          ' WinCells
+          Public Property Get WinCells
+            WinCells = FWinCells
+          End Property
+        
+          Public Property Get PosBegin
+            PosBegin = FPosBegin
+          End Property
+          ' PosBegin
+          Public Property Let PosBegin(Value)
+            If Not IsEmpty(Value) And IsNumeric(Value) Then
+              Value = CInt(Value)
+              If Not _
+                 ( Value < 0 Or Value > 1 Or _
+                   (FPosEnd - Value + 1) > xoMaxSize Or _
+                   (FPosEnd - Value + 1) < xoMinSize ) Then
+                FPosBegin = Value
+              Else
+                FPosBegin = 0
+                FPosEnd = xoMinSize - 1
+              End If
+            Else
+              FPosBegin = 0
+              FPosEnd = xoMinSize - 1
+            End If
+          End Property
+        
+          Public Property Get PosEnd
+            PosEnd = FPosEnd
+          End Property
+          ' PosEnd
+          Public Property Let PosEnd(Value)
+            If Not IsEmpty(Value) And IsNumeric(Value) Then
+              Value = CInt(Value)
+              If Not _
+                 ( (Value - FPosBegin + 1) > xoMaxSize Or _
+                   (Value - FPosBegin + 1) < xoMinSize ) Then
+                FPosEnd = Value
+              Else
+                FPosBegin = 0
+                FPosEnd = xoMinSize - 1
+              End If
+            Else
+              FPosBegin = 0
+              FPosEnd = xoMinSize - 1
+            End If
+          End Property
+        
+          Public Property Get WinLength
+            WinLength = FWinLength
+          End Property
+          ' WinLength
+          Public Property Let WinLength(Value)
+            If Not IsEmpty(Value) And IsNumeric(Value) Then
+              Value = CInt(Value)
+              If Not _
+                 ( Value < xoMinWinLength Or Value > xoMaxWinLength Or _
+                   (FPosEnd - FPosBegin + 1) < Value ) Then
+                FWinLength = Value
+              Else
+                FWinLength = (FPosEnd - FPosBegin + 1)
+              End If
+            Else
+              FWinLength = (FPosEnd - FPosBegin + 1)
+            End If
+          End Property
+        
+          Public Property Get Level
+            Level = FLevel
+          End Property
+          ' Level
+          Public Property Let Level(Value)
+            If Not IsEmpty(Value) And IsNumeric(Value) Then
+              Value = CInt(Value)
+              If Not (Value > xoMaxLevel Or FLevel < xoMinLevel) Then
+                FLevel = Value
+              Else
+                FLevel = xoMinLevel
+              End If
+            Else
+              FLevel = xoMinLevel
+            End If
+          End Property
+        
+          Public Property Get CompMark
+            CompMark = FCompMark
+          End Property
+          ' CompMark
+          Public Property Let CompMark(Value)
+            If Not IsEmpty(Value) Then
+              Select Case Value
+                Case xoCompMark, xoUserMark
+                  FCompMark = Value
+                Case Else
+                  FCompMark = xoCompMark
+              End Select
+            Else
+              FCompMark = xoCompMark
+            End If
+          End Property
+        
+          Public Property Get UserMark
+            UserMark = FUserMark
+          End Property
+          ' UserMark
+          Public Property Let UserMark(Value)
+            If Not IsEmpty(Value) Then
+              Select Case Value
+                Case xoCompMark, xoUserMark
+                  FUserMark = Value
+                Case Else
+                  FUserMark = xoUserMark
+              End Select
+            Else
+              FUserMark = xoUserMark
+            End If
+          End Property
+        
+          Public Property Get StartMove
+            If FUserMark = xoCompMark Then
+              StartMove = 1
+            Else
+              StartMove = 0
+            End If
+          End Property
+          ' StartMove
+          Public Property Let StartMove(Value)
+            If Not IsEmpty(Value) And IsNumeric(Value) Then
+              Value = CInt(Value)
+              If Value = 1 Then
+                FUserMark = xoCompMark
+                FCompMark = xoUserMark
+              Else
+                FCompMark = xoCompMark
+                FUserMark = xoUserMark
+              End If
+            End If
+          End Property
+        
+          ' CurrentMove
+          Public Property Get CurrentMove
+            If IsEmpty(FCurrentMove) Then
+              FCurrentMove = Me.StartMove
+            End If
+            '
+            CurrentMove = FCurrentMove
+          End Property
+        
+          ' CurrentStep
+          Public Property Get CurrentStep
+            If IsEmpty(FCurrentStep) Then
+              FCurrentStep = 1
+            End If
+            '
+            CurrentStep = FCurrentStep
+          End Property
+        
+          ' CurrentMark
+          Public Property Get CurrentMark
+            If Me.CurrentMove = Me.StartMove Then
+              CurrentMark = xoCompMark
+            Else
+              CurrentMark = xoUserMark
+            End If
+          End Property
+        
+          Public Property Get Mode
+            Mode = FMode
+          End Property
+          ' Mode
+          Public Property Let Mode(Value)
+            If Not IsEmpty(Value) Then
+              Select Case Value
+                Case xoNormal, xoEcho
+                  FMode = Value
+                Case Else
+                  FMode = xoNormal
+              End Select
+            Else
+              FMode = xoNormal
+            End If
+          End Property
+        
+          Private Sub Class_Terminate
+            FPL.DestroyObject
+          End Sub
+        '
+        End Class
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-29T09:57:43+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "151158419_5956463 pl_GetScriptIDByName"
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 148086822_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "147015466_1522056380 GLOBAL\\NewForm"
+      NAME: "usrf_xoGame"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2015-04-13T14:05:26+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 148086824_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "148086822_215642201 GLOBAL\\NewForm\\usrf_xoGame"
+      NAME: "Class"
+      DATA_TYPE: "S"
+      STR_DATA: "TgdcCreateableForm"
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2015-04-13T14:05:26+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 148086823_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "148086822_215642201 GLOBAL\\NewForm\\usrf_xoGame"
+      NAME: "dfm"
+      DATA_TYPE: "B"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: | 
+        object usrf_xoGame: TgdcCreateableForm
+          Tag = 0
+          Left = 331
+          Top = 211
+          Width = 532
+          Height = 474
+          Cursor = crDefault
+          Hint = ''
+          HelpContext = 0
+          HorzScrollBar.ButtonSize = 0
+          HorzScrollBar.Color = clBtnHighlight
+          HorzScrollBar.Increment = 8
+          HorzScrollBar.Margin = 0
+          HorzScrollBar.ParentColor = True
+          HorzScrollBar.Position = 0
+          HorzScrollBar.Smooth = False
+          HorzScrollBar.Size = 0
+          HorzScrollBar.Style = ssRegular
+          HorzScrollBar.ThumbSize = 0
+          HorzScrollBar.Tracking = False
+          HorzScrollBar.Visible = True
+          VertScrollBar.ButtonSize = 0
+          VertScrollBar.Color = clBtnHighlight
+          VertScrollBar.Increment = 8
+          VertScrollBar.Margin = 0
+          VertScrollBar.ParentColor = True
+          VertScrollBar.Position = 0
+          VertScrollBar.Smooth = False
+          VertScrollBar.Size = 0
+          VertScrollBar.Style = ssRegular
+          VertScrollBar.ThumbSize = 0
+          VertScrollBar.Tracking = False
+          VertScrollBar.Visible = True
+          Action = nil
+          ActiveControl = nil
+          Align = alNone
+          Anchors = [akLeft, akTop]
+          AutoSize = False
+          BorderIcons = [biSystemMenu, biMinimize, biMaximize]
+          BorderStyle = bsSizeable
+          BorderWidth = 0
+          Caption = 'Крестики-нолики '
+          Color = clBtnFace
+          Constraints.MaxHeight = 0
+          Constraints.MaxWidth = 0
+          Constraints.MinHeight = 0
+          Constraints.MinWidth = 0
+          Ctl3D = True
+          UseDockManager = False
+          DefaultMonitor = dmActiveForm
+          DockSite = False
+          DragKind = dkDrag
+          DragMode = dmManual
+          Enabled = True
+          ParentFont = False
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          Font.Pitch = fpDefault
+          Font.Style = []
+          FormStyle = fsNormal
+          HelpFile = ''
+          KeyPreview = False
+          Menu = nil
+          OldCreateOrder = False
+          ObjectMenuItem = nil
+          ParentBiDiMode = True
+          PopupMenu = nil
+          Position = poDesigned
+          PrintScale = poProportional
+          Scaled = True
+          Visible = False
+          WindowState = wsNormal
+          WindowMenu = nil
+          ShowSpeedButton = False
+          PixelsPerInch = 96
+          TextHeight = 13
+          object usrg_Bevel_0_0: TBevel
+            Tag = 0
+            Left = 30
+            Top = 135
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Bevel_0_1: TBevel
+            Tag = 0
+            Left = 54
+            Top = 135
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Bevel_0_2: TBevel
+            Tag = 0
+            Left = 78
+            Top = 135
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Bevel_1_0: TBevel
+            Tag = 0
+            Left = 30
+            Top = 159
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Bevel_1_1: TBevel
+            Tag = 0
+            Left = 54
+            Top = 159
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Bevel_1_2: TBevel
+            Tag = 0
+            Left = 78
+            Top = 159
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Bevel_2_0: TBevel
+            Tag = 0
+            Left = 30
+            Top = 183
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Bevel_2_1: TBevel
+            Tag = 0
+            Left = 54
+            Top = 183
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Bevel_2_2: TBevel
+            Tag = 0
+            Left = 78
+            Top = 183
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            ParentShowHint = True
+            Shape = bsBox
+            Style = bsRaised
+            Visible = True
+          end
+          object usrg_Label_0_0: TLabel
+            Tag = 0
+            Left = 32
+            Top = 137
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = '0, 0'
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = False
+            PopupMenu = nil
+            ShowAccelChar = True
+            ShowHint = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_1_0: TLabel
+            Tag = 0
+            Left = 56
+            Top = 137
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_2_0: TLabel
+            Tag = 0
+            Left = 80
+            Top = 137
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_0_1: TLabel
+            Tag = 0
+            Left = 32
+            Top = 160
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_1_1: TLabel
+            Tag = 0
+            Left = 56
+            Top = 160
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_2_20: TLabel
+            Tag = 0
+            Left = 80
+            Top = 160
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_0_2: TLabel
+            Tag = 0
+            Left = 32
+            Top = 184
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_1_2: TLabel
+            Tag = 0
+            Left = 56
+            Top = 184
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_2_2: TLabel
+            Tag = 0
+            Left = 80
+            Top = 184
+            Width = 20
+            Height = 20
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = 'n'
+            Color = clWhite
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWhite
+            Font.Height = -19
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_X_0: TLabel
+            Tag = 0
+            Left = 30
+            Top = 105
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = '0'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = True
+            Layout = tlBottom
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_X_1: TLabel
+            Tag = 0
+            Left = 54
+            Top = 105
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = '1'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = True
+            Layout = tlBottom
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_X_2: TLabel
+            Tag = 0
+            Left = 78
+            Top = 105
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = '2'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = True
+            Layout = tlBottom
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_Y_0: TLabel
+            Tag = 0
+            Left = 4
+            Top = 133
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = '0'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = True
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_Y_1: TLabel
+            Tag = 0
+            Left = 4
+            Top = 157
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = '1'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = True
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_Y_2: TLabel
+            Tag = 0
+            Left = 4
+            Top = 181
+            Width = 24
+            Height = 24
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = '2'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = True
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_Level: TLabel
+            Tag = 0
+            Left = 183
+            Top = 74
+            Width = 47
+            Height = 13
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taLeftJustify
+            Anchors = [akLeft, akTop]
+            AutoSize = True
+            Caption = 'Уровень:'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlTop
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_Line: TLabel
+            Tag = 0
+            Left = 103
+            Top = 74
+            Width = 35
+            Height = 13
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taLeftJustify
+            Anchors = [akLeft, akTop]
+            AutoSize = True
+            Caption = 'Линия:'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlTop
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_Size: TLabel
+            Tag = 0
+            Left = 9
+            Top = 74
+            Width = 42
+            Height = 13
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taLeftJustify
+            Anchors = [akLeft, akTop]
+            AutoSize = True
+            Caption = 'Размер:'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = True
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlTop
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_Msg: TLabel
+            Tag = 0
+            Left = 286
+            Top = 62
+            Width = 224
+            Height = 16
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = ''
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = 16
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_Label_Rate: TLabel
+            Tag = 0
+            Left = 286
+            Top = 83
+            Width = 224
+            Height = 13
+            Cursor = crDefault
+            Hint = ''
+            Align = alNone
+            Alignment = taCenter
+            Anchors = [akLeft, akTop]
+            AutoSize = False
+            Caption = ''
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            FocusControl = nil
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'MS Sans Serif'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ShowAccelChar = True
+            Transparent = False
+            Layout = tlCenter
+            Visible = True
+            WordWrap = False
+          end
+          object usrg_StartMove: TGroupBox
+            Tag = 0
+            Left = 9
+            Top = 7
+            Width = 257
+            Height = 50
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            Align = alNone
+            Anchors = [akLeft, akTop]
+            Caption = ' Первый ход '
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            Ctl3D = True
+            DockSite = False
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = 12
+            Font.Name = 'MS Sans Serif'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ParentBiDiMode = True
+            ParentColor = True
+            ParentCtl3D = False
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            TabOrder = 0
+            TabStop = False
+            Visible = True
+            object usrg_StartComp: TRadioButton
+              Tag = 0
+              Left = 17
+              Top = 20
+              Width = 100
+              Height = 17
+              Cursor = crDefault
+              Hint = ''
+              HelpContext = 0
+              Action = nil
+              Alignment = taRightJustify
+              Anchors = [akLeft, akTop]
+              Caption = 'Компьютер'
+              Checked = True
+              Constraints.MaxHeight = 0
+              Constraints.MaxWidth = 0
+              Constraints.MinHeight = 0
+              Constraints.MinWidth = 0
+              DragCursor = crDrag
+              DragKind = dkDrag
+              DragMode = dmManual
+              Enabled = True
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWindowText
+              Font.Height = 16
+              Font.Name = 'Arial'
+              Font.Pitch = fpDefault
+              Font.Style = []
+              ParentBiDiMode = True
+              ParentColor = True
+              ParentCtl3D = True
+              ParentFont = False
+              ParentShowHint = True
+              PopupMenu = nil
+              TabOrder = 0
+              TabStop = True
+              Visible = True
+            end
+            object usrg_StartUser: TRadioButton
+              Tag = 0
+              Left = 139
+              Top = 20
+              Width = 100
+              Height = 17
+              Cursor = crDefault
+              Hint = ''
+              HelpContext = 0
+              Action = nil
+              Alignment = taRightJustify
+              Anchors = [akLeft, akTop]
+              Caption = 'Игрок'
+              Checked = False
+              Constraints.MaxHeight = 0
+              Constraints.MaxWidth = 0
+              Constraints.MinHeight = 0
+              Constraints.MinWidth = 0
+              DragCursor = crDrag
+              DragKind = dkDrag
+              DragMode = dmManual
+              Enabled = True
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWindowText
+              Font.Height = 16
+              Font.Name = 'Arial'
+              Font.Pitch = fpDefault
+              Font.Style = []
+              ParentBiDiMode = True
+              ParentColor = True
+              ParentCtl3D = True
+              ParentFont = False
+              ParentShowHint = True
+              PopupMenu = nil
+              TabOrder = 1
+              TabStop = False
+              Visible = True
+            end
+          end
+          object usrg_Start: TButton
+            Tag = 0
+            Left = 285
+            Top = 12
+            Width = 113
+            Height = 44
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            Action = nil
+            Anchors = [akLeft, akTop]
+            Cancel = False
+            Caption = 'Старт'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            Default = False
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = True
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = 16
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ModalResult = 0
+            ParentBiDiMode = True
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            TabOrder = 4
+            TabStop = True
+            Visible = True
+          end
+          object usrg_Stop: TButton
+            Tag = 0
+            Left = 396
+            Top = 12
+            Width = 113
+            Height = 44
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            Action = nil
+            Anchors = [akLeft, akTop]
+            Cancel = False
+            Caption = 'Стоп'
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            Default = False
+            DragCursor = crDrag
+            DragKind = dkDrag
+            DragMode = dmManual
+            Enabled = False
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = 16
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            ModalResult = 0
+            ParentBiDiMode = True
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            TabOrder = 5
+            TabStop = True
+            Visible = True
+          end
+          object usrg_Level: TSpinEdit
+            Tag = 0
+            Left = 233
+            Top = 70
+            Width = 33
+            Height = 26
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            TabStop = True
+            Anchors = [akLeft, akTop]
+            AutoSelect = True
+            AutoSize = False
+            Color = clWindow
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragMode = dmManual
+            EditorEnabled = False
+            Enabled = True
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = 16
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            Increment = 1
+            MaxLength = 0
+            MaxValue = 9
+            MinValue = 0
+            ParentColor = False
+            ParentCtl3D = True
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ReadOnly = False
+            TabOrder = 3
+            Value = 3
+            Visible = True
+          end
+          object usrg_Line: TSpinEdit
+            Tag = 0
+            Left = 141
+            Top = 70
+            Width = 33
+            Height = 26
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            TabStop = True
+            Anchors = [akLeft, akTop]
+            AutoSelect = True
+            AutoSize = False
+            Color = clWindow
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragMode = dmManual
+            EditorEnabled = False
+            Enabled = True
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = 16
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            Increment = 1
+            MaxLength = 0
+            MaxValue = 5
+            MinValue = 3
+            ParentColor = False
+            ParentCtl3D = True
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ReadOnly = False
+            TabOrder = 2
+            Value = 3
+            Visible = True
+          end
+          object usrg_Size: TSpinEdit
+            Tag = 0
+            Left = 53
+            Top = 70
+            Width = 40
+            Height = 26
+            Cursor = crDefault
+            Hint = ''
+            HelpContext = 0
+            TabStop = True
+            Anchors = [akLeft, akTop]
+            AutoSelect = True
+            AutoSize = False
+            Color = clWindow
+            Constraints.MaxHeight = 0
+            Constraints.MaxWidth = 0
+            Constraints.MinHeight = 0
+            Constraints.MinWidth = 0
+            DragCursor = crDrag
+            DragMode = dmManual
+            EditorEnabled = False
+            Enabled = True
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = 16
+            Font.Name = 'Arial'
+            Font.Pitch = fpDefault
+            Font.Style = []
+            Increment = 1
+            MaxLength = 0
+            MaxValue = 20
+            MinValue = 3
+            ParentColor = False
+            ParentCtl3D = True
+            ParentFont = False
+            ParentShowHint = True
+            PopupMenu = nil
+            ReadOnly = False
+            TabOrder = 1
+            Value = 3
+            Visible = True
+          end
+        end
+        
+      EDITIONDATE: 2015-04-29T17:04:20+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageValue"
+      RUID: 148086825_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "148086822_215642201 GLOBAL\\NewForm\\usrf_xoGame"
+      NAME: "InternalType"
+      DATA_TYPE: "I"
+      STR_DATA: ~
+      INT_DATA: 1
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2015-04-13T14:05:26+03:00
+  - 
+    Properties: 
+      Class: "TgdcMacrosGroup"
+      RUID: 148086827_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087268_215642201
+    Fields: 
+      HASCHILDREN: ~
+      OBJECTNAME: "usrf_xoGame"
+      OBJECTPARENT: ~
+      CLASSNAME: ""
+      SUBTYPE: ""
+      PARENT: ~
+      NAME: "Локальные макросы"
+      ISGLOBAL: 0
+      DESCRIPTION: ~
+      EDITIONDATE: 2015-04-13T14:09:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcReportGroup"
+      RUID: 148086828_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087268_215642201
+    Fields: 
+      HASCHILDREN: ~
+      PARENT: ~
+      NAME: "Отчеты(usrf_xoGame)"
+      DESCRIPTION: ~
+      USERGROUPNAME: "148086828_215642201"
+      EDITIONDATE: 2015-04-13T14:09:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 148086826_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087268_215642201
+    Fields: 
+      NAME: "usrf_xoGame"
+      DESCRIPTION: ~
+      PARENT: ~
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: "148086827_215642201 Локальные макросы"
+      REPORTGROUPKEY: "148086828_215642201 Отчеты(usrf_xoGame)"
+      CLASSNAME: ""
+      OBJECTNAME: "usrf_xoGame"
+      SUBTYPE: ""
+      EDITIONDATE: 2015-04-13T14:09:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148088197_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "HideCells"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        
+        Function HideCells(ByRef frm)
+        '
+          Dim X, Y
+          Dim Bevel_0_0, Cell_0_0, Label_X_0, Label_Y_0
+          Dim I, CtlName, Bevel, Cell, Label_X, Label_Y
+        
+          Set Bevel_0_0 = frm.FindComponent("usrg_Bevel_0_0")
+          Set Cell_0_0 = frm.FindComponent("usrg_Label_0_0")
+          Set Label_X_0 = frm.FindComponent("usrg_Label_X_0")
+          Set Label_Y_0 = frm.FindComponent("usrg_Label_Y_0")
+        
+          If Not _
+              ( Assigned(Bevel_0_0) And Assigned(Cell_0_0) And _
+                Assigned(Label_X_0) And Assigned(Label_Y_0) ) Then
+            HideCells = False
+            Exit Function
+          End If
+        
+          For Y = 0 To xoMaxSize - 1
+            For X = 0 To xoMaxSize - 1
+              '
+              CtlName = "usrg_Bevel_" & X & "_" & Y
+              Set Bevel = frm.FindComponent(CtlName)
+              If Assigned(Bevel) And _
+                  (X > frm.Objects("xo").PosEnd Or Y > frm.Objects("xo").PosEnd) Then
+                Bevel.Visible = False
+              End If
+              '
+              CtlName = "usrg_Label_" & X & "_" & Y
+              Set Cell = frm.FindComponent(CtlName)
+              If Assigned(Cell) And _
+                  (X > frm.Objects("xo").PosEnd Or Y > frm.Objects("xo").PosEnd) Then
+                Cell.Visible = False
+              End If
+              '
+            Next
+          Next
+        
+          For I = 0 To xoMaxSize - 1
+            '
+            CtlName = "usrg_Label_X_" & I
+            Set Label_X = frm.FindComponent(CtlName)
+            If Assigned(Label_X) And I > frm.Objects("xo").PosEnd Then
+              Label_X.Visible = False
+            End If
+            '
+            CtlName = "usrg_Label_Y_" & I
+            Set Label_Y = frm.FindComponent(CtlName)
+            If Assigned(Label_Y) And I > frm.Objects("xo").PosEnd Then
+              Label_Y.Visible = False
+            End If
+            '
+          Next
+        
+          HideCells = True
+        '
+        End Function
+        
+      DISPLAYSCRIPT: | 
+        HIDECELLS
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-28T16:09:19+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148088175_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "MakeCells"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        
+        Function MakeCells(ByRef frm)
+        '
+          Dim X, Y
+          Dim Bevel_0_0, Cell_0_0, Label_X_0, Label_Y_0
+          Dim I, CtlName, Bevel, Cell, Label_X, Label_Y
+          Dim MsgName, Msg
+          Dim RateName, Rate
+        
+          Set Bevel_0_0 = frm.FindComponent("usrg_Bevel_0_0")
+          Set Cell_0_0 = frm.FindComponent("usrg_Label_0_0")
+          Set Label_X_0 = frm.FindComponent("usrg_Label_X_0")
+          Set Label_Y_0 = frm.FindComponent("usrg_Label_Y_0")
+          
+          If Not _
+              ( Assigned(Bevel_0_0) And Assigned(Cell_0_0) And _
+                Assigned(Label_X_0) And Assigned(Label_Y_0) ) Then
+            MakeCells = False
+            Exit Function
+          End If
+        
+          MsgName = "usrg_Label_Msg"
+          Set Msg = frm.GetComponent(MsgName)
+          RateName = "usrg_Label_Rate"
+          Set Rate = frm.GetComponent(RateName)
+        
+          Msg.Caption = "Ждите..."
+          Msg.Repaint
+          Rate.Caption = "Новая игра"
+          Rate.Repaint
+        
+          For I = frm.Objects("xo").PosBegin To frm.Objects("xo").PosEnd
+            If Not I = 0 Then
+              '
+              CtlName = "usrg_Label_X_" & I
+              Set Label_X = frm.FindComponent(CtlName)
+              If Not Assigned(Label_X) Then
+                Set Label_X = Designer.CreateObject(frm, "TLabel", CtlName)
+                Label_X.Alignment = Label_X_0.Alignment
+                Label_X.AutoSize = Label_X_0.AutoSize
+                Label_X.Caption = I
+                Label_X.Color = Label_X_0.Color
+                Label_X.Font.Color = Label_X_0.Font.Color
+                Label_X.Font.Name = Label_X_0.Font.Name
+                Label_X.Font.Height = Label_X_0.Font.Height
+                Label_X.Font.Size = Label_X_0.Font.Size
+                Label_X.Layout = Label_X_0.Layout
+                Label_X.Width = Label_X_0.Width
+                Label_X.Height = Label_X_0.Height
+                Label_X.Left = Label_X_0.Left + I * Label_X_0.Width
+                Label_X.Top = Label_X_0.Top
+                Label_X.Visible = False
+              End If
+              '
+              CtlName = "usrg_Label_Y_" & I
+              Set Label_Y = frm.FindComponent(CtlName)
+              If Not Assigned(Label_Y) Then
+                Set Label_Y = Designer.CreateObject(frm, "TLabel", CtlName)
+                Label_Y.Alignment = Label_Y_0.Alignment
+                Label_Y.AutoSize = Label_Y_0.AutoSize
+                Label_Y.Caption = I
+                Label_Y.Color = Label_Y_0.Color
+                Label_Y.Font.Color = Label_Y_0.Font.Color
+                Label_Y.Font.Name = Label_Y_0.Font.Name
+                Label_Y.Font.Height = Label_Y_0.Font.Height
+                Label_Y.Font.Size = Label_Y_0.Font.Size
+                Label_Y.Layout = Label_Y_0.Layout
+                Label_Y.Width = Label_Y_0.Width
+                Label_Y.Height = Label_Y_0.Height
+                Label_Y.Left = Label_Y_0.Left
+                Label_Y.Top = Label_Y_0.Top + I * Label_Y_0.Height
+                Label_Y.Visible = False
+              End If
+              '
+            End If
+          Next
+        
+          For Y = frm.Objects("xo").PosBegin To frm.Objects("xo").PosEnd
+            For X = frm.Objects("xo").PosBegin To frm.Objects("xo").PosEnd
+              If Not (X = 0 And Y = 0) Then
+                '
+                CtlName = "usrg_Bevel_" & X & "_" & Y
+                Set Bevel = frm.FindComponent(CtlName)
+                If Not Assigned(Bevel) Then
+                  Set Bevel = Designer.CreateObject(frm, "TBevel", CtlName)
+                  Bevel.Style = Bevel_0_0.Style
+                  Bevel.Width = Bevel_0_0.Width
+                  Bevel.Height = Bevel_0_0.Height
+                  Bevel.Left = Bevel_0_0.Left + X * Bevel_0_0.Width
+                  Bevel.Top = Bevel_0_0.Top + Y * Bevel_0_0.Height
+                  Bevel.Visible = False
+                End If
+                '
+                CtlName = "usrg_Label_" & X & "_" & Y
+                Set Cell = frm.FindComponent(CtlName)
+                If Not Assigned(Cell) Then
+                  Set Cell = Designer.CreateObject(frm, "TLabel", CtlName)
+                  Cell.ShowHint = Cell_0_0.ShowHint
+                  Cell.Hint = X & ", " & Y
+                  Cell.Alignment = Cell_0_0.Alignment
+                  Cell.AutoSize = Cell_0_0.AutoSize
+                  Cell.Caption = Cell_0_0.Caption
+                  Cell.Color = Cell_0_0.Color
+                  Cell.Font.Color = Cell_0_0.Font.Color
+                  Cell.Font.Name = Cell_0_0.Font.Name
+                  Cell.Font.Height = Cell_0_0.Font.Height
+                  Cell.Font.Size = Cell_0_0.Font.Size
+                  Cell.Layout = Cell_0_0.Layout
+                  Cell.Width = Cell_0_0.Width
+                  Cell.Height = Cell_0_0.Height
+                  Cell.Left = Cell_0_0.Left + X * (Cell_0_0.Width + (Bevel_0_0.Width - Cell_0_0.Width))
+                  Cell.Top = Cell_0_0.Top + Y * (Cell_0_0.Height + (Bevel_0_0.Height - Cell_0_0.Height))
+                  Cell.Visible = False
+                End If
+                Call SetEventHandler(Cell, "OnMouseUp", "usrg_Label_OnMouseUp")
+                '
+              End If
+            Next
+          Next
+        
+          Msg.Caption = ""
+        
+          MakeCells = True
+        '
+        End Function
+        
+      DISPLAYSCRIPT: | 
+        MAKECELLS
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-29T10:36:17+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087287_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "ClearCells"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        
+        Sub ClearCells(ByRef frm, ClearColor, FreeMark)
+        '
+          Dim FreeCellColor, MarkedCellColor
+          Dim X, Y
+          Dim I, CtlName, Cell, Bevel, Label_X, Label_Y
+          Dim W, H
+          
+          FreeCellColor = RGB(255, 255, 255)
+          MarkedCellColor = 0
+        
+          For I = frm.Objects("xo").PosBegin To frm.Objects("xo").PosEnd
+            '
+            CtlName = "usrg_Label_X_" & I
+            Set Label_X = frm.FindComponent(CtlName)
+            If Assigned(Label_X) Then
+              Label_X.Visible = True
+              'Label_X.Repaint
+            End If
+            '
+            CtlName = "usrg_Label_Y_" & I
+            Set Label_Y = frm.FindComponent(CtlName)
+            If Assigned(Label_Y) Then
+              Label_Y.Visible = True
+              'Label_Y.Repaint
+            End If
+            '
+          Next
+        
+          For Y = frm.Objects("xo").PosBegin To frm.Objects("xo").PosEnd
+            For X = frm.Objects("xo").PosBegin To frm.Objects("xo").PosEnd
+              '
+              CtlName = "usrg_Bevel_" & X & "_" & Y
+              Set Bevel = frm.FindComponent(CtlName)
+              If Assigned(Bevel) Then
+                If ClearColor And Not Bevel.Visible Then
+                  Bevel.Visible = True
+                  'Bevel.Repaint
+                End If
+              End If
+              '
+              CtlName = "usrg_Label_" & X & "_" & Y
+              Set Cell = frm.FindComponent(CtlName)
+              If Assigned(Cell) Then
+                W = Cell.Width
+                H = Cell.Height
+                '
+                If ClearColor Or Cell.Tag > 0 Then
+                  Cell.Color = FreeCellColor
+                  If Cell.Caption = xoFreeMark Then
+                    Cell.Font.Color = Cell.Color
+                  End If
+                End If
+                '
+                If FreeMark And Not Cell.Caption = xoFreeMark Then
+                  Cell.Caption = xoFreeMark
+                  Cell.Font.Color = Cell.Color
+                  Cell.Font.Style = ""
+                End If
+                '
+                If (FreeMark And Not Cell.Caption = xoFreeMark) Or _
+                    ClearColor Or Cell.Tag > 0 Then
+                  Cell.Tag = 0
+                  Cell.Width = W
+                  Cell.Height = H
+                  Cell.Visible = True
+                  'Cell.Repaint
+                End If
+                '
+              End If
+              '
+            Next
+          Next
+        '
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        CLEARCELLS
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNUUFJTVAoA
+        AABDTEVBUkNPTE9SCgAAAENMRUFSQ09MT1IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVFBS
+        U1QIAAAARlJFRU1BUksIAAAARlJFRU1BUksAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVEZM
+        UFI=
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-29T14:49:25+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087331_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087268_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "InProcess"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        
+        Sub InProcess(ByRef frm, ByVal Flag)
+          frm.GetComponent("usrg_Start").Enabled = Not Flag
+          frm.GetComponent("usrg_Stop").Enabled = Flag
+          '
+          frm.GetComponent("usrg_StartComp").Enabled = Not Flag
+          frm.GetComponent("usrg_StartUser").Enabled = Not Flag
+          '
+          frm.GetComponent("usrg_Size").Enabled = Not Flag
+          frm.GetComponent("usrg_Line").Enabled = Not Flag
+          frm.GetComponent("usrg_Level").Enabled = Not Flag
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        INPROCESS
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNUUFJTVAQA
+        AABGTEFHBAAAAEZMQUcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARk5TVEZMUFI=
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-15T15:43:00+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087270_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087268_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrf_xoGameOnShow"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include HideCells
+        '#include ClearCells
+        '#include InProcess
+        Option Explicit
+        
+        Sub usrf_xoGameOnShow(ByVal Sender)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+          call   Inherited(Sender, "OnShow", Array(Sender))
+        '*** конец кода поддержки встроенного обработчика            ***
+        '
+          Dim frm
+          Set frm = Sender
+        
+          If Not frm.ObjectExists("xo") Then
+            frm.AddObjectItem("xo")
+          End If
+          '
+          Set frm.Objects("xo") = New TxoGame
+          
+          frm.GetComponent("usrg_StartComp").SetFocus
+          '
+          If frm.GetComponent("usrg_StartUser").Checked Then
+            frm.GetComponent("usrg_StartComp").Font.Style = ""
+            frm.GetComponent("usrg_StartUser").Font.Style = "fsUnderline"
+          Else
+            frm.GetComponent("usrg_StartComp").Font.Style = "fsUnderline"
+            frm.GetComponent("usrg_StartUser").Font.Style = ""
+          End If
+        
+          Call InProcess(frm, False)
+        '
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        USRF_XOGAMEONSHOW
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONSHOW"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-28T16:14:23+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "148088197_215642201 HideCells"
+          - 
+            ADDFUNCTIONKEY: "148087287_215642201 ClearCells"
+          - 
+            ADDFUNCTIONKEY: "148087331_215642201 InProcess"
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148087268_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      PARENTNAME: ~
+      OBJECTKEY: "148086826_215642201 usrf_xoGame"
+      EVENTNAME: "ONSHOW"
+      FUNCTIONKEY: "148087270_215642201 usrf_xoGameOnShow"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-17T21:00:29+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087279_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087277_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrf_xoGameOnClose"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub usrf_xoGameOnClose(ByVal Sender, ByRef Action)
+        '*** Данный код необходим для вызова встроенного обработчика ***
+        '*** В случае его удаления возможно нарушение работы системы ***
+          Dim ParamArr(1)
+          Set   ParamArr(0) = Sender
+          ParamArr(1) = Action
+          call   Inherited(Sender, "OnClose", ParamArr)
+          Action.Value = ParamArr(1)
+        '*** конец кода поддержки встроенного обработчика            ***
+        '
+          Dim frm
+          Set frm = Sender
+        
+          If frm.ObjectExists("xo") And Assigned(frm.Objects("xo")) Then
+            frm.Objects("xo").DebugGame
+            Set frm.Objects("xo") = Nothing
+          End If
+        '
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        USRF_XOGAMEONCLOSE
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONCLOSE"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        UFJTVAYAAABBQ1RJT04GAAAAQUNUSU9OAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-26T14:45:32+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148087277_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      PARENTNAME: ~
+      OBJECTKEY: "148086826_215642201 usrf_xoGame"
+      EVENTNAME: "ONCLOSE"
+      FUNCTIONKEY: "148087279_215642201 usrf_xoGameOnClose"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-24T10:33:16+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 148087308_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087318_215642201
+    Fields: 
+      NAME: "usrg_StartComp"
+      DESCRIPTION: ~
+      PARENT: "148086826_215642201 usrf_xoGame"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "usrg_StartComp"
+      SUBTYPE: ""
+      EDITIONDATE: 2015-04-15T13:53:25+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087320_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087318_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_StartCompOnEnter"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub usrg_StartCompOnEnter(ByRef Sender)
+          Sender.Font.Style = "fsUnderline"
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        USRG_STARTCOMPONENTER
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONENTER"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-15T14:37:47+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148087318_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_StartComp"
+      PARENTNAME: "usrf_xoGame"
+      OBJECTKEY: "148087308_215642201 usrf_xoGame\\usrg_StartComp"
+      EVENTNAME: "ONENTER"
+      FUNCTIONKEY: "148087320_215642201 usrg_StartCompOnEnter"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-15T14:37:47+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087323_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087321_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_StartCompOnExit"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub usrg_StartCompOnExit(ByRef Sender)
+          Sender.Font.Style = ""
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        USRG_STARTCOMPONEXIT
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONEXIT"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-15T14:32:47+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148087321_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_StartComp"
+      PARENTNAME: "usrf_xoGame"
+      OBJECTKEY: "148087308_215642201 usrf_xoGame\\usrg_StartComp"
+      EVENTNAME: "ONEXIT"
+      FUNCTIONKEY: "148087323_215642201 usrg_StartCompOnExit"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-15T14:32:47+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 148087324_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087325_215642201
+    Fields: 
+      NAME: "usrg_StartUser"
+      DESCRIPTION: ~
+      PARENT: "148086826_215642201 usrf_xoGame"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "usrg_StartUser"
+      SUBTYPE: ""
+      EDITIONDATE: 2015-04-15T14:29:11+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087327_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087325_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_StartUserOnEnter"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub usrg_StartUserOnEnter(ByRef Sender)
+          Sender.Font.Style = "fsUnderline"
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        USRG_STARTUSERONENTER
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONENTER"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-15T14:37:53+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148087325_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_StartUser"
+      PARENTNAME: "usrf_xoGame"
+      OBJECTKEY: "148087324_215642201 usrf_xoGame\\usrg_StartUser"
+      EVENTNAME: "ONENTER"
+      FUNCTIONKEY: "148087327_215642201 usrg_StartUserOnEnter"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-15T14:37:53+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087330_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087328_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_StartUserOnExit"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        sub usrg_StartUserOnExit(ByRef Sender)
+          Sender.Font.Style = ""
+        End sub
+        
+      DISPLAYSCRIPT: | 
+        USRG_STARTUSERONEXIT
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONEXIT"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-15T14:33:06+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148087328_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_StartUser"
+      PARENTNAME: "usrf_xoGame"
+      OBJECTKEY: "148087324_215642201 usrf_xoGame\\usrg_StartUser"
+      EVENTNAME: "ONEXIT"
+      FUNCTIONKEY: "148087330_215642201 usrg_StartUserOnExit"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-15T14:33:06+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087282_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148086888_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "GameOver"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include InProcess
+        Option Explicit
+        
+        Function GameOver(ByRef frm)
+        '
+          Dim I, WinCells
+          Dim MsgName, CtlName, X, Y, Cell
+          Dim W, H
+          
+          If frm.Objects("xo").Win Or frm.Objects("xo").Tie Then
+            GameOver = True
+          Else
+            GameOver = False
+            Exit Function
+          End If
+        
+          MsgName = "usrg_Label_Msg"
+        
+          If Not frm.Objects("xo").WinMark = xoFreeMark Then
+            WinCells = frm.Objects("xo").WinCells
+            For I = LBound(WinCells) To UBound(WinCells)
+              X = WinCells(I, 0)
+              Y = WinCells(I, 1)
+              CtlName = "usrg_Label_" & X & "_" & Y
+              '
+              Set Cell = frm.FindComponent(CtlName)
+              If Assigned(Cell) Then
+                W = Cell.Width
+                H = Cell.Height
+                Cell.Font.Style = "fsBold"
+                Cell.Width = W
+                Cell.Height = H
+                Cell.Repaint
+              End If
+            Next
+        
+            If frm.Objects("xo").CurrentMove = 0 Then
+              frm.GetComponent(MsgName).Caption = "Победил Компьютер"
+            Else
+              frm.GetComponent(MsgName).Caption = "Победил Игрок"
+            End If
+          Else
+            frm.GetComponent(MsgName).Caption = "Ничья"
+          End If
+        
+          Call InProcess(frm, False)
+          frm.GetComponent("usrg_Start").SetFocus
+        '
+        End Function
+        
+      DISPLAYSCRIPT: | 
+        GAMEOVER
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-27T12:26:44+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "148087331_215642201 InProcess"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148088169_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148088166_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "MarkCell"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include GameOver
+        Option Explicit
+        
+        Sub MarkCell(ByVal Sender)
+        '
+          Dim MarkedCellColor
+          Dim frm
+          Dim CtlName, X, Y, Cell, PlayCoor
+          Dim W, H
+        
+          Set frm = Sender.OwnerForm
+        
+          If (frm.GetComponent("usrg_Start").Enabled = True) Or _
+              GameOver(frm) Then
+            Exit Sub
+          End If
+          
+          MarkedCellColor = 0
+          
+          PlayCoor = frm.Objects("xo").PlayCoor
+          X = PlayCoor(0)
+          Y = PlayCoor(1)
+          CtlName = "usrg_Label_" & X & "_" & Y
+          '
+          Set Cell = frm.FindComponent(CtlName)
+          If Assigned(Cell) Then
+            W = Cell.Width
+            H = Cell.Height
+            Cell.Font.Style = ""
+            Cell.Width = W
+            Cell.Height = H
+            Cell.Repaint
+          End If
+          
+          If Sender.Caption = "n" Then
+            Cell = Split(Sender.Name, "_")
+            X = Cell(2)
+            Y = Cell(3)
+            '
+            If frm.Objects("xo").MarkCell(X, Y) Then
+              W = Sender.Width
+              H = Sender.Height
+              Sender.Caption = frm.Objects("xo").CurrentMark
+              Sender.Font.Color = MarkedCellColor
+              Sender.Width = W
+              Sender.Height = H
+              Sender.Repaint
+              '
+              If Not GameOver(frm) Then
+                frm.Objects("xo").NextMove
+                Call Play(frm)
+              End If
+            End If
+          End If
+        '
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        MARKCELL
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-29T14:47:32+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "148087282_215642201 GameOver"
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087280_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148086888_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "UNKNOWN"
+      LANGUAGE: "VBScript"
+      NAME: "Play"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include GameOver
+        Option Explicit
+        
+        Sub Play(ByRef frm)
+        '
+          Dim MarkedCellColor
+          Dim CtlName, X, Y, Cell, PlayCoor
+          Dim W, H
+          Dim MsgName, Msg
+          Dim RateName, Rate
+          
+          MarkedCellColor = 0
+          MsgName = "usrg_Label_Msg"
+          Set Msg = frm.GetComponent(MsgName)
+          RateName = "usrg_Label_Rate"
+          Set Rate = frm.GetComponent(RateName)
+        
+          If frm.Objects("xo").CurrentMove = 0 Then
+            Msg.Caption = "Ждите..."
+            Msg.Repaint
+            If frm.Objects("xo").Play Then
+              PlayCoor = frm.Objects("xo").PlayCoor
+              X = PlayCoor(0)
+              Y = PlayCoor(1)
+              CtlName = "usrg_Label_" & X & "_" & Y
+              '
+              Set Cell = frm.FindComponent(CtlName)
+              If Assigned(Cell) Then
+                If frm.Objects("xo").MarkCell(X, Y) Then
+                  W = Cell.Width
+                  H = Cell.Height
+                  Cell.Caption = frm.Objects("xo").CurrentMark
+                  Cell.Font.Color = MarkedCellColor
+                  Cell.Font.Style = "fsBold"
+                  Cell.Width = W
+                  Cell.Height = H
+                  Cell.Repaint
+                  '
+                  If Not GameOver(frm) Then
+                    frm.Objects("xo").NextMove
+                    Msg.Caption = "Ваш ход отметкой " & UCase(frm.Objects("xo").CurrentMark)
+                  End If
+                End If
+              End If
+            End If
+          Else
+            Msg.Caption = "Ваш ход отметкой " & UCase(frm.Objects("xo").CurrentMark)
+          End If
+        
+          Rate.Caption = _
+            "Ход: " & frm.Objects("xo").CurrentStep & " - " & frm.Objects("xo").CurrentMark
+        '
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        PLAY
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-27T17:19:18+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "148087282_215642201 GameOver"
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 148086831_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148086888_215642201
+    Fields: 
+      NAME: "usrg_Start"
+      DESCRIPTION: ~
+      PARENT: "148086826_215642201 usrf_xoGame"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "usrg_Start"
+      SUBTYPE: ""
+      EDITIONDATE: 2015-04-13T15:31:47+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148086890_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148086888_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_StartOnClick"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include MakeCells
+        '#include HideCells
+        '#include ClearCells
+        '#include InProcess
+        '#include Play
+        Option Explicit
+        
+        Sub usrg_StartOnClick(ByVal Sender)
+        '
+          Dim frm
+          
+          Set frm = Sender.OwnerForm
+        
+          frm.Objects("xo").PosBegin = 0
+          frm.Objects("xo").PosEnd = frm.GetComponent("usrg_Size").Value - 1
+          frm.Objects("xo").WinLength = frm.GetComponent("usrg_Line").Value
+          frm.Objects("xo").Level = frm.GetComponent("usrg_Level").Value
+          frm.Objects("xo").StartMove = Abs(frm.GetComponent("usrg_StartUser").Checked)
+        
+          If Not frm.Objects("xo").NewGame Then
+            Exit Sub
+          End If
+        
+          frm.GetComponent("usrg_Size").Value = frm.Objects("xo").PosEnd - frm.Objects("xo").PosBegin + 1
+          frm.GetComponent("usrg_Line").Value = frm.Objects("xo").WinLength
+          frm.GetComponent("usrg_Level").Value = frm.Objects("xo").Level
+        
+          Call InProcess(frm, True)
+          
+          If Not MakeCells(frm) Then
+            Call InProcess(frm, False)
+            Exit Sub
+          End If
+        
+          Call HideCells(frm)
+          Call ClearCells(frm, True, True)
+          Call Play(frm)
+        '
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        USRG_STARTONCLICK
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONCLICK"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-29T10:27:59+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "148088175_215642201 MakeCells"
+          - 
+            ADDFUNCTIONKEY: "148088197_215642201 HideCells"
+          - 
+            ADDFUNCTIONKEY: "148087287_215642201 ClearCells"
+          - 
+            ADDFUNCTIONKEY: "148087331_215642201 InProcess"
+          - 
+            ADDFUNCTIONKEY: "148087280_215642201 Play"
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148086888_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_Start"
+      PARENTNAME: "usrf_xoGame"
+      OBJECTKEY: "148086831_215642201 usrf_xoGame\\usrg_Start"
+      EVENTNAME: "ONCLICK"
+      FUNCTIONKEY: "148086890_215642201 usrg_StartOnClick"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-24T10:58:50+03:00
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 148087283_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087284_215642201
+    Fields: 
+      NAME: "usrg_Stop"
+      DESCRIPTION: ~
+      PARENT: "148086826_215642201 usrf_xoGame"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "usrg_Stop"
+      SUBTYPE: ""
+      EDITIONDATE: 2015-04-15T10:15:55+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148087286_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148087284_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_StopOnClick"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        
+        Sub usrg_StopOnClick(ByVal Sender)
+        '
+          Dim frm
+        
+          Set frm = Sender.OwnerForm
+        
+          Call InProcess(frm, False)
+          
+          frm.GetComponent("usrg_Label_Msg").Caption = ""
+          frm.GetComponent("usrg_Label_Rate").Caption = ""
+        '
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        USRG_STOPONCLICK
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONCLICK"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        RkxQUg==
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-27T16:33:19+03:00
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148087284_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_Stop"
+      PARENTNAME: "usrf_xoGame"
+      OBJECTKEY: "148087283_215642201 usrf_xoGame\\usrg_Stop"
+      EVENTNAME: "ONCLICK"
+      FUNCTIONKEY: "148087286_215642201 usrg_StopOnClick"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-27T16:33:19+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148086851_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148086849_215642201
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "MACROS"
+      LANGUAGE: "VBScript"
+      NAME: "xoGame"
+      COMMENT: ~
+      SCRIPT: | 
+        Option Explicit
+        
+        Sub xoGame()
+          Dim frm
+          
+          Set frm = GedeminApplication.FindComponent("xoGame")
+        
+          If Not Assigned(frm) Then
+            Set frm = Designer.CreateForm(Application, "usrf_xoGame", "xoGame")
+          End If
+        
+          frm.Left = 400
+          frm.Top = 50
+          frm.Width = 550
+          frm.Height = 670
+          frm.WindowState = 0
+          frm.ShowModal
+          frm.DestroyObject
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        XOGAME
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-29T10:26:10+03:00
+  - 
+    Properties: 
+      Class: "TgdcMacros"
+      RUID: 148086849_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MACROSGROUPKEY: "1020001_17 Глобальные макросы"
+      FUNCTIONKEY: "148086851_215642201 xoGame"
+      NAME: "Крестики-нолики"
+      SERVERKEY: ~
+      ISLOCALEXECUTE: 0
+      ISREBUILD: 0
+      EXECUTEDATE: ~
+      SHORTCUT: 24664
+      EDITIONDATE: 2015-04-29T10:26:11+03:00
+      DISPLAYINMENU: 1
+      RUNONLOGIN: 0
+  - 
+    Properties: 
+      Class: "TgdcDelphiObject"
+      RUID: 148086836_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148088166_215642201
+    Fields: 
+      NAME: "usrg_Label_0_0"
+      DESCRIPTION: ~
+      PARENT: "148086826_215642201 usrf_xoGame"
+      OBJECTTYPE: 0
+      MACROSGROUPKEY: ~
+      REPORTGROUPKEY: ~
+      CLASSNAME: ""
+      OBJECTNAME: "usrg_Label_0_0"
+      SUBTYPE: ""
+      EDITIONDATE: 2015-04-13T15:42:25+03:00
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148088168_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+      HeadObject: 148088166_215642201
+    Fields: 
+      OBJECTNAME: "usrf_xoGame"
+      MODULE: "EVENTS"
+      LANGUAGE: "VBScript"
+      NAME: "usrg_Label_OnMouseUp"
+      COMMENT: ~
+      SCRIPT: | 
+        '#include ClearCells
+        '#include MarkCell
+        Option Explicit
+        
+        Sub usrg_Label_OnMouseUp(ByVal Sender, ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+        '
+          Dim frm
+          Dim Cell, R, C, RateArr
+          Dim RateName, Rate
+          Dim ReviewArr, ReviewCellArr
+          Dim Ret, Cost, I
+          Dim CtlName, RateCell
+          Dim FreeCellColor, CurrentCellColor
+          Dim UserCellColor, CompCellColor, BothCellColor
+          Dim W, H
+          
+          Set frm = Sender.OwnerForm
+          RateName = "usrg_Label_Rate"
+          Set Rate = frm.GetComponent(RateName)
+          
+          Cost = 0
+          FreeCellColor = RGB(255, 255, 255)
+          CurrentCellColor = RGB(191, 191, 191)
+          UserCellColor = RGB(191, 255, 191)
+          CompCellColor = RGB(255, 191, 191)
+          BothCellColor = RGB(255, 255, 191)
+          
+          If Button = 0 Then
+            If Rate.Tag > 0 Then
+              If Rate.Tag = 2 Then
+                Call ClearCells(frm, False, False)
+              End If
+              Rate.Tag = 0
+              Rate.Caption = _
+                "Ход: " & frm.Objects("xo").CurrentStep & " - " & frm.Objects("xo").CurrentMark
+            End If
+            '
+            Call MarkCell(Sender)
+            '
+          ElseIf Button = 1 Then
+            If Rate.Tag > 0 Then
+              Rate.Tag = 0
+              Call ClearCells(frm, False, False)
+              Rate.Caption = _
+                "Ход: " & frm.Objects("xo").CurrentStep & " - " & frm.Objects("xo").CurrentMark
+            Else
+              '
+              Cell = Split(Sender.Name, "_")
+              R = Cell(2)
+              C = Cell(3)
+              Rate.Caption = "Коор: " & R & ", " & C
+              RateArr = frm.Objects("xo").Rate(xoCompMark, R, C, 0)
+              Rate.Caption = Rate.Caption & "    Ранг: " & _
+                xoCompMark & "(" & RateArr(0) & ", " & RateArr(1) & ")"
+              RateArr = frm.Objects("xo").Rate(xoUserMark, R, C, 0)
+              Rate.Caption = Rate.Caption & "  " & _
+                xoUserMark & "(" & RateArr(0) & ", " & RateArr(1) & ")"
+              Rate.Tag = 1
+              '
+              CtlName = "usrg_Label_" & R & "_" & C
+              Set RateCell = frm.FindComponent(CtlName)
+              '
+              If Assigned(RateCell) Then
+                W = RateCell.Width
+                H = RateCell.Height
+                RateCell.Color = CurrentCellColor
+                RateCell.Tag = 4
+                If RateCell.Caption = xoFreeMark Then
+                  RateCell.Font.Color = RateCell.Color
+                End If
+                RateCell.Width = W
+                RateCell.Height = H
+                RateCell.Repaint
+              End If
+              '
+              Ret = frm.Objects("xo").Review(xoUserMark, R, C, Cost)
+              If Not Ret = "" Then
+                ReviewArr = Split(Ret, ";")
+                For I = LBound(ReviewArr) To UBound(ReviewArr) - 1
+                  ReviewCellArr = Split(ReviewArr(I), ",")
+                  CtlName = "usrg_Label_" & ReviewCellArr(1) & "_" & ReviewCellArr(2)
+                  Set RateCell = frm.FindComponent(CtlName)
+                  '
+                  If Assigned(RateCell) Then
+                    W = RateCell.Width
+                    H = RateCell.Height
+                    RateCell.Color = UserCellColor
+                    RateCell.Tag = 1
+                    If RateCell.Caption = xoFreeMark Then
+                      RateCell.Font.Color = RateCell.Color
+                    End If
+                    RateCell.Width = W
+                    RateCell.Height = H
+                    RateCell.Repaint
+                  End If
+                Next
+              End If
+              '
+              Ret = frm.Objects("xo").Review(xoCompMark, R, C, Cost)
+              If Not Ret = "" Then
+                ReviewArr = Split(Ret, ";")
+                For I = LBound(ReviewArr) To UBound(ReviewArr) - 1
+                  ReviewCellArr = Split(ReviewArr(I), ",")
+                  CtlName = "usrg_Label_" & ReviewCellArr(1) & "_" & ReviewCellArr(2)
+                  Set RateCell = frm.FindComponent(CtlName)
+                  '
+                  If Assigned(RateCell) Then
+                    W = RateCell.Width
+                    H = RateCell.Height
+                    If RateCell.Color = UserCellColor Then
+                      RateCell.Color = BothCellColor
+                      RateCell.Tag = 3
+                    ElseIf RateCell.Color = FreeCellColor Then
+                      RateCell.Color = CompCellColor
+                      RateCell.Tag = 2
+                    End If
+                    If RateCell.Caption = xoFreeMark Then
+                      RateCell.Font.Color = RateCell.Color
+                    End If
+                    RateCell.Width = W
+                    RateCell.Height = H
+                    RateCell.Repaint
+                  End If
+                Next
+              End If
+              '
+              Rate.Tag = 2
+              '
+            End If
+          End If
+        '
+        End Sub
+        
+      DISPLAYSCRIPT: | 
+        USRG_LABEL_ONMOUSEUP
+        
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: "ONMOUSEUP"
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "148086826_215642201 usrf_xoGame"
+      ENTEREDPARAMS: !!binary > 
+        U0xQUlBSU1QGAAAAU0VOREVSBgAAAFNFTkRFUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNU
+        UFJTVAYAAABCVVRUT04GAAAAQlVUVE9OAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNU
+        BQAAAFNISUZUBQAAAFNISUZUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RQUlNUAQAAAFgB
+        AAAAWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNUUFJTVAEAAABZAQAAAFkAAAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAARk5TVEZMUFI=
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-04-29T16:47:29+03:00
+    Set: 
+      - 
+        Table: "RP_ADDITIONALFUNCTION"
+        Items: 
+          - 
+            ADDFUNCTIONKEY: "148087287_215642201 ClearCells"
+          - 
+            ADDFUNCTIONKEY: "148088169_215642201 MarkCell"
+  - 
+    Properties: 
+      Class: "TgdcEvent"
+      RUID: 148088166_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "usrg_Label_0_0"
+      PARENTNAME: "usrf_xoGame"
+      OBJECTKEY: "148086836_215642201 usrf_xoGame\\usrg_Label_0_0"
+      EVENTNAME: "ONMOUSEUP"
+      FUNCTIONKEY: "148088168_215642201 usrg_Label_OnMouseUp"
+      DISABLE: 0
+      EDITIONDATE: 2015-04-27T17:14:33+03:00
