@@ -4,7 +4,7 @@
 
 :- dynamic([ xo_params/1, xo_cell/2, xo_solve/2, xo_step/4 ]).
 
-:- ['kb/xo_cell', 'kb/xo_solve'].
+%:- ['kb/xo_cell', 'kb/xo_solve'].
 
 % параметры игры
 % xo_params([Size, Line, Level, Go, ModeOpt])
@@ -16,9 +16,9 @@
 xo_params( [
     size(0, 19),
     line(5),
-    level(9),
+    level(4),
     go(x, o),
-    mode_opt([level(echo, +4)])
+    mode_opt([level(echo, +5)])
 ] ).
 
 % пространство ячеек
@@ -230,7 +230,7 @@ xo_play(Mode, PlayCell, Rule) :-
     memberchk(PlayCell, Solve),
     Rule = rule(next_step_win,Mark,X,Y),
     !.
-% свободные края
+% свободные края (выигрыш через ход)
 xo_play(Mode, PlayCell, Rule) :-
     xo_params(Params),
     memberchk(level(Level), Params),
@@ -240,33 +240,37 @@ xo_play(Mode, PlayCell, Rule) :-
     memberchk(go(Mark1, Mark2), Params),
     xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
     memberchk(line(WinLength), Params),
-    plus(WinLength, -2, ToWinLength1),
-    plus(WinLength, -3, ToWinLength2),
-    %
+    plus(WinLength, -2, ToWinLength),
     ( Mark = CompMark ; Mark = UserMark ),
-    xo_has_chance(Mark, Solve, ToWinLength1),
-    First = cell(_, n),
+    xo_has_chance(Mark, Solve, ToWinLength),
     Solve = [First | Right],
-    Last = cell(_, n),
-    last(Solve, Last),
-    append(Left, Last, Solve),
-    %check_point,
-    findall( BorderCell,
-             ( xo_has_chance(Mark, BorderSolve, MarkedQty),
-               MarkedQty >= ToWinLength2,
-               ( append(Right, [_], BorderSolve),
-                 BorderCell = Last
-               ; BorderSolve = [_ | Left],
-                 BorderCell = First
-               )
-             ),
-             BorderCellList
+    append(Left, [Last], Solve),
+    %check_point
+    ( % n nooon n
+      First = cell(_, n),
+      Last = cell(_, n),
+      xo_has_chance(Mark, SolveBorder1, ToWinLength),
+      append(Right, [cell(_, n)], SolveBorder1),
+      xo_has_chance(Mark, SolveBorder2, ToWinLength),
+      append([cell(_, n)], Left, SolveBorder2),
+      PlayList = [First, Last]
+    ; % _ nonoo n | _ nnooo n
+      xo_has_chance(Mark, SolveBorder1, ToWinLength),
+      append(Right, [cell(_, n)], SolveBorder1),
+      member(PlayCell, Right),
+      PlayCell = cell(_, n),
+      PlayList = [PlayCell]
+    ; % n oonon _ | n ooonn _
+      xo_has_chance(Mark, SolveBorder2, ToWinLength),
+      append([cell(_, n)], Left, SolveBorder2),
+      member(PlayCell, Left),
+      PlayCell = cell(_, n),
+      PlayList = [PlayCell]
     ),
-    \+ BorderCellList = [],
     %check_point,
-    length(BorderCellList, PlayLength),
+    length(PlayList, PlayLength),
     PlayIndex is random(PlayLength),
-    nth0(PlayIndex, BorderCellList, PlayCell),
+    nth0(PlayIndex, PlayList, PlayCell),
     PlayCell = cell(X-Y, n),
     Rule = rule(free_border,Mark,X,Y),
     !.
@@ -301,8 +305,9 @@ xo_play(Mode, PlayCell, Rule) :-
     \+ ForkList = [],
     sort(ForkList, SortedForkList),
     reverse(SortedForkList, [BestFork | TeilForkList]),
-    BestFork = fork(ForkHeight, ForkOrder, ForkPower, _, _, _),
-    PlayFork = fork(ForkHeight, ForkOrder, ForkPower, _, _, _),
+    BestFork = fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
+    PlayFork = fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
+    %check_point,
     findall( PlayFork,
              member(PlayFork, [BestFork | TeilForkList]),
              PlayForkList
@@ -312,7 +317,7 @@ xo_play(Mode, PlayCell, Rule) :-
     nth0(PlayIndex, PlayForkList, PlayFork),
     %check_point,
     PlayCell = cell(X-Y, n),
-    PlayFork = fork(Height, _, Power, Width, Mark, PlayCell),
+    PlayFork = fork(Height, Power, Width, _, Mark, PlayCell),
     Rule = rule(fork,height=Height,power=Power,width=Width,Mark,X,Y),
     !.
 % случайный выбор из лучших шансов на выигрыш
@@ -469,7 +474,7 @@ xo_rate(Mark, Coor, Cost, Gift-Count) :-
 % есть вилка
 % xo_has_fork(MarkSolveList, MarkedFreeCell)
 xo_has_fork([MarkedQty-Order-Mark-Solve | TeilSolves], Fork) :-
-    Fork = fork(ForkHeight, Order, ForkPower, ForkWidth, Mark, FreeCell),
+    Fork = fork(ForkHeight, ForkPower, ForkWidth, Order, Mark, FreeCell),
     FreeCell = cell(_, n),
     member(FreeCell, Solve),
     findall( ForkMarkedQty,
