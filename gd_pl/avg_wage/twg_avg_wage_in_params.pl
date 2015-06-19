@@ -24,7 +24,9 @@ twg_avg_wage_in_params:-
         % Травма производственная
         pJobIllType_ruid-'147036273,151520244',
         % Табель мастера
-        pTblCal_DocType_Fact_ruid-'187613422,1596169984'
+        pTblCal_DocType_Fact_ruid-'187613422,1596169984',
+        % Премия по итогам года
+        pYearBonus_ruid-'159105706,398637376'
         ]),
     fail.
 twg_avg_wage_in_params:-

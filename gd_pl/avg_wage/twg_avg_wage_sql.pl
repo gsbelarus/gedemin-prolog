@@ -22,7 +22,7 @@ wg_valid_sql([
             usr_wg_TblCal_FlexLine/68, % 05, 06, 12
             usr_wg_HourType/13, % 05, 06
             usr_wg_TblCharge/10, % 05, 06, 12
-            usr_wg_FeeType/5, % 05, 06, 12
+            usr_wg_FeeType/6, % 05, 06, 12
             usr_wg_FeeTypeNoCoef/4,
             usr_wg_BadHourType/3,
             usr_wg_BadFeeType/3,
@@ -554,23 +554,31 @@ ORDER BY
         wg_avg_wage_avg
         ]).
 
-gd_pl_ds(Scope, kb, usr_wg_FeeType, 5, [
+gd_pl_ds(Scope, kb, usr_wg_FeeType, 6, [
     fEmplKey-integer, fFirstMoveKey-integer,
     fFeeGroupKey-integer, fFeeTypeKey-integer,
-    fAvgDayHOW-integer
+    fAvgDayHOW-integer, fAlias-string
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
         ]).
-% usr_wg_FeeType(EmplKey, FirstMoveKey, FeeGroupKey, FeeTypeKey, AvgDayHOW)
-get_sql(Scope, kb, usr_wg_FeeType/5,
+% usr_wg_FeeType(EmplKey, FirstMoveKey, FeeGroupKey, FeeTypeKey, AvgDayHOW, Alias)
+get_sql(Scope, kb, usr_wg_FeeType/6,
 "
 SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
   ft.USR$WG_FEEGROUPKEY,
   ft.USR$WG_FEETYPEKEY,
-  ft_avg.USR$AVGDAYHOW
+  ft_avg.USR$AVGDAYHOW,
+  CASE ft.USR$WG_FEETYPEKEY
+    WHEN
+      (SELECT id FROM GD_P_GETID(pYearBonus_ruid))
+        THEN 'ftYearBonus'
+    ELSE
+        'unknown'
+  END
+    AS Alias
 FROM
   USR$CROSS179_256548741 ft
 JOIN
@@ -581,7 +589,7 @@ WHERE
     (SELECT id FROM GD_P_GETID(pFeeGroupKey_ruid))
 ",
     [
-    pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_ruid-_
+    pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_ruid-_, pYearBonus_ruid-_
     ]) :-
     memberchk(Scope, [
         wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg

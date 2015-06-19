@@ -304,7 +304,8 @@ calc_formula(Scope, EmplKey) :-
                     pEmplKey-EmplKey, pDateCalcTo-DateCalcTo ]),
     get_min_wage(Scope, DateCalcTo, BV),
     % БПМ
-    get_budget(Scope, DateCalcTo, BudgetConst),
+    get_budget(Scope, DateCalcTo, BudgetConst0),
+    fit_budget(Scope, EmplKey, BudgetConst0, BudgetConst),
     % для всех алиментов
     forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
             ( % получить сумму по формуле
@@ -313,6 +314,25 @@ calc_formula(Scope, EmplKey) :-
               new_param_list(Scope, Type, FormulaPairs)
             )
           ),
+    !.
+
+%
+fit_budget(Scope, EmplKey, BudgetConst0, BudgetConst) :-
+    % последний прием на работу
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
+    get_last_hire(Scope, PK, DateIn),
+    % начало итогового месяца
+    get_param_list(Scope, in, [pEmplKey-EmplKey, pDateBegin-DateBegin]),
+    atom_date(DateBegin, date(YearBegin, MonthBegin, _)),
+    month_days(YearBegin, MonthBegin, DaysBegin),
+    % окончание итогового месяца
+    atom_date(DateEnd, date(YearBegin, MonthBegin, DaysBegin)),
+    % последний прием на работу больше начала итогового месяца
+    ( DateIn @> DateBegin
+     -> date_diff(DateIn, DaysDiff, DateEnd),
+      BudgetConst is round( BudgetConst0 * (DaysDiff + 1) / DaysBegin )
+    ; BudgetConst = BudgetConst0
+    ),
     !.
 
 % расчет формулы по спецификациям
@@ -1681,7 +1701,8 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     % сумма БВ
     get_min_wage(Scope, DateCalcTo, BV),
     % БПМ
-    get_budget(Scope, DateCalcTo, BudgetConst),
+    get_budget(Scope, DateCalcTo, BudgetConst0),
+    fit_budget(Scope, EmplKey, BudgetConst0, BudgetConst),
     prot_alias(Scope, "алиментов", Alias1),
     ( Scope = wg_fee_alimony
      ->

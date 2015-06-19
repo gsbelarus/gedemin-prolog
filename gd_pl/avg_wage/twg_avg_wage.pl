@@ -266,12 +266,19 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     ; true ),
     % есть хотя бы один расчетный месяц
     once( get_month_incl(Scope, PK, _, _, _) ),
+    %
+    length(Periods, LenPeriods),
+    findall( 1, get_month_incl(Scope, PK, _, _, _), Incl),
+    length(Incl, LenIncl),
     % взять заработок
     findall( Wage,
                % за каждый расчетный месяц
              ( get_month_incl(Scope, PK, Y, M, _),
                % взять данные по заработку
-               get_month_wage(Scope, PK, Y, M, _, Wage) ),
+               get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage),
+               get_month_alias_wage(Scope, PK, Y, M, MonthModernCoef, LenPeriods, LenIncl, AliasModernWage),
+               Wage is ModernWage + AliasModernWage
+             ),
     % в список заработков
     Wages ),
     % итоговый заработок за расчетные месяцы
@@ -944,7 +951,8 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, S
           once( ( var(FeeTypeKey)
                 ; get_data(Scope, kb, usr_wg_FeeType, [
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                            fFeeTypeKey-FeeTypeKey ])
+                            fFeeTypeKey-FeeTypeKey, fAlias-Alias ]),
+                  check_fee_type(Scope, PK, Y, M, Debit, Alias)
                 ; FeeTypeKey < 10
                 )
               ),
@@ -976,6 +984,31 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, S
     ; [SalaryOld-SalaryNew] = [0-0]
     ),
     !.
+
+% check_fee_type(Scope, PK, Y, M, Debit, Alias)
+check_fee_type(Scope, PK, Y, M, Debit, Alias) :-
+    memberchk(Alias, ["ftYearBonus"]),
+    append(PK, [pYM-Y-M, pWage-Debit, pAlias-Alias],
+            Pairs),
+    new_param_list(Scope, temp, Pairs),
+    !,
+    fail.
+check_fee_type(_, _, _, _, _, _).
+
+% get_month_alias_wage(Scope, PK, Y, M, MonthModernCoef, LenPeriods, LenIncl, AliasModernWage)
+get_month_alias_wage(Scope, PK, Y, M, MonthModernCoef, LenPeriods, LenIncl, AliasModernWage) :-
+    append(PK, [pYM-Y-M, pWage-Debit, pAlias-Alias],
+            PairsBefore),
+    get_param_list(Scope, temp, PairsBefore),
+    memberchk(Alias, ["ftYearBonus"]),
+    AliasWage is round(Debit / LenPeriods * LenIncl),
+    AliasModernWage is round(AliasWage * MonthModernCoef),
+    append(PK, [pYM-Y-M,
+                pAliasWage-AliasWage, pAliasModernWage-AliasModernWage, pAlias-Alias],
+            PairsAfter),
+    new_param_list(Scope, temp, PairsAfter),
+    !.
+get_month_alias_wage(_, _, _, _, _, _, _, 0).
 
 % итого зарплата и осовремененная зарплата за месяц
 % - для отпусков
@@ -2016,11 +2049,26 @@ avg_wage_det(EmplKey, FirstMoveKey,
     once( ( memberchk(Y-M-Rule, MonthIncl) ; Rule = none ) ),
     % взять данные по заработку
     once( ( ( append(PK, [pYM-Y-M,
-                            pWage-Wage, pModernCoef-ModernCoef, pModernWage-ModernWage,
+                            pWage-Wage0, pModernCoef-ModernCoef, pModernWage-ModernWage0,
                             pSalaryOld-SalaryOld, pSalaryNew-SalaryNew],
                         Pairs2),
-              get_param_list(Scope, Type, Pairs2) )
-              ; [Wage, ModernCoef, ModernWage, SalaryOld, SalaryNew] = [0, 1, 0, 0, 0] ) ),
+              get_param_list(Scope, Type, Pairs2),
+              %
+              append(PK, [pYM-Y-M,
+                          pAliasWage-AliasWage, pAliasModernWage-AliasModernWage, pAlias-Alias],
+                        PairsAfter),
+              ( get_param_list(Scope, Type, PairsAfter),
+                memberchk(Alias, ["ftYearBonus"])
+               -> true
+              ; AliasWage = 0,
+                AliasModernWage = 0
+              ),
+              %
+              Wage is Wage0 + AliasWage,
+              ModernWage is ModernWage0 + AliasModernWage
+            )
+              ; [Wage, ModernCoef, ModernWage, SalaryOld, SalaryNew] = [0, 1, 0, 0, 0] )
+        ),
     %
     % есть отработанные часы или заработок
     once( ( TabHoures > 0 ; ModernWage > 0 ) ),
