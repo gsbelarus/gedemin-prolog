@@ -21,7 +21,8 @@ twg_fee_in_params:-
         pDocType_Total_ruid-'147567052,119619099',          % 99. Итоговое начисление
         pTblCal_DocType_Plan_ruid-'147567935,1514418708',   % Календарный график
         pTblCal_DocType_Fact_ruid-'187613422,1596169984',   % Табель мастера
-        pBudget_ruid-'147073065,1224850260'                 % БПМ
+        pBudget_ruid-'147073065,1224850260',                % БПМ
+        pMinTransfCharge-10000                 % Минимальная сумма перевода
         ]),
     fail.
 twg_fee_in_params:-

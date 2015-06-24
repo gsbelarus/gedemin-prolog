@@ -25,7 +25,7 @@ wg_valid_sql(
             gd_const_budget/2,
             usr_wg_Variables/2,
             usr_wg_Alimony/12,
-            usr_wg_TransferType/4,
+            usr_wg_TransferType/5,
             usr_wg_TransferScale/3,
             usr_wg_AlimonyDebt/8,
             usr_wg_Alimony_FeeDoc/2,
@@ -696,21 +696,24 @@ ORDER BY
         wg_fee_alimony, wg_fee_fine
         ]).
 
-gd_pl_ds(Scope, kb, usr_wg_TransferType, 4, [
+gd_pl_ds(Scope, kb, usr_wg_TransferType, 5, [
     fID-integer, fParent-integer,
-    fDateBegin-date, fName-string
+    fDateBegin-date, fName-string,
+    fMinTransfCharge-float
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony, wg_fee_fine
         ]).
-% usr_wg_TransferType(ID, Parent, DateBegin, Name)
-get_sql(Scope, kb, usr_wg_TransferType/4,
+% usr_wg_TransferType(ID, Parent, DateBegin, Name, MinTransfCharge)
+get_sql(Scope, kb, usr_wg_TransferType/5,
 "
 SELECT
   tt.ID,
   COALESCE(tt.PARENT, 0) AS Parent,
   COALESCE(tt.USR$DATE, current_date) AS DateBegin,
-  tt.USR$NAME
+  tt.USR$NAME,
+  tt.USR$MIN_POSTAGE AS MinTransfCharge
+  --10000 AS MinTransfCharge
 FROM
   USR$WG_TRANSFERTYPE tt
 ORDER BY

@@ -523,7 +523,21 @@ aggr_fransf(Scope, EmplKey, TransfData, TransfDataList, TransfDataList1, TransfA
     % Сумма расхода по переводу
     TransfCharge0 is ForTransfAmount * TransfPercent / 100,
     get_round_data(Scope, EmplKey, "ftTransferDed", RoundType, RoundValue),
-    round_sum(TransfCharge0, TransfCharge, RoundType, RoundValue),
+    round_sum(TransfCharge0, TransfCharge1, RoundType, RoundValue),
+    % Проверка на минимальную сумму перевода
+    ( get_data(Scope, kb, usr_wg_TransferType, [
+                fID-TransferTypeKey, fMinTransfCharge-MinTransfCharge ])
+     -> true
+    ; get_param(Scope, in, pMinTransfCharge-MinTransfCharge)
+     -> true
+    ; MinTransfCharge = 0
+    ),
+    ( TransfCharge1 =:= 0
+     -> TransfCharge = 0
+    ; TransfCharge1 < MinTransfCharge
+     -> TransfCharge = MinTransfCharge
+    ; TransfCharge = TransfCharge1
+    ),
     % если есть Группа
     ( TransfByGroup = 1,
       % исключить Группу из списка данных

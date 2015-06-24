@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.13"
+  Version: "1.0.0.17"
   Optional: False
   Internal: True
-  MD5: 13BE13D201A9DE82A146D175FFCDC355
+  MD5: 0BD44429E56414E863A4AC054CA8A4A6
 Objects: 
   - 
     Properties: 
@@ -721,7 +721,7 @@ Objects:
                     usr_wg_TblCal_FlexLine/68, % 05, 06, 12
                     usr_wg_HourType/13, % 05, 06
                     usr_wg_TblCharge/10, % 05, 06, 12
-                    usr_wg_FeeType/5, % 05, 06, 12
+                    usr_wg_FeeType/6, % 05, 06, 12
                     usr_wg_FeeTypeNoCoef/4,
                     usr_wg_BadHourType/3,
                     usr_wg_BadFeeType/3,
@@ -1253,23 +1253,31 @@ Objects:
                 wg_avg_wage_avg
                 ]).
         
-        gd_pl_ds(Scope, kb, usr_wg_FeeType, 5, [
+        gd_pl_ds(Scope, kb, usr_wg_FeeType, 6, [
             fEmplKey-integer, fFirstMoveKey-integer,
             fFeeGroupKey-integer, fFeeTypeKey-integer,
-            fAvgDayHOW-integer
+            fAvgDayHOW-integer, fAlias-string
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
                 ]).
-        % usr_wg_FeeType(EmplKey, FirstMoveKey, FeeGroupKey, FeeTypeKey, AvgDayHOW)
-        get_sql(Scope, kb, usr_wg_FeeType/5,
+        % usr_wg_FeeType(EmplKey, FirstMoveKey, FeeGroupKey, FeeTypeKey, AvgDayHOW, Alias)
+        get_sql(Scope, kb, usr_wg_FeeType/6,
         "
         SELECT
           pEmplKey AS EmplKey,
           pFirstMoveKey AS FirstMoveKey,
           ft.USR$WG_FEEGROUPKEY,
           ft.USR$WG_FEETYPEKEY,
-          ft_avg.USR$AVGDAYHOW
+          ft_avg.USR$AVGDAYHOW,
+          CASE ft.USR$WG_FEETYPEKEY
+            WHEN
+              (SELECT id FROM GD_P_GETID(pYearBonus_ruid))
+                THEN 'ftYearBonus'
+            ELSE
+                'unknown'
+          END
+            AS Alias
         FROM
           USR$CROSS179_256548741 ft
         JOIN
@@ -1280,7 +1288,7 @@ Objects:
             (SELECT id FROM GD_P_GETID(pFeeGroupKey_ruid))
         ",
             [
-            pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_ruid-_
+            pEmplKey-_, pFirstMoveKey-_, pFeeGroupKey_ruid-_, pYearBonus_ruid-_
             ]) :-
             memberchk(Scope, [
                 wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
@@ -1896,7 +1904,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-02-04T12:58:50+03:00
+      EDITIONDATE: 2015-06-19T16:10:52+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -1938,7 +1946,9 @@ Objects:
                 % Травма производственная
                 pJobIllType_ruid-'147036273,151520244',
                 % Табель мастера
-                pTblCal_DocType_Fact_ruid-'187613422,1596169984'
+                pTblCal_DocType_Fact_ruid-'187613422,1596169984',
+                % Премия по итогам года
+                pYearBonus_ruid-'159105706,398637376'
                 ]),
             fail.
         twg_avg_wage_in_params:-
@@ -2003,7 +2013,6 @@ Objects:
          %
         %%
         
-        
       DISPLAYSCRIPT: ~
       MODIFYDATE: ~
       OWNERNAME: ~
@@ -2017,7 +2026,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-01-05T14:00:09+03:00
+      EDITIONDATE: 2015-06-19T16:10:16+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2300,12 +2309,19 @@ Objects:
             ; true ),
             % есть хотя бы один расчетный месяц
             once( get_month_incl(Scope, PK, _, _, _) ),
+            %
+            length(Periods, LenPeriods),
+            findall( 1, get_month_incl(Scope, PK, _, _, _), Incl),
+            length(Incl, LenIncl),
             % взять заработок
             findall( Wage,
                        % за каждый расчетный месяц
                      ( get_month_incl(Scope, PK, Y, M, _),
                        % взять данные по заработку
-                       get_month_wage(Scope, PK, Y, M, _, Wage) ),
+                       get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage),
+                       get_month_alias_wage(Scope, PK, Y, M, MonthModernCoef, LenPeriods, LenIncl, AliasModernWage),
+                       Wage is ModernWage + AliasModernWage
+                     ),
             % в список заработков
             Wages ),
             % итоговый заработок за расчетные месяцы
@@ -2978,7 +2994,8 @@ Objects:
                   once( ( var(FeeTypeKey)
                         ; get_data(Scope, kb, usr_wg_FeeType, [
                                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                                    fFeeTypeKey-FeeTypeKey ])
+                                    fFeeTypeKey-FeeTypeKey, fAlias-Alias ]),
+                          check_fee_type(Scope, PK, Y, M, Debit, Alias)
                         ; FeeTypeKey < 10
                         )
                       ),
@@ -3010,6 +3027,31 @@ Objects:
             ; [SalaryOld-SalaryNew] = [0-0]
             ),
             !.
+        
+        % check_fee_type(Scope, PK, Y, M, Debit, Alias)
+        check_fee_type(Scope, PK, Y, M, Debit, Alias) :-
+            memberchk(Alias, ["ftYearBonus"]),
+            append(PK, [pYM-Y-M, pWage-Debit, pAlias-Alias],
+                    Pairs),
+            new_param_list(Scope, temp, Pairs),
+            !,
+            fail.
+        check_fee_type(_, _, _, _, _, _).
+        
+        % get_month_alias_wage(Scope, PK, Y, M, MonthModernCoef, LenPeriods, LenIncl, AliasModernWage)
+        get_month_alias_wage(Scope, PK, Y, M, MonthModernCoef, LenPeriods, LenIncl, AliasModernWage) :-
+            append(PK, [pYM-Y-M, pWage-Debit, pAlias-Alias],
+                    PairsBefore),
+            get_param_list(Scope, temp, PairsBefore),
+            memberchk(Alias, ["ftYearBonus"]),
+            AliasWage is round(Debit / LenPeriods * LenIncl),
+            AliasModernWage is round(AliasWage * MonthModernCoef),
+            append(PK, [pYM-Y-M,
+                        pAliasWage-AliasWage, pAliasModernWage-AliasModernWage, pAlias-Alias],
+                    PairsAfter),
+            new_param_list(Scope, temp, PairsAfter),
+            !.
+        get_month_alias_wage(_, _, _, _, _, _, _, 0).
         
         % итого зарплата и осовремененная зарплата за месяц
         % - для отпусков
@@ -4050,11 +4092,26 @@ Objects:
             once( ( memberchk(Y-M-Rule, MonthIncl) ; Rule = none ) ),
             % взять данные по заработку
             once( ( ( append(PK, [pYM-Y-M,
-                                    pWage-Wage, pModernCoef-ModernCoef, pModernWage-ModernWage,
+                                    pWage-Wage0, pModernCoef-ModernCoef, pModernWage-ModernWage0,
                                     pSalaryOld-SalaryOld, pSalaryNew-SalaryNew],
                                 Pairs2),
-                      get_param_list(Scope, Type, Pairs2) )
-                      ; [Wage, ModernCoef, ModernWage, SalaryOld, SalaryNew] = [0, 1, 0, 0, 0] ) ),
+                      get_param_list(Scope, Type, Pairs2),
+                      %
+                      append(PK, [pYM-Y-M,
+                                  pAliasWage-AliasWage, pAliasModernWage-AliasModernWage, pAlias-Alias],
+                                PairsAfter),
+                      ( get_param_list(Scope, Type, PairsAfter),
+                        memberchk(Alias, ["ftYearBonus"])
+                       -> true
+                      ; AliasWage = 0,
+                        AliasModernWage = 0
+                      ),
+                      %
+                      Wage is Wage0 + AliasWage,
+                      ModernWage is ModernWage0 + AliasModernWage
+                    )
+                      ; [Wage, ModernCoef, ModernWage, SalaryOld, SalaryNew] = [0, 1, 0, 0, 0] )
+                ),
             %
             % есть отработанные часы или заработок
             once( ( TabHoures > 0 ; ModernWage > 0 ) ),
@@ -4786,7 +4843,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-03-11T10:27:39+03:00
+      EDITIONDATE: 2015-06-19T16:09:47+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -4842,7 +4899,7 @@ Objects:
                     gd_const_budget/2,
                     usr_wg_Variables/2,
                     usr_wg_Alimony/12,
-                    usr_wg_TransferType/4,
+                    usr_wg_TransferType/5,
                     usr_wg_TransferScale/3,
                     usr_wg_AlimonyDebt/8,
                     usr_wg_Alimony_FeeDoc/2,
@@ -5513,21 +5570,24 @@ Objects:
                 wg_fee_alimony, wg_fee_fine
                 ]).
         
-        gd_pl_ds(Scope, kb, usr_wg_TransferType, 4, [
+        gd_pl_ds(Scope, kb, usr_wg_TransferType, 5, [
             fID-integer, fParent-integer,
-            fDateBegin-date, fName-string
+            fDateBegin-date, fName-string,
+            fMinTransfCharge-float
             ]) :-
             memberchk(Scope, [
                 wg_fee_alimony, wg_fee_fine
                 ]).
-        % usr_wg_TransferType(ID, Parent, DateBegin, Name)
-        get_sql(Scope, kb, usr_wg_TransferType/4,
+        % usr_wg_TransferType(ID, Parent, DateBegin, Name, MinTransfCharge)
+        get_sql(Scope, kb, usr_wg_TransferType/5,
         "
         SELECT
           tt.ID,
           COALESCE(tt.PARENT, 0) AS Parent,
           COALESCE(tt.USR$DATE, current_date) AS DateBegin,
-          tt.USR$NAME
+          tt.USR$NAME,
+          tt.USR$MIN_POSTAGE AS MinTransfCharge
+          --10000 AS MinTransfCharge
         FROM
           USR$WG_TRANSFERTYPE tt
         ORDER BY
@@ -5745,7 +5805,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-09T16:30:52+03:00
+      EDITIONDATE: 2015-06-24T10:30:40+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -5784,7 +5844,8 @@ Objects:
                 pDocType_Total_ruid-'147567052,119619099',          % 99. Итоговое начисление
                 pTblCal_DocType_Plan_ruid-'147567935,1514418708',   % Календарный график
                 pTblCal_DocType_Fact_ruid-'187613422,1596169984',   % Табель мастера
-                pBudget_ruid-'147073065,1224850260'                 % БПМ
+                pBudget_ruid-'147073065,1224850260',                % БПМ
+                pMinTransfCharge-10000                 % Минимальная сумма перевода
                 ]),
             fail.
         twg_fee_in_params:-
@@ -5900,7 +5961,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-09T16:35:35+03:00
+      EDITIONDATE: 2015-06-24T10:28:18+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -6221,7 +6282,8 @@ Objects:
                             pEmplKey-EmplKey, pDateCalcTo-DateCalcTo ]),
             get_min_wage(Scope, DateCalcTo, BV),
             % БПМ
-            get_budget(Scope, DateCalcTo, BudgetConst),
+            get_budget(Scope, DateCalcTo, BudgetConst0),
+            fit_budget(Scope, EmplKey, BudgetConst0, BudgetConst),
             % для всех алиментов
             forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
                     ( % получить сумму по формуле
@@ -6230,6 +6292,25 @@ Objects:
                       new_param_list(Scope, Type, FormulaPairs)
                     )
                   ),
+            !.
+        
+        %
+        fit_budget(Scope, EmplKey, BudgetConst0, BudgetConst) :-
+            % последний прием на работу
+            PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
+            get_last_hire(Scope, PK, DateIn),
+            % начало итогового месяца
+            get_param_list(Scope, in, [pEmplKey-EmplKey, pDateBegin-DateBegin]),
+            atom_date(DateBegin, date(YearBegin, MonthBegin, _)),
+            month_days(YearBegin, MonthBegin, DaysBegin),
+            % окончание итогового месяца
+            atom_date(DateEnd, date(YearBegin, MonthBegin, DaysBegin)),
+            % последний прием на работу больше начала итогового месяца
+            ( DateIn @> DateBegin
+             -> date_diff(DateIn, DaysDiff, DateEnd),
+              BudgetConst is round( BudgetConst0 * (DaysDiff + 1) / DaysBegin )
+            ; BudgetConst = BudgetConst0
+            ),
             !.
         
         % расчет формулы по спецификациям
@@ -6420,7 +6501,21 @@ Objects:
             % Сумма расхода по переводу
             TransfCharge0 is ForTransfAmount * TransfPercent / 100,
             get_round_data(Scope, EmplKey, "ftTransferDed", RoundType, RoundValue),
-            round_sum(TransfCharge0, TransfCharge, RoundType, RoundValue),
+            round_sum(TransfCharge0, TransfCharge1, RoundType, RoundValue),
+            % Проверка на минимальную сумму перевода
+            ( get_data(Scope, kb, usr_wg_TransferType, [
+                        fID-TransferTypeKey, fMinTransfCharge-MinTransfCharge ])
+             -> true
+            ; get_param(Scope, in, pMinTransfCharge-MinTransfCharge)
+             -> true
+            ; MinTransfCharge = 0
+            ),
+            ( TransfCharge1 =:= 0
+             -> TransfCharge = 0
+            ; TransfCharge1 < MinTransfCharge
+             -> TransfCharge = MinTransfCharge
+            ; TransfCharge = TransfCharge1
+            ),
             % если есть Группа
             ( TransfByGroup = 1,
               % исключить Группу из списка данных
@@ -7598,7 +7693,8 @@ Objects:
             % сумма БВ
             get_min_wage(Scope, DateCalcTo, BV),
             % БПМ
-            get_budget(Scope, DateCalcTo, BudgetConst),
+            get_budget(Scope, DateCalcTo, BudgetConst0),
+            fit_budget(Scope, EmplKey, BudgetConst0, BudgetConst),
             prot_alias(Scope, "алиментов", Alias1),
             ( Scope = wg_fee_alimony
              ->
@@ -8000,7 +8096,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-09T16:29:11+03:00
+      EDITIONDATE: 2015-06-24T12:46:59+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
