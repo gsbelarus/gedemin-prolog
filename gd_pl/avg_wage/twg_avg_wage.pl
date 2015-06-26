@@ -881,23 +881,24 @@ get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
     append(PK, [pYM-Y-M, pWage-Wage], Pairs),
     new_param_list(Scope, temp, Pairs),
     !.
-get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
+get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
     % - для начисления по-среднему
     Scope = wg_avg_wage_avg,
     % взять из временных параметров данные по заработку
-    append(PK, [pYM-Y-M, pWage-Wage],
+    append(PK, [pYM-Y-M, pModernCoef-MonthModernCoef, pModernWage-ModernWage],
             Pairs),
     get_param_list(Scope, temp, Pairs),
     !.
-get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
+get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
     % - для начисления по-среднему
     Scope = wg_avg_wage_avg,
     % расчитать заработок за месяц
-    %cacl_month_wage_avg(Scope, PK, Y, M, Wage),
-    % по методу для Больничных
-    cacl_month_wage_sick(Scope, PK, Y, M, Wage),
+    cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew),
     % записать во временные параметры данные по заработку
-    append(PK, [pYM-Y-M, pWage-Wage], Pairs),
+    append(PK, [pYM-Y-M,
+                pWage-Wage, pModernCoef-MonthModernCoef, pModernWage-ModernWage,
+                pSalaryOld-SalaryOld, pSalaryNew-SalaryNew],
+            Pairs),
     new_param_list(Scope, temp, Pairs),
     !.
 
@@ -1413,7 +1414,7 @@ excl_first_month_days_sick(_, _, _, _, 0) :-
 
 % расчитать заработок за месяц
 % - для начисления по-среднему
-cacl_month_wage_avg(Scope, PK, Y, M, Wage) :-
+cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew) :-
     % разложить первичный ключ
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     findall( ChargeOption-Debits0,
@@ -1421,12 +1422,12 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage) :-
     % параметры выбора начислений
     member(ChargeOption, [tbl_charge, dbf_sums]),
     % взять начисления
-    findall( Debit,
+    findall( Debit-ModernCoef-SalaryOld0-SalaryNew0,
           % для начисления по одному из параметров
           % где дата совпадает с проверяемым месяцем
           ( usr_wg_TblCharge_mix(Scope, [
                 fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fCalYear-Y, fCalMonth-M, fDateBegin-_,
+                fCalYear-Y, fCalMonth-M, fDateBegin-TheDay,
                 fDebit-Debit, fFeeTypeKey-FeeTypeKey ],
                                     ChargeOption),
           % и соответствующего типа
@@ -1436,7 +1437,9 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage) :-
                             fFeeTypeKey-FeeTypeKey ])
                 ; FeeTypeKey < 10
                 )
-              )
+              ),
+          % с коэффициентом осовременивания
+          get_modern_coef(Scope, PK, TheDay, FeeTypeKey, ModernCoef, SalaryOld0, SalaryNew0)
           ),
     % в список начислений
     Debits0 )
@@ -1449,9 +1452,21 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage) :-
       append([Debits1, Debits2], Debits)
     ),
     % всего за месяц
-    sum_list(Debits, Wage),
+    sum_month_debit(Debits, Wage, ModernWage0),
+    % средний за месяц коэффициент осовременивания
+    catch( MonthModernCoef0 is ModernWage0 / Wage, _, fail),
+    to_currency(MonthModernCoef0, MonthModernCoef, 2),
+    % осовремененный заработок
+    ModernWage is round(Wage * MonthModernCoef),
+    % старый и новый оклады
+    ( setof( SalaryOld0-SalaryNew0,
+            Debit ^ ModernCoef ^ member(Debit-ModernCoef-SalaryOld0-SalaryNew0, Debits),
+            [SalaryOld-SalaryNew]
+           )
+    ; [SalaryOld-SalaryNew] = [0-0]
+    ),
     !.
-cacl_month_wage_avg(_, _, _, _, 0.0) :-
+cacl_month_wage_avg(_, _, _, _, 0, 1.0, 0, 0, 0) :-
     !.
 
 % месяц работы полный
@@ -2131,32 +2146,53 @@ avg_wage_sick_det(EmplKey, FirstMoveKey,
 %  12. Начисление по-среднему
 
 % загрузка входных данных по сотруднику
-avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, MonthOffset) :-
+avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, MonthOffset, CoefOption) :-
     Scope = wg_avg_wage_avg, Type = in,
     new_param_list(Scope, Type,
         [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
          pDateCalc-DateCalc, pCalcByHoure-CalcByHoure,
-         pMonthBefore-MonthBefore, pMonthOffset-MonthOffset]),
+         pMonthBefore-MonthBefore, pMonthOffset-MonthOffset,
+         pCoefOption-CoefOption]),
     !.
 
 % выгрузка детальных выходных данных по сотруднику
 avg_wage_avg_det(EmplKey, FirstMoveKey,
-                    Period, Wage,
-                    TabDays, NormDays, TabHoures, NormHoures) :-
+                    Period, Wage, ModernCoef, ModernWage,
+                    TabDays, NormDays, TabHoures, NormHoures,
+                    SalaryOld, SalaryNew) :-
     % параметры контекста
     Scope = wg_avg_wage_avg, Type = temp,
     % шаблон первичного ключа
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % для каждого периода
-    % взять данные по заработку
-    append(PK, [pYM-Y-M, pWage-Wage], Pairs1),
-    get_param_list(Scope, Type, Pairs1),
     % взять данные по табелю и графику
     append(PK, [pYM-Y-M,
                     pTDays-TabDays, pTHoures-TabHoures,
                     pNDays-NormDays, pNHoures-NormHoures],
-            Pairs2),
-    get_param_list(Scope, Type, Pairs2),
+            Pairs1),
+    get_param_list(Scope, Type, Pairs1),
+    % взять данные по заработку
+    once( ( ( append(PK, [pYM-Y-M,
+                            pWage-Wage0, pModernCoef-ModernCoef, pModernWage-ModernWage0,
+                            pSalaryOld-SalaryOld, pSalaryNew-SalaryNew],
+                        Pairs2),
+              get_param_list(Scope, Type, Pairs2),
+              %
+              append(PK, [pYM-Y-M,
+                          pAliasWage-AliasWage, pAliasModernWage-AliasModernWage, pAlias-Alias],
+                        PairsAfter),
+              ( get_param_list(Scope, Type, PairsAfter),
+                memberchk(Alias, ["ftYearBonus"])
+               -> true
+              ; AliasWage = 0,
+                AliasModernWage = 0
+              ),
+              %
+              Wage is Wage0 + AliasWage,
+              ModernWage is ModernWage0 + AliasModernWage
+            )
+              ; [Wage, ModernCoef, ModernWage, SalaryOld, SalaryNew] = [0, 1, 0, 0, 0] )
+        ),
     once( (
         % если для первого движения по типу 1 (прием на работу)
         % где дата совпадает с проверяемым месяцем
@@ -2172,7 +2208,6 @@ avg_wage_avg_det(EmplKey, FirstMoveKey,
         atom_date(Period, date(Y, M, 1))
         ) ),
     true.
-
 
 %  05, 06, 12
 

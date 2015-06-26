@@ -14,7 +14,7 @@ wg_valid_sql([
             %  05. Начисление отпусков
             -usr_wg_DbfSums/8, % 05, 06, 12
             usr_wg_MovementLine/15, % 05, 06, 12
-            usr_wg_FCRate/4,
+            usr_wg_FCRate/4, % 05, 12
             usr_wg_TblCalDay/9, % 05, 06, 12
             -usr_wg_TblDayNorm/8, % 05, 06
             -usr_wg_TblYearNorm/5,
@@ -146,12 +146,15 @@ ORDER BY
         wg_struct_sick
         ]).
 
-gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_FCRate, 4, [
+gd_pl_ds(Scope, kb, usr_wg_FCRate, 4, [
     fEmplKey-integer, fFirstMoveKey-integer,
     fDate-date, fFCRateSum-float
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_avg_wage_vacation, wg_avg_wage_avg
+        ]).
 % usr_wg_FCRate(EmplKey, FirstMoveKey, Date, FCRateSum)
-get_sql(wg_avg_wage_vacation, kb, usr_wg_FCRate/4,
+get_sql(Scope, kb, usr_wg_FCRate/4,
 "
 SELECT
   pEmplKey AS EmplKey,
@@ -165,7 +168,10 @@ ORDER BY
 ",
     [
     pEmplKey-_, pFirstMoveKey-_
-    ]).
+    ]) :-
+    memberchk(Scope, [
+        wg_avg_wage_vacation, wg_avg_wage_avg
+        ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblCalDay, 9, [
     fEmplKey-integer, fFirstMoveKey-integer,

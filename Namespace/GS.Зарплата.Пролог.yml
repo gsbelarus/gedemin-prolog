@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.17"
+  Version: "1.0.0.18"
   Optional: False
   Internal: True
-  MD5: 0BD44429E56414E863A4AC054CA8A4A6
+  MD5: 49F912EF334117E0CB1B9F8FEB7D175C
 Objects: 
   - 
     Properties: 
@@ -713,7 +713,7 @@ Objects:
                     %  05. Начисление отпусков
                     -usr_wg_DbfSums/8, % 05, 06, 12
                     usr_wg_MovementLine/15, % 05, 06, 12
-                    usr_wg_FCRate/4,
+                    usr_wg_FCRate/4, % 05, 12
                     usr_wg_TblCalDay/9, % 05, 06, 12
                     -usr_wg_TblDayNorm/8, % 05, 06
                     -usr_wg_TblYearNorm/5,
@@ -845,12 +845,15 @@ Objects:
                 wg_struct_sick
                 ]).
         
-        gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_FCRate, 4, [
+        gd_pl_ds(Scope, kb, usr_wg_FCRate, 4, [
             fEmplKey-integer, fFirstMoveKey-integer,
             fDate-date, fFCRateSum-float
-            ]).
+            ]) :-
+            memberchk(Scope, [
+                wg_avg_wage_vacation, wg_avg_wage_avg
+                ]).
         % usr_wg_FCRate(EmplKey, FirstMoveKey, Date, FCRateSum)
-        get_sql(wg_avg_wage_vacation, kb, usr_wg_FCRate/4,
+        get_sql(Scope, kb, usr_wg_FCRate/4,
         "
         SELECT
           pEmplKey AS EmplKey,
@@ -864,7 +867,10 @@ Objects:
         ",
             [
             pEmplKey-_, pFirstMoveKey-_
-            ]).
+            ]) :-
+            memberchk(Scope, [
+                wg_avg_wage_vacation, wg_avg_wage_avg
+                ]).
         
         gd_pl_ds(Scope, kb, usr_wg_TblCalDay, 9, [
             fEmplKey-integer, fFirstMoveKey-integer,
@@ -1904,7 +1910,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-06-19T16:10:52+03:00
+      EDITIONDATE: 2015-06-26T11:07:45+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2013,6 +2019,7 @@ Objects:
          %
         %%
         
+        
       DISPLAYSCRIPT: ~
       MODIFYDATE: ~
       OWNERNAME: ~
@@ -2026,7 +2033,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-06-19T16:10:16+03:00
+      EDITIONDATE: 2015-06-26T11:08:25+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2924,23 +2931,24 @@ Objects:
             append(PK, [pYM-Y-M, pWage-Wage], Pairs),
             new_param_list(Scope, temp, Pairs),
             !.
-        get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
+        get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
             % - для начисления по-среднему
             Scope = wg_avg_wage_avg,
             % взять из временных параметров данные по заработку
-            append(PK, [pYM-Y-M, pWage-Wage],
+            append(PK, [pYM-Y-M, pModernCoef-MonthModernCoef, pModernWage-ModernWage],
                     Pairs),
             get_param_list(Scope, temp, Pairs),
             !.
-        get_month_wage(Scope, PK, Y, M, 1.0, Wage) :-
+        get_month_wage(Scope, PK, Y, M, MonthModernCoef, ModernWage) :-
             % - для начисления по-среднему
             Scope = wg_avg_wage_avg,
             % расчитать заработок за месяц
-            %cacl_month_wage_avg(Scope, PK, Y, M, Wage),
-            % по методу для Больничных
-            cacl_month_wage_sick(Scope, PK, Y, M, Wage),
+            cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew),
             % записать во временные параметры данные по заработку
-            append(PK, [pYM-Y-M, pWage-Wage], Pairs),
+            append(PK, [pYM-Y-M,
+                        pWage-Wage, pModernCoef-MonthModernCoef, pModernWage-ModernWage,
+                        pSalaryOld-SalaryOld, pSalaryNew-SalaryNew],
+                    Pairs),
             new_param_list(Scope, temp, Pairs),
             !.
         
@@ -3456,7 +3464,7 @@ Objects:
         
         % расчитать заработок за месяц
         % - для начисления по-среднему
-        cacl_month_wage_avg(Scope, PK, Y, M, Wage) :-
+        cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew) :-
             % разложить первичный ключ
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             findall( ChargeOption-Debits0,
@@ -3464,12 +3472,12 @@ Objects:
             % параметры выбора начислений
             member(ChargeOption, [tbl_charge, dbf_sums]),
             % взять начисления
-            findall( Debit,
+            findall( Debit-ModernCoef-SalaryOld0-SalaryNew0,
                   % для начисления по одному из параметров
                   % где дата совпадает с проверяемым месяцем
                   ( usr_wg_TblCharge_mix(Scope, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                        fCalYear-Y, fCalMonth-M, fDateBegin-_,
+                        fCalYear-Y, fCalMonth-M, fDateBegin-TheDay,
                         fDebit-Debit, fFeeTypeKey-FeeTypeKey ],
                                             ChargeOption),
                   % и соответствующего типа
@@ -3479,7 +3487,9 @@ Objects:
                                     fFeeTypeKey-FeeTypeKey ])
                         ; FeeTypeKey < 10
                         )
-                      )
+                      ),
+                  % с коэффициентом осовременивания
+                  get_modern_coef(Scope, PK, TheDay, FeeTypeKey, ModernCoef, SalaryOld0, SalaryNew0)
                   ),
             % в список начислений
             Debits0 )
@@ -3492,9 +3502,21 @@ Objects:
               append([Debits1, Debits2], Debits)
             ),
             % всего за месяц
-            sum_list(Debits, Wage),
+            sum_month_debit(Debits, Wage, ModernWage0),
+            % средний за месяц коэффициент осовременивания
+            catch( MonthModernCoef0 is ModernWage0 / Wage, _, fail),
+            to_currency(MonthModernCoef0, MonthModernCoef, 2),
+            % осовремененный заработок
+            ModernWage is round(Wage * MonthModernCoef),
+            % старый и новый оклады
+            ( setof( SalaryOld0-SalaryNew0,
+                    Debit ^ ModernCoef ^ member(Debit-ModernCoef-SalaryOld0-SalaryNew0, Debits),
+                    [SalaryOld-SalaryNew]
+                   )
+            ; [SalaryOld-SalaryNew] = [0-0]
+            ),
             !.
-        cacl_month_wage_avg(_, _, _, _, 0.0) :-
+        cacl_month_wage_avg(_, _, _, _, 0, 1.0, 0, 0, 0) :-
             !.
         
         % месяц работы полный
@@ -4174,32 +4196,53 @@ Objects:
         %  12. Начисление по-среднему
         
         % загрузка входных данных по сотруднику
-        avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, MonthOffset) :-
+        avg_wage_avg_in(EmplKey, FirstMoveKey, DateCalc, CalcByHoure, MonthBefore, MonthOffset, CoefOption) :-
             Scope = wg_avg_wage_avg, Type = in,
             new_param_list(Scope, Type,
                 [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                  pDateCalc-DateCalc, pCalcByHoure-CalcByHoure,
-                 pMonthBefore-MonthBefore, pMonthOffset-MonthOffset]),
+                 pMonthBefore-MonthBefore, pMonthOffset-MonthOffset,
+                 pCoefOption-CoefOption]),
             !.
         
         % выгрузка детальных выходных данных по сотруднику
         avg_wage_avg_det(EmplKey, FirstMoveKey,
-                            Period, Wage,
-                            TabDays, NormDays, TabHoures, NormHoures) :-
+                            Period, Wage, ModernCoef, ModernWage,
+                            TabDays, NormDays, TabHoures, NormHoures,
+                            SalaryOld, SalaryNew) :-
             % параметры контекста
             Scope = wg_avg_wage_avg, Type = temp,
             % шаблон первичного ключа
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
             % для каждого периода
-            % взять данные по заработку
-            append(PK, [pYM-Y-M, pWage-Wage], Pairs1),
-            get_param_list(Scope, Type, Pairs1),
             % взять данные по табелю и графику
             append(PK, [pYM-Y-M,
                             pTDays-TabDays, pTHoures-TabHoures,
                             pNDays-NormDays, pNHoures-NormHoures],
-                    Pairs2),
-            get_param_list(Scope, Type, Pairs2),
+                    Pairs1),
+            get_param_list(Scope, Type, Pairs1),
+            % взять данные по заработку
+            once( ( ( append(PK, [pYM-Y-M,
+                                    pWage-Wage0, pModernCoef-ModernCoef, pModernWage-ModernWage0,
+                                    pSalaryOld-SalaryOld, pSalaryNew-SalaryNew],
+                                Pairs2),
+                      get_param_list(Scope, Type, Pairs2),
+                      %
+                      append(PK, [pYM-Y-M,
+                                  pAliasWage-AliasWage, pAliasModernWage-AliasModernWage, pAlias-Alias],
+                                PairsAfter),
+                      ( get_param_list(Scope, Type, PairsAfter),
+                        memberchk(Alias, ["ftYearBonus"])
+                       -> true
+                      ; AliasWage = 0,
+                        AliasModernWage = 0
+                      ),
+                      %
+                      Wage is Wage0 + AliasWage,
+                      ModernWage is ModernWage0 + AliasModernWage
+                    )
+                      ; [Wage, ModernCoef, ModernWage, SalaryOld, SalaryNew] = [0, 1, 0, 0, 0] )
+                ),
             once( (
                 % если для первого движения по типу 1 (прием на работу)
                 % где дата совпадает с проверяемым месяцем
@@ -4215,7 +4258,6 @@ Objects:
                 atom_date(Period, date(Y, M, 1))
                 ) ),
             true.
-        
         
         %  05, 06, 12
         
@@ -4843,7 +4885,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-06-19T16:09:47+03:00
+      EDITIONDATE: 2015-06-26T11:07:02+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
