@@ -1,4 +1,3 @@
-'#include pl_GetScriptIDByName
 Option Explicit
 
 Private Const xoMinSize = 3
@@ -33,8 +32,7 @@ Class TxoGame
     End If
     
     If FIsInitialised Then
-      'FIsInitialised = FPL.LoadScriptByName("xo_game")
-      FIsInitialised = FPL.LoadScript(pl_GetScriptIDByName("xo_game"))
+      FIsInitialised = FPL.LoadScriptByName("xo_game")
       Call GetParams
       '
     End If

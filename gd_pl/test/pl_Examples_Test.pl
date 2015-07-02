@@ -1,4 +1,4 @@
-% Примеры использования PL-объектов
+п»ї% РџСЂРёРјРµСЂС‹ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ PL-РѕР±СЉРµРєС‚РѕРІ
 
 :- dynamic([hello_world_fact/1]).
 
@@ -51,3 +51,8 @@ FROM
   GD_PLACE p
 "
 ).
+
+generate_some_rec(ID, Name, Number) :-
+    integer(Number),
+    between(1, Number, ID),
+    atomic_list_concat(["Record", ID], Name).

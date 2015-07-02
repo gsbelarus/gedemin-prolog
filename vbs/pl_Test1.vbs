@@ -1,4 +1,4 @@
-Option Explicit
+﻿Option Explicit
 '#include pl_GetScriptIDByName
 
 Sub pl_Test1()
