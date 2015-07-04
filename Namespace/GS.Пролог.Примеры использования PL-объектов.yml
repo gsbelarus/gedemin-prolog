@@ -5,13 +5,92 @@ Properties:
   RUID: 148082070_215642201
   Name: "GS.Пролог.Примеры использования PL-объектов"
   Caption: "Примеры использования PL-объектов"
-  Version: "1.0.0.11"
+  Version: "1.0.0.13"
   Optional: False
   Internal: True
-  MD5: FE8C46050A10D46BB79AF8B84229E903
-Uses: 
-  - "147753062_69526485 GS.Общие.Хранилище"
+  MD5: 51DF0D064931EF4E0FD6E1A14D529A4B
 Objects: 
+  - 
+    Properties: 
+      Class: "TgdcFunction"
+      RUID: 148082051_215642201
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      OBJECTNAME: "APPLICATION"
+      MODULE: "PROLOG"
+      LANGUAGE: "VBScript"
+      NAME: "pl_Examples_Script"
+      COMMENT: ~
+      SCRIPT: | 
+        % Примеры использования PL-объектов
+        
+        hello_world(Msg) :-
+            format(atom(Msg), '~w~w~w', ['Hello', ' ', 'World']).
+        hello_world(Msg) :-
+            findall(X, some_fact(X), Xs),
+            atomic_list_concat(Xs, Msg).
+        hello_world("Hello last World").
+        
+        some_fact(hello).
+        some_fact('Next').
+        some_fact("World").
+        
+        some_fact(1, 'Delphi').
+        some_fact(2, 'VBScript').
+        some_fact(3, 'Firebird').
+        some_fact(4, 'FastReport').
+        some_fact(5, 'SWI-Prolog').
+        some_fact(none, 0).
+        some_fact('1995-01-01', "Анжелика").
+        some_fact('2003-01-01', "Гедымин").
+        some_fact('2015-01-01', 2.6).
+        
+        :- dynamic([gd_place/4]).
+        
+        % gd_place(ID, Parent, Name, PlaceType)
+        
+        place_info(Name, PlaceName, PlaceType) :-
+            place_name_type(_, Name, PlaceName, PlaceType).
+        
+        place_name_type(ID, Name, Name, PlaceType) :-
+            gd_place(ID, _, Name, PlaceType).
+        place_name_type(ID, Name, PlaceName, PlaceType) :-
+            gd_place(ID, Parent, Name, _),
+            place_name_type(Parent, _, PlaceName, PlaceType).
+        
+        :-  style_check(-atom).
+        
+        gd_sql(gd_place,
+        "
+        SELECT
+          p.ID, p.PARENT, p.NAME, p.PLACETYPE
+        FROM
+          GD_PLACE p
+        "
+        ).
+        
+        generate_some_rec(ID, Name, Number) :-
+            integer(Number),
+            between(1, Number, ID),
+            atomic_list_concat(["Record", ID], Name).
+        
+        
+      DISPLAYSCRIPT: ~
+      MODIFYDATE: ~
+      OWNERNAME: ~
+      FUNCTIONTYPE: ~
+      EVENT: ~
+      LOCALNAME: ~
+      PUBLICFUNCTION: 1
+      SHORTCUT: ~
+      GROUPNAME: ~
+      MODULECODE: "1010001_17 APPLICATION"
+      ENTEREDPARAMS: ~
+      INHERITEDRULE: 0
+      USEDEBUGINFO: 0
+      EDITIONDATE: 2015-03-24T14:52:14+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -41,22 +120,12 @@ Objects:
           Dim PL
           Set PL = Designer.CreateObject(nil, "TgsPLClient", "")
           If Not PL.IsInitialised Then
-            Dim SwiPath, InitStr
-            SwiPath = "C:/golden/Gedemin/exe/"
-            InitStr = _
-                      "[libswipl.dll]," & _
-                      "[-x],[" & SwiPath & "swipl/gd_pl_state.dat]," & _
-                      "[-p],[foreign=" & SwiPath & "swipl/lib]," & _
-                      "[-s],[" & SwiPath & "swipl/test/pl_Examples_Test.pl]," & _
-                      "[-g],[add_world]"
-            InitStr = ""
-            If Not PL.Initialise(InitStr) Then
+            If Not PL.Initialise("") Then
               Msg = "Ошибка инициализации SWI-Prolog!"
               Call MsgBox(Msg, vbCritical + vbOkOnly, Title)
               PL.DestroyObject
               Exit Sub
             End If
-            'InitStr = ""
           End If
         
           Dim FuncIndex, FuncName, FuncBegin, FuncEnd
@@ -64,26 +133,28 @@ Objects:
           FuncBegin = 1
           FuncEnd = 8
           For FuncIndex = FuncBegin To FuncEnd
+            PL.Debug = False
             Msg = Msg & vbCrLf & _
-                  Eval(FuncName & FuncIndex & "(PL, InitStr)")
+                  Eval(FuncName & FuncIndex & "(PL)")
           Next
           Msg = Msg & vbCrLf & "%%%%"
           PL.DestroyObject
         
-          Dim frmMsg, Creator
-          Set Creator = New TCreator
-          Set frmMsg = Creator.GetObject(nil, "usrf_Msg", "")
+          Dim frmMsg
+          Set frmMsg = Designer.CreateObject(nil, "usrf_Msg", "")
         
           frmMsg.Caption = Title
           frmMsg.GetComponent("usrg_Msg").Lines.Text = Msg
           frmMsg.ShowModal
+          
+          frmMsg.DestroyObject
         End Sub
         
-        Function pl_Example1(ByRef PL, ByVal InitStr)
+        Function pl_Example1(ByRef PL)
           Dim Title, Msg
           Title = vbCrLf & _
                   "%%" & vbCrLf & _
-                  "% 1. pl_Example1(PL, InitStr)" & vbCrLf & _
+                  "% 1. pl_Example1(PL)" & vbCrLf & _
                   "%      TgsPLClient: Call" & vbCrLf & _
                   "%      TgsPLTermv: PutAtom, ToString"
         
@@ -108,16 +179,16 @@ Objects:
           End If
           
         
-          pl_Example1 = Title & vbCrLf & Msg
+          pl_Example1 = Title & vbCrLf & Msg & vbCrLf & "%" & vbCrLf & "%%"
         
           Params.DestroyObject
         End Function
         
-        Function pl_Example2(ByRef PL, ByVal InitStr)
+        Function pl_Example2(ByRef PL)
           Dim Title, Msg
           Title = vbCrLf & _
                   "%%" & vbCrLf & _
-                  "% 2. pl_Example2(PL, InitStr)" & vbCrLf & _
+                  "% 2. pl_Example2(PL)" & vbCrLf & _
                   "%      TgsPLClient: Call2, Call" & vbCrLf & _
                   "%      TgsPLTermv: PutAtom, ToString"
         
@@ -151,16 +222,16 @@ Objects:
             Msg = Msg & vbCrLf & "false."
           End If
         
-          pl_Example2 = Title & vbCrLf & Msg
+          pl_Example2 = Title & vbCrLf & Msg & vbCrLf & "%" & vbCrLf & "%%"
         
           Params.DestroyObject
         End Function
         
-        Function pl_Example3(ByRef PL, ByVal InitStr)
+        Function pl_Example3(ByRef PL)
           Dim Title, Msg
           Title = vbCrLf & _
                   "%%" & vbCrLf & _
-                  "% 3. pl_Example3(PL, InitStr)" & vbCrLf & _
+                  "% 3. pl_Example3(PL)" & vbCrLf & _
                   "%      TgsPLClient: Compound, Term, Call" & vbCrLf & _
                   "%      TgsPLTermv: PutAtom, ToString"
         
@@ -200,18 +271,18 @@ Objects:
             Msg = Msg & vbCrLf & "false."
           End If
         
-          pl_Example3 = Title & vbCrLf & Msg
+          pl_Example3 = Title & vbCrLf & Msg & vbCrLf & "%" & vbCrLf & "%%"
           
           Termv.DestroyObject
           Goal.DestroyObject
           Params.DestroyObject
         End Function
         
-        Function pl_Example4(ByRef PL, ByVal InitStr)
+        Function pl_Example4(ByRef PL)
           Dim Title, Msg
           Title = vbCrLf & _
                   "%%" & vbCrLf & _
-                  "% 4. pl_Example4(PL, InitStr)" & vbCrLf & _
+                  "% 4. pl_Example4(PL)" & vbCrLf & _
                   "%      TgsPLClient: LoadScriptByName, Call" & vbCrLf & _
                   "%      TgsPLTermv: ToString"
         
@@ -219,11 +290,13 @@ Objects:
         
           Dim ScriptName
           ScriptName = "pl_Examples_Script"
-          If InitStr = "" Then
-            If Not PL.LoadScriptByName(ScriptName) Then
-              Exit Function
-            End If
+        
+          PL.Debug = True
+          If Not PL.LoadScriptByName(ScriptName) Then
+            PL.Debug = False
+            Exit Function
           End If
+          PL.Debug = False
         
           Dim PredicateName, Params
           PredicateName = "hello_world"
@@ -240,32 +313,32 @@ Objects:
             Msg = Msg & vbCrLf & "false."
           End If
         
-          pl_Example4 = Title & vbCrLf & Msg
+          pl_Example4 = Title & vbCrLf & Msg & vbCrLf & "%" & vbCrLf & "%%"
         
           Params.DestroyObject
         End Function
         
-        Function pl_Example5(ByRef PL, ByVal InitStr)
+        Function pl_Example5(ByRef PL)
           Dim Title, Msg
           Title = vbCrLf & _
                   "%%" & vbCrLf & _
-                  "% 5. pl_Example5(PL, InitStr)" & vbCrLf & _
+                  "% 5. pl_Example5(PL)" & vbCrLf & _
                   "%      TgsPLClient: Debug, LoadScriptByName" & vbCrLf & _
                   "%      TgsPLTermv: ToString" & vbCrLf & _
                   "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close, Cut"
         
           pl_Example5 = ""
-        
-          PL.Debug = True
           
           Dim ScriptName
           ScriptName = "pl_Examples_Script"
-          If InitStr = "" Then
-            If Not PL.LoadScriptByName(ScriptName) Then
-              Exit Function
-            End If
+        
+          PL.Debug = True
+          If Not PL.LoadScriptByName(ScriptName) Then
+            PL.Debug = False
+            Exit Function
           End If
-          
+          PL.Debug = False
+        
           Dim Params
           Set Params = Designer.CreateObject(1, "TgsPLTermv", "")
           Dim PredicateName, Query
@@ -318,14 +391,23 @@ Objects:
           End If
           Query.Close
         
-          pl_Example5 = Title & vbCrLf & Msg
+          pl_Example5 = Title & vbCrLf & Msg & vbCrLf & "%" & vbCrLf & "%%"
         
           Query.DestroyObject
           Params.DestroyObject
         End Function
         
-        Function pl_Example6(ByRef PL, ByVal InitStr)
-          'TERM-TYPE CONSTANTS
+        Function pl_Example6(ByRef PL)
+          Dim Title, Msg
+          Title = vbCrLf & _
+                  "%%" & vbCrLf & _
+                  "% 6. pl_Example6(PL)" & vbCrLf & _
+                  "%      TgsPLClient: LoadScriptByName" & vbCrLf & _
+                  "%      TgsPLTermv: DataType, ReadInteger, ReadAtom, ReadDate, ReadString" & vbCrLf & _
+                  "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close"
+        
+          pl_Example6 = ""
+        
           Const PL_VARIABLE = 1
           Const PL_ATOM = 2
           Const PL_INTEGER = 3
@@ -333,23 +415,15 @@ Objects:
           Const PL_STRING = 5
           Const PL_TERM = 6
         
-          Dim Title, Msg
-          Title = vbCrLf & _
-                  "%%" & vbCrLf & _
-                  "% 6. pl_Example6(PL, InitStr)" & vbCrLf & _
-                  "%      TgsPLClient: LoadScriptByName" & vbCrLf & _
-                  "%      TgsPLTermv: DataType, ReadInteger, ReadAtom, ReadDate, ReadString" & vbCrLf & _
-                  "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close"
-        
-          pl_Example6 = ""
-        
           Dim ScriptName
           ScriptName = "pl_Examples_Script"
-          If InitStr = "" Then
-            If Not PL.LoadScriptByName(ScriptName) Then
-              Exit Function
-            End If
+          
+          PL.Debug = True
+          If Not PL.LoadScriptByName(ScriptName) Then
+            PL.Debug = False
+            Exit Function
           End If
+          PL.Debug = False
         
           Dim Params
           Set Params = Designer.CreateObject(2, "TgsPLTermv", "")
@@ -401,32 +475,32 @@ Objects:
           End If
           Query.Close
         
-          pl_Example6 = Title & vbCrLf & Msg
+          pl_Example6 = Title & vbCrLf & Msg & vbCrLf & "%" & vbCrLf & "%%"
         
           Query.DestroyObject
           Params.DestroyObject
         End Function
         
-        Function pl_Example7(ByRef PL, ByVal InitStr)
+        Function pl_Example7(ByRef PL)
           Dim Title, Msg
           Title = vbCrLf & _
                   "%%" & vbCrLf & _
-                  "% 7. pl_Example7(PL, InitStr)" & vbCrLf & _
+                  "% 7. pl_Example7(PL)" & vbCrLf & _
                   "%      TgsPLClient: LoadScriptByName, Debug, MakePredicatesOfSQLSelect" & vbCrLf & _
                   "%      TgsPLTermv: PutAtom, ReadString, PutString" & vbCrLf & _
                   "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close"
         
           pl_Example7 = ""
         
-          PL.Debug = False
-        
           Dim ScriptName
           ScriptName = "pl_Examples_Script"
-          If InitStr = "" Then
-            If Not PL.LoadScriptByName(ScriptName) Then
-              Exit Function
-            End If
+          
+          PL.Debug = True
+          If Not PL.LoadScriptByName(ScriptName) Then
+            PL.Debug = False
+            Exit Function
           End If
+          PL.Debug = False
         
           Dim P_sql, Tv_sql, Q_sql
           Dim FactName, SQL
@@ -444,7 +518,6 @@ Objects:
             "?- " & P_sql & "(" & FactName & ", SQL)."
         
           Dim Ret
-          PL.Debug = True
           
           Msg = Msg & vbCrLf & _
             "% Обработка фактов, наполнение базы знаний"
@@ -453,10 +526,14 @@ Objects:
               SQL = Tv_sql.ReadString(1)
               Msg = Msg & vbCrLf & _
                     "/*" & SQL & "*/" & vbCrLf
+        
+              PL.Debug = True
               Ret = PL.MakePredicatesOfSQLSelect( _
                       SQL, _
                       gdcBaseManager.ReadTransaction, _
                       FactName, FactName, False)
+              PL.Debug = False
+        
               Msg = Msg & _
                     "% Добавлено " & Ret & " фактов " & FactName
               Q_sql.NextSolution
@@ -497,26 +574,27 @@ Objects:
           Q_info.DestroyObject
           Tv_info.DestroyObject
         
-          pl_Example7 = Title & vbCrLf & Msg
+          pl_Example7 = Title & vbCrLf & Msg & vbCrLf & "%" & vbCrLf & "%%"
         End Function
         
-        Function pl_Example8(ByRef PL, ByVal InitStr)
+        Function pl_Example8(ByRef PL)
           Dim Title, Msg
           Title = vbCrLf & _
                   "%%" & vbCrLf & _
-                  "% 8. pl_Example8(PL, InitStr)" & vbCrLf & _
+                  "% 8. pl_Example8(PL)" & vbCrLf & _
                   "%      TgsPLClient: LoadScriptByName, ExtractData, MakePredicatesOfDataSet" & vbCrLf & _
                   "%      TgsPLTermv: PutInteger, ReadInteger, ReadString" & vbCrLf & _
                   "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close"
         
           pl_Example8 = ""
         
+          Const ftString = 1
+          Const ftInteger = 3
+        
           Dim ScriptName
           ScriptName = "pl_Examples_Script"
-          If InitStr = "" Then
-            If Not PL.LoadScriptByName(ScriptName) Then
-              Exit Function
-            End If
+          If Not PL.LoadScriptByName(ScriptName) Then
+            Exit Function
           End If
         
           Dim P_rec, Tv_rec, RecNum
@@ -576,8 +654,11 @@ Objects:
           Msg = Msg & vbCrLf & _
             "% Наполнение базы знаний из клиентского набора данных"
           Dim Ret
-          Ret = PL.MakePredicatesOfDataSet(CDS, "ID,Name", P_cds, P_cds, False)
         
+          PL.Debug = True
+          Ret = PL.MakePredicatesOfDataSet(CDS, "ID,Name", P_cds, P_cds, False)
+          PL.Debug = False
+            
           Msg = Msg & vbCrLf & _
             "% Добавлено фактов " & P_cds & ": " & Ret
         
@@ -604,7 +685,7 @@ Objects:
           Q_cds.DestroyObject
           Tv_cds.DestroyObject
         
-          pl_Example8 = Title & vbCrLf & Msg
+          pl_Example8 = Title & vbCrLf & Msg & vbCrLf & "%" & vbCrLf & "%%"
         End Function
         
         
@@ -631,7 +712,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-03-24T15:32:32+03:00
+      EDITIONDATE: 2015-07-04T10:15:03+03:00
   - 
     Properties: 
       Class: "TgdcMacros"
@@ -649,9 +730,25 @@ Objects:
       ISREBUILD: 0
       EXECUTEDATE: ~
       SHORTCUT: 0
-      EDITIONDATE: 2015-03-24T15:32:32+03:00
+      EDITIONDATE: 2015-07-04T10:15:03+03:00
       DISPLAYINMENU: 0
-      RUNONLOGIN: 0
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147015466_1522056380
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990000_17 GLOBAL"
+      NAME: "NewForm"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2011-08-17T10:10:47+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -881,84 +978,3 @@ Objects:
       CURR_DATA: ~
       BLOB_DATA: ~
       EDITIONDATE: 2014-04-11T16:13:46+03:00
-  - 
-    Properties: 
-      Class: "TgdcFunction"
-      RUID: 148082051_215642201
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      OBJECTNAME: "APPLICATION"
-      MODULE: "PROLOG"
-      LANGUAGE: "VBScript"
-      NAME: "pl_Examples_Script"
-      COMMENT: ~
-      SCRIPT: | 
-        % Примеры использования PL-объектов
-        
-        hello_world(Msg) :-
-            format(atom(Msg), '~w~w~w', ['Hello', ' ', 'World']).
-        hello_world(Msg) :-
-            findall(X, some_fact(X), Xs),
-            atomic_list_concat(Xs, Msg).
-        hello_world("Hello last World").
-        
-        some_fact(hello).
-        some_fact('Next').
-        some_fact("World").
-        
-        some_fact(1, 'Delphi').
-        some_fact(2, 'VBScript').
-        some_fact(3, 'Firebird').
-        some_fact(4, 'FastReport').
-        some_fact(5, 'SWI-Prolog').
-        some_fact(none, 0).
-        some_fact('1995-01-01', "Анжелика").
-        some_fact('2003-01-01', "Гедымин").
-        some_fact('2015-01-01', 2.6).
-        
-        :- dynamic([gd_place/4]).
-        
-        % gd_place(ID, Parent, Name, PlaceType)
-        
-        place_info(Name, PlaceName, PlaceType) :-
-            place_name_type(_, Name, PlaceName, PlaceType).
-        
-        place_name_type(ID, Name, Name, PlaceType) :-
-            gd_place(ID, _, Name, PlaceType).
-        place_name_type(ID, Name, PlaceName, PlaceType) :-
-            gd_place(ID, Parent, Name, _),
-            place_name_type(Parent, _, PlaceName, PlaceType).
-        
-        :-  style_check(-atom).
-        
-        gd_sql(gd_place,
-        "
-        SELECT
-          p.ID, p.PARENT, p.NAME, p.PLACETYPE
-        FROM
-          GD_PLACE p
-        "
-        ).
-        
-        generate_some_rec(ID, Name, Number) :-
-            integer(Number),
-            between(1, Number, ID),
-            atomic_list_concat(["Record", ID], Name).
-        
-        
-      DISPLAYSCRIPT: ~
-      MODIFYDATE: ~
-      OWNERNAME: ~
-      FUNCTIONTYPE: ~
-      EVENT: ~
-      LOCALNAME: ~
-      PUBLICFUNCTION: 1
-      SHORTCUT: ~
-      GROUPNAME: ~
-      MODULECODE: "1010001_17 APPLICATION"
-      ENTEREDPARAMS: ~
-      INHERITEDRULE: 0
-      USEDEBUGINFO: 0
-      EDITIONDATE: 2015-03-24T14:52:14+03:00

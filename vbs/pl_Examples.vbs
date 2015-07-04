@@ -32,13 +32,14 @@ Sub pl_Examples()
   Msg = Msg & vbCrLf & "%%%%"
   PL.DestroyObject
 
-  Dim frmMsg, Creator
-  Set Creator = New TCreator
-  Set frmMsg = Creator.GetObject(nil, "usrf_Msg", "")
+  Dim frmMsg
+  Set frmMsg = Designer.CreateObject(nil, "usrf_Msg", "")
 
   frmMsg.Caption = Title
   frmMsg.GetComponent("usrg_Msg").Lines.Text = Msg
   frmMsg.ShowModal
+  
+  frmMsg.DestroyObject
 End Sub
 
 Function pl_Example1(ByRef PL)
@@ -289,14 +290,6 @@ Function pl_Example5(ByRef PL)
 End Function
 
 Function pl_Example6(ByRef PL)
-  'TERM-TYPE CONSTANTS
-  Const PL_VARIABLE = 1
-  Const PL_ATOM = 2
-  Const PL_INTEGER = 3
-  Const PL_FLOAT = 4
-  Const PL_STRING = 5
-  Const PL_TERM = 6
-
   Dim Title, Msg
   Title = vbCrLf & _
           "%%" & vbCrLf & _
@@ -306,6 +299,13 @@ Function pl_Example6(ByRef PL)
           "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close"
 
   pl_Example6 = ""
+
+  Const PL_VARIABLE = 1
+  Const PL_ATOM = 2
+  Const PL_INTEGER = 3
+  Const PL_FLOAT = 4
+  Const PL_STRING = 5
+  Const PL_TERM = 6
 
   Dim ScriptName
   ScriptName = "pl_Examples_Script"
@@ -479,6 +479,9 @@ Function pl_Example8(ByRef PL)
           "%      TgsPLQuery: OpenQuery, EOF, NextSolution, Close"
 
   pl_Example8 = ""
+
+  Const ftString = 1
+  Const ftInteger = 3
 
   Dim ScriptName
   ScriptName = "pl_Examples_Script"
