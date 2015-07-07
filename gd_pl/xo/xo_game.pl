@@ -16,9 +16,9 @@
 xo_params( [
     size(0, 19),
     line(5),
-    level(4),
+    level(3),
     go(x, o),
-    mode_opt([level(echo, +5)])
+    mode_opt([level(echo, +4)])
 ] ).
 
 % пространство ячеек
@@ -294,12 +294,12 @@ xo_play(Mode, PlayCell, Rule) :-
                member(Order-Mark, OrderMarkList),
                xo_has_chance(Mark, Solve, MarkedQty)
              ),
-             SolveList
+             MarkedSolveList
     ),
-    \+ SolveList = [],
+    \+ MarkedSolveList = [],
     %check_point,
     findall( Fork,
-             xo_has_fork(SolveList, Fork),
+             xo_has_fork(MarkedSolveList, Fork),
              ForkList
     ),
     \+ ForkList = [],
@@ -472,10 +472,11 @@ xo_rate(Mark, Coor, Cost, Gift-Count) :-
     !.
 
 % есть вилка
-% xo_has_fork(MarkSolveList, MarkedFreeCell)
+% xo_has_fork(MarkedSolveList, Fork)
 xo_has_fork([MarkedQty-Order-Mark-Solve | TeilSolves], Fork) :-
     Fork = fork(ForkHeight, ForkPower, ForkWidth, Order, Mark, FreeCell),
     FreeCell = cell(_, n),
+    %check_point,
     member(FreeCell, Solve),
     findall( ForkMarkedQty,
              ( member(ForkMarkedQty-Order-Mark-ForkSolve, TeilSolves),
@@ -488,15 +489,12 @@ xo_has_fork([MarkedQty-Order-Mark-Solve | TeilSolves], Fork) :-
     ),
     \+ ForkMarkedQtyList = [],
     %check_point,
-    length(ForkMarkedQtyList, ForkWidth0),
-    succ(ForkWidth0, ForkWidth),
     max_list([MarkedQty | ForkMarkedQtyList], MaxMarkedQty),
     succ(MaxMarkedQty, ForkHeight),
-    sort([MarkedQty | ForkMarkedQtyList], SortedMarkedQty),
-    reverse(SortedMarkedQty, [First, Second | _]),
-    plus(First, Second, ForkPower).
-xo_fork_count([_ | TeilSolves], Count, Fork) :-
-    xo_fork_count(TeilSolves, Count, Fork).
+    sum_list([MarkedQty | ForkMarkedQtyList], ForkPower),
+    length([MarkedQty | ForkMarkedQtyList], ForkWidth).
+xo_has_fork([_ | TeilSolves], Fork) :-
+    xo_has_fork(TeilSolves, Fork).
     
 % оценка ситуации
 % xo_review(Mark, X, Y, Cost, OutMark, OutX, OutY)
@@ -610,7 +608,7 @@ xo_init :-
 % тест
 % xo_test
 xo_test :-
-    Count = 1,
+    Count = 10,
     between(1, Count, Value),
     xo_test(Result, Solve),
     once( xo_step(Mark, Step, _, _) ),

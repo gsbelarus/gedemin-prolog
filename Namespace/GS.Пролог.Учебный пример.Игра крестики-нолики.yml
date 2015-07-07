@@ -5,12 +5,10 @@ Properties:
   RUID: 148085368_215642201
   Name: "GS.Пролог.Учебный пример.Игра крестики-нолики"
   Caption: "GS.Пролог.Учебный пример.Игра крестики-нолики"
-  Version: "1.0.0.38"
+  Version: "1.0.0.41"
   Optional: False
   Internal: True
-  MD5: F6B94573975031BA02C00B2D1F21EC3E
-Uses: 
-  - "147753062_69526485 GS.Общие.Хранилище"
+  MD5: 555942A8EE417BB5928FCA12FCF74749
 Objects: 
   - 
     Properties: 
@@ -44,9 +42,9 @@ Objects:
         xo_params( [
             size(0, 19),
             line(5),
-            level(7),
+            level(3),
             go(x, o),
-            mode_opt([level(echo, +5)])
+            mode_opt([level(echo, +4)])
         ] ).
         
         % пространство ячеек
@@ -322,12 +320,12 @@ Objects:
                        member(Order-Mark, OrderMarkList),
                        xo_has_chance(Mark, Solve, MarkedQty)
                      ),
-                     SolveList
+                     MarkedSolveList
             ),
-            \+ SolveList = [],
+            \+ MarkedSolveList = [],
             %check_point,
             findall( Fork,
-                     xo_has_fork(SolveList, Fork),
+                     xo_has_fork(MarkedSolveList, Fork),
                      ForkList
             ),
             \+ ForkList = [],
@@ -500,10 +498,11 @@ Objects:
             !.
         
         % есть вилка
-        % xo_has_fork(MarkSolveList, MarkedFreeCell)
+        % xo_has_fork(MarkedSolveList, Fork)
         xo_has_fork([MarkedQty-Order-Mark-Solve | TeilSolves], Fork) :-
             Fork = fork(ForkHeight, ForkPower, ForkWidth, Order, Mark, FreeCell),
             FreeCell = cell(_, n),
+            %check_point,
             member(FreeCell, Solve),
             findall( ForkMarkedQty,
                      ( member(ForkMarkedQty-Order-Mark-ForkSolve, TeilSolves),
@@ -516,15 +515,12 @@ Objects:
             ),
             \+ ForkMarkedQtyList = [],
             %check_point,
-            length(ForkMarkedQtyList, ForkWidth0),
-            succ(ForkWidth0, ForkWidth),
             max_list([MarkedQty | ForkMarkedQtyList], MaxMarkedQty),
             succ(MaxMarkedQty, ForkHeight),
-            sort([MarkedQty | ForkMarkedQtyList], SortedMarkedQty),
-            reverse(SortedMarkedQty, [First, Second | _]),
-            plus(First, Second, ForkPower).
-        xo_fork_count([_ | TeilSolves], Count, Fork) :-
-            xo_fork_count(TeilSolves, Count, Fork).
+            sum_list([MarkedQty | ForkMarkedQtyList], ForkPower),
+            length([MarkedQty | ForkMarkedQtyList], ForkWidth).
+        xo_has_fork([_ | TeilSolves], Fork) :-
+            xo_has_fork(TeilSolves, Fork).
         
         % оценка ситуации
         % xo_review(Mark, X, Y, Cost, OutMark, OutX, OutY)
@@ -638,7 +634,7 @@ Objects:
         % тест
         % xo_test
         xo_test :-
-            Count = 1,
+            Count = 10,
             between(1, Count, Value),
             xo_test(Result, Solve),
             once( xo_step(Mark, Step, _, _) ),
@@ -699,7 +695,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-05-09T08:12:49+03:00
+      EDITIONDATE: 2015-07-07T10:00:54+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -828,7 +824,6 @@ Objects:
       NAME: "TxoGame"
       COMMENT: ~
       SCRIPT: | 
-        '#include pl_GetScriptIDByName
         Option Explicit
         
         Private Const xoMinSize = 3
@@ -863,8 +858,7 @@ Objects:
             End If
             
             If FIsInitialised Then
-              'FIsInitialised = FPL.LoadScriptByName("xo_game")
-              FIsInitialised = FPL.LoadScript(pl_GetScriptIDByName("xo_game"))
+              FIsInitialised = FPL.LoadScriptByName("xo_game")
               Call GetParams
               '
             End If
@@ -1299,13 +1293,24 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-29T09:57:43+03:00
-    Set: 
-      - 
-        Table: "RP_ADDITIONALFUNCTION"
-        Items: 
-          - 
-            ADDFUNCTIONKEY: "151158419_5956463 pl_GetScriptIDByName"
+      EDITIONDATE: 2015-07-02T11:15:59+03:00
+  - 
+    Properties: 
+      Class: "TgdcStorageFolder"
+      RUID: 147015466_1522056380
+      AlwaysOverwrite: False
+      DontRemove: False
+      IncludeSiblings: False
+    Fields: 
+      PARENT: "990000_17 GLOBAL"
+      NAME: "NewForm"
+      DATA_TYPE: "F"
+      STR_DATA: ~
+      INT_DATA: ~
+      DATETIME_DATA: ~
+      CURR_DATA: ~
+      BLOB_DATA: ~
+      EDITIONDATE: 2011-08-17T10:10:47+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -2707,8 +2712,8 @@ Objects:
       PARENT: ~
       NAME: "Отчеты(usrf_xoGame)"
       DESCRIPTION: ~
-      USERGROUPNAME: "148086828_215642201"
       EDITIONDATE: 2015-04-13T14:09:10+03:00
+      USERGROUPNAME: "148086828_215642201"
   - 
     Properties: 
       Class: "TgdcDelphiObject"
@@ -4095,7 +4100,6 @@ Objects:
       SHORTCUT: 24664
       EDITIONDATE: 2015-04-29T10:26:11+03:00
       DISPLAYINMENU: 1
-      RUNONLOGIN: 0
   - 
     Properties: 
       Class: "TgdcDelphiObject"
