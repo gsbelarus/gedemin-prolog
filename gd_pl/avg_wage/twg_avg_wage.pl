@@ -38,7 +38,7 @@
     %  05. Начисление отпусков
     usr_wg_DbfSums, % 05, 06, 12
     usr_wg_MovementLine, % 05, 06, 12
-    usr_wg_FCRate,
+    usr_wg_FCRate, % 05, 12
     usr_wg_TblCalDay, % 05, 06, 12
     %usr_wg_TblDayNorm, % 05, 06, 12
     %usr_wg_TblYearNorm,
@@ -190,14 +190,14 @@ avg_wage(Scope) :-
     get_local_date_time(DT),
     % записать отладочную информацию
     new_param_list(Scope, debug, [start-Scope-DT]),
+    % настроить правила
+    wg_config_rules(Scope),
     % шаблон первичного ключа
     PK = [pEmplKey-_, pFirstMoveKey-_],
     % для каждого первичного ключа расчета из входных параметров
     get_param_list(Scope, in, PK),
     % запустить цикл механизма подготовки данных
     engine_loop(Scope, in, PK),
-    % настроить правила
-    wg_config_rules(Scope),
     % выполнить расчет
     eval_avg_wage(Scope, PK),
     % найти альтернативу
@@ -334,6 +334,36 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % среднедневной заработок
     catch( AvgWage0 is AvgHoureWage * AvgMonthNorm / AvgDays, _, fail ),
     AvgWage is round(AvgWage0),
+    !.
+calc_avg_wage(Scope, PK, AvgWage, Variant) :-
+    % - для отпусков (нужно больше месяцев)
+    Scope = wg_avg_wage_vacation,
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    \+ Periods = [],
+    % взять заработок
+    findall( Wage,
+               % за каждый период проверки
+             ( member(Y1-M1, Periods),
+               % взять данные по заработку
+               get_month_wage(Scope, PK, Y1, M1, _, Wage),
+               Wage > 0 ),
+    % в список заработков
+    Wages ),
+    % если нет заработка
+    Wages = [],
+    % то для расчета нужно больше месяцев
+    AvgWage = 0, Variant = need_more,
+    !.
+calc_avg_wage(Scope, PK, AvgWage, Variant) :-
+    % - для отпусков (нет требуемого количества месяцев)
+    Scope = wg_avg_wage_vacation,
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    % если нет рабочих периодов
+    Periods = [],
+    % то для расчета нет требуемого количества месяцев
+    AvgWage = 0, Variant = no_data,
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (по расчетным дням / со справкой)
@@ -1974,9 +2004,7 @@ prepare_data(Scope, Type, PK, TypeNextStep) :-
     MonthAdd is (- (MonthQty + MonthBefore)),
     date_add(DateCalcTo, MonthAdd, month, DateCalcFrom),
     % DateNormFrom, DateNormTo
-    %date_add(DateCalcTo, -1, day, DateCalcTo1),
-    date_add(DateCalcTo, 0, day, DateCalcTo1), % ?
-    atom_date(DateCalcTo1, date(Y, _, _)),
+    atom_date(DateCalc, date(Y, _, _)),
     atom_date(DateNormFrom, date(Y, 1, 1)),
     Y1 is Y + 1,
     atom_date(DateNormTo, date(Y1, 1, 1)),
