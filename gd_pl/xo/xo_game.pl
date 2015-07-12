@@ -44,9 +44,7 @@ xo_solve_moves([move(1, -1), move(-1, 1)]).   % диагональ2
 % формирование пространства ячеек
 % xo_make_cell
 xo_make_cell :-
-    length(CellArgs, 2),
-    CellFact =.. [xo_cell|CellArgs],
-    retractall( CellFact ),
+    retractall( xo_cell(_, _) ),
     xo_params(Params),
     memberchk(size(PosBegin, PosEnd), Params),
     between(PosBegin, PosEnd, X),
@@ -59,9 +57,7 @@ xo_make_cell :-
 % формирование пространства решений
 % xo_make_solve
 xo_make_solve :-
-    length(SolveArgs, 2),
-    SolveFact =.. [xo_solve|SolveArgs],
-    retractall( SolveFact ),
+    retractall( xo_solve(_, _) ),
     xo_params(Params),
     memberchk(size(PosBegin, PosEnd), Params),
     memberchk(line(WinLength), Params),
@@ -297,9 +293,11 @@ xo_play(Mode, PlayCell, Rule) :-
              MarkedSolveList
     ),
     \+ MarkedSolveList = [],
+    sort(MarkedSolveList, SortedSolveList),
+    reverse(SortedSolveList, ClaimForkList),
     %check_point,
     findall( Fork,
-             xo_has_fork(MarkedSolveList, Fork),
+             xo_has_fork(ClaimForkList, Fork),
              ForkList
     ),
     \+ ForkList = [],
@@ -317,8 +315,8 @@ xo_play(Mode, PlayCell, Rule) :-
     nth0(PlayIndex, PlayForkList, PlayFork),
     %check_point,
     PlayCell = cell(X-Y, n),
-    PlayFork = fork(Height, Power, Width, _, Mark, PlayCell),
-    Rule = rule(fork,height=Height,power=Power,width=Width,Mark,X,Y),
+    PlayFork = fork(Height, Power, Width, Order, Mark, PlayCell),
+    Rule = rule(fork,height=Height,power=Power,width=Width,order=Order,Mark,X,Y),
     !.
 % случайный выбор из лучших шансов на выигрыш
 xo_play(Mode, PlayCell, Rule) :-
@@ -331,8 +329,7 @@ xo_play(Mode, PlayCell, Rule) :-
     xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
     memberchk(line(WinLength), Params),
     xo_limit_coor(WinLength, LimitData),
-    between(2, WinLength, CostCut),
-    Cost is WinLength - CostCut,
+    member(Cost, [1, 0]),
     %check_point,
     RateShape = [TotalGift, TotalCount, CompGift, UserGift, CompCount, UserCount],
     xo_rate_shape(RateShape, Method-Rate),
@@ -375,8 +372,7 @@ xo_play(Mode, PlayCell, Rule) :-
     xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
     memberchk(line(WinLength), Params),
     xo_limit_coor(WinLength, LimitData),
-    between(3, WinLength, CostCut),
-    Cost is WinLength - CostCut,
+    member(Cost, [1, 0]),
     ( Mark = CompMark ;  Mark = UserMark ),
     findall( Coor,
              ( xo_cell(Coor, n),
@@ -474,12 +470,13 @@ xo_rate(Mark, Coor, Cost, Gift-Count) :-
 % есть вилка
 % xo_has_fork(MarkedSolveList, Fork)
 xo_has_fork([MarkedQty-Order-Mark-Solve | TeilSolves], Fork) :-
-    Fork = fork(ForkHeight, ForkPower, ForkWidth, Order, Mark, FreeCell),
+    Fork = fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, Mark, FreeCell),
     FreeCell = cell(_, n),
     %check_point,
     member(FreeCell, Solve),
+    member(ClaimOrder, [1, 0]),
     findall( ForkMarkedQty,
-             ( member(ForkMarkedQty-Order-Mark-ForkSolve, TeilSolves),
+             ( member(ForkMarkedQty-ClaimOrder-_-ForkSolve, TeilSolves),
                select(FreeCell, ForkSolve, ForkSolveRest),
                \+ ( member(ForkCell, ForkSolveRest),
                     memberchk(ForkCell, Solve)
@@ -492,7 +489,8 @@ xo_has_fork([MarkedQty-Order-Mark-Solve | TeilSolves], Fork) :-
     max_list([MarkedQty | ForkMarkedQtyList], MaxMarkedQty),
     succ(MaxMarkedQty, ForkHeight),
     sum_list([MarkedQty | ForkMarkedQtyList], ForkPower),
-    length([MarkedQty | ForkMarkedQtyList], ForkWidth).
+    length([MarkedQty | ForkMarkedQtyList], ForkWidth),
+    memberchk(Order-ClaimOrder-ForkOrder, [1-1-4, 0-0-3, 1-0-2, 0-1-1]).
 xo_has_fork([_ | TeilSolves], Fork) :-
     xo_has_fork(TeilSolves, Fork).
     
@@ -585,9 +583,7 @@ xo_get_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark) :-
 % установить параметры игры
 % xo_get_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark)
 xo_set_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark) :-
-    length(ParamsArgs, 1),
-    ParamsFact =.. [xo_params|ParamsArgs],
-    retractall( ParamsFact ),
+    retractall( xo_params(_) ),
     assertz(
         xo_params( [
             size(PosBegin, PosEnd),
@@ -621,9 +617,7 @@ xo_test(Result, Solve) :-
     xo_params(Params),
     memberchk(go(CompMark, UserMark), Params),
     memberchk(size(PosBegin, PosEnd), Params),
-    length(StepArgs, 4),
-    StepFact =.. [xo_step|StepArgs],
-    retractall( StepFact ),
+    retractall( xo_step(_, _, _, _) ),
     PlayCell = cell(X-Y, n),
     MaxStep is (PosEnd - PosBegin + 1) ** 2 / 2 * sign(PosEnd - PosBegin + 1),
     between(1, MaxStep, Step),

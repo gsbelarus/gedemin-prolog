@@ -5,10 +5,10 @@ Properties:
   RUID: 148085368_215642201
   Name: "GS.Пролог.Учебный пример.Игра крестики-нолики"
   Caption: "GS.Пролог.Учебный пример.Игра крестики-нолики"
-  Version: "1.0.0.41"
+  Version: "1.0.0.46"
   Optional: False
   Internal: True
-  MD5: 555942A8EE417BB5928FCA12FCF74749
+  MD5: 7F52C7397CE5F895D53D5F301B5375E4
 Objects: 
   - 
     Properties: 
@@ -70,9 +70,7 @@ Objects:
         % формирование пространства ячеек
         % xo_make_cell
         xo_make_cell :-
-            length(CellArgs, 2),
-            CellFact =.. [xo_cell|CellArgs],
-            retractall( CellFact ),
+            retractall( xo_cell(_, _) ),
             xo_params(Params),
             memberchk(size(PosBegin, PosEnd), Params),
             between(PosBegin, PosEnd, X),
@@ -85,9 +83,7 @@ Objects:
         % формирование пространства решений
         % xo_make_solve
         xo_make_solve :-
-            length(SolveArgs, 2),
-            SolveFact =.. [xo_solve|SolveArgs],
-            retractall( SolveFact ),
+            retractall( xo_solve(_, _) ),
             xo_params(Params),
             memberchk(size(PosBegin, PosEnd), Params),
             memberchk(line(WinLength), Params),
@@ -323,9 +319,11 @@ Objects:
                      MarkedSolveList
             ),
             \+ MarkedSolveList = [],
+            sort(MarkedSolveList, SortedSolveList),
+            reverse(SortedSolveList, ClaimForkList),
             %check_point,
             findall( Fork,
-                     xo_has_fork(MarkedSolveList, Fork),
+                     xo_has_fork(ClaimForkList, Fork),
                      ForkList
             ),
             \+ ForkList = [],
@@ -343,8 +341,8 @@ Objects:
             nth0(PlayIndex, PlayForkList, PlayFork),
             %check_point,
             PlayCell = cell(X-Y, n),
-            PlayFork = fork(Height, Power, Width, _, Mark, PlayCell),
-            Rule = rule(fork,height=Height,power=Power,width=Width,Mark,X,Y),
+            PlayFork = fork(Height, Power, Width, Order, Mark, PlayCell),
+            Rule = rule(fork,height=Height,power=Power,width=Width,order=Order,Mark,X,Y),
             !.
         % случайный выбор из лучших шансов на выигрыш
         xo_play(Mode, PlayCell, Rule) :-
@@ -357,8 +355,7 @@ Objects:
             xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
             memberchk(line(WinLength), Params),
             xo_limit_coor(WinLength, LimitData),
-            between(2, WinLength, CostCut),
-            Cost is WinLength - CostCut,
+            member(Cost, [1, 0]),
             %check_point,
             RateShape = [TotalGift, TotalCount, CompGift, UserGift, CompCount, UserCount],
             xo_rate_shape(RateShape, Method-Rate),
@@ -401,8 +398,7 @@ Objects:
             xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
             memberchk(line(WinLength), Params),
             xo_limit_coor(WinLength, LimitData),
-            between(3, WinLength, CostCut),
-            Cost is WinLength - CostCut,
+            member(Cost, [1, 0]),
             ( Mark = CompMark ;  Mark = UserMark ),
             findall( Coor,
                      ( xo_cell(Coor, n),
@@ -500,12 +496,13 @@ Objects:
         % есть вилка
         % xo_has_fork(MarkedSolveList, Fork)
         xo_has_fork([MarkedQty-Order-Mark-Solve | TeilSolves], Fork) :-
-            Fork = fork(ForkHeight, ForkPower, ForkWidth, Order, Mark, FreeCell),
+            Fork = fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, Mark, FreeCell),
             FreeCell = cell(_, n),
             %check_point,
             member(FreeCell, Solve),
+            member(ClaimOrder, [1, 0]),
             findall( ForkMarkedQty,
-                     ( member(ForkMarkedQty-Order-Mark-ForkSolve, TeilSolves),
+                     ( member(ForkMarkedQty-ClaimOrder-_-ForkSolve, TeilSolves),
                        select(FreeCell, ForkSolve, ForkSolveRest),
                        \+ ( member(ForkCell, ForkSolveRest),
                             memberchk(ForkCell, Solve)
@@ -518,7 +515,8 @@ Objects:
             max_list([MarkedQty | ForkMarkedQtyList], MaxMarkedQty),
             succ(MaxMarkedQty, ForkHeight),
             sum_list([MarkedQty | ForkMarkedQtyList], ForkPower),
-            length([MarkedQty | ForkMarkedQtyList], ForkWidth).
+            length([MarkedQty | ForkMarkedQtyList], ForkWidth),
+            memberchk(Order-ClaimOrder-ForkOrder, [1-1-4, 0-0-3, 1-0-2, 0-1-1]).
         xo_has_fork([_ | TeilSolves], Fork) :-
             xo_has_fork(TeilSolves, Fork).
         
@@ -611,9 +609,7 @@ Objects:
         % установить параметры игры
         % xo_get_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark)
         xo_set_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark) :-
-            length(ParamsArgs, 1),
-            ParamsFact =.. [xo_params|ParamsArgs],
-            retractall( ParamsFact ),
+            retractall( xo_params(_) ),
             assertz(
                 xo_params( [
                     size(PosBegin, PosEnd),
@@ -647,9 +643,7 @@ Objects:
             xo_params(Params),
             memberchk(go(CompMark, UserMark), Params),
             memberchk(size(PosBegin, PosEnd), Params),
-            length(StepArgs, 4),
-            StepFact =.. [xo_step|StepArgs],
-            retractall( StepFact ),
+            retractall( xo_step(_, _, _, _) ),
             PlayCell = cell(X-Y, n),
             MaxStep is (PosEnd - PosBegin + 1) ** 2 / 2 * sign(PosEnd - PosBegin + 1),
             between(1, MaxStep, Step),
@@ -695,121 +689,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-07-07T10:00:54+03:00
-  - 
-    Properties: 
-      Class: "TgdcFunction"
-      RUID: 151158415_5956463
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-    Fields: 
-      OBJECTNAME: "APPLICATION"
-      MODULE: "CONST"
-      LANGUAGE: "VBScript"
-      NAME: "pl_Const"
-      COMMENT: ~
-      SCRIPT: | 
-        Option Explicit
-        'Константы и переменные Prolog
-        
-        Public Const scrPrologModuleName = "PROLOG"
-        
-        'TERM-TYPE CONSTANTS
-        Public Const PL_VARIABLE = 1
-        Public Const PL_ATOM = 2
-        Public Const PL_INTEGER = 3
-        Public Const PL_FLOAT = 4
-        Public Const PL_STRING = 5
-        Public Const PL_TERM = 6
-        '
-        
-        'for Function wg_Prolog
-        Public wg_Prolog_
-        Set wg_Prolog_ = Nothing
-        '
-        
-        ' global switch fo debug
-        Public Const plGlobalDebug = True
-        '
-        
-      DISPLAYSCRIPT: ~
-      MODIFYDATE: ~
-      OWNERNAME: ~
-      FUNCTIONTYPE: ~
-      EVENT: ~
-      LOCALNAME: ~
-      PUBLICFUNCTION: 1
-      SHORTCUT: ~
-      GROUPNAME: ~
-      MODULECODE: "1010001_17 APPLICATION"
-      ENTEREDPARAMS: ~
-      INHERITEDRULE: 0
-      USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-27T11:25:16+03:00
-  - 
-    Properties: 
-      Class: "TgdcFunction"
-      RUID: 151158419_5956463
-      AlwaysOverwrite: False
-      DontRemove: False
-      IncludeSiblings: False
-      HeadObject: 148085833_215642201
-    Fields: 
-      OBJECTNAME: "APPLICATION"
-      MODULE: "UNKNOWN"
-      LANGUAGE: "VBScript"
-      NAME: "pl_GetScriptIDByName"
-      COMMENT: ~
-      SCRIPT: | 
-        '#include pl_Const
-        Option Explicit
-        
-        Function pl_GetScriptIDByName(Name)
-          Dim Creator, ibsql
-        
-          pl_GetScriptIDByName = 0
-        
-          Set ibsql = Designer.CreateObject(nil, "TIBSQL", "")
-        
-          ibsql.Transaction = gdcBaseManager.ReadTransaction
-          ibsql.SQL.TEXT = _
-              "SELECT * FROM gd_function" & _
-              " WHERE UPPER(name) = UPPER(:name) AND module = :module"
-          ibsql.ParamByName("name").AsString = Name
-          ibsql.ParamByName("module").AsString = scrPrologModuleName
-          ibsql.ExecQuery
-        
-          If Not ibsql.EOF Then
-             pl_GetScriptIDByName = ibsql.FieldByName("id").AsInteger
-          End If
-          
-          ibsql.DestroyObject
-        End Function
-        
-      DISPLAYSCRIPT: | 
-        PL_GETSCRIPTIDBYNAME
-        
-      MODIFYDATE: ~
-      OWNERNAME: ~
-      FUNCTIONTYPE: ~
-      EVENT: ~
-      LOCALNAME: ~
-      PUBLICFUNCTION: 1
-      SHORTCUT: ~
-      GROUPNAME: ~
-      MODULECODE: "1010001_17 APPLICATION"
-      ENTEREDPARAMS: !!binary > 
-        U0xQUlBSU1QEAAAATkFNRQQAAABOQU1FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEZOU1RGTFBS
-      INHERITEDRULE: 0
-      USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-27T14:13:56+03:00
-    Set: 
-      - 
-        Table: "RP_ADDITIONALFUNCTION"
-        Items: 
-          - 
-            ADDFUNCTIONKEY: "151158415_5956463 pl_Const"
+      EDITIONDATE: 2015-07-12T17:31:41+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
