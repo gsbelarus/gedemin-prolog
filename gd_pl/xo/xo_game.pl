@@ -16,7 +16,7 @@
 xo_params( [
     size(0, 19),
     line(5),
-    level(3),
+    level(6),
     go(x, o),
     mode_opt([level(echo, +4)])
 ] ).
@@ -296,15 +296,17 @@ xo_play(Mode, PlayCell, Rule) :-
     sort(MarkedSolveList, SortedSolveList),
     reverse(SortedSolveList, ClaimForkList),
     %check_point,
-    findall( Fork,
-             xo_has_fork(ClaimForkList, Fork),
+    findall( Extra-Fork,
+             ( xo_has_fork(ClaimForkList, Fork),
+               xo_fork_extra(ModeLevel, Mark1, WinLength, Fork, Extra)
+             ),
              ForkList
     ),
     \+ ForkList = [],
     sort(ForkList, SortedForkList),
     reverse(SortedForkList, [BestFork | TeilForkList]),
-    BestFork = fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
-    PlayFork = fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
+    BestFork = ForkExtra-fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
+    PlayFork = ForkExtra-fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
     %check_point,
     findall( PlayFork,
              member(PlayFork, [BestFork | TeilForkList]),
@@ -315,8 +317,8 @@ xo_play(Mode, PlayCell, Rule) :-
     nth0(PlayIndex, PlayForkList, PlayFork),
     %check_point,
     PlayCell = cell(X-Y, n),
-    PlayFork = fork(Height, Power, Width, Order, Mark, PlayCell),
-    Rule = rule(fork,height=Height,power=Power,width=Width,order=Order,Mark,X,Y),
+    PlayFork = Extra-fork(Height, Power, Width, Order, Mark, PlayCell),
+    Rule = rule(fork,extra=Extra,height=Height,power=Power,width=Width,order=Order,Mark,X,Y),
     !.
 % случайный выбор из лучших шансов на выигрыш
 xo_play(Mode, PlayCell, Rule) :-
@@ -392,6 +394,51 @@ xo_play(Mode, PlayCell, Rule) :-
 % случайный выбор свободной ячейки
 xo_play(_, PlayCell, Rule) :-
     xo_random_free_cell(PlayCell, Rule).
+
+% xo_fork_extra(ModeLevel, NormalMark, WinLength, Fork, Extra)
+xo_fork_extra(ModeLevel, NormalMark, WinLength, Fork, Extra) :-
+    ModeLevel >= 8,
+    plus(WinLength, -2, ToWinLength),
+    %
+    Cell = cell(X-Y, n),
+    Fork = fork(_, _, _, _, Mark, Cell),
+    ( Mark = NormalMark -> ForkMode = normal ; ForkMode = echo ),
+    xo_mark_cell(ForkMode, X, Y),
+    %
+    findall( Solve,
+             ( xo_has_chance(Mark, Solve, ToWinLength),
+               memberchk(cell(X-Y, Mark), Solve),
+               %
+               Solve = [First | Right],
+               append(Left, [Last], Solve),
+               ( % n nooon n
+                 First = cell(_, n),
+                 Last = cell(_, n),
+                 xo_has_chance(Mark, SolveBorder1, ToWinLength),
+                 append(Right, [cell(_, n)], SolveBorder1),
+                 xo_has_chance(Mark, SolveBorder2, ToWinLength),
+                 append([cell(_, n)], Left, SolveBorder2)
+                -> true
+               ; % _ nonoo n | _ nnooo n
+                 xo_has_chance(Mark, SolveBorder1, ToWinLength),
+                 append(Right, [cell(_, n)], SolveBorder1),
+                 member(PlayCell, Right),
+                 PlayCell = cell(_, n)
+                -> true
+               ; % n oonon _ | n ooonn _
+                 xo_has_chance(Mark, SolveBorder2, ToWinLength),
+                 append([cell(_, n)], Left, SolveBorder2),
+                 member(PlayCell, Left),
+                 PlayCell = cell(_, n)
+               )
+             ),
+             SolveList
+           ),
+    length(SolveList, Extra),
+    %
+    xo_unmark_cell(X, Y),
+    !.
+xo_fork_extra(_, _, _, _, 0).
 
 % xo_limit_coor(WinLength, LimitData)
 xo_limit_coor(WinLength, LimitData) :-
@@ -628,7 +675,7 @@ xo_test(Result, Solve) :-
     ),
     xo_mark_cell(Mode, PlayCell),
     asserta( xo_step(Mark, Step, X, Y) ),
-    writeln(Rule->step(Step, Mark, X, Y)),
+    writeln(step(Step, Mark, X, Y)-Rule),
     ( xo_win(Mode, Mark, Solve)
      ->
       Result = Mode

@@ -5,10 +5,10 @@ Properties:
   RUID: 148085368_215642201
   Name: "GS.Пролог.Учебный пример.Игра крестики-нолики"
   Caption: "GS.Пролог.Учебный пример.Игра крестики-нолики"
-  Version: "1.0.0.46"
+  Version: "1.0.0.49"
   Optional: False
   Internal: True
-  MD5: 7F52C7397CE5F895D53D5F301B5375E4
+  MD5: A8D2B04C33C5E6D10C48A10ED3679197
 Objects: 
   - 
     Properties: 
@@ -42,7 +42,7 @@ Objects:
         xo_params( [
             size(0, 19),
             line(5),
-            level(3),
+            level(6),
             go(x, o),
             mode_opt([level(echo, +4)])
         ] ).
@@ -322,15 +322,17 @@ Objects:
             sort(MarkedSolveList, SortedSolveList),
             reverse(SortedSolveList, ClaimForkList),
             %check_point,
-            findall( Fork,
-                     xo_has_fork(ClaimForkList, Fork),
+            findall( Extra-Fork,
+                     ( xo_has_fork(ClaimForkList, Fork),
+                       xo_fork_extra(ModeLevel, Mark1, WinLength, Fork, Extra)
+                     ),
                      ForkList
             ),
             \+ ForkList = [],
             sort(ForkList, SortedForkList),
             reverse(SortedForkList, [BestFork | TeilForkList]),
-            BestFork = fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
-            PlayFork = fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
+            BestFork = ForkExtra-fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
+            PlayFork = ForkExtra-fork(ForkHeight, ForkPower, ForkWidth, ForkOrder, _, _),
             %check_point,
             findall( PlayFork,
                      member(PlayFork, [BestFork | TeilForkList]),
@@ -341,8 +343,8 @@ Objects:
             nth0(PlayIndex, PlayForkList, PlayFork),
             %check_point,
             PlayCell = cell(X-Y, n),
-            PlayFork = fork(Height, Power, Width, Order, Mark, PlayCell),
-            Rule = rule(fork,height=Height,power=Power,width=Width,order=Order,Mark,X,Y),
+            PlayFork = Extra-fork(Height, Power, Width, Order, Mark, PlayCell),
+            Rule = rule(fork,extra=Extra,height=Height,power=Power,width=Width,order=Order,Mark,X,Y),
             !.
         % случайный выбор из лучших шансов на выигрыш
         xo_play(Mode, PlayCell, Rule) :-
@@ -418,6 +420,51 @@ Objects:
         % случайный выбор свободной ячейки
         xo_play(_, PlayCell, Rule) :-
             xo_random_free_cell(PlayCell, Rule).
+        
+        % xo_fork_extra(ModeLevel, NormalMark, WinLength, Fork, Extra)
+        xo_fork_extra(ModeLevel, NormalMark, WinLength, Fork, Extra) :-
+            ModeLevel >= 8,
+            plus(WinLength, -2, ToWinLength),
+            %
+            Cell = cell(X-Y, n),
+            Fork = fork(_, _, _, _, Mark, Cell),
+            ( Mark = NormalMark -> ForkMode = normal ; ForkMode = echo ),
+            xo_mark_cell(ForkMode, X, Y),
+            %
+            findall( Solve,
+                     ( xo_has_chance(Mark, Solve, ToWinLength),
+                       memberchk(cell(X-Y, Mark), Solve),
+                       %
+                       Solve = [First | Right],
+                       append(Left, [Last], Solve),
+                       ( % n nooon n
+                         First = cell(_, n),
+                         Last = cell(_, n),
+                         xo_has_chance(Mark, SolveBorder1, ToWinLength),
+                         append(Right, [cell(_, n)], SolveBorder1),
+                         xo_has_chance(Mark, SolveBorder2, ToWinLength),
+                         append([cell(_, n)], Left, SolveBorder2)
+                        -> true
+                       ; % _ nonoo n | _ nnooo n
+                         xo_has_chance(Mark, SolveBorder1, ToWinLength),
+                         append(Right, [cell(_, n)], SolveBorder1),
+                         member(PlayCell, Right),
+                         PlayCell = cell(_, n)
+                        -> true
+                       ; % n oonon _ | n ooonn _
+                         xo_has_chance(Mark, SolveBorder2, ToWinLength),
+                         append([cell(_, n)], Left, SolveBorder2),
+                         member(PlayCell, Left),
+                         PlayCell = cell(_, n)
+                       )
+                     ),
+                     SolveList
+                   ),
+            length(SolveList, Extra),
+            %
+            xo_unmark_cell(X, Y),
+            !.
+        xo_fork_extra(_, _, _, _, 0).
         
         % xo_limit_coor(WinLength, LimitData)
         xo_limit_coor(WinLength, LimitData) :-
@@ -654,7 +701,7 @@ Objects:
             ),
             xo_mark_cell(Mode, PlayCell),
             asserta( xo_step(Mark, Step, X, Y) ),
-            writeln(Rule->step(Step, Mark, X, Y)),
+            writeln(step(Step, Mark, X, Y)-Rule),
             ( xo_win(Mode, Mark, Solve)
              ->
               Result = Mode
@@ -689,7 +736,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-07-12T17:31:41+03:00
+      EDITIONDATE: 2015-07-18T14:11:20+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -721,7 +768,7 @@ Objects:
         Class TxoGame
         '
           Private FIsInitialised
-          Private FPlayCoor(1)
+          Private FPlayCoor(1), FRule
           Private FWinMode, FWinMark
           Private FWinCells()
           '
@@ -865,6 +912,7 @@ Objects:
             If Play Then
               FPlayCoor(0) = FTv.ReadInteger(1)
               FPlayCoor(1) = FTv.ReadInteger(2)
+              FRule = FTv.ToString(3)
             End If
             '
             FTv.DestroyObject
@@ -958,6 +1006,11 @@ Objects:
           ' PlayCoor
           Public Property Get PlayCoor
             PlayCoor = FPlayCoor
+          End Property
+        
+          ' Rule
+          Public Property Get Rule
+            Rule = FRule
           End Property
         
           ' WinMode
@@ -1173,7 +1226,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-07-02T11:15:59+03:00
+      EDITIONDATE: 2015-07-17T12:29:14+03:00
   - 
     Properties: 
       Class: "TgdcStorageFolder"
@@ -1243,10 +1296,10 @@ Objects:
       BLOB_DATA: | 
         object usrf_xoGame: TgdcCreateableForm
           Tag = 0
-          Left = 331
-          Top = 211
-          Width = 532
-          Height = 474
+          Left = 400
+          Top = 50
+          Width = 550
+          Height = 670
           Cursor = crDefault
           Hint = ''
           HelpContext = 0
@@ -1275,7 +1328,7 @@ Objects:
           VertScrollBar.Tracking = False
           VertScrollBar.Visible = True
           Action = nil
-          ActiveControl = nil
+          ActiveControl = usrg_StartComp
           Align = alNone
           Anchors = [akLeft, akTop]
           AutoSize = False
@@ -1497,7 +1550,7 @@ Objects:
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = '0, 0'
+            Hint = '0,0'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1538,7 +1591,7 @@ Objects:
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = ''
+            Hint = '1,0'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1563,9 +1616,10 @@ Objects:
             ParentBiDiMode = True
             ParentColor = False
             ParentFont = False
-            ParentShowHint = True
+            ParentShowHint = False
             PopupMenu = nil
             ShowAccelChar = True
+            ShowHint = True
             Transparent = False
             Layout = tlCenter
             Visible = True
@@ -1578,7 +1632,7 @@ Objects:
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = ''
+            Hint = '2,0'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1603,9 +1657,10 @@ Objects:
             ParentBiDiMode = True
             ParentColor = False
             ParentFont = False
-            ParentShowHint = True
+            ParentShowHint = False
             PopupMenu = nil
             ShowAccelChar = True
+            ShowHint = True
             Transparent = False
             Layout = tlCenter
             Visible = True
@@ -1618,7 +1673,7 @@ Objects:
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = ''
+            Hint = '0,1'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1643,9 +1698,10 @@ Objects:
             ParentBiDiMode = True
             ParentColor = False
             ParentFont = False
-            ParentShowHint = True
+            ParentShowHint = False
             PopupMenu = nil
             ShowAccelChar = True
+            ShowHint = True
             Transparent = False
             Layout = tlCenter
             Visible = True
@@ -1658,7 +1714,7 @@ Objects:
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = ''
+            Hint = '1,1'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1683,22 +1739,23 @@ Objects:
             ParentBiDiMode = True
             ParentColor = False
             ParentFont = False
-            ParentShowHint = True
+            ParentShowHint = False
             PopupMenu = nil
             ShowAccelChar = True
+            ShowHint = True
             Transparent = False
             Layout = tlCenter
             Visible = True
             WordWrap = False
           end
-          object usrg_Label_2_20: TLabel
+          object usrg_Label_2_1: TLabel
             Tag = 0
             Left = 80
             Top = 160
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = ''
+            Hint = '2,1'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1723,9 +1780,10 @@ Objects:
             ParentBiDiMode = True
             ParentColor = False
             ParentFont = False
-            ParentShowHint = True
+            ParentShowHint = False
             PopupMenu = nil
             ShowAccelChar = True
+            ShowHint = True
             Transparent = False
             Layout = tlCenter
             Visible = True
@@ -1738,7 +1796,7 @@ Objects:
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = ''
+            Hint = '0,2'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1763,9 +1821,10 @@ Objects:
             ParentBiDiMode = True
             ParentColor = False
             ParentFont = False
-            ParentShowHint = True
+            ParentShowHint = False
             PopupMenu = nil
             ShowAccelChar = True
+            ShowHint = True
             Transparent = False
             Layout = tlCenter
             Visible = True
@@ -1778,7 +1837,7 @@ Objects:
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = ''
+            Hint = '1,2'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1803,9 +1862,10 @@ Objects:
             ParentBiDiMode = True
             ParentColor = False
             ParentFont = False
-            ParentShowHint = True
+            ParentShowHint = False
             PopupMenu = nil
             ShowAccelChar = True
+            ShowHint = True
             Transparent = False
             Layout = tlCenter
             Visible = True
@@ -1818,7 +1878,7 @@ Objects:
             Width = 20
             Height = 20
             Cursor = crDefault
-            Hint = ''
+            Hint = '2,2'
             Align = alNone
             Alignment = taCenter
             Anchors = [akLeft, akTop]
@@ -1843,9 +1903,10 @@ Objects:
             ParentBiDiMode = True
             ParentColor = False
             ParentFont = False
-            ParentShowHint = True
+            ParentShowHint = False
             PopupMenu = nil
             ShowAccelChar = True
+            ShowHint = True
             Transparent = False
             Layout = tlCenter
             Visible = True
@@ -2290,7 +2351,7 @@ Objects:
               Font.Height = 16
               Font.Name = 'Arial'
               Font.Pitch = fpDefault
-              Font.Style = []
+              Font.Style = [fsUnderline]
               ParentBiDiMode = True
               ParentColor = True
               ParentCtl3D = True
@@ -2542,7 +2603,7 @@ Objects:
           end
         end
         
-      EDITIONDATE: 2015-04-29T17:04:20+03:00
+      EDITIONDATE: 2015-07-17T13:50:18+03:00
   - 
     Properties: 
       Class: "TgdcStorageValue"
@@ -2661,6 +2722,7 @@ Objects:
               Set Cell = frm.FindComponent(CtlName)
               If Assigned(Cell) And _
                   (X > frm.Objects("xo").PosEnd Or Y > frm.Objects("xo").PosEnd) Then
+                Cell.Hint = X & "," & Y
                 Cell.Visible = False
               End If
               '
@@ -2703,7 +2765,7 @@ Objects:
         U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-28T16:09:19+03:00
+      EDITIONDATE: 2015-07-17T13:48:43+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2816,8 +2878,6 @@ Objects:
                 Set Cell = frm.FindComponent(CtlName)
                 If Not Assigned(Cell) Then
                   Set Cell = Designer.CreateObject(frm, "TLabel", CtlName)
-                  Cell.ShowHint = Cell_0_0.ShowHint
-                  Cell.Hint = X & ", " & Y
                   Cell.Alignment = Cell_0_0.Alignment
                   Cell.AutoSize = Cell_0_0.AutoSize
                   Cell.Caption = Cell_0_0.Caption
@@ -2833,6 +2893,8 @@ Objects:
                   Cell.Top = Cell_0_0.Top + Y * (Cell_0_0.Height + (Bevel_0_0.Height - Cell_0_0.Height))
                   Cell.Visible = False
                 End If
+                Cell.Hint = X & "," & Y
+                Cell.ShowHint = Cell_0_0.ShowHint
                 Call SetEventHandler(Cell, "OnMouseUp", "usrg_Label_OnMouseUp")
                 '
               End If
@@ -2861,7 +2923,7 @@ Objects:
         U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-29T10:36:17+03:00
+      EDITIONDATE: 2015-07-17T13:28:23+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2935,6 +2997,7 @@ Objects:
                   Cell.Caption = xoFreeMark
                   Cell.Font.Color = Cell.Color
                   Cell.Font.Style = ""
+                  Cell.Hint = X & "," & Y
                 End If
                 '
                 If (FreeMark And Not Cell.Caption = xoFreeMark) Or _
@@ -2972,7 +3035,7 @@ Objects:
         UFI=
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-29T14:49:25+03:00
+      EDITIONDATE: 2015-07-17T13:50:15+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -3535,6 +3598,7 @@ Objects:
       COMMENT: ~
       SCRIPT: | 
         '#include GameOver
+        '#include Play
         Option Explicit
         
         Sub MarkCell(ByVal Sender)
@@ -3578,6 +3642,8 @@ Objects:
               H = Sender.Height
               Sender.Caption = frm.Objects("xo").CurrentMark
               Sender.Font.Color = MarkedCellColor
+              Sender.Hint = Sender.Hint & "  " & _
+                frm.Objects("xo").CurrentStep & "-" & frm.Objects("xo").CurrentMark
               Sender.Width = W
               Sender.Height = H
               Sender.Repaint
@@ -3608,13 +3674,15 @@ Objects:
         RkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-29T14:47:32+03:00
+      EDITIONDATE: 2015-07-17T13:44:51+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
         Items: 
           - 
             ADDFUNCTIONKEY: "148087282_215642201 GameOver"
+          - 
+            ADDFUNCTIONKEY: "148087280_215642201 Play"
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -3663,6 +3731,9 @@ Objects:
                   H = Cell.Height
                   Cell.Caption = frm.Objects("xo").CurrentMark
                   Cell.Font.Color = MarkedCellColor
+                  Cell.Hint = Cell.Hint & "  " & _
+                    frm.Objects("xo").CurrentStep & "-" & frm.Objects("xo").CurrentMark & vbCrLf & _
+                    frm.Objects("xo").Rule
                   Cell.Font.Style = "fsBold"
                   Cell.Width = W
                   Cell.Height = H
@@ -3700,7 +3771,7 @@ Objects:
         U0xQUlBSU1QDAAAARlJNAwAAAEZSTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGTlNURkxQUg==
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-04-30T10:07:45+03:00
+      EDITIONDATE: 2015-07-17T13:45:01+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -4051,7 +4122,9 @@ Objects:
                 "Ход: " & frm.Objects("xo").CurrentStep & " - " & frm.Objects("xo").CurrentMark
             End If
             '
-            Call MarkCell(Sender)
+            If Sender.Caption = xoFreeMark Then
+              Call MarkCell(Sender)
+            End If
             '
           ElseIf Button = 1 Then
             If Rate.Tag > 0 Then
@@ -4167,7 +4240,7 @@ Objects:
         AAAAAAAAAAAAAAAAAAAARk5TVEZMUFI=
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-05-10T22:16:07+03:00
+      EDITIONDATE: 2015-07-17T13:40:34+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -4190,4 +4263,4 @@ Objects:
       EVENTNAME: "ONMOUSEUP"
       FUNCTIONKEY: "148088168_215642201 usrg_Label_OnMouseUp"
       DISABLE: 0
-      EDITIONDATE: 2015-04-27T17:14:33+03:00
+      EDITIONDATE: 2015-07-17T13:33:29+03:00

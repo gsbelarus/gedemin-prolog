@@ -15,7 +15,7 @@ Public Const xoEcho = "echo"
 Class TxoGame
 '
   Private FIsInitialised
-  Private FPlayCoor(1)
+  Private FPlayCoor(1), FRule
   Private FWinMode, FWinMark
   Private FWinCells()
   '
@@ -159,6 +159,7 @@ Class TxoGame
     If Play Then
       FPlayCoor(0) = FTv.ReadInteger(1)
       FPlayCoor(1) = FTv.ReadInteger(2)
+      FRule = FTv.ToString(3)
     End If
     '
     FTv.DestroyObject
@@ -252,6 +253,11 @@ Class TxoGame
   ' PlayCoor
   Public Property Get PlayCoor
     PlayCoor = FPlayCoor
+  End Property
+
+  ' Rule
+  Public Property Get Rule
+    Rule = FRule
   End Property
 
   ' WinMode
