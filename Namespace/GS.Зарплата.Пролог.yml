@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.20"
+  Version: "1.0.0.21"
   Optional: False
   Internal: True
-  MD5: 750C5766FB81F338A57806BFDDAB1B19
+  MD5: F50B06CECB9A40DC6E9C64A26EDAEB04
 Objects: 
   - 
     Properties: 
@@ -8219,6 +8219,7 @@ Objects:
                 pKindOfWork_ByWorkOuter_ruid-'147041907,453357870', % Внешн. совмещение
                 pFeeGroupKey_ruid-'147021001,274788016',          % Начисляются СВ
                 pFeeParentSick_ruid-'147025974,403876601',        % Пособия
+                pFeeType_JobIll_ruid-'575315331,99701464',        % Травма на производстве
                 pFeeType_SocInsurance_ruid-'147653395,119619099', % Пенсионный
                 pTblCal_DocType_Fact_ruid-'187613422,1596169984',     % Табель мастера
                 pHourType_Sick_ruid-'147650801,119619099',      % Больничные (Б)
@@ -8310,7 +8311,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-03-11T10:28:42+03:00
+      EDITIONDATE: 2015-07-23T14:45:51+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -8632,9 +8633,11 @@ Objects:
         WHERE
           ft.PARENT =
             (SELECT id FROM GD_P_GETID(pFeeParentSick_ruid))
+          AND
+          NOT ft.ID = (SELECT id FROM GD_P_GETID(pFeeType_JobIll_ruid))
         ",
             [
-            pFeeParentSick_ruid-_
+            pFeeParentSick_ruid-_, pFeeType_JobIll_ruid-_
             ]) :-
             memberchk(Scope, [
                 wg_pu_3
@@ -8965,7 +8968,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-03-11T10:28:52+03:00
+      EDITIONDATE: 2015-07-23T14:46:46+03:00
   - 
     Properties: 
       Class: "TgdcFunction"

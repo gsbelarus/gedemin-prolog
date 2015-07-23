@@ -22,6 +22,7 @@ twg_pu_in_params:-
         pKindOfWork_ByWorkOuter_ruid-'147041907,453357870', % Внешн. совмещение
         pFeeGroupKey_ruid-'147021001,274788016',          % Начисляются СВ
         pFeeParentSick_ruid-'147025974,403876601',        % Пособия
+        pFeeType_JobIll_ruid-'575315331,99701464',        % Травма на производстве
         pFeeType_SocInsurance_ruid-'147653395,119619099', % Пенсионный
         pTblCal_DocType_Fact_ruid-'187613422,1596169984',     % Табель мастера
         pHourType_Sick_ruid-'147650801,119619099',      % Больничные (Б)

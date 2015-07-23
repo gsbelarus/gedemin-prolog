@@ -305,9 +305,11 @@ FROM
 WHERE
   ft.PARENT =
     (SELECT id FROM GD_P_GETID(pFeeParentSick_ruid))
+  AND
+  NOT ft.ID = (SELECT id FROM GD_P_GETID(pFeeType_JobIll_ruid))
 ",
     [
-    pFeeParentSick_ruid-_
+    pFeeParentSick_ruid-_, pFeeType_JobIll_ruid-_
     ]) :-
     memberchk(Scope, [
         wg_pu_3
