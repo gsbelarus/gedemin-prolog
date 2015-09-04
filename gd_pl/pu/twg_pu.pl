@@ -76,18 +76,21 @@ pu_calc(Scope, EmplKey) :-
     % выполнить расчет
     make_rep_periods(Scope, EmplKey),
     make_pu_tab(Scope, EmplKey),
-    forall( member(CatType/IsContract-IsPractice, [1/0-0, 3/1-0]),
-            ( make_work_periods(Scope, EmplKey, CatType/IsContract-IsPractice),
-              add_rep_amount(Scope, EmplKey, CatType),
-              add_sick_amount(Scope, EmplKey, CatType),
-              %add_soc_amount(Scope, EmplKey, CatType),
-              make_exp_periods(Scope, EmplKey, CatType)
-            )
-    ),
+    member(CatType/IsContract-IsPractice, [1/0-0, 3/1-0]),
+    make_rep_data(Scope, EmplKey, CatType/IsContract-IsPractice),
     % найти альтернативу
     fail.
 pu_calc(_, _) :-
     % больше альтернатив нет
+    !.
+
+%
+make_rep_data(Scope, EmplKey, CatType/IsContract-IsPractice) :-
+    make_work_periods(Scope, EmplKey, CatType/IsContract-IsPractice),
+    add_rep_amount(Scope, EmplKey, CatType),
+    add_sick_amount(Scope, EmplKey, CatType),
+    %add_soc_amount(Scope, EmplKey, CatType),
+    make_exp_periods(Scope, EmplKey, CatType),
     !.
 
 %
@@ -339,7 +342,7 @@ add_sick_amount(Scope, EmplKey, CatType) :-
                               pYM-Y-M, pSickAmount-SickAmount ])
             )
     ),
-    fail.
+    !.
 add_sick_amount(_, _, _).
 
 %
@@ -445,9 +448,9 @@ make_exp_periods(Scope, EmplKey, CatType) :-
                     pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo,
                     pTabOption-TabOption ]),
     %
-    member(FirstMoveKey/_-_, WorkPeriods),
-    %
     make_rep_days(DateCalcFrom, DateCalcTo, RepDays),
+    %
+    member(FirstMoveKey/_-_, WorkPeriods),
     form_work_days(RepDays, Scope-EmplKey-CatType, FirstMoveKey, WorkPeriods, RepDays1),
     form_skip_days(RepDays1, Scope-EmplKey-FirstMoveKey-CatType-TabOption/WorkPeriods, RepDays2),
     RepDays2 = [DayBegin|_],
@@ -457,7 +460,7 @@ make_exp_periods(Scope, EmplKey, CatType) :-
                             pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                             pCatType-CatType, pExpPeriod/ExpPeriod ])
     ),
-    !.
+    fail.
 make_exp_periods(_, _, _).
 
 % сформировать отчетные дни
