@@ -795,6 +795,8 @@ WHERE
   sl.USR$DATEBEGIN >= 'pDateCalcFrom'
   AND
   sl.USR$DATEBEGIN < 'pDateCalcTo'
+  AND
+  NOT s.USR$ILLTYPEKEY = ( SELECT id FROM GD_P_GETID(pJobIllType_ruid) )
 UNION ALL
 SELECT
   'avg' AS AvgType,
@@ -827,7 +829,8 @@ WHERE
   t.USR$DATEBEGIN < 'pDateCalcTo'
 ",
     [
-    pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
+    pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_,
+    pJobIllType_ruid-_
     ]).
 
 gd_pl_ds(Scope, kb, usr_wg_FeeTypeProp, 4, [

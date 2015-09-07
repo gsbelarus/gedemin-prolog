@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.22"
+  Version: "1.0.0.23"
   Optional: False
   Internal: True
-  MD5: 1D5EC23AC71B208FB612094F241B05F2
+  MD5: 59C5AAB5B0EBF50E968253734112CF07
 Objects: 
   - 
     Properties: 
@@ -1494,6 +1494,8 @@ Objects:
           sl.USR$DATEBEGIN >= 'pDateCalcFrom'
           AND
           sl.USR$DATEBEGIN < 'pDateCalcTo'
+          AND
+          NOT s.USR$ILLTYPEKEY = ( SELECT id FROM GD_P_GETID(pJobIllType_ruid) )
         UNION ALL
         SELECT
           'avg' AS AvgType,
@@ -1526,7 +1528,8 @@ Objects:
           t.USR$DATEBEGIN < 'pDateCalcTo'
         ",
             [
-            pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_
+            pEmplKey-_, pFirstMoveKey-_, pDateCalcFrom-_, pDateCalcTo-_,
+            pJobIllType_ruid-_
             ]).
         
         gd_pl_ds(Scope, kb, usr_wg_FeeTypeProp, 4, [
@@ -1910,7 +1913,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-07-08T15:31:15+03:00
+      EDITIONDATE: 2015-09-07T16:29:17+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2462,7 +2465,32 @@ Objects:
             AvgWage is round(AvgWage0),
             !.
         calc_avg_wage(Scope, PK, AvgWage, Rule) :-
-            % - для больничных (от ставки при отсутствии заработка)
+            % - для больничных (по среднему заработку при отсутствии заработка)
+            Scope = wg_avg_wage_sick,
+            Rule = by_avg_wage,
+            % подготовка временных данных для расчета
+            prep_avg_wage(Scope, PK, Periods),
+            % есть требуемое количество месяцев
+            get_param(Scope, run, pMonthQty-MonthQty),
+            length(Periods, MonthQty),
+            % взять заработок
+            findall( Wage,
+                       % за каждый период проверки
+                     ( member(Y-M, Periods),
+                       % взять данные по заработку
+                       get_month_wage(Scope, PK, Y, M, _, Wage),
+                       Wage > 0
+                     ),
+            % в список заработков
+            Wages ),
+            % если нет заработка
+            Wages = [],
+            % то попытка расчета по среднему заработку
+            calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule),
+            AvgWage > 0,
+            !.
+        calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+            % - для больничных (от ставки при отсутствии заработка и среднего заработка)
             Scope = wg_avg_wage_sick,
             Rule = by_rate,
             % подготовка временных данных для расчета
@@ -4913,7 +4941,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-07-08T15:42:08+03:00
+      EDITIONDATE: 2015-09-07T16:28:54+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

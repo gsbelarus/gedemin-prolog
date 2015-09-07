@@ -412,7 +412,32 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     AvgWage is round(AvgWage0),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
-    % - для больничных (от ставки при отсутствии заработка)
+    % - для больничных (по среднему заработку при отсутствии заработка)
+    Scope = wg_avg_wage_sick,
+    Rule = by_avg_wage,
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    % есть требуемое количество месяцев
+    get_param(Scope, run, pMonthQty-MonthQty),
+    length(Periods, MonthQty),
+    % взять заработок
+    findall( Wage,
+               % за каждый период проверки
+             ( member(Y-M, Periods),
+               % взять данные по заработку
+               get_month_wage(Scope, PK, Y, M, _, Wage),
+               Wage > 0
+             ),
+    % в список заработков
+    Wages ),
+    % если нет заработка
+    Wages = [],
+    % то попытка расчета по среднему заработку
+    calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule),
+    AvgWage > 0,
+    !.
+calc_avg_wage(Scope, PK, AvgWage, Rule) :-
+    % - для больничных (от ставки при отсутствии заработка и среднего заработка)
     Scope = wg_avg_wage_sick,
     Rule = by_rate,
     % подготовка временных данных для расчета
