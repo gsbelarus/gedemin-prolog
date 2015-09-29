@@ -13,7 +13,7 @@ wg_valid_sql(
             [
             usr_wg_MovementLine/15,
             gd_contact/2,
-            usr_wg_TblCharge/14,
+            usr_wg_TblCharge/15,
             usr_wg_TblCharge_Prev/12,
             usr_wg_TblCharge_AlimonyDebt/9,
             usr_wg_FeeType/4,
@@ -128,18 +128,19 @@ WHERE
         wg_fee_alimony, wg_fee_fine
         ]).
 
-gd_pl_ds(Scope, kb, usr_wg_TblCharge, 14, [
+gd_pl_ds(Scope, kb, usr_wg_TblCharge, 15, [
     fDocKey-integer, fEmplKey-integer, fFirstMoveKey-integer,
     fCalYear-integer, fCalMonth-integer, fDateBegin-date,
     fDebit-float, fCredit-float, fFeeTypeKey-integer,
     fDOW-float, fHOW-float,
-    fTotalYear-integer, fTotalMonth-integer, fTotalDateBegin-date
+    fTotalYear-integer, fTotalMonth-integer, fTotalDateBegin-date,
+    fPayPeriod-integer
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony, wg_fee_fine
         ]).
-% usr_wg_TblCharge(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, DOW, HOW, TotalYear, TotalMonth, TotalDateBegin)
-get_sql(Scope, kb, usr_wg_TblCharge/14,
+% usr_wg_TblCharge(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, DOW, HOW, TotalYear, TotalMonth, TotalDateBegin, PayPeriod)
+get_sql(Scope, kb, usr_wg_TblCharge/15,
 "
 SELECT
   tch.USR$DOCUMENTKEY,
@@ -155,16 +156,22 @@ SELECT
   tch.USR$HOW,
   EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS TotalYear,
   EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS TotalMonth,
-  t.USR$DATEBEGIN AS TotalDateBegin
+  t.USR$DATEBEGIN AS TotalDateBegin,
+  COALESCE(ft.USR$PAYPERIOD, 0) AS PayPeriod
 FROM
   USR$WG_TBLCHARGE tch
 JOIN
   USR$WG_TOTAL t
     ON t.DOCUMENTKEY = tch.USR$TOTALDOCKEY
+JOIN
+  USR$WG_FEETYPE ft
+    ON ft.ID = tch.USR$FEETYPEKEY
 WHERE
   tch.USR$EMPLKEY = pEmplKey
   AND
   tch.USR$TOTALDOCKEY = pTotalDocKey
+  AND
+  COALESCE(ft.USR$PAYPERIOD, 0) >= 0
 ",
     [
     pEmplKey-_, pTotalDocKey-_

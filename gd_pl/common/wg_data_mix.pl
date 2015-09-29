@@ -148,6 +148,9 @@ check_schedule(Scope, PK, _, ScheduleKey) :-
 
 % расчитать табель за месяц по одному из параметров
 calc_month_tab(Scope, PK, Y-M, TabDays) :-
+    calc_month_tab(Scope, PK, Y-M, TabDays, _).
+% вариант с возвратом значения параметра
+calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
     % параметры выбора табеля
     member(TabelOption, [tbl_cal_flex, tbl_cal, tbl_charge, dbf_sums]),
     % взять данные из табеля
@@ -162,7 +165,7 @@ calc_month_tab(Scope, PK, Y-M, TabDays) :-
     % проверить список табеля
     \+ TabDays = [],
     !.
-calc_month_tab(_, _, _, []) :-
+calc_month_tab(_, _, _, [], none) :-
     !.
 
 % сумма дней и часов
@@ -249,7 +252,7 @@ usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, Days, Duration, HoureType, TabelOpti
                 fCalYear-Y, fCalMonth-M, fDate-Date,
                 fDuration-Duration, fHoureType-HoureType]),
     once( (Duration > 0, Days = 1 ; Days = 0) ).
-% или табель дни-часы из начислений
+% или табель дни-часы из начислений (вариант 1)
 usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
     TabelOption = tbl_charge,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
@@ -260,10 +263,21 @@ usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
     once( get_data(Scope, kb, usr_wg_FeeType, [
                     fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                     fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
+% или табель дни-часы из начислений (вариант 2)
+usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
+    TabelOption = tbl_charge,
+    PK = [pEmplKey-EmplKey],
+    ArgPairs = [fEmplKey-EmplKey,
+                fCalYear-Y, fCalMonth-M, fDateBegin-Date,
+                fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
+    get_data(Scope, kb, usr_wg_TblCharge, [fPayPeriod-_|ArgPairs]),
+    once( get_data(Scope, kb, usr_wg_FeeType, [
+                    fEmplKey-EmplKey,
+                    fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
 % или день месяца из dbf
 usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, InDays, InHoures, 0, TabelOption) :-
     TabelOption = dbf_sums,
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
+    PK = [ pEmplKey-EmplKey | _ ],
     get_data(Scope, kb, usr_wg_DbfSums, [
                 fEmplKey-EmplKey, fInDays-InDays, fInHoures-InHoures,
                 fInYear-Y, fInMonth-M, fDateBegin-Date]).

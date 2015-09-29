@@ -134,7 +134,7 @@ calc_tab(Scope, EmplKey) :-
     DateIn @=< DateEnd,
     % Общий табель за итоговый месяц
     atom_date(DateBegin, date(Y, M, _)),
-    calc_month_tab(Scope, PK, Y-M, TabDays),
+    calc_month_tab(Scope, [pEmplKey-EmplKey], Y-M, TabDays, TabelOption),
     sum_days_houres(TabDays, TDays, THoures),
     % спецификация временных данных
     append([ [Section-1], PK,
@@ -155,14 +155,43 @@ calc_tab(Scope, EmplKey) :-
                 AlimonyPairs),
     % для всех алиментов
     forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
-            ( % посчитать Дни и Часы для периода действия алиментов
-              sum_days_houres(TabDays, ADays, AHoures, ADateBegin, ADateEnd),
-              % вычислить Коеффициент от Общего табеля
-              catch( TCoef is AHoures / THoures, _, TCoef = 1.0),
+            (   % для табеля и табеля мастера
+              ( memberchk(TabelOption, [tbl_cal_flex, tbl_cal])
+               ->
+                % посчитать Дни и Часы для периода действия алиментов
+                sum_days_houres(TabDays, ADays, AHoures, ADateBegin, ADateEnd),
+                % вычислить Коеффициент от Общего табеля
+                catch( TCoef is AHoures / THoures, _, TCoef = 1.0)
+              ; % иначе пропорция по календарным дням
+                prop_days_houres(Y-M, ADateBegin, ADateEnd, TCoef),
+                ADays is TDays * TCoef,
+                AHoures is THoures * TCoef
+              ),
               % добавить временные данные
               new_param_list(Scope, Type, AlimonyPairs)
             )
           ),
+    !.
+
+% пропорция по календарным дням
+prop_days_houres(Y-M, ADateBegin, ADateEnd, TCoef) :-
+    month_days(Y, M, Days),
+    atom_date(DateBegin, date(Y, M, 1)),
+    atom_date(DateEnd, date(Y, M, Days)),
+    ( ADateBegin @>= DateBegin,
+      ADateBegin @=< DateEnd
+     ->
+      TDateBegin = ADateBegin
+    ; TDateBegin = DateBegin
+    ),
+    ( ADateEnd @>= DateBegin,
+      ADateEnd @=< DateEnd
+     ->
+      TDateEnd = ADateEnd
+    ; TDateEnd = DateEnd
+    ),
+    date_diff(TDateBegin, DaysDiff, TDateEnd),
+    TCoef is (DaysDiff + 1) / Days,
     !.
 
 % расчет суммы
