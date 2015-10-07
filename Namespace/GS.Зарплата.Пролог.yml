@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.23"
+  Version: "1.0.0.25"
   Optional: False
   Internal: True
-  MD5: 59C5AAB5B0EBF50E968253734112CF07
+  MD5: C12C69711AE5D383371CE28086E14418
 Objects: 
   - 
     Properties: 
@@ -520,6 +520,9 @@ Objects:
         
         % расчитать табель за месяц по одному из параметров
         calc_month_tab(Scope, PK, Y-M, TabDays) :-
+            calc_month_tab(Scope, PK, Y-M, TabDays, _).
+        % вариант с возвратом значения параметра
+        calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
             % параметры выбора табеля
             member(TabelOption, [tbl_cal_flex, tbl_cal, tbl_charge, dbf_sums]),
             % взять данные из табеля
@@ -534,7 +537,7 @@ Objects:
             % проверить список табеля
             \+ TabDays = [],
             !.
-        calc_month_tab(_, _, _, []) :-
+        calc_month_tab(_, _, _, [], none) :-
             !.
         
         % сумма дней и часов
@@ -621,7 +624,7 @@ Objects:
                         fCalYear-Y, fCalMonth-M, fDate-Date,
                         fDuration-Duration, fHoureType-HoureType]),
             once( (Duration > 0, Days = 1 ; Days = 0) ).
-        % или табель дни-часы из начислений
+        % или табель дни-часы из начислений (вариант 1)
         usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
             TabelOption = tbl_charge,
             PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
@@ -632,10 +635,21 @@ Objects:
             once( get_data(Scope, kb, usr_wg_FeeType, [
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                             fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
+        % или табель дни-часы из начислений (вариант 2)
+        usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, 0, TabelOption) :-
+            TabelOption = tbl_charge,
+            PK = [pEmplKey-EmplKey],
+            ArgPairs = [fEmplKey-EmplKey,
+                        fCalYear-Y, fCalMonth-M, fDateBegin-Date,
+                        fFeeTypeKey-FeeTypeKey, fDOW-DOW, fHOW-HOW],
+            get_data(Scope, kb, usr_wg_TblCharge, [fPayPeriod-_|ArgPairs]),
+            once( get_data(Scope, kb, usr_wg_FeeType, [
+                            fEmplKey-EmplKey,
+                            fFeeTypeKey-FeeTypeKey, fAvgDayHOW-1]) ).
         % или день месяца из dbf
         usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, InDays, InHoures, 0, TabelOption) :-
             TabelOption = dbf_sums,
-            PK = [pEmplKey-EmplKey, pFirstMoveKey-_],
+            PK = [ pEmplKey-EmplKey | _ ],
             get_data(Scope, kb, usr_wg_DbfSums, [
                         fEmplKey-EmplKey, fInDays-InDays, fInHoures-InHoures,
                         fInYear-Y, fInMonth-M, fDateBegin-Date]).
@@ -681,7 +695,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-07-08T15:31:38+03:00
+      EDITIONDATE: 2015-09-29T16:14:35+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -2531,7 +2545,7 @@ Objects:
             findall( AvgWage0-Rule0,
                      ( member(Rule0, Rules),
                        calc_avg_wage_sick(Scope, PK, Periods, AvgWage0, Rule0),
-                       AvgWage0 > 0
+                       AvgWage0 >= 0
                      ),
             % в список расчетов
             AvgWageList),
@@ -4941,7 +4955,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-09-07T16:28:54+03:00
+      EDITIONDATE: 2015-10-07T10:04:32+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"
@@ -4985,7 +4999,7 @@ Objects:
                     [
                     usr_wg_MovementLine/15,
                     gd_contact/2,
-                    usr_wg_TblCharge/14,
+                    usr_wg_TblCharge/15,
                     usr_wg_TblCharge_Prev/12,
                     usr_wg_TblCharge_AlimonyDebt/9,
                     usr_wg_FeeType/4,
@@ -5100,18 +5114,19 @@ Objects:
                 wg_fee_alimony, wg_fee_fine
                 ]).
         
-        gd_pl_ds(Scope, kb, usr_wg_TblCharge, 14, [
+        gd_pl_ds(Scope, kb, usr_wg_TblCharge, 15, [
             fDocKey-integer, fEmplKey-integer, fFirstMoveKey-integer,
             fCalYear-integer, fCalMonth-integer, fDateBegin-date,
             fDebit-float, fCredit-float, fFeeTypeKey-integer,
             fDOW-float, fHOW-float,
-            fTotalYear-integer, fTotalMonth-integer, fTotalDateBegin-date
+            fTotalYear-integer, fTotalMonth-integer, fTotalDateBegin-date,
+            fPayPeriod-integer
             ]) :-
             memberchk(Scope, [
                 wg_fee_alimony, wg_fee_fine
                 ]).
-        % usr_wg_TblCharge(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, DOW, HOW, TotalYear, TotalMonth, TotalDateBegin)
-        get_sql(Scope, kb, usr_wg_TblCharge/14,
+        % usr_wg_TblCharge(DocKey, EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, DOW, HOW, TotalYear, TotalMonth, TotalDateBegin, PayPeriod)
+        get_sql(Scope, kb, usr_wg_TblCharge/15,
         "
         SELECT
           tch.USR$DOCUMENTKEY,
@@ -5127,16 +5142,22 @@ Objects:
           tch.USR$HOW,
           EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS TotalYear,
           EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS TotalMonth,
-          t.USR$DATEBEGIN AS TotalDateBegin
+          t.USR$DATEBEGIN AS TotalDateBegin,
+          COALESCE(ft.USR$PAYPERIOD, 0) AS PayPeriod
         FROM
           USR$WG_TBLCHARGE tch
         JOIN
           USR$WG_TOTAL t
             ON t.DOCUMENTKEY = tch.USR$TOTALDOCKEY
+        JOIN
+          USR$WG_FEETYPE ft
+            ON ft.ID = tch.USR$FEETYPEKEY
         WHERE
           tch.USR$EMPLKEY = pEmplKey
           AND
           tch.USR$TOTALDOCKEY = pTotalDocKey
+          AND
+          COALESCE(ft.USR$PAYPERIOD, 0) >= 0
         ",
             [
             pEmplKey-_, pTotalDocKey-_
@@ -5903,7 +5924,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-06-24T10:30:40+03:00
+      EDITIONDATE: 2015-09-29T16:15:24+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
@@ -6210,7 +6231,7 @@ Objects:
             DateIn @=< DateEnd,
             % Общий табель за итоговый месяц
             atom_date(DateBegin, date(Y, M, _)),
-            calc_month_tab(Scope, PK, Y-M, TabDays),
+            calc_month_tab(Scope, [pEmplKey-EmplKey], Y-M, TabDays, TabelOption),
             sum_days_houres(TabDays, TDays, THoures),
             % спецификация временных данных
             append([ [Section-1], PK,
@@ -6231,14 +6252,43 @@ Objects:
                         AlimonyPairs),
             % для всех алиментов
             forall( get_data(Scope, kb, usr_wg_Alimony, SpecAlimony),
-                    ( % посчитать Дни и Часы для периода действия алиментов
-                      sum_days_houres(TabDays, ADays, AHoures, ADateBegin, ADateEnd),
-                      % вычислить Коеффициент от Общего табеля
-                      catch( TCoef is AHoures / THoures, _, TCoef = 1.0),
+                    (   % для табеля и табеля мастера
+                      ( memberchk(TabelOption, [tbl_cal_flex, tbl_cal])
+                       ->
+                        % посчитать Дни и Часы для периода действия алиментов
+                        sum_days_houres(TabDays, ADays, AHoures, ADateBegin, ADateEnd),
+                        % вычислить Коеффициент от Общего табеля
+                        catch( TCoef is AHoures / THoures, _, TCoef = 1.0)
+                      ; % иначе пропорция по календарным дням
+                        prop_days_houres(Y-M, ADateBegin, ADateEnd, TCoef),
+                        ADays is TDays * TCoef,
+                        AHoures is THoures * TCoef
+                      ),
                       % добавить временные данные
                       new_param_list(Scope, Type, AlimonyPairs)
                     )
                   ),
+            !.
+        
+        % пропорция по календарным дням
+        prop_days_houres(Y-M, ADateBegin, ADateEnd, TCoef) :-
+            month_days(Y, M, Days),
+            atom_date(DateBegin, date(Y, M, 1)),
+            atom_date(DateEnd, date(Y, M, Days)),
+            ( ADateBegin @>= DateBegin,
+              ADateBegin @=< DateEnd
+             ->
+              TDateBegin = ADateBegin
+            ; TDateBegin = DateBegin
+            ),
+            ( ADateEnd @>= DateBegin,
+              ADateEnd @=< DateEnd
+             ->
+              TDateEnd = ADateEnd
+            ; TDateEnd = DateEnd
+            ),
+            date_diff(TDateBegin, DaysDiff, TDateEnd),
+            TCoef is (DaysDiff + 1) / Days,
             !.
         
         % расчет суммы
@@ -8194,7 +8244,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-06-24T12:46:59+03:00
+      EDITIONDATE: 2015-09-29T16:13:46+03:00
     Set: 
       - 
         Table: "RP_ADDITIONALFUNCTION"

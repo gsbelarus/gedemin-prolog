@@ -478,7 +478,7 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     findall( AvgWage0-Rule0,
              ( member(Rule0, Rules),
                calc_avg_wage_sick(Scope, PK, Periods, AvgWage0, Rule0),
-               AvgWage0 > 0
+               AvgWage0 >= 0
              ),
     % в список расчетов
     AvgWageList),

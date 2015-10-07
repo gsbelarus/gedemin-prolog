@@ -35,6 +35,7 @@ lib :-
             ordsets,
             oset,
             pairs,
+            process,
             prolog_autoload,
             prolog_codewalk,
             prolog_metainference,
@@ -48,6 +49,7 @@ lib :-
             system
             ]),
     load_files([], [silent(false)]).
+
 %
 usr :-
     gd_pl_path( usr(PathUser) ),
