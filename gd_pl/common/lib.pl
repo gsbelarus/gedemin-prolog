@@ -64,7 +64,7 @@ month_name(12, "декабрь", ru).
 % term_to_file(+Term, +FilePath, +Mode)
 term_to_file(Term, FilePath, Mode) :-
     memberchk(Mode, [write, append]),
-    open(FilePath, Mode, Stream, [encoding(utf8)]),
+    open(FilePath, Mode, Stream, [create([write]), encoding(text)]),
     forall( catch(Term, _, fail),
             ( writeq(Stream, Term), write(Stream,'.'), nl(Stream) )
           ),

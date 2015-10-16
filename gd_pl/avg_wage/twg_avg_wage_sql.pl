@@ -290,7 +290,7 @@ SELECT
   EXTRACT(YEAR FROM tcl.USR$DATE) AS CalYear,
   EXTRACT(MONTH FROM tcl.USR$DATE) AS CalMonth,
   tcl.USR$DATE,
-  tcl.USR$DURATION,
+  SUM(tcl.USR$DURATION) AS Duration,
   tcl.USR$HOURTYPE
 FROM
   USR$WG_TBLCAL tc
@@ -305,6 +305,8 @@ WHERE
   tcl.USR$DATE >= 'pDateCalcFrom'
   AND
   tcl.USR$DATE < 'pDateCalcTo'
+GROUP BY
+  1,2,3,4,5,7
 ORDER BY
   tc.USR$EMPLKEY,
   tc.USR$FIRSTMOVEKEY,

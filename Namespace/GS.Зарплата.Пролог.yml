@@ -5,10 +5,10 @@ Properties:
   RUID: 152690130_258063421
   Name: "GS.Зарплата.Пролог"
   Caption: "Пролог-скрипты"
-  Version: "1.0.0.25"
+  Version: "1.0.0.26"
   Optional: False
   Internal: True
-  MD5: C12C69711AE5D383371CE28086E14418
+  MD5: 4183D8EB273439466F598BDD0096C05E
 Objects: 
   - 
     Properties: 
@@ -1003,7 +1003,7 @@ Objects:
           EXTRACT(YEAR FROM tcl.USR$DATE) AS CalYear,
           EXTRACT(MONTH FROM tcl.USR$DATE) AS CalMonth,
           tcl.USR$DATE,
-          tcl.USR$DURATION,
+          SUM(tcl.USR$DURATION) AS Duration,
           tcl.USR$HOURTYPE
         FROM
           USR$WG_TBLCAL tc
@@ -1018,6 +1018,8 @@ Objects:
           tcl.USR$DATE >= 'pDateCalcFrom'
           AND
           tcl.USR$DATE < 'pDateCalcTo'
+        GROUP BY
+          1,2,3,4,5,7
         ORDER BY
           tc.USR$EMPLKEY,
           tc.USR$FIRSTMOVEKEY,
@@ -1927,7 +1929,7 @@ Objects:
       ENTEREDPARAMS: ~
       INHERITEDRULE: 0
       USEDEBUGINFO: 0
-      EDITIONDATE: 2015-09-07T16:29:17+03:00
+      EDITIONDATE: 2015-10-07T17:18:50+03:00
   - 
     Properties: 
       Class: "TgdcFunction"
