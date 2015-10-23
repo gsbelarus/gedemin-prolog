@@ -2,7 +2,7 @@
 %   isql.exe
 %   fbclient.dll
 
-:- module( isql, [isql_thread/2] ).
+:- module( isql, [isql_thread/2, isql_thread/4] ).
 
 %%
 %
@@ -12,26 +12,33 @@
 
 :- dynamic([user:isql_proc/2, user:isql_line/4, user:isql_filter/1]).
 
-isql_exe_args(Exe, Args) :-
+check_point.
+
+isql_exe_args(Exe, Args, User, Password) :-
     current_prolog_flag(executable, AppPath),
     prolog_to_os_filename(PrologPath, AppPath),
     file_directory_name(PrologPath, Directory),
     atom_concat(Directory, '/isql.exe', Exe),
     Args = [
             '-q', '-s', '3', '-pag', '0', '-e', %'-nod', '-now',
-            '-u', 'sysdba', '-p', 'masterkey'
+            '-u', User, '-p', Password
            ],
     !.
 
 isql_thread(DB, QueryList) :-
+    User = 'sysdba', Password = 'masterkey'
+    isql_thread(DB, QueryList, User, Password),
+    !.
+
+isql_thread(DB, QueryList, User, Password) :-
     thread_self(Id),
-    isql_exe_args(Exe, Args),
+    isql_exe_args(Exe, Args, User, Password),
     Options = [
                 stdin(pipe(SIn)), stdout(pipe(SOut)),
                 process(PID), window(false)
               ],
     process_create(Exe, Args, Options),
-    retractall( isql_proc(thread(Id), process(PID)) ),
+    retractall( user:isql_proc(thread(Id), process(PID)) ),
     assertz( user:isql_proc(thread(Id), process(PID)) ),
     %
     phrase(isql_connect(DB), ConnectCodes),
@@ -55,7 +62,6 @@ isql_thread(DB, QueryList) :-
     %
     write(SIn, "exit;"), nl(SIn),
     flush_output(SIn),
-    %
     isql_kb(SOut, Id, PID),
     !.
 
@@ -307,6 +313,8 @@ isql_node(sql(set(term, State))) -->
     ( "^;", {State = on}
     ; ";^", {State = off}
     ).
+isql_node(con(blank)) -->
+    "CON>", sp, at_end.
 isql_node(con(Parse)) -->
     "CON>", sp,
     isql_parse(Parse), ";".
