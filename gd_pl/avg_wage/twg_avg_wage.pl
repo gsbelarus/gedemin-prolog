@@ -984,7 +984,7 @@ check_month_wage_sick(Scope, PK, Y, M, Wage, MonthAvgSalary) :-
     !.
 check_month_wage_sick(_, _, _, _, Wage, Wage) :-
     !.
-    
+
 % расчитать заработок за месяц
 % - для отпусков
 cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, SalaryNew) :-
@@ -1427,7 +1427,7 @@ add_excl_day(exlc_days([TheDate|_]), LogDays, LogDays) :-
     !.
 add_excl_day(exlc_days([TheDate, ExclType, OrderType | _]), LogDays, LogDays) :-
     % праздник из отпуска
-    ExclType = "LEAVEDOCLINE",
+    ( ExclType = "LEAVEDOCLINE" -> true ; ExclType = "LEAVEEXTDOC" ),
     catch( wg_holiday(TheDate), _, fail ),
     % трудовой отпуск
     OrderType = 1,
@@ -1907,7 +1907,7 @@ month_bad_type(Scope, PK, Y-M) :-
                 fExclType-ExclType, fHourType-HoureType,
                 fFromDate-FromDate, fToDate-ToDate] ),
     % для отпусков
-    ExclType = "LEAVEDOCLINE",
+    ( ExclType = "LEAVEDOCLINE" -> true ; ExclType = "LEAVEEXTDOC" ),
     % с плохим типом часов
     nonvar(HoureType),
     HoureType > 0,
@@ -2873,3 +2873,4 @@ wg_change_rules(Scope, [Rule|Rules], [Rule|Rules1]) :-
 
  %
 %%
+

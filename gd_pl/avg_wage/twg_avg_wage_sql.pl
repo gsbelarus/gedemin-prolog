@@ -949,7 +949,7 @@ SELECT
   pEmplKey AS EmplKey,
   pFirstMoveKey AS FirstMoveKey,
   'LEAVEEXTDOC' AS ExclType,
-  0 AS OrderType,
+  1 AS OrderType,
   0 AS HourType,
   0 AS ExclWeekDay,
   CAST( IIF(ext.USR$DATEBEGIN < 'pDateCalcFrom', 'pDateCalcFrom', ext.USR$DATEBEGIN) AS DATE) AS FromDate,
@@ -1201,3 +1201,4 @@ ORDER BY
 
  %
 %%
+
