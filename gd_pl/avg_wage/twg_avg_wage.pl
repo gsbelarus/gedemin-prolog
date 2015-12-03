@@ -130,6 +130,9 @@ wg_valid_rules([by_cal_flex, by_cal, by_orders]).
 %% дополнительные правила для учета расчетных дней
 % [хотя бы один месяц полный, все месяцы полные]
 wg_valid_rules([by_calc_days_any, -by_calc_days_all]).
+%% дополнительные правила для пропоциональных начислений
+% [пропорция по часам, пропорция по дням, для оклада сначала по дням]
+wg_valid_rules([prop_by_houres, prop_by_days, -salary_prop_by_days]).
 
 %% варианты правил полных месяцев
 %  - для отпусков
@@ -1241,24 +1244,59 @@ get_prop_coef(Scope, PK, Y, M, PropCoef) :-
     % взять данные по графику и табелю за месяц
     get_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures),
     % расчитать коэфициент для пропорционального начисления
-    calc_prop_coef(TDays, NDays, THoures, NHoures, PropCoef),
+    calc_prop_coef(Scope, PK, Y-M, TDays, NDays, THoures, NHoures, PropCoef, _Rule),
     !.
 
 % расчитать коэффициент для пропорционального начисления
-calc_prop_coef(TabDays, NormDays, TabHoures, NormHoures, PropCoef) :-
-    ( TabDays =:= 0, % комментировать, если приоритет по часам
-      TabHoures > 0,
-      NormHoures > 0
-     ->
-      PropCoef is TabHoures / NormHoures
-    ; TabDays > 0,
-      NormDays > 0,
-      PropCoef is TabDays / NormDays
+calc_prop_coef(Scope, PK, Y-M, TabDays, NormDays, TabHoures, NormHoures, PropCoef, Rule) :-
+    % для оклада сначала по часам
+    Rule = salary_prop_by_days,
+    % правило действительно
+    wg_valid_rules(Rules),
+    memberchk(Rule, Rules),
+    % календарных дней в текущем месяце
+    month_days(Y, M, MonthDays),
+    atom_date(LastDate, date(Y, M, MonthDays)),
+    % взять последние данные по ставке
+    get_last_rate(Scope, PK, LastDate, PayFormKey-SalaryKey-_-_),
+      % если форма оплаты оклад
+    ( PayFormKey = SalaryKey,
+      % то сначала пропорция по дням
+      Variant = prop_by_days
+    ; % затем пропорция по часам
+      Variant = prop_by_houres
     ),
-    \+ PropCoef > 1.0,
+    calc_prop_coef(TabDays, NormDays, TabHoures, NormHoures, PropCoef, Variant),
     !.
-calc_prop_coef(_, _, _, _, 1.0) :-
+calc_prop_coef(_, _, _, TabDays, NormDays, TabHoures, NormHoures, PropCoef, Rule) :-
+    calc_prop_coef(TabDays, NormDays, TabHoures, NormHoures, PropCoef, Rule),
     !.
+
+calc_prop_coef(_, _, TabHoures, NormHoures, PropCoef, Rule) :-
+    % пропорция по часам
+    Rule = prop_by_houres,
+    % правило действительно
+    wg_valid_rules(Rules),
+    memberchk(Rule, Rules),
+    %
+    TabHoures > 0,
+    NormHoures > 0,
+    PropCoef0 is TabHoures / NormHoures,
+    ( PropCoef0 > 1.0, PropCoef = 1.0 ; PropCoef = PropCoef0 ),
+    !.
+calc_prop_coef(TabDays, NormDays, _, _, PropCoef, Rule) :-
+    % пропорция по дням
+    Rule = prop_by_days,
+    % правило действительно
+    wg_valid_rules(Rules),
+    memberchk(Rule, Rules),
+    %
+    TabDays > 0,
+    NormDays > 0,
+    PropCoef0 is TabDays / NormDays,
+    ( PropCoef0 > 1.0, PropCoef = 1.0 ; PropCoef = PropCoef0 ),
+    !.
+calc_prop_coef(_, _, _, _, 0.0, none).
 
 % добавление временных данных по расчетным дням
 % - для больничных
@@ -2764,13 +2802,31 @@ struct_sick_out(AccDate, IncludeDate, Percent, DOI, HOI, Summa, DateBegin, DateE
 
 % взять среднедневную ставку на текущий месяц
 get_avg_wage_rate(Scope, PK, TheDate, AvgWage) :-
-    % разложить первичный ключ
-    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % текущий месяц
     atom_date(TheDate, date(Y, M, _)),
     % календарных дней в текущем месяце
     month_days(Y, M, MonthDays),
     atom_date(LastDate, date(Y, M, MonthDays)),
+    % взять последние данные по ставке
+    get_last_rate(Scope, PK, LastDate, PayFormKey-SalaryKey-TSalary-THoureRate),
+      % если форма оплаты оклад
+    ( PayFormKey = SalaryKey,
+      % то расчет по тарифному окладу
+      AvgWage is TSalary / MonthDays
+    ; % иначе
+      % расчитать график за месяц
+      calc_month_norm(Scope, PK, Y-M, [tbl_cal_flex, tbl_day_norm], NormDays),
+      % сумма дней и часов по графику
+      sum_days_houres(NormDays, _, NHoures),
+      % расчет от часовой тарифной ставки
+      AvgWage is NHoures * THoureRate / MonthDays
+    ),
+    !.
+
+% взять последние данные по ставке
+get_last_rate(Scope, PK, LastDate, PayFormKey-SalaryKey-TSalary-THoureRate) :-
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
     % взять данные по ставке
     findall( PayFormKey0-SalaryKey0-TSalary0-THoureRate0,
                % из данных по движению
@@ -2785,18 +2841,6 @@ get_avg_wage_rate(Scope, PK, TheDate, AvgWage) :-
     RateList ),
     % взять последние данные по ставке
     last(RateList, PayFormKey-SalaryKey-TSalary-THoureRate),
-      % если форма оплаты оклад
-    ( PayFormKey = SalaryKey,
-      % то расчет по тарифному окладу
-      AvgWage is TSalary / MonthDays
-    ; % иначе
-      % расчитать график за месяц
-      calc_month_norm(Scope, PK, Y-M, [tbl_cal_flex, tbl_day_norm], NormDays),
-      % сумма дней и часов по графику
-      sum_days_houres(NormDays, _, NHoures),
-      % расчет от часовой тарифной ставки
-      AvgWage is NHoures * THoureRate / MonthDays
-    ),
     !.
 
 % взять среднедневной БПМ на текущий месяц
