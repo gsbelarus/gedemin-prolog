@@ -135,7 +135,7 @@ calc_tab(Scope, EmplKey) :-
     % Общий табель за итоговый месяц
     atom_date(DateBegin, date(Y, M, _)),
     calc_month_tab(Scope, [pEmplKey-EmplKey], Y-M, TabDays, TabelOption),
-    sum_days_houres(TabDays, TDays, THoures),
+    sum_days_houres(TabDays, TDays, THoures, TabelOption),
     % спецификация временных данных
     append([ [Section-1], PK,
              [pYM-Y-M, pTDays-TDays, pTHoures-THoures] ],
@@ -159,7 +159,7 @@ calc_tab(Scope, EmplKey) :-
               ( memberchk(TabelOption, [tbl_cal_flex, tbl_cal])
                ->
                 % посчитать Дни и Часы для периода действия алиментов
-                sum_days_houres(TabDays, ADays, AHoures, ADateBegin, ADateEnd),
+                sum_days_houres(TabDays, ADays, AHoures, ADateBegin, ADateEnd, TabelOption),
                 % вычислить Коеффициент от Общего табеля
                 catch( TCoef is AHoures / THoures, _, TCoef = 1.0)
               ; % иначе пропорция по календарным дням

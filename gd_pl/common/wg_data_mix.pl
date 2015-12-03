@@ -156,7 +156,13 @@ calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
     % взять данные из табеля
     findall( Date-DOW-HOW,
             % для проверяемого месяца
-            ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, _, TabelOption),
+            ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, HoureType, TabelOption),
+              ( get_data(Scope, kb, usr_wg_HourType, [
+                            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                            fID-HoureType, fIsWorked-1] )
+               -> true
+              ; HoureType = 0
+              ),
             % с контролем наличия дней или часов
             once( ( DOW > 0 ; HOW > 0 ) )
             ),
@@ -170,10 +176,17 @@ calc_month_tab(_, _, _, [], none) :-
 
 % сумма дней и часов
 sum_days_houres(ListDays, Days, Houres) :-
-    sum_days_houres(ListDays, Days, Houres, '', ''),
+    sum_days_houres(ListDays, Days, Houres, '', '', none),
+    !.
+sum_days_houres(ListDays, Days, Houres, TabelOption) :-
+    sum_days_houres(ListDays, Days, Houres, '', '', TabelOption),
     !.
 sum_days_houres(ListDays, Days, Houres, DateBegin, DateEnd) :-
-    sum_days_houres(ListDays, Days, Houres, 0, 0, DateBegin, DateEnd),
+    sum_days_houres(ListDays, Days, Houres, DateBegin, DateEnd, none),
+    !.
+sum_days_houres(ListDays, Days, Houres, DateBegin, DateEnd, TabelOption) :-
+    sum_group_days(ListDays, ListDays1, TabelOption),
+    sum_days_houres(ListDays1, Days, Houres, 0, 0, DateBegin, DateEnd),
     !.
 %
 sum_days_houres([], Days, Houres, Days, Houres, _, _).
@@ -192,6 +205,39 @@ sum_days_houres([Date-DOW-HOW|ListDays], Days, Houres, Days0, Houres0, DateBegin
     ),
     !,
     sum_days_houres(ListDays, Days, Houres, Days1, Houres1, DateBegin, DateEnd).
+
+%
+sum_group_days(ListDays, ListDays1) :-
+    sum_group_days(ListDays, ListDays1, none),
+    !.
+sum_group_days(ListDays, ListDays1, TabelOption) :-
+    ( setof( Date,
+             DOW ^ HOW ^ ( member(Date-DOW-HOW, ListDays), (DOW > 0 -> true ; HOW > 0 ) ),
+             Dates
+           )
+     -> true
+    ; Dates = []
+    ),
+    findall( Date-SumDOW-SumHOW,
+             ( member(Date, Dates),
+               findall( HOW,
+                        member(Date-_-HOW, ListDays),
+                        HOWs
+                      ),
+               sum_list(HOWs, SumHOW),
+               ( memberchk(TabelOption, [tbl_cal_flex, tbl_cal])
+                ->
+                 SumDOW = 1
+               ; findall( DOW,
+                          member(Date-DOW-_, ListDays),
+                          DOWs
+                        ),
+                 sum_list(DOWs, SumDOW)
+               )
+             ),
+             ListDays1
+           ),
+    !.
 
 /* реализация - смешанные данные */
 

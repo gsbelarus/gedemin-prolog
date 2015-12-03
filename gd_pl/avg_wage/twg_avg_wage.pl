@@ -1303,9 +1303,9 @@ get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, IsSpecMon
       catch( wg_job_ill_type(IllType), _, fail)
      ->
       % расчитать табель за месяц
-      calc_month_tab(Scope, PK, Y-M, TabDays),
+      calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption),
       % сумма дней и часов по табелю
-      sum_days_houres(TabDays, TDays, _),
+      sum_days_houres(TabDays, TDays, _, TabelOption),
       CalcDays1 = TDays
     ;
       CalcDays1 = CalcDays
@@ -1686,9 +1686,9 @@ calc_month_norm_tab(Scope, PK, Y-M, NDays, TDays, NHoures, THoures) :-
     % сумма дней и часов по графику
     sum_days_houres(NormDays, NDays, NHoures),
     % расчитать табель за месяц
-    calc_month_tab(Scope, PK, Y-M, TabDays),
+    calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption),
     % сумма дней и часов по табелю
-    sum_days_houres(TabDays, TDays, THoures),
+    sum_days_houres(TabDays, TDays, THoures, TabelOption),
     !.
 
 % расчитать график за месяц по одному из параметров
