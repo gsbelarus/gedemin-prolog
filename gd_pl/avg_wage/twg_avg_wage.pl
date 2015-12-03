@@ -113,6 +113,9 @@ wg_valid_rules([-by_month_wage_all]).
 wg_valid_rules([-by_month_avg_wage]).
 % [отсутствие в месяце плохих типов начислений и часов]
 wg_valid_rules([-by_month_no_bad_type]).
+%% дополнительные правила по расчету структуры
+% [дополнительные дни в конец]
+wg_valid_rules([-extra_days_to_end]).
 
 %% варианты правил расчета
 %  - для больничных
@@ -2403,10 +2406,33 @@ struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
     findall( VcType-Slice,
                 ( wg_vacation_slice(VcType, Slice), VcType = FilterVcType ),
              SliceList0 ),
-    keysort(SliceList0, [Slice0|SliceList1]),
-    append(SliceList1, [Slice0], SliceList),
+    keysort(SliceList0, SortedSliceList0),
+    sort_slice_list(SortedSliceList0, SliceList),
     struct_vacation_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage),
     !.
+
+%
+sort_slice_list([VcType01-Slice01|SliceList1], SliceList) :-
+    % дополнительные дни в конец
+    Rule = extra_days_to_end,
+    % правило действительно
+    wg_valid_rules(Rules),
+    memberchk(Rule, Rules),
+    %
+    fix_slice(SliceList1, Slice01, Slice02),
+    append([VcType01-Slice02], SliceList1, SliceList),
+    !.
+sort_slice_list([VcType01-Slice01|SliceList1], SliceList) :-
+    append(SliceList1, [VcType01-Slice01], SliceList),
+    !.
+
+%
+fix_slice([], Slice, Slice).
+fix_slice([_-Slice|SliceList], Slice01, Slice02) :-
+    Slice03 is Slice01 - Slice,
+    ( Slice03 >= 0, Slice04 = Slice03 ; Slice04 = 0 ),
+    !,
+    fix_slice(SliceList, Slice04, Slice02).
 
 %
 struct_vacation_calc([Slice|SliceList], _-Slice0, AccDate, DateBegin, DateEnd, AvgWage) :-
