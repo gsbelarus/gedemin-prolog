@@ -13,6 +13,7 @@ twg_avg_wage_in_params:-
         ]),
     new_param_list(Scope, in, [
         pCommon-1,
+        pStartDate-'2012-01-01', pNullDate-'2100-01-01',
         % форма оплаты Оклад
         pPayFormSalary_ruid-'147009181,119619099',
         % Календарный график
@@ -21,6 +22,8 @@ twg_avg_wage_in_params:-
         pTblCal_DocType_Plan_dbid1-1514418708,
         pTblCal_DocType_Plan_xid2-147117601,
         pTblCal_DocType_Plan_dbid2-1481574092,
+        % ДМ
+        pKindDayHourType_ruid-'147650798,119619099',
         % Травма производственная
         pJobIllType_ruid-'147036273,151520244',
         % Табель мастера
@@ -52,7 +55,6 @@ twg_avg_wage_in_params:-
         pFeeGroupKey_ruid-'147071457,274788016',
         % Группа Пропорциональных начислений
         pFeeGroupKeyProp_ruid-'147119175,1354510846',
-        pKindDayHourType_ruid-'147650798,119619099',
         pAvgSalaryRB_ruid-'147105585,1224850260'
         ]),
     fail.
