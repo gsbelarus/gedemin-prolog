@@ -134,7 +134,7 @@ calc_tab(Scope, EmplKey) :-
     DateIn @=< DateEnd,
     % Общий табель за итоговый месяц
     atom_date(DateBegin, date(Y, M, _)),
-    calc_month_tab(Scope, [pEmplKey-EmplKey], Y-M, TabDays, TabelOption),
+    calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption),
     sum_days_houres(TabDays, TDays, THoures, TabelOption),
     % спецификация временных данных
     append([ [Section-1], PK,
@@ -548,19 +548,11 @@ aggr_fransf(Scope, EmplKey, TransfData, TransfDataList, TransfDataList1, TransfA
       TransfByGroup = 1
     ),
     % Процент для расхода на перевод
-    get_transf_percent(Scope, EmplKey, TransferTypeKey, ForTransfAmount, TransfPercent),
+    get_transf_percent(Scope, EmplKey, TransferTypeKey, ForTransfAmount, TransfPercent, MinTransfCharge),
     % Сумма расхода по переводу
     TransfCharge0 is ForTransfAmount * TransfPercent / 100,
     get_round_data(Scope, EmplKey, "ftTransferDed", RoundType, RoundValue),
     round_sum(TransfCharge0, TransfCharge1, RoundType, RoundValue),
-    % Проверка на минимальную сумму перевода
-    ( get_data(Scope, kb, usr_wg_TransferType, [
-                fID-TransferTypeKey, fMinTransfCharge-MinTransfCharge ])
-     -> true
-    ; get_param(Scope, in, pMinTransfCharge-MinTransfCharge)
-     -> true
-    ; MinTransfCharge = 0
-    ),
     ( TransfCharge1 =:= 0
      -> TransfCharge = 0
     ; TransfCharge1 < MinTransfCharge
@@ -1196,23 +1188,23 @@ get_round_data(Scope, EmplKey, _, RoundType, RoundValue) :-
     !.
 
 % Процент для расхода на перевод
-get_transf_percent(Scope, EmplKey, TransferTypeKey, Sum, Percent) :-
+get_transf_percent(Scope, EmplKey, TransferTypeKey, Sum, Percent, MinTransfCharge) :-
     get_param_list(Scope, run, [pEmplKey-EmplKey, pDateCalcTo-DateCalcTo]),
     findall( TransferData,
              get_transf_type(Scope, DateCalcTo, TransferTypeKey, TransferData),
     TransferDataList),
     msort(TransferDataList, TransferDataList1),
-    last(TransferDataList1, _-TransferTypeKey1),
+    last(TransferDataList1, _-TransferTypeKey1-MinTransfCharge),
     get_transf_scale(Scope, TransferTypeKey1, Sum, Percent),
     !.
-get_transf_percent(_, _, _, _, 0.0) :-
+get_transf_percent(_, _, _, _, 0.0, 0.0) :-
     !.
 
 % Расценки на перевод
-get_transf_type(Scope, DateCalcTo, TransferTypeKey0, DateBegin-TransferTypeKey) :-
+get_transf_type(Scope, DateCalcTo, TransferTypeKey0, DateBegin-TransferTypeKey-MinTransfCharge) :-
     get_data(Scope, kb, usr_wg_TransferType, [
                 fID-TransferTypeKey, fParent-TransferTypeKey0,
-                fDateBegin-DateBegin ]),
+                fDateBegin-DateBegin, fMinTransfCharge-MinTransfCharge ]),
     \+ get_data(Scope, kb, usr_wg_TransferType, [
                     fParent-TransferTypeKey]),
     DateBegin @< DateCalcTo.
