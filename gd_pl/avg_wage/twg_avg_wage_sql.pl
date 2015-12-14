@@ -20,7 +20,7 @@ wg_valid_sql([
             -usr_wg_TblYearNorm/5,
             usr_wg_TblCalLine/7, % 05, 06, 12
             usr_wg_TblCal_FlexLine/68, % 05, 06, 12
-            usr_wg_HourType/13, % 05, 06
+            usr_wg_HourType/13, % 05, 06, 12
             usr_wg_TblCharge/10, % 05, 06, 12
             usr_wg_FeeType/6, % 05, 06, 12
             usr_wg_FeeTypeNoCoef/4,
@@ -427,7 +427,7 @@ gd_pl_ds(Scope, kb, usr_wg_HourType, 13, [
     fExcludeForSickList-integer, fExclType-string
     ]) :-
     memberchk(Scope, [
-        wg_avg_wage_vacation, wg_avg_wage_sick
+        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
         ]).
 % usr_wg_HourType(EmplKey, FirstMoveKey,
 %   ID, Code, DigitCode, Description, IsWorked, ShortName,
@@ -462,7 +462,7 @@ FROM
     pEmplKey-_, pFirstMoveKey-_, pKindDayHourType_ruid-_
     ]) :-
     memberchk(Scope, [
-        wg_avg_wage_vacation, wg_avg_wage_sick
+        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
         ]).
 
 gd_pl_ds(Scope, kb, usr_wg_TblCharge, 10, [
