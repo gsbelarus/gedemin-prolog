@@ -137,15 +137,20 @@ get_last_schedule(Scope, PK, ScheduleKey) :-
 % проверить вхождение даты в график
 check_schedule(Scope, PK, TheDay, ScheduleKey) :-
     append(PK,
-            [pDateFrom-DateFrom, pDateTo-DateTo, pScheduleKey-ScheduleKey],
+            [pDateFrom-DateFrom, pDateTo-DateTo, pScheduleKey-ScheduleKey0],
                 Pairs),
-    get_param_list(Scope, temp, Pairs),
-    TheDay @>= DateFrom, TheDay @< DateTo,
+    findall( ScheduleKey0,
+             ( get_param_list(Scope, temp, Pairs),
+               TheDay @>= DateFrom, TheDay @< DateTo
+             ),
+    ScheduleKeyList),
+    \+ ScheduleKeyList = [],
+    !,
+    last(ScheduleKeyList, ScheduleKey).
+check_schedule(Scope, PK, TheDay, ScheduleKey) :-
+    get_last_schedule(Scope, PK, TheDay, ScheduleKey),
     !.
-check_schedule(Scope, PK, _, ScheduleKey) :-
-    get_last_schedule(Scope, PK, ScheduleKey),
-    !.
-
+    
 % расчитать табель за месяц по одному из параметров
 calc_month_tab(Scope, PK, Y-M, TabDays) :-
     calc_month_tab(Scope, PK, Y-M, TabDays, _).
@@ -156,12 +161,12 @@ calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
     % взять данные из табеля
     findall( Date-DOW-HOW,
             % для проверяемого месяца
-            ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW, HOW, HoureType, TabelOption),
+            ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW0, HOW, HoureType, TabelOption),
               ( get_data(Scope, kb, usr_wg_HourType, [
                             fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                             fID-HoureType, fIsWorked-1] )
-               -> true
-              ; HoureType = 0
+               -> (DOW0 > 0 -> DOW = DOW0 ; DOW = 1)
+              ; HoureType = 0, DOW = DOW0
               ),
             % с контролем наличия дней или часов
             once( ( DOW > 0 ; HOW > 0 ) )
@@ -277,13 +282,17 @@ usr_wg_TblDayNorm_mix(Scope, PK, Y-M, Date, Duration, WorkDay, NormOption) :-
 usr_wg_TblDayNorm_mix(Scope, PK, Y-M, TheDay, WDuration, WorkDay, NormOption) :-
     NormOption = tbl_day_norm,
     PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
-    get_data(Scope, kb, usr_wg_TblCalDay, [
-                fScheduleKey-ScheduleKey,
-                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
-                fWYear-Y, fWMonth-M, fTheDay-TheDay,
-                fWDuration-WDuration, fWorkDay-WorkDay ]),
-    check_schedule(Scope, PK, TheDay, ScheduleKey).
-
+    between(1, 31, D),
+    atom_date(TheDay, date(Y, M, D)),
+    once( (
+          get_data(Scope, kb, usr_wg_TblCalDay, [
+                      fScheduleKey-ScheduleKey,
+                      fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                      fWYear-Y, fWMonth-M, fTheDay-TheDay,
+                      fWDuration-WDuration, fWorkDay-WorkDay ]),
+          check_schedule(Scope, PK, TheDay, ScheduleKey)
+        ) ),
+    true.
 %% взять данные по табелю
 % день месяца по табелю мастера
 usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, Days, Duration, HoureType, TabelOption) :-
