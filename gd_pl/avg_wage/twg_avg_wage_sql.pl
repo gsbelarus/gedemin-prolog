@@ -635,16 +635,21 @@ gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_BadHourType, 3, [
 get_sql(wg_avg_wage_vacation, kb, usr_wg_BadHourType/3,
 "
 SELECT
-  pEmplKey AS EmplKey, pFirstMoveKey AS FirstMoveKey, id
-FROM USR$WG_HOURTYPE
-WHERE id IN
+  pEmplKey AS EmplKey,
+  pFirstMoveKey AS FirstMoveKey,
+  ht.ID
+FROM
+  USR$WG_HOURTYPE ht
+WHERE
+  COALESCE(ht.USR$BADHOURTYPE, 0) = 1
+/* id IN
 (SELECT id FROM gd_ruid
 WHERE xid IN (pBadHourType_xid_IN)
 AND dbid = pBadHourType_dbid
-)
+)*/
 ",
     [
-    pEmplKey-_, pFirstMoveKey-_, pBadHourType_xid_IN-_, pBadHourType_dbid-_
+    pEmplKey-_, pFirstMoveKey-_ %, pBadHourType_xid_IN-_, pBadHourType_dbid-_
     ]).
 
 gd_pl_ds(wg_avg_wage_vacation, kb, usr_wg_BadFeeType, 3, [

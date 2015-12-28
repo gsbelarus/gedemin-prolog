@@ -43,8 +43,8 @@ twg_avg_wage_in_params:-
         %pBadFeeType_xid_IN-'151000730',
         %pBadFeeType_dbid-2109681374,
         % А, УБЗ, Т
-        pBadHourType_xid_IN-'147650804, 147650786, 147650802',
-        pBadHourType_dbid-119619099,
+        %pBadHourType_xid_IN-'147650804, 147650786, 147650802',
+        %pBadHourType_dbid-119619099,
         % Ненормированный график
         pSpecDep_ruid-'156913837,131572570'
         ]),
