@@ -768,8 +768,6 @@ pu_calc_out(Scope, EmplKey, Result) :-
     ExpCountList ),
     sum_list(ExpCountList, EDocExpCount),
     %
-    %(EDocFeeAmount + EDocSickAmount) > 0,
-    %
     format( string(EDocHeader),
             "~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~0f~w~0f~w~0f~w~0f~w~w~w~w~w~w~w~n",
             [ "<ПУ-3=", EDocCode, "=", UNPF, "=", PersonalNumber, "=",
@@ -860,6 +858,8 @@ pu_calc_out(Scope, EmplKey, Result) :-
            ],
            ResultList),
     atomic_list_to_string(ResultList, Result),
+    %
+    exist_in("СТАЖ=", Result),
     % записать отладочную информацию
     param_list_debug(Scope, Type-Section),
     true.

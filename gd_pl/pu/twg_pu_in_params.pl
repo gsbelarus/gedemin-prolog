@@ -16,7 +16,7 @@ twg_pu_in_params:-
         Section,
         pStartDate-'2012-01-01', pNullDate-'2100-01-01',
         pAvgSalaryRB_ruid-'147105585,1224850260',
-        pAvgSalaryRB_Coef-4,
+        pAvgSalaryRB_Coef-5,
         pKindOfWork_Basic_ruid-'147017405,119619099',       % Основное место работы
         pKindOfWork_ByWork_ruid-'147017406,119619099',      % Внутр. совмещение
         pKindOfWork_ByWorkOuter_ruid-'147041907,453357870', % Внешн. совмещение
