@@ -539,6 +539,7 @@ SELECT
   EmplKey, FirstMoveKey, ExclType, OrderType, HourType, ExclWeekDay, FromDate, ToDate
 FROM (
 SELECT
+  2 AS ExclOrder,
   ld.USR$EMPLKEY AS EmplKey,
   ld.USR$FIRSTMOVEKEY AS FirstMoveKey,
   'LEAVEDOCLINE' AS ExclType,
@@ -554,6 +555,7 @@ WHERE ld.USR$EMPLKEY = pEmplKey
   AND COALESCE(ld.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
 UNION ALL
 SELECT
+  1 AS ExclOrder,
   s.USR$EMPLKEY AS EmplKey,
   0 AS FirstMoveKey,
   'SICKLIST' AS ExclType,
@@ -569,6 +571,7 @@ WHERE s.USR$EMPLKEY = pEmplKey
   AND COALESCE(s.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
 UNION ALL
 SELECT
+  3 AS ExclOrder,
   kdl.USR$EMPLKEY AS EmplKey,
   0 AS FirstMoveKey,
   'KINDDAYLINE' AS ExclType,
@@ -583,7 +586,7 @@ WHERE kdl.USR$EMPLKEY = pEmplKey
   AND COALESCE(kdl.USR$DATEEND, 'pDateCalcTo') >= 'pDateCalcFrom'
 )
 ORDER BY
-  ExclWeekDay,
+  ExclOrder,
   FromDate
 ",
     [
