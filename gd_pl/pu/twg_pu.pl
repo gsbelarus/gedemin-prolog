@@ -262,7 +262,16 @@ add_rep_amount(Scope, EmplKey, CatType) :-
             ( findall( ChargeSumYM,
                        member(Y-M/ChargeSumYM, ChargeSumList),
               ChargeSumYMList),
-              sum_list(ChargeSumYMList, FeeAmount),
+              sum_list(ChargeSumYMList, FeeAmount0),
+              get_avg_salary_rb(Scope, Y-M, MonthAvgSalary),
+              ( get_param_list(Scope, in, [pCommon, pAvgSalaryRB_Coef-Coef])
+               -> FeeAmountCheck is round(MonthAvgSalary * Coef)
+              ; FeeAmountCheck = FeeAmount0
+              ),
+              ( FeeAmount0 > FeeAmountCheck
+               -> FeeAmount = FeeAmountCheck
+              ; FeeAmount = FeeAmount0
+              ),
               new_param_list(Scope, temp, [
                               pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
                               pCatType-CatType,
