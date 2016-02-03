@@ -2,6 +2,22 @@
 
 %:- ['../gd_pl_state/date'].
 
+% round_br(+ExpIn, -NumOut)
+round_br(ExpIn, NumOut) :-
+    % BYR
+    get_local_date_time(Date, _),
+    Date @< '2016-07-01',
+    round_br(ExpIn, NumOut, 0),
+    !.
+round_br(ExpIn, NumOut) :-
+    % BYN
+    round_br(ExpIn, NumOut, 2).
+    
+% round_br(+ExpIn, -NumOut, +Round)
+round_br(ExpIn, NumOut, Round) :-
+   NumIn is ExpIn,
+   to_currency(NumIn, NumOut, Round).
+    
 % desc for predsort
 desc(Order, Term1, Term2) :-
     compare(Order0, Term1, Term2),
@@ -61,17 +77,22 @@ month_name(10, "октябрь", ru).
 month_name(11, "ноябрь", ru).
 month_name(12, "декабрь", ru).
 
-% term_to_file(+Term, +FilePath, +Mode)
-term_to_file(Term, FilePath, Mode) :-
+% term_to_file(+Term, +FilePath, +Mode, +Options)
+term_to_file(Term, FilePath, Mode, Options) :-
     memberchk(Mode, [write, append]),
-    open(FilePath, Mode, Stream, [create([write]), encoding(text)]),
+    open(FilePath, Mode, Stream, Options),
     forall( catch(Term, _, fail),
             ( writeq(Stream, Term), write(Stream,'.'), nl(Stream) )
           ),
     close(Stream, [force(true)]),
     !.
+term_to_file(Term, FilePath, Mode) :-
+    Options = [create([write]), encoding(utf8)],
+    term_to_file(Term, FilePath, Mode, Options),
+    !.
 term_to_file(Term, FilePath) :-
-    term_to_file(Term, FilePath, write),
+    Mode = write,
+    term_to_file(Term, FilePath, Mode),
     !.
 
 % get_local_stamp(-Stamp)
@@ -113,13 +134,13 @@ to_currency(NumIn, NumOut, Round) :-
     NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
     !.
     
-% round_sum(+SumIn, +SumOut, +RoundType, +RoundValue)
+% round_sum(+SumIn, -SumOut, +RoundType, +RoundValue)
 round_sum(SumIn, SumOut, RoundType, RoundValue) :-
     number(SumIn), integer(RoundType), number(RoundValue),
     Delta = 0.00001,
     round_sum(SumIn, SumOut, RoundType, RoundValue, Delta),
     !.
-% round_sum(+SumIn, +SumOut, +RoundType, +RoundValue, +Delta)
+% round_sum(+SumIn, -SumOut, +RoundType, +RoundValue, +Delta)
 round_sum(SumIn, SumOut, 1, _, Delta) :-
     SumOut is round((SumIn + Delta) / 10) * 10,
     !.
