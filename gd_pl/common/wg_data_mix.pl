@@ -148,7 +148,8 @@ check_schedule(Scope, PK, TheDay, ScheduleKey) :-
     !,
     last(ScheduleKeyList, ScheduleKey).
 check_schedule(Scope, PK, TheDay, ScheduleKey) :-
-    get_last_schedule(Scope, PK, TheDay, ScheduleKey),
+    %get_last_schedule(Scope, PK, TheDay, ScheduleKey),
+    get_last_schedule(Scope, PK, ScheduleKey),
     !.
     
 % расчитать табель за месяц по одному из параметров
