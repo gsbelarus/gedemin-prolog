@@ -1075,10 +1075,12 @@ get_month_alias_wage(_, _, _, _, _, _, _, 0).
 % итого зарплата и осовремененная зарплата за месяц
 % - для отпусков
 sum_month_debit(Debits, Wage, ModernWage) :-
-    sum_month_debit(Debits, Wage, ModernWage, 0, 0),
+    sum_month_debit(Debits, Wage, ModernWage, 0.0, 0.0),
     !.
 %
-sum_month_debit([], Wage, ModernWage, Wage, ModernWage) :-
+sum_month_debit([], Wage, ModernWage, Wage0, ModernWage0) :-
+    Wage is round(Wage0),
+    ModernWage is round(ModernWage0),
     !.
 sum_month_debit([Debit-ModernCoef-_-_ | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
     Wage1 is Wage0 + Debit,
@@ -1217,7 +1219,8 @@ sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage) :-
     sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage, 0.0),
     !.
 %
-sum_month_debit_sick(_, _, _, _, [], Wage, Wage) :-
+sum_month_debit_sick(_, _, _, _, [], Wage, Wage0) :-
+    Wage is round(Wage0),
     !.
 sum_month_debit_sick(Scope, PK, Y, M, [Debit-FeeTypeKey | Debits], Wage, Wage0) :-
     nonvar(FeeTypeKey),
@@ -1232,8 +1235,7 @@ sum_month_debit_sick(Scope, PK, Y, M, [Debit-FeeTypeKey | Debits], Wage, Wage0) 
     % взять коэфициент для пропорционального начисления
     get_prop_coef(Scope, PK, Y, M, PropCoef),
     % пропорциональный расчет
-    Debit1 is round(Debit * PropCoef),
-    Wage1 is Wage0 + Debit1,
+    Wage1 is Wage0 + Debit * PropCoef,
     !,
     sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage, Wage1).
 sum_month_debit_sick(Scope, PK, Y, M, [Debit-_ | Debits], Wage, Wage0) :-
@@ -1518,7 +1520,7 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOl
     % параметры выбора начислений
     member(ChargeOption, [tbl_charge, dbf_sums]),
     % взять начисления
-    findall( Debit-ModernCoef-SalaryOld0-SalaryNew0,
+    findall( Debit-ModernCoef-FeeTypeKey-SalaryOld0-SalaryNew0,
           % для начисления по одному из параметров
           % где дата совпадает с проверяемым месяцем
           ( usr_wg_TblCharge_mix(Scope, [
@@ -1548,7 +1550,7 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOl
       append([Debits1, Debits2], Debits)
     ),
     % всего за месяц
-    sum_month_debit(Debits, Wage, ModernWage0),
+    sum_month_debit_avg(Scope, PK, Y, M, Debits, Wage, ModernWage0),
     % средний за месяц коэффициент осовременивания
     catch( MonthModernCoef0 is ModernWage0 / Wage, _, fail),
     to_currency(MonthModernCoef0, MonthModernCoef, 2),
@@ -1556,7 +1558,7 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOl
     ModernWage is round(Wage * MonthModernCoef),
     % старый и новый оклады
     ( setof( SalaryOld0-SalaryNew0,
-            Debit ^ ModernCoef ^ member(Debit-ModernCoef-SalaryOld0-SalaryNew0, Debits),
+            Debit ^ ModernCoef ^ FeeTypeKey ^ member(Debit-ModernCoef-FeeTypeKey-SalaryOld0-SalaryNew0, Debits),
             [SalaryOld-SalaryNew]
            )
     ; [SalaryOld-SalaryNew] = [0-0]
@@ -1564,6 +1566,39 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOl
     !.
 cacl_month_wage_avg(_, _, _, _, 0, 1.0, 0, 0, 0) :-
     !.
+
+% итого зарплата и осовремененная зарплата за месяц
+% - для начисления по-среднему
+sum_month_debit_avg(Scope, PK, Y, M, Debits, Wage, ModernWage) :-
+    sum_month_debit_avg(Scope, PK, Y, M, Debits, Wage, ModernWage, 0.0, 0.0),
+    !.
+%
+sum_month_debit_avg(_, _, _, _, [], Wage, ModernWage, Wage0, ModernWage0) :-
+    Wage is round(Wage0),
+    ModernWage is round(ModernWage0),
+    !.
+sum_month_debit_avg(Scope, PK, Y, M, [Debit-ModernCoef-FeeTypeKey-_-_ | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
+    nonvar(FeeTypeKey),
+    % разложить первичный ключ
+    PK = [pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey],
+    % тип начисления для пропорционального расчета
+    ( get_data(Scope, kb, usr_wg_FeeTypeProp, [
+                fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                fFeeTypeKeyProp-FeeTypeKey ])
+    -> true
+    ; FeeTypeKey = 1 ),
+    % взять коэфициент для пропорционального начисления
+    get_prop_coef(Scope, PK, Y, M, PropCoef),
+    % пропорциональный расчет
+    Wage1 is Wage0 + Debit * PropCoef,
+    ModernWage1 is ModernWage0 + Debit * PropCoef * ModernCoef,
+    !,
+    sum_month_debit_avg(Scope, PK, Y, M, Debits, Wage, ModernWage, Wage1, ModernWage1).
+sum_month_debit_avg(Scope, PK, Y, M, [Debit-ModernCoef-_-_-_ | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
+    Wage1 is Wage0 + Debit,
+    ModernWage1 is ModernWage0 + Debit * ModernCoef,
+    !,
+    sum_month_debit_avg(Scope, PK, Y, M, Debits, Wage, ModernWage, Wage1, ModernWage1).
 
 % месяц работы полный
 is_full_month(Scope, PK, Y-M) :-
@@ -2526,7 +2561,12 @@ struct_sick_in(
     % шаблон первичного ключа
     PK = [pEmplKey-_, pFirstMoveKey-_],
     % по сотруднику из параметров выполнения
-    get_param_list(Scope, NextType, PK),
+    get_param_list(Scope, NextType, [pDateCalcFrom-_|PK]),
+    % удалить данные по расчету
+    forall( get_param_list(Scope, out, [], Pairs),
+            dispose_param_list(Scope, out, Pairs) ),
+    % проверка входных данных
+    DateBegin @=< DateEnd,
     % формирование временных данных по графику работы
     make_schedule(Scope, PK),
     % формирование временных данных параметров расчета
@@ -2558,6 +2598,16 @@ struct_sick_in(
     sick_slice_list_excl(SliceList0, SliceList, DurationBefore),
     % расчет структуры
     struct_sick_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage, Scope, PK),
+    !.
+struct_sick_in(
+    _, DateBegin, DateEnd, _, _,
+    _, _, _, _,
+    _, _
+) :-
+    Scope = wg_struct_sick,
+    \+ DateBegin @=< DateEnd,
+    new_param_list(Scope, error, [
+                    pError-"Дата начала больше даты окончания!"]),
     !.
 
 % формирование списка отрезков
@@ -2784,7 +2834,7 @@ add_sick_norm(TheDay, DOI, HOI, DOI, HOI, IllType, Scope, PK, Holiday, 1) :-
     % По уходу за ребенком до 3-х лет
     catch( wg_child_ill_type(IllType), _, fail),
     \+ once( ( member(NormOption, [tbl_cal_flex, tbl_day_norm]),
-      usr_wg_TblDayNorm_mix(Scope, PK, _, TheDay, WDuration, 1, NormOption),
+               usr_wg_TblDayNorm_mix(Scope, PK, _, TheDay, WDuration, 1, NormOption),
                WDuration > 0
              )
            ),
