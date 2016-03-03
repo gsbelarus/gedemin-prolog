@@ -137,18 +137,30 @@ make_work_periods(Scope, EmplKey, CatType/IsContract-IsPractice) :-
                          fIsContract-IsContract, fIsPractice-IsPractice ]),
                memberchk(MovementType, [1, 3]),
                ( CatType = 1
-                -> \+ get_data(Scope, kb, usr_wg_KindOfWork, [
-                                  fID-KindOfWorkKey, fAlias-"kwByWork" ])
+                -> true /*\+ get_data(Scope, kb, usr_wg_KindOfWork, [
+                                  fID-KindOfWorkKey, fAlias-"kwByWork" ])*/
                ; get_data(Scope, kb, usr_wg_KindOfWork, [
                              fID-KindOfWorkKey, fAlias-"kwByWorkOuter" ])
                )
              ),
-    MoveList ),
-    \+ MoveList = [],
+    MoveList0 ),
+    \+ MoveList0 = [],
+    setof( FirstMoveKey,
+           Date ^ MovementType ^
+           member(FirstMoveKey/Date-MovementType, MoveList0),
+    FirstMoveList ),
     get_param_list(Scope, run, [
                     pEmplKey-EmplKey,
                     pDateCalcFrom-DateCalcFrom, pDateCalcTo-DateCalcTo ]),
-    move_to_work_periods(MoveList, DateCalcFrom, DateCalcTo, WorkPeriods),
+    findall( WorkPeriods,
+             ( member(FirstMoveKey, FirstMoveList),
+               findall( FirstMoveKey/Date-MovementType,
+                        member(FirstMoveKey/Date-MovementType, MoveList0),
+               MoveList ),
+               move_to_work_periods(MoveList, DateCalcFrom, DateCalcTo, WorkPeriods)
+             ),
+    WorkPeriodsList ),
+    append(WorkPeriodsList, WorkPeriods),
     new_param_list(Scope, temp, [
                     pEmplKey-EmplKey,
                     pCatType-CatType, pWorkPeriods-WorkPeriods ]),
@@ -585,11 +597,14 @@ is_skip_amount(Day, Scope-EmplKey-CatType) :-
     !.
 
 %
-form_exp_periods([DayEnd/State], DayBegin/State, [DayBegin-DayEnd/State]).
+form_exp_periods([DayEnd/State], DayBegin/State, [DayBegin-DayEnd/State]) :-
+    !.
 form_exp_periods([DayEnd/State, DayNext/StateNext | Teil], DayBegin/State, [DayBegin-DayEnd/State | Rest]) :-
     \+ State = StateNext,
+    !,
     form_exp_periods([DayNext/StateNext | Teil], DayNext/StateNext, Rest).
 form_exp_periods([_ | Teil], DayBegin/State, Rest) :-
+    !,
     form_exp_periods(Teil, DayBegin/State, Rest).
 
 /* реализация - расширение для клиента */
