@@ -2,17 +2,21 @@
 
 %:- ['../gd_pl_state/date'].
 
+:- dynamic(denom_mode/0).
+% ! для режима деноминации убрать комментарий в следующей строке
+%:- assertz(denom_mode).
+
 % round_br(+ExpIn, -NumOut)
-round_br(ExpIn, NumOut) :-
-    % BYR
-    get_local_date_time(Date, _),
-    Date @< '2016-07-01',
-    round_br(ExpIn, NumOut, 0),
-    !.
+:- if(denom_mode).
 round_br(ExpIn, NumOut) :-
     % BYN
     round_br(ExpIn, NumOut, 2).
-    
+:- else.
+round_br(ExpIn, NumOut) :-
+    % BYR
+    round_br(ExpIn, NumOut, 0).
+:- endif.
+
 % round_br(+ExpIn, -NumOut, +Round)
 round_br(ExpIn, NumOut, Round) :-
    NumIn is ExpIn,
@@ -25,6 +29,42 @@ desc(Order, Term1, Term2) :-
     ; Order0 = '<', Order = '>'
     ; Order = Order0
     ),
+    !.
+
+% round_sum(+SumIn, -SumOut, +RoundType, +RoundValue)
+:- if(denom_mode).
+round_sum(SumIn, SumOut, _, _) :-
+    % BYN
+    to_currency(SumIn, SumOut, 2).
+:- else.
+round_sum(SumIn, SumOut, RoundType, RoundValue) :-
+    % BYR
+    number(SumIn), integer(RoundType), number(RoundValue),
+    Delta = 0.00001,
+    round_sum(SumIn, SumOut, RoundType, RoundValue, Delta),
+    !.
+:- endif.
+
+% round_sum(+SumIn, -SumOut, +RoundType, +RoundValue, +Delta)
+round_sum(SumIn, SumOut, 1, _, Delta) :-
+    round_sum(SumIn, SumOut, 2, 10, Delta).
+round_sum(SumIn, SumOut, 2, RoundValue, Delta) :-
+    SumOut is round((SumIn + Delta) / RoundValue) * RoundValue,
+    !.
+round_sum(SumIn, SumOut, 3, RoundValue, Delta) :-
+    SumOut is float_integer_part((SumIn + Delta) / RoundValue) * RoundValue,
+    !.
+round_sum(Sum, Sum, _, _, _) :-
+    !.
+
+% to_currency(+NumIn, -NumOut)
+to_currency(NumIn, NumOut) :-
+    to_currency(NumIn, NumOut, 4),
+    !.
+% to_currency(+NumIn, -NumOut, +Round)
+to_currency(NumIn, NumOut, Round) :-
+    number(NumIn), integer(Round),
+    NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
     !.
 
 % atomic_list_to_string(+List, -String)
@@ -123,35 +163,6 @@ prepare_sql(InSQL,[Key-Value|Pairs], OutSQL) :-
     replace_all(InSQL, Key, Value, InSQL1),
     !,
     prepare_sql(InSQL1, Pairs, OutSQL).
-
-% to_currency(+NumIn, -NumOut)
-to_currency(NumIn, NumOut) :-
-    to_currency(NumIn, NumOut, 4),
-    !.
-% to_currency(+NumIn, -NumOut, +Round)
-to_currency(NumIn, NumOut, Round) :-
-    number(NumIn), integer(Round),
-    NumOut is float( round( NumIn * (10 ** Round) ) / (10 ** Round) ),
-    !.
-    
-% round_sum(+SumIn, -SumOut, +RoundType, +RoundValue)
-round_sum(SumIn, SumOut, RoundType, RoundValue) :-
-    number(SumIn), integer(RoundType), number(RoundValue),
-    Delta = 0.00001,
-    round_sum(SumIn, SumOut, RoundType, RoundValue, Delta),
-    !.
-% round_sum(+SumIn, -SumOut, +RoundType, +RoundValue, +Delta)
-round_sum(SumIn, SumOut, 1, _, Delta) :-
-    SumOut is round((SumIn + Delta) / 10) * 10,
-    !.
-round_sum(SumIn, SumOut, 2, RoundValue, Delta) :-
-    SumOut is round((SumIn + Delta) / RoundValue) * RoundValue,
-    !.
-round_sum(SumIn, SumOut, 3, RoundValue, Delta) :-
-    SumOut is float_integer_part((SumIn + Delta) / RoundValue) * RoundValue,
-    !.
-round_sum(Sum, Sum, _, _, _) :-
-    !.
 
 % exist_in(+Search, +In)
 exist_in(Search, In) :-
