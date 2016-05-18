@@ -295,7 +295,8 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     get_param(Scope, in, pAvgDays-AvgDays),
     % среднедневной заработок
     catch( AvgWage0 is Amount / Num / AvgDays, _, fail ),
-    AvgWage is round(AvgWage0),
+    %AvgWage is round(AvgWage0),
+    round_br(AvgWage0, AvgWage),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для отпусков (по среднечасовому)
@@ -339,7 +340,8 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     get_param(Scope, in, pAvgDays-AvgDays),
     % среднедневной заработок
     catch( AvgWage0 is AvgHoureWage * AvgMonthNorm / AvgDays, _, fail ),
-    AvgWage is round(AvgWage0),
+    %AvgWage is round(AvgWage0),
+    round_br(AvgWage0, AvgWage),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     % - для отпусков (нужно больше месяцев)
@@ -415,7 +417,8 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     !,
     % среднедневной заработок
     catch( AvgWage0 is Amount / TotalCalcDays, _, fail ),
-    AvgWage is round(AvgWage0),
+    %AvgWage is round(AvgWage0),
+    round_br(AvgWage0, AvgWage),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Rule) :-
     % - для больничных (по среднему заработку при отсутствии заработка)
@@ -573,7 +576,8 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     sum_list(TWorkList, TotalTab),
     % средний заработок
     catch( AvgWage0 is Amount / TotalTab, _, fail ),
-    AvgWage is round(AvgWage0),
+    %AvgWage is round(AvgWage0),
+    round_br(AvgWage0, AvgWage),
     !.
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     % - для начисления по-среднему (нужно больше месяцев)
@@ -640,7 +644,8 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     sum_list(AvgWageList, AvgWageAmount),
     length(Periods, MonthQty),
     catch( AvgWage0 is AvgWageAmount / MonthQty, _, AvgWage0 = 0 ),
-    AvgWage is round(AvgWage0),
+    %AvgWage is round(AvgWage0),
+    round_br(AvgWage0, AvgWage),
     !.
 calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     % по среднему заработку
@@ -660,7 +665,8 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     AvgSummaList),
     % максимальный среднедневной заработок
     max_list(AvgSummaList, MaxAvgSumma),
-    AvgWage is round(MaxAvgSumma),
+    %AvgWage is round(MaxAvgSumma),
+    round_br(MaxAvgSumma, AvgWage),
     !.
 calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     % по не полным месяцам
@@ -693,7 +699,8 @@ calc_avg_wage_sick(Scope, PK, Periods, AvgWage, Rule) :-
     sum_list(CalcDaysList, TotalCalcDays),
     % среднедневной заработок
     catch( AvgWage0 is Amount / TotalCalcDays, _, fail ),
-    AvgWage is round(AvgWage0),
+    %AvgWage is round(AvgWage0),
+    round_br(AvgWage0, AvgWage),
     !.
 
 % правила для учета расчетных дней
@@ -785,7 +792,8 @@ prep_TblCharge(Scope, PK) :-
             Debit, FeeTypeKey, DOW, HOW, PayPeriod],
     Term =.. [PredName|Args],
     catch( Term, _, fail ), \+ PayPeriod < 2,
-    Debit1 is round(Debit / PayPeriod),
+    %Debit1 is round(Debit / PayPeriod),
+    round_br(Debit / PayPeriod, Debit1),
     % добавление фактов по начислениям
     add_TblCharge(PayPeriod, [PredName, EmplKey, FirstMoveKey],
                     DateBegin, [Debit1, FeeTypeKey], DOW, HOW),
@@ -800,7 +808,8 @@ prep_TblCharge(Scope, PK) :-
             Debit, FeeTypeKey, PayPeriod],
     Term =.. [PredName|Args],
     catch( Term, _, fail ), \+ PayPeriod < 2,
-    Debit1 is round(Debit / PayPeriod),
+    %Debit1 is round(Debit / PayPeriod),
+    round_br(Debit / PayPeriod, Debit1),
     % добавление фактов по начислениям
     add_TblCharge(PayPeriod, [PredName1, EmplKey, FirstMoveKey],
                     DateBegin, [Debit1, FeeTypeKey], 0, 0),
@@ -983,8 +992,10 @@ check_month_wage_sick(Scope, PK, Y, M, Wage, MonthAvgSalary) :-
     get_month_days_sick(Scope, PK, Y, M, MonthDays, CalcDays, IsFullMonth, _),
     % сделать контроль превышения
     ( IsFullMonth =:= 1
-     -> MonthAvgSalary is round(MonthAvgSalary0)
-    ; MonthAvgSalary is round(MonthAvgSalary0 / MonthDays * CalcDays)
+    % -> MonthAvgSalary is round(MonthAvgSalary0)
+     -> round_br(MonthAvgSalary0, MonthAvgSalary)
+    %; MonthAvgSalary is round(MonthAvgSalary0 / MonthDays * CalcDays)
+    ; round_br(MonthAvgSalary0 / MonthDays * CalcDays, MonthAvgSalary)
     ),
     Wage > MonthAvgSalary,
     !.
@@ -1037,7 +1048,8 @@ cacl_month_wage(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOld, S
     catch( MonthModernCoef0 is ModernWage0 / Wage, _, fail),
     to_currency(MonthModernCoef0, MonthModernCoef, 2),
     % осовремененный заработок
-    ModernWage is round(Wage * MonthModernCoef),
+    %ModernWage is round(Wage * MonthModernCoef),
+    round_br(Wage * MonthModernCoef, ModernWage),
     % старый и новый оклады
     ( setof( SalaryOld0-SalaryNew0,
             Debit ^ ModernCoef ^ member(Debit-ModernCoef-SalaryOld0-SalaryNew0, Debits),
@@ -1063,8 +1075,10 @@ get_month_alias_wage(Scope, PK, Y, M, MonthModernCoef, LenPeriods, LenIncl, Alia
             PairsBefore),
     get_param_list(Scope, temp, PairsBefore),
     memberchk(Alias, ["ftYearBonus"]),
-    AliasWage is round(Debit / LenPeriods * LenIncl),
-    AliasModernWage is round(AliasWage * MonthModernCoef),
+    %AliasWage is round(Debit / LenPeriods * LenIncl),
+    round_br(Debit / LenPeriods * LenIncl, AliasWage),
+    %AliasModernWage is round(AliasWage * MonthModernCoef),
+    round_br(AliasWage * MonthModernCoef, AliasModernWage),
     append(PK, [pYM-Y-M,
                 pAliasWage-AliasWage, pAliasModernWage-AliasModernWage, pAlias-Alias],
             PairsAfter),
@@ -1079,8 +1093,10 @@ sum_month_debit(Debits, Wage, ModernWage) :-
     !.
 %
 sum_month_debit([], Wage, ModernWage, Wage0, ModernWage0) :-
-    Wage is round(Wage0),
-    ModernWage is round(ModernWage0),
+    %Wage is round(Wage0),
+    round_br(Wage0, Wage),
+    %ModernWage is round(ModernWage0),
+    round_br(ModernWage0, ModernWage),
     !.
 sum_month_debit([Debit-ModernCoef-_-_ | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
     Wage1 is Wage0 + Debit,
@@ -1220,7 +1236,8 @@ sum_month_debit_sick(Scope, PK, Y, M, Debits, Wage) :-
     !.
 %
 sum_month_debit_sick(_, _, _, _, [], Wage, Wage0) :-
-    Wage is round(Wage0),
+    %Wage is round(Wage0),
+    round_br(Wage0, Wage),
     !.
 sum_month_debit_sick(Scope, PK, Y, M, [Debit-FeeTypeKey | Debits], Wage, Wage0) :-
     nonvar(FeeTypeKey),
@@ -1555,7 +1572,8 @@ cacl_month_wage_avg(Scope, PK, Y, M, Wage, MonthModernCoef, ModernWage, SalaryOl
     catch( MonthModernCoef0 is ModernWage0 / Wage, _, fail),
     to_currency(MonthModernCoef0, MonthModernCoef, 2),
     % осовремененный заработок
-    ModernWage is round(Wage * MonthModernCoef),
+    %ModernWage is round(Wage * MonthModernCoef),
+    round_br(Wage * MonthModernCoef, ModernWage),
     % старый и новый оклады
     ( setof( SalaryOld0-SalaryNew0,
             Debit ^ ModernCoef ^ FeeTypeKey ^ member(Debit-ModernCoef-FeeTypeKey-SalaryOld0-SalaryNew0, Debits),
@@ -1574,8 +1592,10 @@ sum_month_debit_avg(Scope, PK, Y, M, Debits, Wage, ModernWage) :-
     !.
 %
 sum_month_debit_avg(_, _, _, _, [], Wage, ModernWage, Wage0, ModernWage0) :-
-    Wage is round(Wage0),
-    ModernWage is round(ModernWage0),
+    %Wage is round(Wage0),
+    round_br(Wage0, Wage),
+    %ModernWage is round(ModernWage0),
+    round_br(ModernWage0, ModernWage),
     !.
 sum_month_debit_avg(Scope, PK, Y, M, [Debit-ModernCoef-FeeTypeKey-_-_ | Debits], Wage, ModernWage, Wage0, ModernWage0) :-
     nonvar(FeeTypeKey),
@@ -1886,7 +1906,8 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     % количество полных месяцев
     length(Wages1, Num),
     % среднемесячный заработок
-    catch( MonthAvgWage is round(Amount / Num), _, fail ),
+    %catch( MonthAvgWage is round(Amount / Num), _, fail ),
+    catch( round_br(Amount / Num, MonthAvgWage), _, fail ),
     % заработок за месяц не меньше среднемесячного
     Wage >= MonthAvgWage,
     !.
@@ -2699,21 +2720,26 @@ struct_sick_calc(SliceList, SickPart0-Slice, AccDate, DateBegin, DateEnd, AvgWag
       % если расчет от БПМ
     ( BudgetOption = 1,
       get_avg_wage_budget(Scope, in, Y-M, AvgWage),
-      Summa is round(DOI * AvgWage * SickPart)
+      %Summa is round(DOI * AvgWage * SickPart)
+      round_br(DOI * AvgWage * SickPart, Summa)
     ; % или расчет от Ставки при отсутствии заработка
       ByRateOption = 1,
       AvgWage0 =:= 0,
       get_avg_wage_rate(Scope, PK, IncludeDate, AvgWage),
-      Summa is round(DOI * AvgWage * SickPart)
+      %Summa is round(DOI * AvgWage * SickPart)
+      round_br(DOI * AvgWage * SickPart, Summa)
       % или есть признак Декретный
-    ; IsPregnancy = 1,
-      Summa is round(DOI * AvgWage0 * SickPart)
+    ; fail, IsPregnancy = 1,
+      %Summa is round(DOI * AvgWage0 * SickPart)
+      round_br(DOI * AvgWage0 * SickPart, Summa)
       % иначе проверка на превышение по среднему заработку в РБ
-    ; Summa0 is round(DOI * AvgWage0 * SickPart),
+    %; Summa0 is round(DOI * AvgWage0 * SickPart),
+    ; round_br(DOI * AvgWage0 * SickPart, Summa0),
       % для среднедневной зп для месяца по среднемесячной зп в РБ
       avg_wage_by_avg_salary(Scope, Y-M, AvgWage1),
       % процент не учитывается
-      Summa1 is round(DOI * AvgWage1),
+      %Summa1 is round(DOI * AvgWage1),
+      round_br(DOI * AvgWage1, Summa1),
       % берется минимальная сумма
       Summa is min(Summa0, Summa1)
     ),
@@ -2958,7 +2984,8 @@ avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
     % календарных дней в месяце
     month_days(Y, M, MonthDays),
     % расчитать среднедневную зп для месяца
-    MonthAvgWage is round(MonthAvgSalary * AvgSalaryRB_Coef / MonthDays),
+    %MonthAvgWage is round(MonthAvgSalary * AvgSalaryRB_Coef / MonthDays),
+    round_br(MonthAvgSalary * AvgSalaryRB_Coef / MonthDays, MonthAvgWage),
     !.
 
 % section twg_rule

@@ -239,14 +239,16 @@ calc_amount(Scope, EmplKey) :-
     AlimonySumList),
     sum_list(AlimonySumList, AlimonyAmount),
     % Оплачено по Предыдущему периоду
-    AlimonyAmountPaid is round(AlimonyAmount * AlimonyCoef) * 1.0,
+    %AlimonyAmountPaid is round(AlimonyAmount * AlimonyCoef) * 1.0,
+    round_br(AlimonyAmount * AlimonyCoef, AlimonyAmountPaid),
     % сумма по Текущему периоду
     calc_amount_by_shape(Scope, EmplKey, 3),
     % добавить временные данные
     new_param_list(Scope, Type, AmountPaidPairs),
     forall( get_data(Scope, kb, usr_wg_TblCharge_Prev, SpecTblChargePrev),
             ( AlimonySum is Credit - Debit,
-              AlimonySumPaid is round(AlimonySum * AlimonyCoef) * 1.0,
+              %AlimonySumPaid is round(AlimonySum * AlimonyCoef) * 1.0,
+              round_br(AlimonySum * AlimonyCoef, AlimonySumPaid),
               % добавить временные данные
               new_param_list(Scope, Type, SumPaidPairs)
             )
@@ -294,9 +296,11 @@ calc_amount_by_shape(Scope, EmplKey, Shape) :-
     % Облагаемая ПН Исключаемая сумма
     charges_sum(ChargesExcl, [debit(1), credit(0)], TaxableFeeTypeList, AmountTaxableExcl),
     % Исключаемый ПН
-    IncomeTaxExcl is round(AmountTaxableExcl * IncomeTaxCoef) * 1.0,
+    %IncomeTaxExcl is round(AmountTaxableExcl * IncomeTaxCoef) * 1.0,
+    round_br(AmountTaxableExcl * IncomeTaxCoef, IncomeTaxExcl),
     % Расчетная сумма = Общая сумма - Исключаемая сумма - Исключаемый ПН
-    ForAlimony is round(AmountAll - AmountExcl - IncomeTaxExcl) * 1.0,
+    %ForAlimony is round(AmountAll - AmountExcl - IncomeTaxExcl) * 1.0,
+    round_br(AmountAll - AmountExcl - IncomeTaxExcl, ForAlimony),
     % спецификация временных данных
     AmountPairs = [
                 Section-Shape, pEmplKey-EmplKey, pForAlimony-ForAlimony,
@@ -359,7 +363,8 @@ fit_budget(Scope, EmplKey, BudgetConst0, BudgetConst) :-
     % последний прием на работу больше начала итогового месяца
     ( DateIn @> DateBegin
      -> date_diff(DateIn, DaysDiff, DateEnd),
-      BudgetConst is round( BudgetConst0 * (DaysDiff + 1) / DaysBegin )
+      %BudgetConst is round( BudgetConst0 * (DaysDiff + 1) / DaysBegin )
+      round_br(BudgetConst0 * (DaysDiff + 1) / DaysBegin, BudgetConst)
     ; BudgetConst = BudgetConst0
     ),
     !.
@@ -398,15 +403,18 @@ calc_formula_by_spec(Scope, EmplKey, SpecAlimony, FormulaPairs) :-
     replace_all(Formula2, ",", ".", Formula3),
     % вычислить Результат
     ( catch( term_to_atom(Expr, Formula3), _, fail ),
-      catch( Eval is round(Expr) * 1.0, _, fail), FormulaError = 0
+      %catch( Eval is round(Expr) * 1.0, _, fail), FormulaError = 0
+      catch( round_br(Expr, Eval), _, fail), FormulaError = 0
     ; Eval = 0.0, FormulaError = 1
     ),
     get_param_list(Scope, Type, [
                     pCalcTab-2, pAlimonyKey-AlimonyKey, pTCoef-TCoef ]),
-    Result is round(Eval * TCoef) * 1.0,
+    %Result is round(Eval * TCoef) * 1.0,
+    round_br(Eval * TCoef, Result),
     % Часть БПМ
     ( ChildCount > 0 ->
-      BudgetPart is round(BudgetConst * LivingWagePerc * TCoef) * 1.0
+      %BudgetPart is round(BudgetConst * LivingWagePerc * TCoef) * 1.0
+      round_br(BudgetConst * LivingWagePerc * TCoef, BudgetPart)
     ; BudgetPart = 0.0
     ),
     % Оплачено по Предыдущему периоду
@@ -617,9 +625,11 @@ check_rest(Scope, EmplKey) :-
     % сумма Удержаний
     get_fee_amount(Scope, EmplKey, FeeAmount),
     % сумма Остатка
-    RestAmount is round(AmountAll * RestPercent) * 1.0,
+    %RestAmount is round(AmountAll * RestPercent) * 1.0,
+    round_br(AmountAll * RestPercent, RestAmount)
     % сумма Контроля
-    CheckAmount is round(AmountAll - RestAmount - FeeAmount) * 1.0,
+    %CheckAmount is round(AmountAll - RestAmount - FeeAmount) * 1.0,
+    round_br(AmountAll - RestAmount - FeeAmount, CheckAmount),
     % добавить временные данные
     new_param_list(Scope, Type, CheckPairs),
     % для всех алиментов
@@ -871,6 +881,7 @@ drop_debt_prep_data(Scope, EmplKey, DateIn, Balance) :-
                 Section-4, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pDropDebtCoef-DropDebtCoef ],
     % параметры Округления
+    %check_point,
     get_round_data(Scope, EmplKey, "ftAlimonyDebt", RoundType, RoundValue),
     % сумма Баланса для Cписания долгов по алиментам
     round_sum(Balance, DropDeptBalance, CutRoundType, RoundValue),
@@ -1180,6 +1191,7 @@ get_round_data(Scope, _, Alias0, RoundType, RoundValue) :-
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
                 fAlias-Alias, fRoundByFeeType-1,
                 fRoundType-RoundType, fRoundValue-RoundValue ]),
+    RoundValue > 0,
     !.
 get_round_data(Scope, EmplKey, _, RoundType, RoundValue) :-
     get_param_list(Scope, in, [
@@ -2016,7 +2028,8 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     ),
     ( WithPrev =:= 1
      ->
-      ForAlimonyPrev1 is round(ForAlimonyPrev),
+      %ForAlimonyPrev1 is round(ForAlimonyPrev),
+      round_br(ForAlimonyPrev, ForAlimonyPrev1),
       Desc3 = ["с учетом ПС (", ForAlimonyPrev1, ")"],
       atomic_list_to_string(Desc3, Desc31),
       Desc32 = [Desc31]
@@ -2121,6 +2134,8 @@ p(Scope):-
     writeln(ProtText),
     writeln(Len),
     !.
+
+check_point.
 
  %
 %%
