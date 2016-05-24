@@ -794,8 +794,9 @@ pu_calc_out(Scope, EmplKey, Result) :-
     ExpCountList ),
     sum_list(ExpCountList, EDocExpCount),
     %
+    format_br("~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~0f~w~0f~w~0f~w~0f~w~w~w~w~w~w~w~n", Format1),
     format( string(EDocHeader),
-            "~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~0f~w~0f~w~0f~w~0f~w~w~w~w~w~w~w~n",
+            Format1,
             [ "<ПУ-3=", EDocCode, "=", UNPF, "=", PersonalNumber, "=",
               F, "=", I, "=", O, "=", CatCode, "=", Number, "=", Date, "= = =",
               EDocFeeAmount, "=", EDocSickAmount, "=0=0=",
@@ -827,8 +828,9 @@ pu_calc_out(Scope, EmplKey, Result) :-
                 -> FeeAmount + SickAmount > 0
                ; true
                ),
+               format_br("~w~0f~w~0f~w~0f~w~n", Format2),
                format( string(FeeStr),
-                       "~w~0f~w~0f~w~0f~w~n",
+                       Format2,
                        [ "НЧСЛ=", M, "=",
                          FeeAmount, "=", SickAmount, "=0=0=0="
                        ] )

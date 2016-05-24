@@ -6,6 +6,45 @@
 % ! для режима деноминации убрать комментарий в следующей строке
 %:- assertz(denom_mode).
 
+:- ( \+ locale_property(ru, _),
+     locale_create(_, default, [
+                               alias(ru),
+                               decimal_point(','),
+                               thousands_sep(' '),
+                               grouping([repeat(3)])
+                               ])
+   ; true ).
+
+:- ( \+ locale_property(comma, _),
+     locale_create(_, default, [
+                               alias(comma),
+                               decimal_point(','),
+                               thousands_sep(''),
+                               grouping([repeat(3)])
+                               ])
+   ; true ).
+
+:- ( \+ locale_property(dot, _),
+     locale_create(_, default, [
+                               alias(dot),
+                               decimal_point('.'),
+                               thousands_sep(''),
+                               grouping([repeat(3)])
+                               ])
+   ; true ).
+   
+:- set_locale(comma).
+
+% format_br(+InStr, -OutStr)
+:- if(denom_mode).
+format_br(InStr, OutStr) :-
+    Search = "~0f", Replace = "~2:f",
+    replace_all(InStr, Search, Replace, OutStr),
+    !.
+:- else.
+format_br(Str, Str).
+:- endif.
+
 % round_br(+ExpIn, -NumOut)
 :- if(denom_mode).
 round_br(ExpIn, NumOut) :-

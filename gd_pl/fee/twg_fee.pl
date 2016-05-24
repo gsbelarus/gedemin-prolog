@@ -626,7 +626,7 @@ check_rest(Scope, EmplKey) :-
     get_fee_amount(Scope, EmplKey, FeeAmount),
     % сумма Остатка
     %RestAmount is round(AmountAll * RestPercent) * 1.0,
-    round_br(AmountAll * RestPercent, RestAmount)
+    round_br(AmountAll * RestPercent, RestAmount),
     % сумма Контроля
     %CheckAmount is round(AmountAll - RestAmount - FeeAmount) * 1.0,
     round_br(AmountAll - RestAmount - FeeAmount, CheckAmount),
@@ -1676,7 +1676,7 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
                     pYM-Y-M, pTDays-TDays, pTHoures-THoures ]),
     month_name(M, MonthName),
     format( string(ProtText),
-            "~` t~w~9+ ~w ~w ~w~` t~w~32+ ~1f ~w~1f ~w~n",
+            "~` t~w~9+ ~w ~w ~w~` t~w~32+ ~1:f ~w~1:f ~w~n",
             [ "Период:", MonthName, Y, "г.",
               "Отработано:", THoures, "ч. (", TDays, "дн.)" ] ),
     !.
@@ -1708,25 +1708,26 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
                     pAmountAll-AmountAll, pIncomeTax-IncomeTax,
                     pAmountExcl-AmountExcl, pIncomeTaxExcl-IncomeTaxExcl ]),
     prot_alias(Scope, "алиментов", Alias1),
-    ( AmountExcl > 0 ->
-      Format1 = "~n~2|~w~n~4|~0f~w~0f~w~0f~n",
+    ( AmountExcl > 0
+     ->
+      format_br("~n~2|~w~n~4|~0f~w~0f~w~0f~n", Format1),
       Args1 = [ "Заработок = Начисленная сумма - ПН",
               AmountAll, " = ", AmountAll - IncomeTax, " - ", -IncomeTax
               ]
-    ; Format1 = "~n~2|~w~w~w~n~4|~0f~w~0f~w~0f~n",
+    ; format_br("~n~2|~w~w~w~n~4|~0f~w~0f~w~0f~n", Format1),
       Args1 = [ "Для ", Alias1, " = Начисленная сумма - ПН",
               AmountAll, " = ", AmountAll - IncomeTax, " - ", -IncomeTax
               ]
     ),
     ( AmountExcl > 0 ->
-      Format2 = "~2|~w~n~4|~0f~w~0f~w~0f~n",
+      format_br("~2|~w~n~4|~0f~w~0f~w~0f~n", Format2),
       Args2 = [ "Исключаемый заработок = Исключаемая сумма - Исключаемый ПН",
                 AmountExcl + IncomeTaxExcl, " = ", AmountExcl," - ", -IncomeTaxExcl
               ]
     ; Format2 = "", Args2 = []
     ),
     ( AmountExcl > 0 ->
-      Format3 = "~2|~w~w~w~n~4|~0f~w~0f~w~0f~n",
+      format_br("~2|~w~w~w~n~4|~0f~w~0f~w~0f~n", Format3),
       Args3 = [ "Для ", Alias1, " = Заработок - Исключаемый заработок",
                 ForAlimony, " = ", AmountAll, " - ",  AmountExcl + IncomeTaxExcl
               ]
@@ -1753,15 +1754,16 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     prot_alias(Scope, "алиментов", Alias1),
     ( Scope = wg_fee_alimony
      ->
+      format_br("~n~2|~w~0f~n~2|~w~0f~n~n~2|~w~w~w~n~4|~w~15|~w~27|~w~55|~w~61|~w~n", Format1),
       format( string(ProtText1),
-              "~n~2|~w~0f~n~2|~w~0f~n~n~2|~w~w~w~n~4|~w~15|~w~27|~w~55|~w~61|~w~n",
+              Format1,
               [ "Базовая величина (БВ) = ", BV,
                 "Бюджет прожиточного минимума (БПМ) = ", BudgetConst,
                 "Исполнительные листы (расчетная сумма ", Alias1, "):",
                 "Ключ", "Сумма", "Формула", "Дети", "Примечание"  ] )
-    ;
+    ; format_br("~n~2|~w~0f~n~n~2|~w~w~w~n~4|~w~15|~w~27|~w~55|~w~n", Format1),
       format( string(ProtText1),
-              "~n~2|~w~0f~n~n~2|~w~w~w~n~4|~w~15|~w~27|~w~55|~w~n",
+              Format1,
               [ "Базовая величина (БВ) = ", BV,
                 "Исполнительные листы (расчетная сумма ", Alias1, "):",
                 "Ключ", "Сумма", "Формула", "Примечание"  ] )
@@ -1773,8 +1775,9 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     get_param_list(Scope, Type2, [
                     Section2, pEmplKey-EmplKey,
                     pAlimonyAmount-AlimonyAmount ]),
+    format_br("~` t~w~14+ ~0f~n", Format2),
     format( string(ProtText3),
-            "~` t~w~14+ ~0f~n",
+            Format2,
             ["Итого:", AlimonyAmount] ),
     atomic_list_to_string([ProtText1, ProtText2, ProtText3], ProtText),
     !.
@@ -1792,14 +1795,16 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
                     pFeeAmount-FeeAmount ]),
     ( FeeAmount > 0
      ->
+      format_br("~n~2|~w~n~4|~0f~w~0f~w~0f~w~0:f~w~w~0f~n", Format),
       format( string(ProtText),
-              "~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~w~w~0f~n",
+              Format,
               [ "Контрольная сумма = Заработок - Заработок * Процент остатка - Удержаний",
                 CheckAmount, " = ", AmountAll, " - ",
                 AmountAll, " * ", RestPercent * 100, "%",
                 " - ", FeeAmount ] )
-    ; format( string(ProtText),
-              "~n~2|~w~n~4|~0f~w~0f~w~0f~w~0f~w~n",
+    ; format_br("~n~2|~w~n~4|~0f~w~0f~w~0f~w~0:f~w~n", Format),
+      format( string(ProtText),
+              Format,
               [ "Контрольная сумма = Заработок - Заработок * Процент остатка",
                 CheckAmount, " = ", AmountAll, " - ",
                 AmountAll, " * ", RestPercent * 100, "%" ] )
@@ -1836,8 +1841,9 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
                              pAlimonyDebt-AlimonyDebt ]),
     AlimonyDebtList ),
     sum_list(AlimonyDebtList, AlimonyDebtTotal),
+    format_br("~` t~w~14+ ~0f~26| ~0f~n", Format),
     format( string(ProtText2),
-            "~` t~w~14+ ~0f~26| ~0f~n",
+            Format,
             ["Итого:", AlimonyChargeTotal, AlimonyDebtTotal] ),
     string_concat(ProtText1, ProtText2, ProtText),
     !.
@@ -1876,8 +1882,9 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
                     Section2, pEmplKey-EmplKey,
                     pDropDebtTotal-DropDebtTotal, pRestDebtTotal-RestDebtTotal,
                     pDebtTotal-DebtTotal, pPaidDebtTotal-PaidDebtTotal]),
+    format_br("~` t~w~14+ ~0f~26| ~0f~38| ~0f~50| ~0f~n", Format),
     format( string(ProtText2),
-            "~` t~w~14+ ~0f~26| ~0f~38| ~0f~50| ~0f~n",
+            Format,
             ["Итого:", DropDebtTotal, DebtTotal, PaidDebtTotal, RestDebtTotal] ),
     string_concat(ProtText1, ProtText2, ProtText),
     !.
@@ -1909,10 +1916,10 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
                     Section1, pEmplKey-EmplKey ]),
     prot_alias(Scope, "алиментам", Alias1),
     format( string(ProtText0),
-            "~n~2|~w~w~w~n~n~2|~w~n~4|~w~15|~w~n",
+            "~n~2|~w~w~w~n~n~2|~w~n~4|~w~15|~w~27|~w~n",
             [ "Долг по ", Alias1, " к удержанию по частичной сумме",
               "Исполнительные листы (частичная сумма списания долга):",
-              "Ключ", "Сумма" ] ),
+              "Ключ", "Сумма", "Примечание" ] ),
     findall( ProtDetText,
              fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
     ProtDetTextList),
@@ -1920,8 +1927,9 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     get_param_list(Scope, Type3, [
                     Section3, pEmplKey-EmplKey,
                     pDropDebtChargeTotal-DropDebtChargeTotal ]),
+    format_br("~` t~w~14+ ~0f~n", Format),
     format( string(ProtText2),
-            "~` t~w~14+ ~0f~n",
+            Format,
             ["Итого:", DropDebtChargeTotal] ),
     string_concat(ProtText1, ProtText2, ProtText),
     !.
@@ -1944,8 +1952,9 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
              fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText),
     ProtDetTextList),
     atomic_list_to_string([ProtText0|ProtDetTextList], ProtText1),
+    format_br("~` t~w~10+ ~0f~n", Format),
     format( string(ProtText2),
-            "~` t~w~10+ ~0f~n",
+            Format,
             ["Итого:", TransfChargeTotal] ),
     string_concat(ProtText1, ProtText2, ProtText),
     !.
@@ -1963,8 +1972,9 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
                     pDropDebtChargeTotal-DropDebtChargeTotal,
                     pTransfChargeTotal-TransfChargeTotal ]),
     prot_alias(Scope, "Алименты", Alias1),
+    format_br("~n~2|~w~w~w~n~4|~0f~w~0f~w~0f~w~0f~n", Format),
     format( string(ProtText),
-            "~n~2|~w~w~w~n~4|~0f~w~0f~w~0f~w~0f~n",
+            Format,
             [ "Итого удержано = ", Alias1, " + Списание долгов + Расходы по переводу",
               AllChargeTotal, " = ",
               AlimonyChargeTotal, " + ", DropDebtChargeTotal, " + ", TransfChargeTotal] ),
@@ -1994,9 +2004,10 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtDetText) :-
     date_format(ADateEnd, ADateEnd1),
     ( TCoef < 1
      -> TCoef1 = AHoures / THoures
-    ; TCoef1 = TCoef ),
+    ; format(string(TCoef1), "~3:f", [TCoef])
+    ),
     format( string(ProtDetText),
-            "~4|~w~14| ~w~26| ~w~38| ~1f ~w~1f ~w~59| ~w~n",
+            "~4|~w~14| ~w~26| ~w~38| ~1:f ~w~1:f ~w~59| ~w~n",
             [ AlimonyKey, ADateBegin1, ADateEnd1,
               AHoures, "ч. (", ADays, "дн.)", TCoef1 ] ),
     true.
@@ -2039,12 +2050,13 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
     atomic_list_to_string(DescList, "; ", Desc),
     ( Scope = wg_fee_alimony
      ->
+      format_br("~4|~w~14| ~0f~26| ~w~54| ~0f~60| ~w~n", Format),
       format( string(ProtText),
-              "~4|~w~14| ~0f~26| ~w~54| ~0f~60| ~w~n",
+              Format,
               [ AlimonyKey, AlimonySum, Formula, ChildCount, Desc ] )
-    ;
+    ; format_br("~4|~w~14| ~0f~26| ~w~54| ~w~n", Format),
       format( string(ProtText),
-              "~4|~w~14| ~0f~26| ~w~54| ~w~n",
+              Format,
               [ AlimonyKey, AlimonySum, Formula, Desc ] )
     ),
     true.
@@ -2063,8 +2075,9 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
                         pAlimonyDebt-AlimonyDebt ]) -> true
     ; AlimonyDebt = 0
     ),
+    format_br("~4|~w~14| ~0f~26| ~0f~n", Format),
     format( string(ProtText),
-            "~4|~w~14| ~0f~26| ~0f~n",
+            Format,
             [ AlimonyKey, AlimonyCharge, AlimonyDebt ] ),
     true.
 % Исполнительные листы (расчетная сумма списания долга) - детали
@@ -2080,8 +2093,9 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
                     pDebtAmount-DebtAmount, pPaidDebtAmount-PaidDebtAmount,
                     pDebtPercent-DebtPercent
                      ]),
+    format_br("~4|~w~14| ~0f~26| ~0f~38| ~0f~50| ~0f~62| ~0:f~w~n", Format),
     format( string(ProtText),
-            "~4|~w~14| ~0f~26| ~0f~38| ~0f~50| ~0f~62| ~0f~w~n",
+            Format,
             [ AlimonyKey,
               DropDebtAmount, DebtAmount, PaidDebtAmount, RestDebtAmount,
               DebtPercent * 100, "%" ] ),
@@ -2101,9 +2115,21 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
                             pDropDebtCharge-DropDebtCharge ]),
     DropDebtChargeList ),
     sum_list(DropDebtChargeList, DropDebtAmount),
+    findall( DropDebtChargeCalc,
+             get_param_list(Scope, Type2, [
+                            Section2, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                            pDropDebtChargeCalc-DropDebtChargeCalc ]),
+    DropDebtChargeCalcList ),
+    sum_list(DropDebtChargeCalcList, DropDebtCalcAmount),
+    ( ( DropDebtAmount =:= DropDebtCalcAmount -> true ; DropDebtChargeCalcList = [] )
+     ->
+      Desc = ""
+    ; Desc = "Ручное списание"
+    ),
+    format_br("~4|~w~14| ~0f~26| ~w~n", Format),
     format( string(ProtText),
-            "~4|~w~14| ~0f~n",
-            [ AlimonyKey, DropDebtAmount ] ),
+            Format,
+            [ AlimonyKey, DropDebtAmount, Desc ] ),
     true.
 % расходы по Переводу - детали
 fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
@@ -2120,8 +2146,9 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
                 fID-Recipient, fName-Name ]) -> true
     ; Name = ""
     ),
+    format_br("~4|~w~10| ~0f~22| ~0f~34| ~2f~w~46| ~w~n", Format),
     format( string(ProtText),
-            "~4|~w~10| ~0f~22| ~0f~34| ~2f~w~46| ~w~n",
+            Format,
             [ "", TransfCharge, ForTransfAmount, TransfPercent, "%", Name ] ),
     true.
 
