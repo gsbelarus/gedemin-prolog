@@ -25,11 +25,13 @@ wg_valid_sql(
             gd_const_budget/2,
             usr_wg_Variables/2,
             usr_wg_Alimony/12,
-            usr_wg_TransferType/5,
+            usr_wg_TransferType/6,
             usr_wg_TransferScale/3,
             usr_wg_AlimonyDebt/8,
             usr_wg_Alimony_FeeDoc/2,
+            usr_wg_AlimonyDebtOut/8,
             usr_wg_AlimonyDebt_delete/0,
+            usr_wg_AlimonyDebtOut_update/0,
             -
             ]).
 
@@ -703,22 +705,27 @@ ORDER BY
         wg_fee_alimony, wg_fee_fine
         ]).
 
-gd_pl_ds(Scope, kb, usr_wg_TransferType, 5, [
+gd_pl_ds(Scope, kb, usr_wg_TransferType, 6, [
     fID-integer, fParent-integer,
     fDateBegin-date, fName-string,
-    fMinTransfCharge-float
+    fFeeTypeKey-integer, fMinTransfCharge-float
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony, wg_fee_fine
         ]).
-% usr_wg_TransferType(ID, Parent, DateBegin, Name, MinTransfCharge)
-get_sql(Scope, kb, usr_wg_TransferType/5,
+% usr_wg_TransferType(ID, Parent, DateBegin, Name, FeeTypeKey, MinTransfCharge)
+get_sql(Scope, kb, usr_wg_TransferType/6,
 "
 SELECT
   tt.ID,
   COALESCE(tt.PARENT, 0) AS Parent,
   COALESCE(tt.USR$DATE, current_date) AS DateBegin,
   tt.USR$NAME,
+  COALESCE(
+            tt.USR$FEETYPEKEY,
+            (SELECT id FROM GD_P_GETID(pFeeType_TransferDed_ruid))
+          )
+  AS FeeTypeKey,
   tt.USR$MIN_POSTAGE AS MinTransfCharge
   --10000 AS MinTransfCharge
 FROM
@@ -727,6 +734,7 @@ ORDER BY
   Parent, DateBegin, tt.ID
 ",
     [
+    pFeeType_TransferDed_ruid-_
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony, wg_fee_fine
@@ -811,7 +819,6 @@ ORDER BY
         wg_fee_alimony, wg_fee_fine
         ]).
 
-
 gd_pl_ds(Scope, kb, usr_wg_Alimony_FeeDoc, 2, [
     fDocKey-integer, fEmplKey-integer
     ]) :-
@@ -874,6 +881,51 @@ WHERE
         wg_fee_alimony, wg_fee_fine
         ]).
         
+gd_pl_ds(Scope, kb, usr_wg_AlimonyDebtOut, 8, [
+    fDocKey-integer, fEmplKey-integer,
+    fCalYear-integer, fCalMonth-integer,
+    fAlimonyKey-integer, fTotalDocKey-integer,
+    fDebtSumOut-float, fDebtSumCalc-float
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_fine
+        ]).
+% usr_wg_AlimonyDebtOut(DocKey, EmplKey, CalYear, CalMonth, AlimonyKey, TotalDocKey, DebtSumOut, DebtSumCalc)
+get_sql(Scope, kb, usr_wg_AlimonyDebtOut/8,
+"
+SELECT
+  aldebtout.DOCUMENTKEY,
+  al.USR$EMPLKEY,
+  EXTRACT(YEAR FROM t.USR$DATEBEGIN) AS CalYear,
+  EXTRACT(MONTH FROM t.USR$DATEBEGIN) AS CalMonth,
+  aldebtout.USR$ALIMONYKEY,
+  aldebtout.USR$TOTALDOCKEY,
+  aldebtout.USR$DEBTSUMOUT,
+  aldebtout.USR$DEBTSUMCALC
+FROM
+  USR$WG_ALIMONYDEBTOUT aldebtout
+JOIN
+  USR$WG_ALIMONY al
+    ON al.DOCUMENTKEY = aldebtout.USR$ALIMONYKEY
+JOIN
+  USR$WG_TOTAL t
+    ON t.DOCUMENTKEY = aldebtout.USR$TOTALDOCKEY
+WHERE
+  al.USR$EMPLKEY = pEmplKey
+  AND
+  t.USR$DATEBEGIN >= 'pDateCalcFrom'
+  AND
+  t.USR$DATEBEGIN < 'pDateCalcTo'
+ORDER BY
+  t.USR$DATEBEGIN
+",
+    [
+    pEmplKey-_, pDateCalcFrom-_, pDateCalcTo-_
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_fine
+        ]).
+
 /* удаление данных */
 
 gd_pl_ds(Scope, cmd, usr_wg_AlimonyDebt_delete, 0, [
@@ -917,6 +969,53 @@ WHERE
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony, wg_fee_fine
+        ]).
+
+/**/
+
+/* обновление данных */
+
+gd_pl_ds(Scope, upd, usr_wg_AlimonyDebtOut_update, 0, [
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_fine
+        ]).
+% usr_wg_AlimonyDebtOut_update
+get_sql(Scope, upd, usr_wg_AlimonyDebtOut_update/0,
+"
+UPDATE
+  USR$WG_ALIMONYDEBTOUT aldebtout_upd
+SET
+  aldebtout_upd.USR$DEBTSUMCALC = pDropDebtChargeCalc
+WHERE
+  aldebtout_upd.DOCUMENTKEY =
+  (
+  SELECT
+    aldebtout.DOCUMENTKEY
+  FROM
+    USR$WG_ALIMONYDEBTOUT aldebtout
+  JOIN
+    USR$WG_ALIMONY al
+      ON al.DOCUMENTKEY = aldebtout.USR$ALIMONYKEY
+  JOIN
+    USR$WG_TOTAL t
+      ON t.DOCUMENTKEY = aldebtout.USR$TOTALDOCKEY
+  WHERE
+    al.USR$EMPLKEY = pEmplKey
+    AND
+    al.DOCUMENTKEY = pAlimonyKey
+    AND
+    t.USR$DATEBEGIN >= 'pDateCalcFrom'
+    AND
+    t.USR$DATEBEGIN < 'pDateCalcTo'
+  )
+",
+    [
+    pDropDebtChargeCalc-_,
+    pEmplKey-_, pAlimonyKey-_, pDateCalcFrom-_, pDateCalcTo-_
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_fine
         ]).
 
 /**/

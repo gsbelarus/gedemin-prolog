@@ -9,7 +9,7 @@
 :- dynamic(debug_mode/0).
 % ! при использовании в ТП Гедымин
 % ! комментировать следующую строку
-%:- assertz(debug_mode).
+:- assertz(debug_mode).
 
 %%% begin debug mode section
 :- if(debug_mode).
@@ -50,7 +50,8 @@
     usr_wg_TransferType,
     usr_wg_TransferScale,
     usr_wg_AlimonyDebt,
-    usr_wg_Alimony_FeeDoc
+    usr_wg_Alimony_FeeDoc,
+    usr_wg_AlimonyDebtOut
     ],
     working_directory(_, '..').
 %%
@@ -1023,7 +1024,8 @@ drop_debt_charge(Scope, EmplKey, DropDeptBalance, ByDropDebtCoef) :-
     DropDebtChargePairs = [
                 Section-5, pEmplKey-EmplKey,
                 pAlimonyKey-AlimonyKey, pAlimonyDebtKey-AlimonyDebtKey,
-                pDropDebtCharge-_, pByDropDebtCoef-ByDropDebtCoef ],
+                pDropDebtCharge-_, pDropDebtChargeCalc-_,
+                pByDropDebtCoef-ByDropDebtCoef ],
     % удалить временные данные по Списанию долгов
     forall( get_param_list(Scope, Type, [Section-5, pEmplKey-EmplKey], Pairs),
             dispose_param_list(Scope, Type, Pairs) ),
@@ -1071,23 +1073,53 @@ drop_debt_charge(Scope, [_-AlimonyDebtKey-RestSum|RestDebtDataList], DropDebtCha
       DropDebtCharge1 is DropDebtCharge0
     ; DropDebtCharge1 is DropDeptBalance
     ),
-    round_sum(DropDebtCharge1, DropDebtCharge, RoundType, RoundValue),
-    member_list([pAlimonyDebtKey-AlimonyDebtKey, pDropDebtCharge-DropDebtCharge],
-                    DropDebtChargePairs),
+    round_sum(DropDebtCharge1, DropDebtChargeCalc, RoundType, RoundValue),
+    member_list([
+        pEmplKey-EmplKey, pAlimonyKey-AlimonyKey, pAlimonyDebtKey-AlimonyDebtKey,
+        pDropDebtCharge-DropDebtCharge, pDropDebtChargeCalc-DropDebtChargeCalc ],
+    DropDebtChargePairs),
+    % проверка Ручного списания задолженности
+    check_drop_debt_out(Scope, EmplKey, AlimonyKey, DropDebtChargeCalc, DropDebtCharge),
     % добавить временные данные
     new_param_list(Scope, Type, DropDebtChargePairs),
     % новая спецификация временных данных
     replace_list(DropDebtChargePairs,
-                    [pAlimonyDebtKey-AlimonyDebtKey, pDropDebtCharge-DropDebtCharge],
-                    [pAlimonyDebtKey-_, pDropDebtCharge-_],
-                        DropDebtChargePairs1),
+        [
+         pAlimonyDebtKey-AlimonyDebtKey,
+         pDropDebtCharge-DropDebtCharge, pDropDebtChargeCalc-DropDebtChargeCalc
+        ],
+        [
+         pAlimonyDebtKey-_,
+         pDropDebtCharge-_, pDropDebtChargeCalc-_
+        ],
+    DropDebtChargePairs1),
     % новый Баланс для Списания долгов
     DropDebtAmount1 is DropDebtAmount - DropDebtCharge,
     DropDeptBalance1 is DropDeptBalance - DropDebtCharge,
     !,
     drop_debt_charge(Scope, RestDebtDataList, DropDebtChargePairs1, DropDebtAmount1, DropDeptBalance1, RoundType, RoundValue).
 
+% проверка Ручного списания задолженности
+check_drop_debt_out(Scope, EmplKey, AlimonyKey, _DropDebtChargeCalc, DebtSumOut) :-
+    %fail, % !! для отключения
+    % - для штрафов
+    memberchk(Scope, [wg_fee_fine]),
+    get_data(Scope, kb, usr_wg_Alimony, [
+                fEmplKey-EmplKey, fDocKey-AlimonyKey,  fFormula-Formula]),
+    memberchk(Formula, ["0", ""]),
+    %
+    get_data(Scope, kb, usr_wg_AlimonyDebtOut, [
+                fEmplKey-EmplKey, fAlimonyKey-AlimonyKey, fDebtSumOut-DebtSumOut ]),
+    !.
+check_drop_debt_out(_, _, _, ChargeSum, ChargeSum).
+
 % Контроль остатка после Списания долгов
+drop_debt_check_rest(Scope, EmplKey) :-
+    %fail, % !! для отключения
+    % - для штрафов
+    memberchk(Scope, [wg_fee_fine]),
+    get_data(Scope, kb, usr_wg_AlimonyDebtOut, [fEmplKey-EmplKey]),
+    !.
 drop_debt_check_rest(Scope, EmplKey) :-
     Type = temp, NextType = out,
     % спецификация параметров Контроля остатка
@@ -1509,6 +1541,48 @@ fee_calc_cmd(Scope, EmplKey, PredicateName, Arity, SQL) :-
     new_param_list(Scope, TypeNextStep, PairsNextStep),
     true.
 
+% формирование SQL-команд на обновление данных по сотруднику
+fee_calc_upd(Scope, EmplKey, PredicateName, Arity, SQL) :-
+    % - для штрафов
+    memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
+    Type = run, TypeNextStep = upd,
+    % записать отладочную информацию
+    param_list_debug(Scope, Type-TypeNextStep),
+    % взять данные выполнения
+    get_param_list(Scope, Type, [pEmplKey-EmplKey], Pairs01),
+    % взять данные для обновления
+    get_upd_params(Scope, EmplKey, AlimonyKey, Pairs02),
+    % объединить данные для подстановки параметров
+    append([Pairs01, Pairs02], Pairs),
+    % для каждой спецификации набора данных
+    gd_pl_ds(Scope, upd, PredicateName, Arity, _),
+    Query = PredicateName/Arity,
+    is_valid_sql(Query),
+    % взять SQL-строку с параметрами
+    get_sql(Scope, upd, Query, SQL0, Params),
+    % сопоставить параметры с данными выполнения
+    member_list(Params, Pairs),
+    % подготовить SQL-запрос
+    prepare_sql(SQL0, Params, SQL),
+    % записать данные по SQL-команде
+    PairsNextStep = [pEmplKey-EmplKey, pAlimonyKey-AlimonyKey, pUpd-Query, pSQL-SQL],
+    new_param_list(Scope, TypeNextStep, PairsNextStep),
+    true.
+
+% взять данные для обновления
+get_upd_params(Scope, EmplKey, AlimonyKey, Pairs) :-
+    % - для штрафов (ручное списание долгов)
+    memberchk(Scope, [wg_fee_fine]),
+    Type = temp,
+    % спецификация параметров списания долгов
+    DropDebtParams = [
+                pDropDebt-5, pEmplKey-EmplKey, pAlimonyKey-AlimonyKey,
+                pDropDebtChargeCalc-DropDebtChargeCalc ],
+    % взять данные по списанию долгов
+    get_param_list(Scope, Type, DropDebtParams),
+    Pairs = [pAlimonyKey-AlimonyKey, pDropDebtChargeCalc-DropDebtChargeCalc],
+    true.
+
 % выгрузка выходных данных по сотруднику
 fee_calc_out(Scope, EmplKey, Result) :-
     % - для алиментов и штрафов
@@ -1559,8 +1633,6 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :
     % - для алиментов и штрафов (пересылка)
     memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Type = temp, AccountKeyIndex = 2,
-    get_data(Scope, kb, usr_wg_FeeType_Dict, [
-                fID-FeeTypeID, fAlias-"ftTransferDed" ]),
     % спецификация параметров перевода
     TransfParams = [
                 pCalcTransf-_, pEmplKey-EmplKey,
@@ -1568,6 +1640,16 @@ fee_calc_charge(Scope, EmplKey, ChargeSum, FeeTypeID, DocKey, AccountKeyIndex) :
     % взять данные по переводу
     get_param_list(Scope, Type, TransfParams),
     ChargeSum > 0,
+    % вида удержания для расходов по переводу
+    ( get_data(Scope, kb, usr_wg_Alimony, [
+                fDocKey-DocKey, fTransferTypeKey-TransferTypeKey ]),
+      get_data(Scope, kb, usr_wg_TransferType, [
+                fID-TransferTypeKey, fFeeTypeKey-FeeTypeID ]),
+      FeeTypeID > 0
+     -> true
+    ; get_data(Scope, kb, usr_wg_FeeType_Dict, [
+                fID-FeeTypeID, fAlias-"ftTransferDed" ])
+    ),
     true.
 
 % выгрузка выходных данных по долгам по сотруднику
@@ -1818,9 +1900,10 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     Types = [Type1, Type2, Type3],
     Sections = [Section1, Section2, Section3],
     get_param_list(Scope, Type1, [
-                    Section1, pEmplKey-EmplKey,
+                    Section1, pEmplKey-EmplKey, pFormula-Formula,
                     pAlimonyCharge-AlimonyCharge, pAlimonySum-AlimonySum ]),
     ( \+ AlimonyCharge =:= AlimonySum -> true ; AlimonyCharge =:= 0 ),
+    \+ memberchk(Formula, ["0", ""]),
     prot_alias(Scope, "Алименты", Alias1),
     prot_alias(Scope, "алиментов", Alias2),
     format( string(ProtText0),
@@ -1889,19 +1972,42 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     string_concat(ProtText1, ProtText2, ProtText),
     !.
 % Исполнительные листы (частичная сумма списания долга)
+fee_prot(Scope, Types, Sections, _, ProtText) :-
+    fail, % !! для отключения
+    % - для штрафов
+    memberchk(Scope, [wg_fee_fine]),
+    Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
+    Types = [_Type1, Type2, _],
+    Sections = [_Section1, Section2, _],
+    get_param_list(Scope, Type2, [
+                    Section2, pEmplKey-EmplKey ]),
+    get_data(Scope, kb, usr_wg_AlimonyDebtOut, [
+                fEmplKey-EmplKey, fDebtSumOut-DebtSumOut ]),
+    prot_alias(Scope, "алиментам", Alias1),
+    format_br("~n~2|~w~w~w~w~0f~w~n", Format),
+    format( string(ProtText),
+            Format,
+            [ "Долг по ", Alias1, " к удержанию по сумме ручного списания",
+              " (", DebtSumOut, ")" ] ),
+    !.
 fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     % - для алиментов и штрафов
     memberchk(Scope, [wg_fee_alimony, wg_fee_fine]),
     Sections = [pDropDebt-3, pDropDebt-5, pCalcTotal-1],
     Types = [Type1, Type2, _],
     Sections = [Section1, Section2, _],
+    % не было подбора суммы списания долга
     get_param_list(Scope, Type1, [
                     Section1, pEmplKey-EmplKey,
                     pChargeStep-0 ]),
+    % нет признака частичного списания долга
     get_param_list(Scope, Type2, [
                     Section2, pEmplKey-EmplKey,
                     pByDropDebtCoef-0 ]),
+    % нет ручного списания
+    \+ get_data(Scope, kb, usr_wg_AlimonyDebtOut, [fEmplKey-EmplKey]),
     prot_alias(Scope, "алиментам", Alias1),
+    % списание по расчетной сумме
     format( string(ProtText),
             "~n~2|~w~w~w~n",
             [ "Долг по ", Alias1, " к удержанию по расчетной сумме" ] ),
@@ -2121,7 +2227,7 @@ fee_prot_det(Scope, Types, Sections, EmplKey, ProtText) :-
                             pDropDebtChargeCalc-DropDebtChargeCalc ]),
     DropDebtChargeCalcList ),
     sum_list(DropDebtChargeCalcList, DropDebtCalcAmount),
-    ( ( DropDebtAmount =:= DropDebtCalcAmount -> true ; DropDebtChargeCalcList = [] )
+    ( ( DropDebtAmount =:= DropDebtCalcAmount ; DropDebtChargeCalcList = [] )
      ->
       Desc = ""
     ; Desc = "Ручное списание"
