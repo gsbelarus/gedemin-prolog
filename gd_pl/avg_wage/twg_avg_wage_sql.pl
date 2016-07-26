@@ -1182,7 +1182,8 @@ gd_pl_ds(Scope, kb, usr_wg_pl_Rule, 2, [
     fAtom-string, fEnabled-boolean
     ]) :-
     memberchk(Scope, [
-        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
+        wg_struct_vacation
         ]).
 % usr_wg_pl_Rule(Atom, Enabled)
 get_sql(Scope, kb, usr_wg_pl_Rule/2,
@@ -1201,7 +1202,8 @@ ORDER BY
     [
     ]) :-
     memberchk(Scope, [
-        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg
+        wg_avg_wage_vacation, wg_avg_wage_sick, wg_avg_wage_avg,
+        wg_struct_vacation
         ]).
 
  %

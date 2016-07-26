@@ -2439,6 +2439,10 @@ struct_vacation_sql(DocKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
 
 %
 struct_vacation_in(DateCalc, _, _, AvgWage, _) :-
+    Scope = wg_struct_vacation,
+    % настроить правила
+    wg_config_rules(Scope),
+    %
     wg_vacation_compensation(DateFrom, Duration, 1),
     atom_date(DateCalc, date(Year, Month, _)),
     month_days(Year, Month, Days),
@@ -2455,6 +2459,10 @@ struct_vacation_in(DateCalc, _, _, AvgWage, _) :-
     new_param_list(struct_vacation, out, OutPairs),
     !.
 struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
+    Scope = wg_struct_vacation,
+    % настроить правила
+    wg_config_rules(Scope),
+    %
     atom_date(DateCalc, date(Year, Month, _)),
     month_days(Year, Month, Days),
     atom_date(AccDate, date(Year, Month, Days)),
@@ -2994,7 +3002,11 @@ avg_wage_by_avg_salary(Scope, Y-M, MonthAvgWage) :-
 
 % настроить правила
 wg_config_rules(Scope) :-
-    memberchk(Scope, [wg_avg_wage_vacation, wg_avg_wage_sick]),
+    memberchk(Scope, [
+        wg_avg_wage_vacation,
+        wg_avg_wage_sick,
+        wg_struct_vacation
+        ]),
     findall( Rules, wg_valid_rules(Rules), RulesList),
     append(RulesList, RulesSet),
     wg_change_rules(Scope, RulesSet, RulesSet1),
