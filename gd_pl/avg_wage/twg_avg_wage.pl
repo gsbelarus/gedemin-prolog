@@ -1862,7 +1862,7 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
     % варианты правил полных месяцев
     wg_full_month_rules(FullMonthRules),
     % взять заработок и коэффициент осовременивания за проверяемый месяц
-    get_month_wage(Scope, PK, Y, M, ModernCoef, Wage),
+    get_month_wage(Scope, PK, Y, M, _ModernCoef, Wage),
     % взять заработок
     findall( Wage1,
               % для расчетного месяца
@@ -1870,9 +1870,10 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
               % который принят для исчисления по варианту полного месяца
               memberchk(Variant1, FullMonthRules),
               % с заработком и коэффициентом осовременивания за месяц
-              get_month_wage(Scope, PK, Y1, M1, ModernCoef1, Wage1),
+              get_month_wage(Scope, PK, Y1, M1, _ModernCoef1, Wage1),
               % где коэффициенты для проверяемого и расчетного равны
-              ModernCoef =:= ModernCoef1 ),
+              %ModernCoef =:= ModernCoef1 ),
+                          true ),
     % в список заработков
     Wages1 ),
     % если заработок проверяемого месяца соответствует условию
