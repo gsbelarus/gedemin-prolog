@@ -15,7 +15,7 @@ wg_valid_sql([
             usr_wg_PersonalCard/7,
             gd_people/7,
             usr_wg_Contract/6,
-            usr_wg_TblCharge/11,
+            usr_wg_TblCharge/13,
             usr_wg_FeeType/2,
             usr_wg_FeeTypeSick/1,
             usr_wg_FeeType_Dict/3,
@@ -138,7 +138,7 @@ SELECT FIRST(1)
   pc.USR$EMPLKEY,
   REPLACE( UPPER(pc.USR$SURNAME), 'Ё', 'Е' ) AS F,
   UPPER( LEFT(pc.USR$FIRSTNAME, 1) ) AS I,
-  UPPER( LEFT(pc.USR$MIDDLENAME, 1) ) AS O,
+  UPPER( LPAD( TRIM(LEFT(pc.USR$MIDDLENAME, 1)), 1, '-') ) AS O,
   pc.USR$SEX,
   pc.USR$INSURANCENUMBER AS PersonalNumber,
   COALESCE(pc.USR$PENSIONERDATE, CAST('pNullDate' AS DATE)) AS PensionerDate
@@ -219,17 +219,20 @@ WHERE
         wg_pu_3
         ]).
 
-gd_pl_ds(Scope, kb, usr_wg_TblCharge, 11, [
+gd_pl_ds(Scope, kb, usr_wg_TblCharge, 13, [
     fEmplKey-integer, fFirstMoveKey-integer,
     fCalYear-integer, fCalMonth-integer, fDateBegin-date,
-    fDebit-float, fCredit-float, fFeeTypeKey-integer,
-    fDOW-float, fHOW-float, fPayPeriod-integer
+    fDebit-float, fCredit-float,
+    fDebitDenom-float, fCreditDenom-float,
+    fFeeTypeKey-integer,
+    fDOW-float, fHOW-float,
+    fPayPeriod-integer
     ]) :-
     memberchk(Scope, [
         wg_pu_3
         ]).
-% usr_wg_TblCharge(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, FeeTypeKey, DOW, HOW, PayPeriod)
-get_sql(Scope, kb, usr_wg_TblCharge/11,
+% usr_wg_TblCharge(EmplKey, FirstMoveKey, CalYear, CalMonth, DateBegin, Debit, Credit, DebitDenom, CreditDenom, FeeTypeKey, DOW, HOW, PayPeriod)
+get_sql(Scope, kb, usr_wg_TblCharge/13,
 "
 SELECT
   tch.USR$EMPLKEY,
@@ -239,6 +242,8 @@ SELECT
   tch.USR$DATEBEGIN,
   tch.USR$DEBIT,
   tch.USR$CREDIT,
+  tch.USR$DEBIT_DENOM,
+  tch.USR$CREDIT_DENOM,
   tch.USR$FEETYPEKEY,
   tch.USR$DOW,
   tch.USR$HOW,

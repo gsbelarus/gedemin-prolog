@@ -211,7 +211,8 @@ add_rep_amount(Scope, EmplKey, CatType) :-
     % взять суммы СВ
     findall( Y-M/ChargeSum,
               % по начислениям
-            ( get_data(Scope, kb, usr_wg_TblCharge, [
+            %( get_data(Scope, kb, usr_wg_TblCharge, [
+            ( get_data_denom(Scope, kb, usr_wg_TblCharge, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                         fCalYear-Y, fCalMonth-M,
                         fDebit-Debit, fCredit-Credit,
@@ -258,7 +259,8 @@ add_rep_amount(Scope, EmplKey, CatType) :-
     % взять суммы
     findall( Y-M/ChargeSum,
               % по начислениям
-            ( get_data(Scope, kb, usr_wg_TblCharge, [
+            %( get_data(Scope, kb, usr_wg_TblCharge, [
+            ( get_data_denom(Scope, kb, usr_wg_TblCharge, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                         fCalYear-Y, fCalMonth-M,
                         fDebit-Debit, fCredit-Credit,
@@ -304,7 +306,8 @@ add_sick_amount(Scope, EmplKey, CatType) :-
     % взять суммы СВ
     findall( Y-M/ChargeSum,
               % по начислениям
-            ( get_data(Scope, kb, usr_wg_TblCharge, [
+            %( get_data(Scope, kb, usr_wg_TblCharge, [
+            ( get_data_denom(Scope, kb, usr_wg_TblCharge, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                         fCalYear-Y, fCalMonth-M,
                         fDebit-Debit, fCredit-Credit,
@@ -341,7 +344,8 @@ add_sick_amount(Scope, EmplKey, CatType) :-
     % взять суммы
     findall( Y-M/ChargeSum,
               % по начислениям
-            ( get_data(Scope, kb, usr_wg_TblCharge, [
+            %( get_data(Scope, kb, usr_wg_TblCharge, [
+            ( get_data_denom(Scope, kb, usr_wg_TblCharge, [
                         fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                         fCalYear-Y, fCalMonth-M,
                         fDebit-Debit, fCredit-Credit,
@@ -794,12 +798,12 @@ pu_calc_out(Scope, EmplKey, Result) :-
     ExpCountList ),
     sum_list(ExpCountList, EDocExpCount),
     %
-    format_br("~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~0f~w~0f~w~0f~w~0f~w~w~w~w~w~w~w~n", Format1),
+    format_br("~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~w~0f~w~0f~w~d~w~d~w~w~w~w~w~w~w~n", Format1),
     format( string(EDocHeader),
             Format1,
             [ "<ПУ-3=", EDocCode, "=", UNPF, "=", PersonalNumber, "=",
-              F, "=", I, "=", O, "=", CatCode, "=", Number, "=", Date, "= = =",
-              EDocFeeAmount, "=", EDocSickAmount, "=0=0=",
+              F, "=", I, "=", O, "=", CatCode, "=", Number, "=", Date, "=",
+              EDocFeeAmount, "=", EDocSickAmount, "=0,00=0,00=0,00=0,00=",
               EDocRepCount, "=", EDocExpCount, "=",
               EDocDate, "= =", EDocYear, "=", PhoneNum, "="
             ] ),
@@ -828,11 +832,11 @@ pu_calc_out(Scope, EmplKey, Result) :-
                 -> FeeAmount + SickAmount > 0
                ; true
                ),
-               format_br("~w~0f~w~0f~w~0f~w~n", Format2),
+               format_br("~w~d~w~0f~w~0f~w~n", Format2),
                format( string(FeeStr),
                        Format2,
                        [ "НЧСЛ=", M, "=",
-                         FeeAmount, "=", SickAmount, "=0=0=0="
+                         FeeAmount, "=", SickAmount, "=0,00=0,00=0,00=0,00=0,00= = = = ="
                        ] )
              ),
     FeeStrList ),
@@ -915,6 +919,36 @@ pu_clean(_, _) :-
     !.
 
 /**/
+get_data_denom(Scope, Type, Name, FieldValuePairs) :-
+    memberchk(Name, [usr_wg_TblCharge]),
+    member_list([fCalYear-Y, fCalMonth-M], FieldValuePairs),
+    selectchk(fDebit-Debit, FieldValuePairs, FieldValuePairs1),
+    selectchk(fCredit-Credit, FieldValuePairs1, FieldValuePairs2),
+    append(FieldValuePairs2, [
+        fDebit-Debit0, fCredit-Credit0,
+        fDebitDenom-DebitDenom, fCreditDenom-CreditDenom ],
+        FieldValuePairs3),
+    get_data(Scope, Type, Name, FieldValuePairs3),
+    debit_credit_denom(Y-M, Debit0, Credit0, DebitDenom, CreditDenom, Debit, Credit),
+    true.
+get_data_denom(Scope, Type, Name, FieldValuePairs) :-
+    \+ memberchk(Name, [usr_wg_TblCharge]),
+    get_data(Scope, Type, Name, FieldValuePairs),
+    true.
 
+debit_credit_denom(2016-M, Debit0, Credit0, DebitDenom, CreditDenom, Debit, Credit) :-
+    M < 7,
+    ( DebitDenom =:= 0 -> Debit is Debit0 * 10000
+    ; Debit = DebitDenom ),
+    ( CreditDenom =:= 0 -> Credit is Credit0 * 10000
+    ; Credit = CreditDenom ),
+    !.
+debit_credit_denom(Y-M, Debit, Credit, _, _, Debit, Credit) :-
+    ( Y = 2016, M > 6
+    ; Y > 2016 ),
+    !.
+debit_credit_denom(_, _, _, DebitDenom, CreditDenom, DebitDenom, CreditDenom) :-
+    !.
+    
  %
 %%

@@ -2,7 +2,9 @@
 % игра крестики-нолики
 %
 
-:- dynamic([ xo_params/1, xo_cell/2, xo_solve/2, xo_step/4 ]).
+%:- module( xo, [] ).
+
+:- dynamic([ xo_params/1, xo_cell/2, xo_solve/2, xo_step/4, xo_step_back/4 ]).
 
 %:- ['kb/xo_cell', 'kb/xo_solve'].
 
@@ -16,9 +18,9 @@
 xo_params( [
     size(0, 19),
     line(5),
-    level(6),
+    level(4),
     go(x, o),
-    mode_opt([level(echo, +4)])
+    mode_opt([level(echo, +5)])
 ] ).
 
 % пространство ячеек
@@ -27,11 +29,12 @@ xo_params( [
 %   Mark = {x ; o ; n}
 
 % пространство решений
-% xo_solve(Solve, State)
+% xo_solve(Solve, State/HasChanceMark)
 %   Solve = [ cell(Coor, Mark) | _ ]
 %   Coor = X-Y
 %   Mark = {x ; o ; n}
 %   State = [x-Qty1, o-Qty2, n-Qty3]
+%   HasChanceMark
 
 % пространство движений для поиска решения
 % xo_solve_moves(SolveMoves)
@@ -71,7 +74,7 @@ xo_make_solve :-
     xo_cell_solve(Moves, Coor, Coor, WinLength, [cell(Coor, n)], Solve),
     \+ xo_solve(Solve, _),
     State = [x-0, o-0, n-WinLength],
-    assertz( xo_solve(Solve, State) ),
+    assertz( xo_solve(Solve, State/_) ),
     fail.
 xo_make_solve :-
     once( xo_solve(_, _) ).
@@ -105,7 +108,7 @@ xo_win(Mode, Mark, Solve) :-
     memberchk(line(WinLength), Params),
     memberchk(go(CompMark, UserMark), Params),
     member(Mode-Mark, [normal-CompMark, echo-UserMark]),
-    xo_solve(Solve, State),
+    xo_solve(Solve, State/Mark),
     memberchk(Mark-WinLength, State),
     !.
 
@@ -138,9 +141,14 @@ xo_mode_level(_, _, Level, Level).
 % есть шанс для выигрыша
 % xo_has_chance(Mark, Solve, MarkedQty)
 xo_has_chance(Mark, Solve, MarkedQty) :-
+    xo_solve(Solve, State/Mark),
+    memberchk(Mark-MarkedQty, State),
+    true.
+xo_has_chance(Mark, Solve, MarkedQty) :-
+    fail, % disabled
     xo_params(Params),
     memberchk(line(WinLength), Params),
-    xo_solve(Solve, State),
+    xo_solve(Solve, State/_),
     memberchk(n-FreeQty, State),
     memberchk(Mark-MarkedQty, State),
     ( WinLength = FreeQty
@@ -170,13 +178,15 @@ xo_play(Mode, PlayCell, Rule) :-
     \+ xo_cell(_, x),
     \+ xo_cell(_, o),
     %check_point,
+    memberchk(line(WinLength), Params),
     Method = 0,
     findall( Method-rate(Gift, Count) / Coor,
              ( xo_cell(Coor, n),
-               findall( FreeQty-1,
-                        ( xo_solve(Solve, State),
-                          memberchk(cell(Coor, n), Solve),
-                          memberchk(n-FreeQty, State)
+               findall( WinLength-1,
+                        ( xo_solve(Solve, _),
+                          %xo_solve(Solve, State/_),
+                          memberchk(cell(Coor, n), Solve)%,
+                          %memberchk(n-FreeQty, State)
                         ),
                         FreeQtyList
                ),
@@ -199,7 +209,7 @@ xo_play(Mode, PlayCell, Rule) :-
     PlayRateIndex is random(PlayRateLen),
     nth0(PlayRateIndex, PlayRateCoorList, PlayCoor),
     PlayCell = cell(PlayCoor, n),
-    Rule = rule(random_best,method=Method,length=PlayLen,index=PlayIndex),
+    Rule = rule(random_best,method=Method,length=PlayLen/PlayRateLen,index=PlayIndex/PlayRateIndex),
     !.
 % первый ход - случайный выбор
 xo_play(_, PlayCell, Rule) :-
@@ -253,14 +263,14 @@ xo_play(Mode, PlayCell, Rule) :-
     ; % _ nonoo n | _ nnooo n
       xo_has_chance(Mark, SolveBorder1, ToWinLength),
       append(Right, [cell(_, n)], SolveBorder1),
-      member(PlayCell, Right),
       PlayCell = cell(_, n),
+      memberchk(PlayCell, Right),
       PlayList = [PlayCell]
     ; % n oonon _ | n ooonn _
       xo_has_chance(Mark, SolveBorder2, ToWinLength),
       append([cell(_, n)], Left, SolveBorder2),
-      member(PlayCell, Left),
       PlayCell = cell(_, n),
+      memberchk(PlayCell, Left),
       PlayList = [PlayCell]
     ),
     %check_point,
@@ -269,6 +279,42 @@ xo_play(Mode, PlayCell, Rule) :-
     nth0(PlayIndex, PlayList, PlayCell),
     PlayCell = cell(X-Y, n),
     Rule = rule(free_border,Mark,X,Y),
+    !.
+% тире (выигрыш через ход)
+xo_play(Mode, PlayCell, Rule) :-
+    xo_params(Params),
+    memberchk(level(Level), Params),
+    memberchk(mode_opt(ModeOpt), Params),
+    xo_mode_level(Mode, ModeOpt, Level, ModeLevel),
+    ModeLevel >= 6,
+    memberchk(go(Mark1, Mark2), Params),
+    xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
+    memberchk(line(WinLength), Params),
+    plus(WinLength, -2, ToWinCut2),
+    plus(WinLength, -3, ToWinCut3),
+    ( Mark = CompMark ; Mark = UserMark ),
+    xo_has_chance(Mark, Solve, ToWinCut3),
+    Solve = [First | Right],
+    append(Left, [Last], Solve),
+    %check_point,
+    ( % o nonon o
+      First = cell(_, n),
+      Last = cell(_, n),
+      xo_has_chance(Mark, SolveBorder1, ToWinCut2),
+      append(Right, [cell(_, Mark)], SolveBorder1),
+      xo_has_chance(Mark, SolveBorder2, ToWinCut2),
+      append([cell(_, Mark)], Left, SolveBorder2),
+      Left = [First | Middle],
+      PlayCell = cell(_, n),
+      memberchk(PlayCell, Middle),
+      PlayList = [PlayCell]
+    ),
+    %check_point,
+    length(PlayList, PlayLength),
+    PlayIndex is random(PlayLength),
+    nth0(PlayIndex, PlayList, PlayCell),
+    PlayCell = cell(X-Y, n),
+    Rule = rule(dash_mark,Mark,X,Y),
     !.
 % вилка
 xo_play(Mode, PlayCell, Rule) :-
@@ -331,7 +377,7 @@ xo_play(Mode, PlayCell, Rule) :-
     xo_mode_go(Mode, go(Mark1, Mark2), go(CompMark, UserMark)),
     memberchk(line(WinLength), Params),
     xo_limit_coor(WinLength, LimitData),
-    member(Cost, [1, 0]),
+    member(Cost, [2, 1, 0]),
     %check_point,
     RateShape = [TotalGift, TotalCount, CompGift, UserGift, CompCount, UserCount],
     xo_rate_shape(RateShape, Method-Rate),
@@ -361,7 +407,7 @@ xo_play(Mode, PlayCell, Rule) :-
     PlayRateIndex is random(PlayRateLen),
     nth0(PlayRateIndex, PlayRateCoorList, PlayCoor),
     PlayCell = cell(PlayCoor, n),
-    Rule = rule(random_best,method=Method,cost=Cost,length=PlayLen,index=PlayIndex),
+    Rule = rule(random_best,method=Method,cost=Cost,length=PlayLen/PlayRateLen,index=PlayIndex/PlayRateIndex),
     !.
 % случайный выбор из шансов на выигрыш
 xo_play(Mode, PlayCell, Rule) :-
@@ -398,7 +444,8 @@ xo_play(_, PlayCell, Rule) :-
 % xo_fork_extra(ModeLevel, NormalMark, WinLength, Fork, Extra)
 xo_fork_extra(ModeLevel, NormalMark, WinLength, Fork, Extra) :-
     ModeLevel >= 8,
-    plus(WinLength, -2, ToWinLength),
+    plus(WinLength, -2, ToWinCut2),
+    plus(WinLength, -3, ToWinCut3),
     %
     Cell = cell(X-Y, n),
     Fork = fork(_, _, _, _, Mark, Cell),
@@ -406,7 +453,7 @@ xo_fork_extra(ModeLevel, NormalMark, WinLength, Fork, Extra) :-
     xo_mark_cell(ForkMode, X, Y),
     %
     findall( Solve,
-             ( xo_has_chance(Mark, Solve, ToWinLength),
+             ( xo_has_chance(Mark, Solve, ToWinCut2),
                memberchk(cell(X-Y, Mark), Solve),
                %
                Solve = [First | Right],
@@ -414,22 +461,38 @@ xo_fork_extra(ModeLevel, NormalMark, WinLength, Fork, Extra) :-
                ( % n nooon n
                  First = cell(_, n),
                  Last = cell(_, n),
-                 xo_has_chance(Mark, SolveBorder1, ToWinLength),
+                 xo_has_chance(Mark, SolveBorder1, ToWinCut2),
                  append(Right, [cell(_, n)], SolveBorder1),
-                 xo_has_chance(Mark, SolveBorder2, ToWinLength),
+                 xo_has_chance(Mark, SolveBorder2, ToWinCut2),
                  append([cell(_, n)], Left, SolveBorder2)
                 -> true
                ; % _ nonoo n | _ nnooo n
-                 xo_has_chance(Mark, SolveBorder1, ToWinLength),
+                 xo_has_chance(Mark, SolveBorder1, ToWinCut2),
                  append(Right, [cell(_, n)], SolveBorder1),
                  member(PlayCell, Right),
                  PlayCell = cell(_, n)
                 -> true
                ; % n oonon _ | n ooonn _
-                 xo_has_chance(Mark, SolveBorder2, ToWinLength),
+                 xo_has_chance(Mark, SolveBorder2, ToWinCut2),
                  append([cell(_, n)], Left, SolveBorder2),
                  member(PlayCell, Left),
                  PlayCell = cell(_, n)
+               )
+             ; xo_has_chance(Mark, Solve, ToWinCut3),
+               memberchk(cell(X-Y, Mark), Solve),
+               %
+               Solve = [First | Right],
+               append(Left, [Last], Solve),
+               ( % o nonon o
+                 First = cell(_, n),
+                 Last = cell(_, n),
+                 xo_has_chance(Mark, SolveBorder1, ToWinCut2),
+                 append(Right, [cell(_, Mark)], SolveBorder1),
+                 xo_has_chance(Mark, SolveBorder2, ToWinCut2),
+                 append([cell(_, Mark)], Left, SolveBorder2),
+                 Left = [First | Middle],
+                 PlayCell = cell(_, n),
+                 memberchk(PlayCell, Middle)
                )
              ),
              SolveList
@@ -584,6 +647,9 @@ xo_mark_cell(Mode, Cell) :-
     Cell = cell(X-Y, n),
     retract( xo_cell(X-Y, n) ),
     assertz( xo_cell(X-Y, Mark) ),
+    ( xo_step(_, Step, _, _) -> true ; Step = 0 ),
+    ( Mode = normal -> succ(Step, Step1) ; Step1 = Step ),
+    asserta( xo_step(Mark, Step1, X, Y) ),
     !.
 
 % очистка ячейки
@@ -599,22 +665,58 @@ xo_unmark_cell(X, Y) :-
 xo_unmark_cell(X, Y) :-
     retract( xo_cell(X-Y, _) ),
     assertz( xo_cell(X-Y, n) ),
+    xo_step(Mark, Step, X, Y),
+    retract( xo_step(Mark, Step, X, Y) ),
+    !.
+
+xo_back :-
+    retract( xo_step(Mark, Step, X, Y) ),
+    xo_unmark_cell(X, Y),
+    asserta( xo_step_back(Mark, Step, X, Y) ),
+    !.
+
+xo_forth :-
+    retract( xo_step_back(Mark, _, X, Y) ),
+    xo_params(Params),
+    memberchk(go(CompMark, UserMark), Params),
+    memberchk(Mode-Mark, [normal-CompMark, echo-UserMark]),
+    xo_mark_cell(Mode, X, Y),
     !.
 
 % смена состояния для решения
 % xo_change_solve(Solve, State, Cell, Mark, ChangedSolve, ChangedState)
-xo_change_solve([Cell|TeilSolve], Cell, Mark, [ChangedCell|TeilSolve], State, ChangedState) :-
+xo_change_solve([Cell|TeilSolve], Cell, Mark, [ChangedCell|TeilSolve], State0, ChangedState) :-
     Cell = cell(X-Y, OldMark),
     ChangedCell = cell(X-Y, Mark),
+    State0 = State/_,
     select(Mark-MarkedQty, State, State1),
     select(OldMark-OldMarkQty, State1, State2),
     succ(MarkedQty, MarkedQty1),
     plus(OldMarkQty, -1, OldMarkQty1),
-    append(State2, [Mark-MarkedQty1, OldMark-OldMarkQty1], ChangedState),
+    append(State2, [Mark-MarkedQty1, OldMark-OldMarkQty1], ChangedState0),
+    xo_change_chance(ChangedState0, ChangedState),
     !.
 xo_change_solve([SafeCell|TeilSolve], Cell, Mark, [SafeCell|RestSolve], State, ChangedState) :-
     !,
     xo_change_solve(TeilSolve, Cell, Mark, RestSolve, State, ChangedState).
+
+% xo_change_chance(State, State/HasChanceMark)
+xo_change_chance(State, State/HasChanceMark) :-
+    xo_params(Params),
+    memberchk(go(CompMark, UserMark), Params),
+    ( memberchk(CompMark-0, State),
+      memberchk(UserMark-0, State)
+    ; memberchk(CompMark-CompMarkedQty, State),
+      memberchk(UserMark-0, State),
+      CompMarkedQty > 0,
+      HasChanceMark = CompMark
+    ; memberchk(UserMark-UserMarkedQty, State),
+      memberchk(CompMark-0, State),
+      UserMarkedQty > 0,
+      HasChanceMark = UserMark
+    ; HasChanceMark = n
+    ),
+    !.
 
 % взять параметры игры
 % xo_get_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark)
@@ -646,12 +748,14 @@ xo_set_params(PosBegin, PosEnd, WinLength, Level, CompMark, UserMark) :-
 xo_init :-
     xo_make_cell,
     xo_make_solve,
+    retractall( xo_step(_, _, _, _) ),
+    retractall( xo_step_back(_, _, _, _) ),
     !.
 
 % тест
 % xo_test
 xo_test :-
-    Count = 10,
+    Count = 1,
     between(1, Count, Value),
     xo_test(Result, Solve),
     once( xo_step(Mark, Step, _, _) ),
@@ -664,17 +768,17 @@ xo_test(Result, Solve) :-
     xo_params(Params),
     memberchk(go(CompMark, UserMark), Params),
     memberchk(size(PosBegin, PosEnd), Params),
-    retractall( xo_step(_, _, _, _) ),
+    %retractall( xo_step(_, _, _, _) ),
     PlayCell = cell(X-Y, n),
-    MaxStep is (PosEnd - PosBegin + 1) ** 2 / 2 * sign(PosEnd - PosBegin + 1),
-    between(1, MaxStep, Step),
+    MaxStep is round( float_integer_part( (PosEnd - PosBegin + 1) ** 2 / 2 * sign(PosEnd - PosBegin + 1) ) ),
+    between(1, MaxStep, _),
     member(Mode-Mark, [normal-CompMark, echo-UserMark]),
     ( xo_play_in(Mode-Mark, PlayCell, Rule)
      -> true
-    ; xo_play(Mode, PlayCell, Rule)
+    ; time( xo_play(Mode, PlayCell, Rule) )
     ),
     xo_mark_cell(Mode, PlayCell),
-    asserta( xo_step(Mark, Step, X, Y) ),
+    once( xo_step(Mark, Step, X, Y) ),
     writeln(step(Step, Mark, X, Y)-Rule),
     ( xo_win(Mode, Mark, Solve)
      ->
