@@ -43,6 +43,7 @@
     usr_wg_FeeType_Dict,
     usr_wg_TblCalLine,
     usr_wg_TblCal_FlexLine,
+    usr_wg_HourType,
     usr_wg_FCRate,
     gd_const_budget,
     usr_wg_Variables,

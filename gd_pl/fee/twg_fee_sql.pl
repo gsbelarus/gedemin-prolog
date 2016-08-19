@@ -21,6 +21,7 @@ wg_valid_sql(
             usr_wg_FeeType_Dict/6,
             usr_wg_TblCalLine/7,
             usr_wg_TblCal_FlexLine/68,
+            usr_wg_HourType/12,
             usr_wg_FCRate/2,
             gd_const_budget/2,
             usr_wg_Variables/2,
@@ -554,6 +555,44 @@ WHERE
         wg_fee_alimony, wg_fee_fine
         ]).
 
+gd_pl_ds(Scope, kb, usr_wg_HourType, 12, [
+    fEmplKey-integer, fFirstMoveKey-integer,
+    fID-integer, fCode-string, fDigitCode-string,
+    fDiscription-string/255, fIsWorked-integer, fShortName-string,
+    fForCalFlex-integer, fForOverTime-integer, fForFlex-integer,
+    fExcludeForSickList-integer
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
+% usr_wg_HourType(EmplKey, FirstMoveKey,
+%   ID, Code, DigitCode, Description, IsWorked, ShortName,
+%   ForCalFlex, ForOverTime, ForFlex, ExcludeForSickList)
+get_sql(Scope, kb, usr_wg_HourType/12,
+"
+SELECT
+  pEmplKey AS EmplKey,
+  0 AS FirstMoveKey,
+  ht.ID,
+  ht.USR$CODE,
+  ht.USR$DIGITCODE,
+  ht.USR$DISCRIPTION,
+  ht.USR$ISWORKED,
+  ht.USR$SHORTNAME,
+  ht.USR$FORCALFLEX,
+  ht.USR$FOROVERTIME,
+  ht.USR$FORFLEX,
+  ht.USR$WG_EXCLUDEFORSICKLIST
+FROM
+  USR$WG_HOURTYPE ht
+",
+    [
+    pEmplKey-_
+    ]) :-
+    memberchk(Scope, [
+        wg_fee_alimony, wg_fee_fine
+        ]).
+
 gd_pl_ds(Scope, kb, usr_wg_FCRate, 2, [
     fDate-date, fMinWage-float
     ]) :-
@@ -825,7 +864,7 @@ gd_pl_ds(Scope, kb, usr_wg_Alimony_FeeDoc, 2, [
     memberchk(Scope, [
         wg_fee_alimony, wg_fee_fine
         ]).
-% usr_wg_Alimony(DocKey, EmplKey)
+% usr_wg_Alimony_FeeDoc(DocKey, EmplKey)
 get_sql(Scope, kb, usr_wg_Alimony_FeeDoc/2,
 "
 SELECT

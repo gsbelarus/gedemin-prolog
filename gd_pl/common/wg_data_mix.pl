@@ -164,7 +164,7 @@ calc_month_tab(Scope, PK, Y-M, TabDays, TabelOption) :-
             % для проверяемого месяца
             ( usr_wg_TblCalLine_mix(Scope, PK, Y-M, Date, DOW0, HOW, HoureType, TabelOption),
               ( get_data(Scope, kb, usr_wg_HourType, [
-                            fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
+                            %fEmplKey-EmplKey, fFirstMoveKey-FirstMoveKey,
                             fID-HoureType, fIsWorked-1] )
                -> (DOW0 > 0 -> DOW = DOW0 ; DOW = 1)
               ; HoureType = 0, DOW = DOW0
