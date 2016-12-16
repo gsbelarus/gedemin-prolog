@@ -235,12 +235,14 @@ add_rep_amount(Scope, EmplKey, CatType) :-
               get_avg_salary_rb(Scope, Y-M, MonthAvgSalary),
               ( get_param_list(Scope, in, [pCommon, pAvgSalaryRB_Coef-Coef])
               % -> FeeAmountCheck is round(MonthAvgSalary * Coef)
-               -> round_br(MonthAvgSalary * Coef, FeeAmountCheck)
+              % -> round_br(MonthAvgSalary * Coef, FeeAmountCheck)
+               -> round_denom(Y-M, MonthAvgSalary * Coef, FeeAmountCheck)
               ; FeeAmountCheck = FeeAmount0
               ),
               ( FeeAmount0 > FeeAmountCheck
                -> FeeAmount = FeeAmountCheck
-              ; FeeAmount = FeeAmount0
+              %; FeeAmount = FeeAmount0
+              ; round_denom(Y-M, FeeAmount0, FeeAmount)
               ),
               new_param_list(Scope, temp, [
                               pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
@@ -281,12 +283,14 @@ add_rep_amount(Scope, EmplKey, CatType) :-
               get_avg_salary_rb(Scope, Y-M, MonthAvgSalary),
               ( get_param_list(Scope, in, [pCommon, pAvgSalaryRB_Coef-Coef])
               % -> FeeAmountCheck is round(MonthAvgSalary * Coef)
-               -> round_br(MonthAvgSalary * Coef, FeeAmountCheck)
+              % -> round_br(MonthAvgSalary * Coef, FeeAmountCheck)
+               -> round_denom(Y-M, MonthAvgSalary * Coef, FeeAmountCheck)
               ; FeeAmountCheck = FeeAmount0
               ),
               ( FeeAmount0 > FeeAmountCheck
                -> FeeAmount = FeeAmountCheck
-              ; FeeAmount = FeeAmount0
+              %; FeeAmount = FeeAmount0
+              ; round_denom(Y-M, FeeAmount0, FeeAmount)
               ),
               new_param_list(Scope, temp, [
                               pEmplKey-EmplKey, pFirstMoveKey-FirstMoveKey,
@@ -950,5 +954,20 @@ debit_credit_denom(Y-M, Debit, Credit, _, _, Debit, Credit) :-
 debit_credit_denom(_, _, _, DebitDenom, CreditDenom, DebitDenom, CreditDenom) :-
     !.
     
+round_denom(2016-M, Expr, Amount) :-
+    M < 7,
+    round_br(Expr, Amount0),
+    Amount is round(Amount0),
+    !.
+round_denom(Y-M, Expr, Amount) :-
+    ( Y = 2016, M > 6
+    ; Y > 2016 ),
+    round_br(Expr, Amount),
+    !.
+round_denom(_, Expr, Amount) :-
+    round_br(Expr, Amount0),
+    Amount is round(Amount0),
+    !.
+
  %
 %%
