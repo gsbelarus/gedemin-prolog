@@ -84,15 +84,21 @@ JOIN
 WHERE
   ml.USR$EMPLKEY = pEmplKey
   AND
+  (
   ml.USR$KINDOFWORKKEY =
     (SELECT id FROM GD_P_GETID(pKindOfWork_Basic_ruid))
+  OR
+  ml.USR$KINDOFWORKKEY =
+    (SELECT id FROM GD_P_GETID(pKindOfWork_ByWorkOuter_ruid))
+  )
 ORDER BY
   ml.USR$EMPLKEY,
   ml.USR$FIRSTMOVE,
   ml.USR$DATEBEGIN
 ",
     [
-    pEmplKey-_, pPayFormSalary_ruid-_, pKindOfWork_Basic_ruid-_
+    pEmplKey-_, pPayFormSalary_ruid-_,
+    pKindOfWork_Basic_ruid-_, pKindOfWork_ByWorkOuter_ruid-_
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony, wg_fee_fine

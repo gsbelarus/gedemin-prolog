@@ -16,6 +16,7 @@ twg_fee_in_params:-
         Section-1,
         pStartDate-'2012-01-01', pNullDate-'2100-01-01',
         pKindOfWork_Basic_ruid-'147017405,119619099',       % Основное место работы
+        pKindOfWork_ByWorkOuter_ruid-'147041907,453357870', % Внешний совместитель
         pPayFormSalary_ruid-'147009181,119619099',          % Форма оплаты Оклад
         pFeeGroupKey_IncomeTax_ruid-'147021000,274788016',  % Облагается ПН
         pDocType_Total_ruid-'147567052,119619099',          % 99. Итоговое начисление
