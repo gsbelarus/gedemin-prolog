@@ -530,8 +530,13 @@ calc_avg_wage(Scope, PK, AvgWage, Rule) :-
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     % - для начисления по-среднему (по часам или дням)
     Scope = wg_avg_wage_avg,
+    % не превышен лимит
+    get_param_list(Scope, run, [pMonthLimitQty-MonthLimitQty, pMonthBefore-MonthBefore]),
+    \+ MonthBefore > MonthLimitQty,
     % подготовка временных данных для расчета
     prep_avg_wage(Scope, PK, Periods),
+    % есть хотя бы один месяц для расчета
+    Periods = [_|_],
     % взять заработок
     findall( Wage1,
                % за каждый период проверки
@@ -542,17 +547,8 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
                Wage1 > 0 ),
     % в список заработков
     Wages ),
-      % есть требуемое количество месяцев
-    ( get_param(Scope, run, pMonthQty-MonthQty),
-      length(Wages, MonthQty)
-    -> true
-    ; % или первый период проверки
-      Periods = [Y-M|_],
-      % и период последнего приема на работу
-      get_last_hire(Scope, PK, DateIn),
-      % совпадают
-      atom_date(DateIn, date(Y, M, _))
-    ),
+    % есть заработок хотя бы за один месяц
+    Wages = [_|_],
     % итоговый заработок
     sum_list(Wages, Amount),
     % признак расчета по часам
@@ -582,24 +578,35 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     % - для начисления по-среднему (нужно больше месяцев)
     Scope = wg_avg_wage_avg,
-    % периоды для проверки
-    get_periods(Scope, PK, [Y-M|_]),
-    atom_date(FirstDate, date(Y, M, 1)),
-    % для даты последнего приема на работу
-    get_last_hire(Scope, PK, DateIn),
-    % если дата последнего приема на работу меньше первой даты расчета
-    DateIn @< FirstDate,
-    % и не превышен лимит
+    % не превышен лимит
     get_param_list(Scope, run, [pMonthLimitQty-MonthLimitQty, pMonthBefore-MonthBefore]),
     \+ MonthBefore > MonthLimitQty,
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    % есть хотя бы один месяц для расчета
+    Periods = [_|_],
+    % взять заработок
+    findall( Wage1,
+               % за каждый период проверки
+             ( member(Y1-M1, Periods),
+               % взять данные по заработку
+               get_month_wage(Scope, PK, Y1, M1, _, Wage1),
+               % где значение больше 0
+               Wage1 > 0 ),
+    % в список заработков
+    Wages ),
+    % нет заработка
+    Wages = [],
     % то для расчета нужно больше месяцев
     AvgWage = 0, Variant = need_more,
     !.
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     % - для начисления по-среднему (по начислению за текущий месяц)
     Scope = wg_avg_wage_avg,
-    % нет периодов для проверки
-    get_periods(Scope, PK, []),
+    % подготовка временных данных для расчета
+    prep_avg_wage(Scope, PK, Periods),
+    % нет периодов для расчета
+    Periods = [],
     % если следующий период
     append(PK, [pDateCalcTo-DateTo], Pairs),
     get_param_list(Scope, run, Pairs),
@@ -612,16 +619,9 @@ calc_avg_wage(Scope, PK, AvgWage, Variant) :-
     AvgWage = 0, Variant = by_current_month,
     !.
 calc_avg_wage(Scope, PK, AvgWage, Variant) :-
-    % - для начисления по-среднему (нет требуемого количества месяцев)
+    % - для начисления по-среднему (нет данных для расчета)
     Scope = wg_avg_wage_avg,
-    % периоды для проверки
-    get_periods(Scope, PK, [Y-M|_]),
-    atom_date(FirstDate, date(Y, M, 1)),
-    % взять дату последнего приема на работу
-    get_last_hire(Scope, PK, DateIn),
-    % если дата последнего приема на работу не меньше первой даты расчета
-    \+ DateIn @< FirstDate,
-    % то для расчета нет требуемого количества месяцев
+    % нет данных для расчета
     AvgWage = 0, Variant = no_data,
     !.
 
@@ -1873,7 +1873,7 @@ rule_month_wage(Scope, PK, Y-M, Rule) :-
               get_month_wage(Scope, PK, Y1, M1, _ModernCoef1, Wage1),
               % где коэффициенты для проверяемого и расчетного равны
               %ModernCoef =:= ModernCoef1 ),
-                          true ),
+              true ),
     % в список заработков
     Wages1 ),
     % если заработок проверяемого месяца соответствует условию
@@ -2440,6 +2440,7 @@ struct_vacation_sql(DocKey, DateBegin, DateEnd, PredicateName, Arity, SQL) :-
 
 %
 struct_vacation_in(DateCalc, _, _, AvgWage, _) :-
+    fail, % disabled
     Scope = wg_struct_vacation,
     % настроить правила
     wg_config_rules(Scope),
@@ -2450,7 +2451,8 @@ struct_vacation_in(DateCalc, _, _, AvgWage, _) :-
     atom_date(AccDate, date(Year, Month, Days)),
     atom_date(DateFrom, date(Y, M, _)),
     atom_date(IncludeDate, date(Y, M, 1)),
-    Summa is Duration * AvgWage,
+    %Summa is Duration * AvgWage,
+    round_br(Duration * AvgWage, Summa),
     OutPairs = [
                 pAccDate-AccDate, pIncludeDate-IncludeDate,
                 pDuration-Duration, pSumma-Summa,
@@ -2459,22 +2461,54 @@ struct_vacation_in(DateCalc, _, _, AvgWage, _) :-
                 ],
     new_param_list(struct_vacation, out, OutPairs),
     !.
-struct_vacation_in(DateCalc, DateBegin, DateEnd, AvgWage, SliceOption) :-
+struct_vacation_in(DateCalc, DateBegin, DateEnd0, AvgWage, SliceOption) :-
     Scope = wg_struct_vacation,
     % настроить правила
     wg_config_rules(Scope),
     %
+    ( wg_vacation_compensation(DateFrom, Duration, 1)
+     ->
+      plus(Duration, -1, Duration1),
+      date_add(DateBegin, Duration1, day, DateEnd)
+    ; DateEnd = DateEnd0
+    ),
     atom_date(DateCalc, date(Year, Month, _)),
     month_days(Year, Month, Days),
     atom_date(AccDate, date(Year, Month, Days)),
-    once( (SliceOption = 0, FilterVcType = 0 ; true) ),
+    ( SliceOption = 0 -> FilterVcType = 0 ; true ),
     findall( VcType-Slice,
                 ( wg_vacation_slice(VcType, Slice), VcType = FilterVcType ),
              SliceList0 ),
     keysort(SliceList0, SortedSliceList0),
     sort_slice_list(SortedSliceList0, SliceList),
-    struct_vacation_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage),
+    ( wg_vacation_compensation(DateFrom, Duration, 1)
+     ->
+      atom_date(DateFrom, date(Y, M, _)),
+      atom_date(IncludeDate, date(Y, M, 1)),
+      struct_vacation_calc_comp(SliceList, AvgWage, AccDate, IncludeDate)
+    ; struct_vacation_calc(SliceList, _-0, AccDate, DateBegin, DateEnd, AvgWage)
+    ),
     !.
+
+%
+struct_vacation_calc_comp([], _, _, _).
+struct_vacation_calc_comp([VcType0-Duration | SliceList], AvgWage, AccDate, IncludeDate) :-
+    Duration > 0,
+    VcType is VcType0 + 10,
+    %Summa is Duration * AvgWage,
+    round_br(Duration * AvgWage, Summa),
+    OutPairs = [
+                pAccDate-AccDate, pIncludeDate-IncludeDate,
+                pDuration-Duration, pSumma-Summa,
+                pDateBegin-AccDate, pDateEnd-AccDate,
+                pVcType-VcType
+                ],
+    new_param_list(struct_vacation, out, OutPairs),
+    !,
+    struct_vacation_calc_comp(SliceList, AvgWage, AccDate, IncludeDate).
+struct_vacation_calc_comp([_ | SliceList], AvgWage, AccDate, IncludeDate) :-
+    !,
+    struct_vacation_calc_comp(SliceList, AvgWage, AccDate, IncludeDate).
 
 %
 sort_slice_list([VcType01-Slice01|SliceList1], SliceList) :-
@@ -2514,7 +2548,8 @@ struct_vacation_calc(SliceList, VcType-Slice, AccDate, DateBegin, DateEnd, AvgWa
     atom_date(DateBegin1, date(Y, M, _)),
     atom_date(IncludeDate, date(Y, M, 1)),
     sum_vacation_days(DateBegin1, DateEnd1, 1, Duration),
-    Summa is Duration * AvgWage,
+    %Summa is Duration * AvgWage,
+    round_br(Duration * AvgWage, Summa),
     OutPairs = [
                 pAccDate-AccDate, pIncludeDate-IncludeDate,
                 pDuration-Duration, pSumma-Summa,
