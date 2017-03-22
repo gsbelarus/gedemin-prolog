@@ -2468,7 +2468,7 @@ struct_vacation_in(DateCalc, DateBegin, DateEnd0, AvgWage, SliceOption) :-
     %
     ( wg_vacation_compensation(DateFrom, Duration, 1)
      ->
-      plus(Duration, -1, Duration1),
+      Duration1 is round(Duration) - 1,
       date_add(DateBegin, Duration1, day, DateEnd)
     ; DateEnd = DateEnd0
     ),
