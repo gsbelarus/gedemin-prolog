@@ -400,7 +400,7 @@ WHERE
   AND
   tcfl.USR$FIRSTMOVEKEY = pFirstMoveKey
   AND
-  t.USR$DATEBEGIN >= 'pDateCalcFrom'
+  t.USR$DATEEND >= 'pDateCalcFrom'
   AND
   t.USR$DATEBEGIN < 'pDateCalcTo'
  ORDER BY
