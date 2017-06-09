@@ -283,24 +283,30 @@ calc_amount_by_shape(Scope, EmplKey, Shape) :-
     % Подоходный налог (ПН)
     get_data(Scope, kb, usr_wg_FeeType_Dict, [
                 fID-IncomeTaxFeeType, fAlias-"ftIncomeTax" ]),
-    charges_sum(Charges, [debit(0), credit(1)], [IncomeTaxFeeType], IncomeTax),
-    % собрать виды начислений, облагаемые ПН
+    % Пенсионный (СВ)
+    get_data(Scope, kb, usr_wg_FeeType_Dict, [
+                fID-SocInsuranceFeeType, fAlias-"ftSocInsurance" ]),
+    charges_sum(Charges,
+                [debit(0), credit(1)],
+                [IncomeTaxFeeType, SocInsuranceFeeType],
+                IncomeTax),
+    % собрать виды начислений, облагаемые ПН+СВ
     findall( TaxableFeeType,
              get_data(Scope, kb, usr_wg_FeeType_Taxable, [
                          fEmplKey-EmplKey, fFeeTypeKey-TaxableFeeType ]),
     TaxableFeeTypeList),
-    % Облагаемая ПН сумма
+    % Облагаемая ПН+СВ сумма
     charges_sum(Charges, [debit(1), credit(0)], TaxableFeeTypeList, AmountTaxable),
-    % Коеффициент ПН
+    % Коеффициент ПН+СВ
     ( AmountTaxable =:= 0, IncomeTaxCoef = 0
     ; IncomeTaxCoef is IncomeTax / AmountTaxable
     ),
-    % Облагаемая ПН Исключаемая сумма
+    % Облагаемая ПН+СВ Исключаемая сумма
     charges_sum(ChargesExcl, [debit(1), credit(0)], TaxableFeeTypeList, AmountTaxableExcl),
-    % Исключаемый ПН
+    % Исключаемый ПН+СВ
     %IncomeTaxExcl is round(AmountTaxableExcl * IncomeTaxCoef) * 1.0,
     round_br(AmountTaxableExcl * IncomeTaxCoef, IncomeTaxExcl),
-    % Расчетная сумма = Общая сумма - Исключаемая сумма - Исключаемый ПН
+    % Расчетная сумма = Общая сумма - Исключаемая сумма - Исключаемый (ПН+СВ)
     %ForAlimony is round(AmountAll - AmountExcl - IncomeTaxExcl) * 1.0,
     round_br(AmountAll - AmountExcl - IncomeTaxExcl, ForAlimony),
     % спецификация временных данных
@@ -1794,17 +1800,17 @@ fee_prot(Scope, Types, Sections, EmplKey, ProtText) :-
     ( AmountExcl > 0
      ->
       format_br("~n~2|~w~n~4|~0f~w~0f~w~0f~n", Format1),
-      Args1 = [ "Заработок = Начисленная сумма - ПН",
+      Args1 = [ "Заработок = Начисленная сумма - (ПН+СВ)",
               AmountAll, " = ", AmountAll - IncomeTax, " - ", -IncomeTax
               ]
     ; format_br("~n~2|~w~w~w~n~4|~0f~w~0f~w~0f~n", Format1),
-      Args1 = [ "Для ", Alias1, " = Начисленная сумма - ПН",
+      Args1 = [ "Для ", Alias1, " = Начисленная сумма - (ПН+СВ)",
               AmountAll, " = ", AmountAll - IncomeTax, " - ", -IncomeTax
               ]
     ),
     ( AmountExcl > 0 ->
       format_br("~2|~w~n~4|~0f~w~0f~w~0f~n", Format2),
-      Args2 = [ "Исключаемый заработок = Исключаемая сумма - Исключаемый ПН",
+      Args2 = [ "Исключаемый заработок = Исключаемая сумма - Исключаемый (ПН+СВ)",
                 AmountExcl + IncomeTaxExcl, " = ", AmountExcl," - ", -IncomeTaxExcl
               ]
     ; Format2 = "", Args2 = []

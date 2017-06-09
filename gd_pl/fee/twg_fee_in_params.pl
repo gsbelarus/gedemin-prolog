@@ -19,6 +19,7 @@ twg_fee_in_params:-
         pKindOfWork_ByWorkOuter_ruid-'147041907,453357870', % Внешний совместитель
         pPayFormSalary_ruid-'147009181,119619099',          % Форма оплаты Оклад
         pFeeGroupKey_IncomeTax_ruid-'147021000,274788016',  % Облагается ПН
+        pFeeGroupKey_SocInsurance_ruid-'147021001,274788016',     % Начисляются СВ
         pDocType_Total_ruid-'147567052,119619099',          % 99. Итоговое начисление
         pTblCal_DocType_Plan_ruid-'147567935,1514418708',   % Календарный график
         pTblCal_DocType_Fact_ruid-'187613422,1596169984',   % Табель мастера
@@ -42,6 +43,7 @@ twg_fee_in_params:-
         pFeeType_Fine_ruid-'147049310,1011422021',         % Штрафы
         pFeeType_HolidayComp_ruid-'147076028,274788016',   % Компенсация отпуска
         pFeeType_IncomeTax_ruid-'147567139,119619099',     % Подоходный
+        pFeeType_SocInsurance_ruid-'147653395,119619099',  % Пенсионный
         pFeeType_TransferDed_ruid-'147069035,453357870',   % Расходы по переводу
         pFeeType_AlimonyDebt_ruid-'147067786,453357870',   % Долг по алиментам
         pFeeType_FineDebt_ruid-'147036413,360343892'       % Долг по штрафам

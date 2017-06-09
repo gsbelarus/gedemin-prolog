@@ -361,11 +361,15 @@ JOIN
   USR$WG_FEETYPE ft_avg
     ON ft_avg.ID = ft.USR$WG_FEETYPEKEY
 WHERE
-  ft.USR$WG_FEEGROUPKEY =
-    (SELECT id FROM GD_P_GETID(pFeeGroupKey_IncomeTax_ruid))
+  ft.USR$WG_FEEGROUPKEY
+    IN
+    (
+      (SELECT id FROM GD_P_GETID(pFeeGroupKey_IncomeTax_ruid)),
+      (SELECT id FROM GD_P_GETID(pFeeGroupKey_SocInsurance_ruid))
+    )
 ",
     [
-    pEmplKey-_, pFeeGroupKey_IncomeTax_ruid-_
+    pEmplKey-_, pFeeGroupKey_IncomeTax_ruid-_, pFeeGroupKey_SocInsurance_ruid-_
     ]) :-
     memberchk(Scope, [
         wg_fee_alimony, wg_fee_fine
@@ -397,6 +401,9 @@ SELECT
       (SELECT id FROM GD_P_GETID(pFeeType_IncomeTax_ruid))
         THEN 'ftIncomeTax'
     WHEN
+      (SELECT id FROM GD_P_GETID(pFeeType_SocInsurance_ruid))
+        THEN 'ftSocInsurance'
+    WHEN
       (SELECT id FROM GD_P_GETID(pFeeType_TransferDed_ruid))
         THEN 'ftTransferDed'
     WHEN
@@ -421,6 +428,7 @@ FROM
     pFeeType_Fine_ruid-_,
     pFeeType_HolidayComp_ruid-_,
     pFeeType_IncomeTax_ruid-_,
+    pFeeType_SocInsurance_ruid-_,
     pFeeType_TransferDed_ruid-_,
     pFeeType_AlimonyDebt_ruid-_,
     pFeeType_FineDebt_ruid-_
