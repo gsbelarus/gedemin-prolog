@@ -155,7 +155,7 @@ chars_nn([N2], ['0', N2]).
 %
 is_date(date(Y, M, D)) :-
     integer(Y), integer(M), integer(D),
-    between(1994, 2024, Y),
+    between(1994, 2054, Y),
     month_days(Y, M, LastDay),
     between(1, LastDay, D),
     !.
